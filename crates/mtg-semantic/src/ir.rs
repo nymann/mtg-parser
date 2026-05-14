@@ -1,4 +1,4 @@
-use mtg_grammar::Keyword;
+use mtg_grammar::{Keyword, StaticAbility};
 use serde::{Deserialize, Serialize};
 
 /// Semantic IR for one Oracle-text effect. The grammar's syntactic
@@ -11,10 +11,17 @@ pub enum CardEffect {
     ManaCost(ManaValue),
     /// "Destroy target creature."
     DestroyTargetCreature,
-    /// A single keyword ability such as `Flying`.
+    /// A single keyword ability such as `Flying` or `Enchant artifact`.
     Keyword(Keyword),
     /// "Target player draws N cards."
     TargetPlayerDrawsCards { count: u32 },
+    /// A static ability with a conditional continuous effect. The
+    /// grammar-side AST is reused verbatim until the IR grows real
+    /// reference-resolution work to do here.
+    StaticAbility(StaticAbility),
+    /// Two or more lowered effects, in source order — the lowering of
+    /// a multi-ability card.
+    Compound(Vec<CardEffect>),
 }
 
 /// Per-color mana totals. The "mana value" of a cost is [`Self::total`].

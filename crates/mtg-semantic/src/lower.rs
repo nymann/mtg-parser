@@ -16,6 +16,14 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }
+        Statement::StaticAbility(sa) => CardEffect::StaticAbility(sa.clone()),
+        Statement::Compound(stmts) => {
+            let lowered = stmts
+                .iter()
+                .map(lower)
+                .collect::<Result<Vec<_>, _>>()?;
+            CardEffect::Compound(lowered)
+        }
     })
 }
 

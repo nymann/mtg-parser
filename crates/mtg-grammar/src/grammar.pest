@@ -2,17 +2,31 @@
 //   - Scryfall-style mana costs, e.g. `{2}{R}{R}`
 //   - "Destroy target creature."
 //   - "Target player draws N cards." (N as an English word)
-//   - Single keyword abilities, e.g. `Flying`
+//   - Keyword abilities (`Flying`, parameterized `Enchant <type>`, ...)
+//   - Cards with multiple abilities separated by newlines
+//   - Static abilities of the form
+//       "As long as <cond>, <effect>."
+//     where <effect> is a type-changing continuous effect on the
+//     enchanted permanent (the Animate Artifact shape).
 //
-// Whitespace is implicit between tokens in non-atomic rules. Mana
-// symbols are compound-atomic so no whitespace is permitted inside or
-// between them.
+// Whitespace within an ability is implicit between tokens in
+// non-atomic rules. `WHITESPACE` is just " " so newlines are never
+// consumed implicitly — they act as ability separators at the top
+// level.
 
 WHITESPACE = _{ " " }
 
-card_text = { SOI ~ statement ~ EOI }
+card_text = { SOI ~ abilities ~ EOI }
 
-statement = _{ mana_cost | destroy | draw_cards | keyword_ability }
+abilities = _{ statement ~ ("\n" ~ statement)* }
+
+statement = _{
+    mana_cost
+  | destroy
+  | draw_cards
+  | static_ability
+  | keyword_ability
+}
 
 mana_cost   = ${ mana_symbol+ }
 mana_symbol = ${ "{" ~ mana_body ~ "}" }
@@ -29,5 +43,40 @@ number_word = @{
 }
 
 keyword_ability = { keyword }
-keyword         = _{ flying }
+keyword         = _{ enchant | flying }
 flying          = @{ ^"flying" }
+enchant         = { ^"enchant" ~ permanent_type }
+
+// Card types that appear as keyword arguments or in type lines.
+// Atomic so each alternative is matched as a single word.
+permanent_type = @{
+    ^"artifact"
+  | ^"creature"
+  | ^"enchantment"
+  | ^"land"
+  | ^"planeswalker"
+}
+
+// "As long as <cond>, <effect>." — one static ability of the
+// conditional-continuous-effect family.
+static_ability = {
+    ^"as" ~ ^"long" ~ ^"as" ~ condition ~ "," ~ continuous_effect ~ "."
+}
+
+condition      = _{ enchanted_isnt }
+enchanted_isnt = {
+    ^"enchanted" ~ permanent_type ~ ^"isn't" ~ article ~ permanent_type
+}
+
+continuous_effect       = _{ becomes_pt_from_mv }
+becomes_pt_from_mv = {
+    ^"it's" ~ article ~ permanent_type+
+  ~ ^"with" ~ ^"power" ~ ^"and" ~ ^"toughness"
+  ~ ^"each" ~ ^"equal" ~ ^"to" ~ ^"its" ~ ^"mana" ~ ^"value"
+}
+
+// Silent: the indefinite article ("a" / "an") is recoverable from
+// the following noun's initial sound at unparse time, so we don't
+// store it in the AST. "an" is listed first because PEG alternatives
+// are ordered and "a" is a prefix of "an".
+article = _{ ^"an" | ^"a" }

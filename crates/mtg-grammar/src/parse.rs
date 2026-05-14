@@ -2,7 +2,10 @@ use pest::iterators::Pair;
 use pest::Parser;
 use pest_derive::Parser;
 
-use crate::ast::{Keyword, ManaCost, ManaSymbol, Statement};
+use crate::ast::{
+    Condition, ContinuousEffect, Keyword, ManaCost, ManaSymbol, PermanentType, Statement,
+    StaticAbility,
+};
 
 #[derive(Parser)]
 #[grammar = "grammar.pest"]
@@ -25,11 +28,18 @@ impl From<pest::error::Error<Rule>> for ParseError {
 pub fn parse(text: &str) -> Result<Statement, ParseError> {
     let mut pairs = MtgParser::parse(Rule::card_text, text)?;
     let card_text = pairs.next().expect("card_text always matches once");
-    let inner = card_text
-        .into_inner()
-        .next()
-        .expect("card_text contains a statement");
-    statement_from_pair(inner)
+    let mut statements = Vec::new();
+    for inner in card_text.into_inner() {
+        if inner.as_rule() == Rule::EOI {
+            continue;
+        }
+        statements.push(statement_from_pair(inner)?);
+    }
+    match statements.len() {
+        0 => Err(ParseError::Internal("empty card_text")),
+        1 => Ok(statements.into_iter().next().expect("len checked")),
+        _ => Ok(Statement::Compound(statements)),
+    }
 }
 
 fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
@@ -38,6 +48,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
+        Rule::static_ability => Ok(Statement::StaticAbility(static_ability_from_pair(pair)?)),
         _ => Err(ParseError::Internal("statement")),
     }
 }
@@ -47,8 +58,7 @@ fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         .into_inner()
         .next()
         .expect("draw_cards always contains a number_word");
-    let count = number_word_to_u32(word.as_str())
-        .ok_or(ParseError::Internal("number_word"))?;
+    let count = number_word_to_u32(word.as_str()).ok_or(ParseError::Internal("number_word"))?;
     Ok(Statement::TargetPlayerDrawsCards { count })
 }
 
@@ -75,7 +85,74 @@ fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         .expect("keyword_ability always contains a keyword");
     match inner.as_rule() {
         Rule::flying => Ok(Keyword::Flying),
+        Rule::enchant => {
+            let pt = inner
+                .into_inner()
+                .next()
+                .expect("enchant always contains a permanent_type");
+            Ok(Keyword::Enchant(permanent_type_from_pair(pt)?))
+        }
         _ => Err(ParseError::Internal("keyword")),
+    }
+}
+
+fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseError> {
+    let mut inner = pair.into_inner();
+    let cond_pair = inner
+        .next()
+        .expect("static_ability begins with a condition");
+    let effect_pair = inner
+        .next()
+        .expect("static_ability has an effect after the condition");
+    Ok(StaticAbility {
+        condition: condition_from_pair(cond_pair)?,
+        effect: continuous_effect_from_pair(effect_pair)?,
+    })
+}
+
+fn condition_from_pair(pair: Pair<Rule>) -> Result<Condition, ParseError> {
+    match pair.as_rule() {
+        Rule::enchanted_isnt => {
+            let mut types = pair.into_inner();
+            let pt = types
+                .next()
+                .expect("enchanted_isnt names the enchanted type first");
+            let neg = types
+                .next()
+                .expect("enchanted_isnt names the negated type second");
+            Ok(Condition::EnchantedIsNot {
+                permanent_type: permanent_type_from_pair(pt)?,
+                negated_type: permanent_type_from_pair(neg)?,
+            })
+        }
+        _ => Err(ParseError::Internal("condition")),
+    }
+}
+
+fn continuous_effect_from_pair(pair: Pair<Rule>) -> Result<ContinuousEffect, ParseError> {
+    match pair.as_rule() {
+        Rule::becomes_pt_from_mv => {
+            let types = pair
+                .into_inner()
+                .map(permanent_type_from_pair)
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(ContinuousEffect::BecomesWithPtFromManaValue { types })
+        }
+        _ => Err(ParseError::Internal("continuous_effect")),
+    }
+}
+
+fn permanent_type_from_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseError> {
+    if pair.as_rule() != Rule::permanent_type {
+        return Err(ParseError::Internal("permanent_type"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "artifact" => Ok(PermanentType::Artifact),
+        "creature" => Ok(PermanentType::Creature),
+        "enchantment" => Ok(PermanentType::Enchantment),
+        "land" => Ok(PermanentType::Land),
+        "planeswalker" => Ok(PermanentType::Planeswalker),
+        _ => Err(ParseError::Internal("permanent_type variant")),
     }
 }
 
