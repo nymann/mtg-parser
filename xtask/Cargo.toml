@@ -13,3 +13,5 @@ mtg-scryfall = { path = "../crates/mtg-scryfall" }
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+ratatui = { workspace = true }
+crossterm = { workspace = true }
