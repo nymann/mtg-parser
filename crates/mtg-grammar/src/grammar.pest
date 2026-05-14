@@ -1,0 +1,21 @@
+// Walking-skeleton grammar. Covers:
+//   - Scryfall-style mana costs, e.g. `{2}{R}{R}`
+//   - "Destroy target creature."
+//
+// Whitespace is implicit between tokens in non-atomic rules. Mana
+// symbols are compound-atomic so no whitespace is permitted inside or
+// between them.
+
+WHITESPACE = _{ " " }
+
+card_text = { SOI ~ statement ~ EOI }
+
+statement = _{ mana_cost | destroy }
+
+mana_cost   = ${ mana_symbol+ }
+mana_symbol = ${ "{" ~ mana_body ~ "}" }
+mana_body   = _{ generic | color }
+generic     = @{ ASCII_DIGIT+ }
+color       = @{ "W" | "U" | "B" | "R" | "G" | "C" }
+
+destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }

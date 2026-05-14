@@ -1,0 +1,27 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/mtg-grammar",
+    "crates/mtg-semantic",
+    "xtask",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.75"
+license = "MIT OR Apache-2.0"
+publish = false
+repository = "https://github.com/nymann/mtg-parser"
+
+[workspace.dependencies]
+pest = "2.7"
+pest_derive = "2.7"
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+proptest = "1.4"
+
+[profile.dev]
+opt-level = 0
+
+[profile.test]
+opt-level = 0

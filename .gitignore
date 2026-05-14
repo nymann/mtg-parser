@@ -1,0 +1,5 @@
+/target
+.grammar-fix/
+.scryfall-cache/
+*.swp
+.DS_Store

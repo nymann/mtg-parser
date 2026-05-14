@@ -1,0 +1,13 @@
+[package]
+name = "mtg-semantic"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+mtg-grammar = { path = "../mtg-grammar" }
+serde = { workspace = true }
+thiserror = { workspace = true }
