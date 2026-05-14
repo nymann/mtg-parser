@@ -1,5 +1,5 @@
 [package]
-name = "xtask"
+name = "mtg-corpus"
 version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
@@ -8,6 +8,8 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-mtg-corpus = { path = "../crates/mtg-corpus" }
-mtg-scryfall = { path = "../crates/mtg-scryfall" }
+mtg-grammar = { path = "../mtg-grammar" }
+mtg-scryfall = { path = "../mtg-scryfall" }
 anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

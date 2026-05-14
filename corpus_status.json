@@ -1,0 +1,1168 @@
+{
+  "_v": 1,
+  "generated_at": "2026-05-14",
+  "total": 290,
+  "passing": 0,
+  "cards": {
+    "lea/Air Elemental": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Ancestral Recall": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target player draws three cards.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Animate Artifact": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant artifact\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Animate Dead": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature card in a graveyard\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Animate Wall": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant Wall\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Ankh of Mishra": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a land enters, this artifact deals 2 damage to that land's controller.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Armageddon": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy all lands.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Aspect of Wolf": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Bad Moon": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Black creatures get +1/+1.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Badlands": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Balance": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards and sacrifice creatures the same way.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Basalt Monolith": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This artifact doesn't untap during your untap step.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Bayou": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Benalish Hero": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Banding\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Berserk": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Cast this spell only before the combat damage step.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Birds of Paradise": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Black Knight": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | First strike\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Black Lotus": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}, Sacrifice this artifact: Add three mana of any one color.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Black Vise": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | As this artifact enters, choose an opponent.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Black Ward": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Blaze of Glory": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Cast this spell only during combat before blockers are declared.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Blessing": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Blue Elemental Blast": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Choose one —\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Blue Ward": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Bog Wraith": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Swampwalk\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Braingeyser": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target player draws X cards.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Burrowing": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Camouflage": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Cast this spell only during your declare attackers step.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Castle": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Untapped creatures you control get +0/+2.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Celestial Prism": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {2}, {T}: Add one mana of any color.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Channel": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Chaos Orb": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {1}, {T}: If this artifact is on the battlefield, flip it onto the battlefield from a height of at least one foot. If this artifact turns over completely at least once during the flip, destroy all nontoken permanents it touches. Then destroy this artifact.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Chaoslace": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target spell or permanent becomes red.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Circle of Protection: Blue": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {1}: The next time a blue source of your choice would deal damage to you this turn, prevent that damage.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Circle of Protection: Green": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {1}: The next time a green source of your choice would deal damage to you this turn, prevent that damage.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Circle of Protection: Red": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {1}: The next time a red source of your choice would deal damage to you this turn, prevent that damage.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Circle of Protection: White": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {1}: The next time a white source of your choice would deal damage to you this turn, prevent that damage.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Clockwork Beast": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This creature enters with seven +1/+0 counters on it.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Clone": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | You may have this creature enter as a copy of any creature on the battlefield.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Cockatrice": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Consecrate Land": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant land\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Conservator": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {3}, {T}: Prevent the next 2 damage that would be dealt to you this turn.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Contract from Below": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Remove this card from your deck before playing if you're not playing for ante.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Control Magic": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Conversion": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | At the beginning of your upkeep, sacrifice this enchantment unless you pay {W}{W}.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Copper Tablet": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | At the beginning of each player's upkeep, this artifact deals 1 damage to that player.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Copy Artifact": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | You may have this enchantment enter as a copy of any artifact on the battlefield, except it's an enchantment in addition to its other types.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Counterspell": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Counter target spell.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Craw Wurm": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Creature Bond": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Crusade": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | White creatures get +1/+1.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Crystal Rod": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a player casts a blue spell, you may pay {1}. If you do, you gain 1 life.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Cursed Land": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant land\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Cyclopean Tomb": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {2}, {T}: Put a mire counter on target non-Swamp land. That land is a Swamp for as long as it has a mire counter on it. Activate only during your upkeep.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Dark Ritual": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Add {B}{B}{B}.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Darkpact": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Remove this card from your deck before playing if you're not playing for ante.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Death Ward": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Regenerate target creature.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Deathgrip": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | {B}{B}: Counter target green spell.\n  |       ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Deathlace": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target spell or permanent becomes black.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Demonic Attorney": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Remove this card from your deck before playing if you're not playing for ante.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Demonic Hordes": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Destroy target land.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Demonic Tutor": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Search your library for a card, put that card into your hand, then shuffle.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Dingus Egg": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a land is put into a graveyard from the battlefield, this artifact deals 2 damage to that land's controller.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Disenchant": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy target artifact or enchantment.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Disintegrate": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Disintegrate deals X damage to any target. If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Disrupting Scepter": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {3}, {T}: Target player discards a card. Activate only during your turn.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Dragon Whelp": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Drain Life": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Spend only black mana on X.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Drain Power": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target player activates a mana ability of each land they control. Then that player loses all unspent mana and you add the mana lost this way.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Drudge Skeletons": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {B}: Regenerate this creature.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Dwarven Demolition Team": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Destroy target Wall.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Dwarven Warriors": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Target creature with power 2 or less can't be blocked this turn.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Earth Elemental": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Earthbind": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Earthquake": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Earthquake deals X damage to each creature without flying and each player.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Elvish Archers": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | First strike\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Evil Presence": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant land\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/False Orders": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Cast this spell only during the declare blockers step.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Farmstead": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant land\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Fastbond": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | You may play any number of lands on each of your turns.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Fear": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Feedback": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant enchantment\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Fire Elemental": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Fireball": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This spell costs {1} more to cast for each target beyond the first.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Firebreathing": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Flashfires": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy all Plains.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Flight": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Fog": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Prevent all combat damage that would be dealt this turn.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Force of Nature": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Trample\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Forcefield": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {1}: The next time an unblocked creature of your choice would deal combat damage to you this turn, prevent all but 1 of that damage.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Forest": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Fork": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Copy target instant or sorcery spell, except that the copy is red. You may choose new targets for the copy.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Frozen Shade": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {B}: This creature gets +1/+1 until end of turn.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Fungusaur": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever this creature is dealt damage, put a +1/+1 counter on it.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Gaea's Liege": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | As long as Gaea's Liege isn't attacking, its power and toughness are each equal to the number of Forests you control. As long as Gaea's Liege is attacking, its power and toughness are each equal to the number of Forests defending player controls.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Gauntlet of Might": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Red creatures get +1/+1.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Giant Growth": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target creature gets +3/+3 until end of turn.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Giant Spider": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Reach\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Glasses of Urza": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Look at target player's hand.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Gloom": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | White spells cost {3} more to cast.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Goblin Balloon Brigade": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {R}: This creature gains flying until end of turn.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Goblin King": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Other Goblins get +1/+1 and have mountainwalk.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Granite Gargoyle": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Gray Ogre": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Green Ward": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Grizzly Bears": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Guardian Angel": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Prevent the next X damage that would be dealt to any target this turn. Until end of turn, you may pay {1} any time you could cast an instant. If you do, prevent the next 1 damage that would be dealt to that permanent or player this turn.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Healing Salve": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Choose one —\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Helm of Chatzuk": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {1}, {T}: Target creature gains banding until end of turn.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Hill Giant": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Holy Armor": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Holy Strength": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Howl from Beyond": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target creature gets +X/+0 until end of turn.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Howling Mine": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | At the beginning of each player's draw step, if this artifact is untapped, that player draws an additional card.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Hurloon Minotaur": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Hurricane": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Hurricane deals X damage to each creature with flying and each player.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Hypnotic Specter": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Ice Storm": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy target land.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Icy Manipulator": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {1}, {T}: Tap target artifact, creature, or land.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Illusionary Mask": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {X}: You may choose a creature card in your hand whose mana cost could be paid by some amount of, or all of, the mana you spent on {X}. If you do, you may cast that card face down as a 2/2 creature spell without paying its mana cost. If the creature that spell becomes as it resolves has not been turned face up and would assign or deal damage, be dealt damage, or become tapped, instead it's turned face up and assigns or deals damage, is dealt damage, or becomes tapped. Activate only as a sorcery.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Instill Energy": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Invisibility": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Iron Star": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a player casts a red spell, you may pay {1}. If you do, you gain 1 life.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Ironclaw Orcs": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This creature can't block creatures with power 2 or greater.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Ironroot Treefolk": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Island": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Island Sanctuary": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | If you would draw a card during your draw step, instead you may skip that draw. If you do, until your next turn, you can't be attacked except by creatures with flying and/or islandwalk.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Ivory Cup": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a player casts a white spell, you may pay {1}. If you do, you gain 1 life.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Jade Monolith": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {1}: The next time a source of your choice would deal damage to target creature this turn, that source deals that damage to you instead.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Jade Statue": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {2}: This artifact becomes a 3/6 Golem artifact creature until end of combat. Activate only during combat.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Jayemdae Tome": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {4}, {T}: Draw a card.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Juggernaut": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This creature attacks each combat if able.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Jump": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target creature gains flying until end of turn.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Karma": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | At the beginning of each player's upkeep, this enchantment deals damage to that player equal to the number of Swamps they control.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Keldon Warlord": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Keldon Warlord's power and toughness are each equal to the number of non-Wall creatures you control.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Kormus Bell": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | All Swamps are 1/1 black creatures that are still lands.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Kudzu": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant land\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Lance": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Ley Druid": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Untap target land.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Library of Leng": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | You have no maximum hand size.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Lich": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | As this enchantment enters, you lose life equal to your life total.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Lifeforce": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | {G}{G}: Counter target black spell.\n  |       ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Lifelace": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target spell or permanent becomes green.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Lifetap": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a Forest an opponent controls becomes tapped, you gain 1 life.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Lightning Bolt": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Lightning Bolt deals 3 damage to any target.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Living Artifact": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant artifact\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Living Lands": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | All Forests are 1/1 creatures that are still lands.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Living Wall": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Llanowar Elves": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Add {G}.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Lord of Atlantis": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Other Merfolk get +1/+1 and have islandwalk.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Lord of the Pit": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying, trample\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Lure": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Magical Hack": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Change the text of target spell or permanent by replacing all instances of one basic land type with another.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Mahamoti Djinn": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Mana Flare": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a player taps a land for mana, that player adds one mana of any type that land produced.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Mana Short": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Tap all lands target player controls and that player loses all unspent mana.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Mana Vault": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This artifact doesn't untap during your untap step.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Manabarbs": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a player taps a land for mana, this enchantment deals 1 damage to that player.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Meekstone": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Creatures with power 3 or greater don't untap during their controllers' untap steps.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Merfolk of the Pearl Trident": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Mesa Pegasus": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying; banding\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Mind Twist": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target player discards X cards at random.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Mons's Goblin Raiders": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Mountain": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Mox Emerald": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Add {G}.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Mox Jet": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Add {B}.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Mox Pearl": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Add {W}.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Mox Ruby": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Add {R}.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Mox Sapphire": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Add {U}.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Natural Selection": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Look at the top three cards of target player's library, then put them back in any order. You may have that player shuffle.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Nether Shadow": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Haste\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Nettling Imp": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn. That creature attacks this turn if able. Destroy it at the beginning of the next end step if it didn't attack this turn. Activate only during an opponent's turn, before attackers are declared.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Nevinyrral's Disk": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This artifact enters tapped.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Nightmare": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Northern Paladin": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | {W}{W}, {T}: Destroy target black permanent.\n  |       ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Obsianus Golem": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Orcish Artillery": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: This creature deals 2 damage to any target and 3 damage to you.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Orcish Oriflamme": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Attacking creatures you control get +1/+0.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Paralyze": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Pearled Unicorn": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Personal Incarnation": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {0}: The next 1 damage that would be dealt to this creature this turn is dealt to its owner instead. Only this creatures owner may activate this ability.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Pestilence": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | At the beginning of the end step, if no creatures are on the battlefield, sacrifice this enchantment.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Phantasmal Forces": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Phantasmal Terrain": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant land\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Phantom Monster": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Pirate Ship": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This creature can't attack unless defending player controls an Island.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Plague Rats": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Plague Rats's power and toughness are each equal to the number of creatures named Plague Rats on the battlefield.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Plains": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Plateau": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Power Leak": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant enchantment\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Power Sink": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Counter target spell unless its controller pays {X}. If that player doesn't, they tap all lands with mana abilities they control and lose all unspent mana.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Power Surge": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | At the beginning of each player's upkeep, this enchantment deals X damage to that player, where X is the number of untapped lands they controlled at the beginning of this turn.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Prodigal Sorcerer": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: This creature deals 1 damage to any target.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Psionic Blast": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Psionic Blast deals 4 damage to any target and 2 damage to you.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Psychic Venom": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant land\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Purelace": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target spell or permanent becomes white.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Raging River": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever one or more creatures you control attack, each defending player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile. Then, for each attacking creature you control, choose \"left\" or \"right.\" That creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Raise Dead": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Return target creature card from your graveyard to your hand.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Red Elemental Blast": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Choose one —\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Red Ward": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Regeneration": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Regrowth": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Return target card from your graveyard to your hand.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Resurrection": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Return target creature card from your graveyard to the battlefield.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Reverse Damage": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | The next time a source of your choice would deal damage to you this turn, prevent that damage. You gain life equal to the damage prevented this way.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Righteousness": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target blocking creature gets +7/+7 until end of turn.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Roc of Kher Ridges": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Rock Hydra": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This creature enters with X +1/+1 counters on it.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Rod of Ruin": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {3}, {T}: This artifact deals 1 damage to any target.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Royal Assassin": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Destroy target tapped creature.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Sacrifice": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | As an additional cost to cast this spell, sacrifice a creature.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Samite Healer": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Prevent the next 1 damage that would be dealt to any target this turn.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Savannah": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Savannah Lions": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Scathe Zombies": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Scavenging Ghoul": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | At the beginning of each end step, put a corpse counter on this creature for each creature that died this turn.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Scrubland": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Scryb Sprites": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Sea Serpent": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This creature can't attack unless defending player controls an Island.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Sedge Troll": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This creature gets +1/+1 as long as you control a Swamp.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Sengir Vampire": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Serra Angel": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Shanodin Dryads": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Forestwalk\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Shatter": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy target artifact.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Shivan Dragon": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Simulacrum": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | You gain life equal to the damage dealt to you this turn. Simulacrum deals damage to target creature you control equal to the damage dealt to you this turn.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Sinkhole": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy target land.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Siren's Call": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Cast this spell only during an opponent's turn, before attackers are declared.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Sleight of Mind": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Change the text of target spell or permanent by replacing all instances of one color word with another.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Smoke": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Players can't untap more than one creature during their untap steps.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Sol Ring": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Add {C}{C}.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Soul Net": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a creature dies, you may pay {1}. If you do, you gain 1 life.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Spell Blast": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Counter target spell with mana value X.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Stasis": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Players skip their untap steps.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Steal Artifact": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant artifact\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Stone Giant": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:2\n  |\n1 | {T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.\n  |  ^---\n  |\n  = expected generic or color"
+    },
+    "lea/Stone Rain": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy target land.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Stream of Life": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target player gains X life.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Sunglasses of Urza": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | You may spend white mana as though it were red mana.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Swamp": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Swords to Plowshares": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Exile target creature. Its controller gains life equal to its power.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Taiga": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Terror": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy target nonartifact, nonblack creature. It can't be regenerated.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/The Hive": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {5}, {T}: Create a 1/1 colorless Insect artifact creature token with flying named Wasp.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Thicket Basilisk": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever this creature blocks or becomes blocked by a non-Wall creature, destroy that creature at end of combat.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Thoughtlace": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target spell or permanent becomes blue.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Throne of Bone": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a player casts a black spell, you may pay {1}. If you do, you gain 1 life.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Timber Wolves": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Banding\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Time Vault": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | This artifact enters tapped.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Time Walk": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Take an extra turn after this one.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Timetwister": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Each player shuffles their hand and graveyard into their library, then draws seven cards.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Tranquility": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy all enchantments.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Tropical Island": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Tsunami": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy all Islands.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Tundra": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Tunnel": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy target Wall. It can't be regenerated.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Twiddle": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | You may tap or untap target artifact, creature, or land.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Two-Headed Giant of Foriys": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Trample\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Underground Sea": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Unholy Strength": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Unsummon": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Return target creature to its owner's hand.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Uthden Troll": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | {R}: Regenerate this creature.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
+    },
+    "lea/Verduran Enchantress": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever you cast an enchantment spell, you may draw a card.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Vesuvan Doppelganger": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | You may have this creature enter as a copy of any creature on the battlefield, except it doesn't copy that creature's color and it has \"At the beginning of your upkeep, you may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability.\"\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Veteran Bodyguard": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | As long as this creature is untapped, all damage that would be dealt to you by unblocked creatures is dealt to this creature instead.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Volcanic Eruption": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy X target Mountains. Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wall of Air": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender, flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wall of Bone": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wall of Brambles": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wall of Fire": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wall of Ice": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wall of Stone": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wall of Swords": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wall of Water": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wall of Wood": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wanderlust": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/War Mammoth": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Trample\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Warp Artifact": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant artifact\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Water Elemental": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "lea/Weakness": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Web": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wheel of Fortune": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Each player discards their hand, then draws seven cards.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/White Knight": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | First strike\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/White Ward": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant creature\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wild Growth": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant land\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Will-o'-the-Wisp": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Winter Orb": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | As long as this artifact is untapped, players can't untap more than one land during their untap steps.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wooden Sphere": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Whenever a player casts a green spell, you may pay {1}. If you do, you gain 1 life.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Word of Command": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Look at target opponent's hand and choose a card from it. You control that player until Word of Command finishes resolving. The player plays that card if able. While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card. If the chosen card is cast as a spell, you control the player while that spell is resolving.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Wrath of God": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy all creatures. They can't be regenerated.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "lea/Zombie Master": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Other Zombie creatures have swampwalk.\n  | ^---\n  |\n  = expected card_text"
+    }
+  }
+}

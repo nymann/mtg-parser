@@ -1,0 +1,22 @@
+use std::path::PathBuf;
+
+/// Workspace root, resolved from this crate's `CARGO_MANIFEST_DIR` so
+/// invocation directory doesn't matter.
+pub fn repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("xtask manifest has a parent directory")
+        .to_path_buf()
+}
+
+pub fn corpus_status_path() -> PathBuf {
+    repo_root().join("corpus_status.json")
+}
+
+pub fn generated_tests_dir() -> PathBuf {
+    repo_root().join("crates/mtg-grammar/tests/generated")
+}
+
+pub fn generated_tests_manifest() -> PathBuf {
+    repo_root().join("crates/mtg-grammar/tests/generated.rs")
+}
