@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use crate::ast::{ManaCost, ManaSymbol, Statement};
+use crate::ast::{Keyword, ManaCost, ManaSymbol, Statement};
 
 pub fn unparse(statement: &Statement) -> String {
     let mut out = String::new();
@@ -12,6 +12,13 @@ fn write_statement(out: &mut String, statement: &Statement) {
     match statement {
         Statement::ManaCost(mc) => write_mana_cost(out, mc),
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
+        Statement::Keyword(kw) => write_keyword(out, *kw),
+    }
+}
+
+fn write_keyword(out: &mut String, kw: Keyword) {
+    match kw {
+        Keyword::Flying => out.push_str("Flying"),
     }
 }
 

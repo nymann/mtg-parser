@@ -2,11 +2,10 @@
   "_v": 1,
   "generated_at": "2026-05-14",
   "total": 290,
-  "passing": 0,
+  "passing": 5,
   "cards": {
     "lea/Air Elemental": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Ancestral Recall": {
       "status": "fail",
@@ -66,7 +65,7 @@
     },
     "lea/Birds of Paradise": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Black Knight": {
       "status": "fail",
@@ -162,7 +161,7 @@
     },
     "lea/Cockatrice": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Consecrate Land": {
       "status": "fail",
@@ -270,7 +269,7 @@
     },
     "lea/Dragon Whelp": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Drain Life": {
       "status": "fail",
@@ -414,7 +413,7 @@
     },
     "lea/Granite Gargoyle": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Gray Ogre": {
       "status": "fail",
@@ -470,7 +469,7 @@
     },
     "lea/Hypnotic Specter": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Ice Storm": {
       "status": "fail",
@@ -606,7 +605,7 @@
     },
     "lea/Lord of the Pit": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying, trample\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying, trample\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Lure": {
       "status": "fail",
@@ -617,8 +616,7 @@
       "error": "parse: parse error:  --> 1:1\n  |\n1 | Change the text of target spell or permanent by replacing all instances of one basic land type with another.\n  | ^---\n  |\n  = expected card_text"
     },
     "lea/Mahamoti Djinn": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Mana Flare": {
       "status": "fail",
@@ -646,7 +644,7 @@
     },
     "lea/Mesa Pegasus": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying; banding\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying; banding\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Mind Twist": {
       "status": "fail",
@@ -698,7 +696,7 @@
     },
     "lea/Nightmare": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Northern Paladin": {
       "status": "fail",
@@ -734,15 +732,14 @@
     },
     "lea/Phantasmal Forces": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Phantasmal Terrain": {
       "status": "fail",
       "error": "parse: parse error:  --> 1:1\n  |\n1 | Enchant land\n  | ^---\n  |\n  = expected card_text"
     },
     "lea/Phantom Monster": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Pirate Ship": {
       "status": "fail",
@@ -825,8 +822,7 @@
       "error": "parse: parse error:  --> 1:1\n  |\n1 | Target blocking creature gets +7/+7 until end of turn.\n  | ^---\n  |\n  = expected card_text"
     },
     "lea/Roc of Kher Ridges": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Rock Hydra": {
       "status": "fail",
@@ -869,8 +865,7 @@
       "error": "empty oracle text (vanilla card)"
     },
     "lea/Scryb Sprites": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Sea Serpent": {
       "status": "fail",
@@ -882,11 +877,11 @@
     },
     "lea/Sengir Vampire": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Serra Angel": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Shanodin Dryads": {
       "status": "fail",
@@ -898,7 +893,7 @@
     },
     "lea/Shivan Dragon": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Simulacrum": {
       "status": "fail",
@@ -1142,7 +1137,7 @@
     },
     "lea/Will-o'-the-Wisp": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | Flying␊\n  |       ^---\n  |\n  = expected EOI"
     },
     "lea/Winter Orb": {
       "status": "fail",

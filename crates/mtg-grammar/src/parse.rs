@@ -2,7 +2,7 @@ use pest::iterators::Pair;
 use pest::Parser;
 use pest_derive::Parser;
 
-use crate::ast::{ManaCost, ManaSymbol, Statement};
+use crate::ast::{Keyword, ManaCost, ManaSymbol, Statement};
 
 #[derive(Parser)]
 #[grammar = "grammar.pest"]
@@ -36,7 +36,19 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     match pair.as_rule() {
         Rule::mana_cost => Ok(Statement::ManaCost(mana_cost_from_pair(pair))),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
+        Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         _ => Err(ParseError::Internal("statement")),
+    }
+}
+
+fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
+    let inner = pair
+        .into_inner()
+        .next()
+        .expect("keyword_ability always contains a keyword");
+    match inner.as_rule() {
+        Rule::flying => Ok(Keyword::Flying),
+        _ => Err(ParseError::Internal("keyword")),
     }
 }
 

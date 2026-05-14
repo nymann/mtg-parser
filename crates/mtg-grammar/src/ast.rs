@@ -4,6 +4,12 @@ use serde::{Deserialize, Serialize};
 pub enum Statement {
     ManaCost(ManaCost),
     DestroyTargetCreature,
+    Keyword(Keyword),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Keyword {
+    Flying,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,3 +1,4 @@
+use mtg_grammar::Keyword;
 use serde::{Deserialize, Serialize};
 
 /// Semantic IR for one Oracle-text effect. The grammar's syntactic
@@ -10,6 +11,8 @@ pub enum CardEffect {
     ManaCost(ManaValue),
     /// "Destroy target creature."
     DestroyTargetCreature,
+    /// A single keyword ability such as `Flying`.
+    Keyword(Keyword),
 }
 
 /// Per-color mana totals. The "mana value" of a cost is [`Self::total`].
