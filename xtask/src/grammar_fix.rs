@@ -135,7 +135,11 @@ enum IterationOutcome {
 }
 
 fn run_one_iteration(client: &ScryfallClient, opts: &Options) -> Result<IterationOutcome> {
-    // 1. Find the next failing card.
+    // Step 1: find the next failing card.
+    step(
+        1,
+        &format!("finding the next failing card in '{}'", opts.set),
+    );
     let (card, error, normalized) = match find_next_failing_card(client, &opts.set)? {
         NextCard::AllPass => return Ok(IterationOutcome::AllPass),
         NextCard::Failing {
@@ -144,26 +148,35 @@ fn run_one_iteration(client: &ScryfallClient, opts: &Options) -> Result<Iteratio
             normalized,
         } => (card, reason, normalized),
     };
+    print_card_overview(&card, &normalized, &error);
 
+    // Step 2: create the log dir.
     let log_dir = create_log_dir(&card)?;
-    println!("Card    : {} ({})", card.name, card.set_code);
-    println!("Log dir : {}", log_dir.display());
+    step(2, &format!("log dir = {}", log_dir.display()));
 
     // The promoted test path is deterministic from the card slug. We
     // compute it now so the prompt can reference it, but the file
-    // itself is written only when we commit to actually running the
-    // claude step — dry-run must leave the working tree untouched.
+    // itself is written only past the dry-run gate — dry-run must
+    // leave the working tree untouched.
     let test_path = generated_test_path(&card);
 
-    // Snapshot card + baseline corpus status into the log dir.
+    // Step 3: snapshot card + baseline corpus status.
+    step(3, "snapshotting card.json and baseline pass count");
     let card_json = serde_json::to_string_pretty(&card)?;
     std::fs::write(log_dir.join("card.json"), card_json)?;
+    let baseline_pass_count = read_corpus_passing(&corpus_status_path()).unwrap_or(0);
 
-    // Build prompt and dump it.
+    // Step 4: build + write the prompt.
     let prompt = build_prompt(&card, &error, &normalized, &test_path)?;
     std::fs::write(log_dir.join("prompt.md"), &prompt)?;
-    println!("Prompt  : {}", log_dir.join("prompt.md").display());
-    println!("Prompt size: {} bytes", prompt.len());
+    step(
+        4,
+        &format!(
+            "wrote prompt.md ({} bytes) → {}",
+            prompt.len(),
+            log_dir.join("prompt.md").display()
+        ),
+    );
 
     if opts.dry_run {
         println!();
@@ -171,13 +184,23 @@ fn run_one_iteration(client: &ScryfallClient, opts: &Options) -> Result<Iteratio
         return Ok(IterationOutcome::DryRunStop);
     }
 
-    // From here on we mutate the working tree.
-    let baseline_pass_count = read_corpus_passing(&corpus_status_path()).unwrap_or(0);
+    // Step 5: promote the failing test.
+    step(
+        5,
+        &format!(
+            "promoting failing test → {}",
+            test_path
+                .strip_prefix(repo_root())
+                .unwrap_or(&test_path)
+                .display()
+        ),
+    );
     write_promoted_test(&test_path, &card, &normalized).context("generate promoted test file")?;
     register_generated_test(&test_path).context("register generated test")?;
 
-    // 5. Delegate to claude -p. This is the one non-deterministic step.
-    let transcript_path = log_dir.join("transcript.txt");
+    // Step 6: delegate to claude -p. The one non-deterministic step.
+    step(6, "invoking `claude -p` (streaming events below)");
+    let transcript_path = log_dir.join("transcript.ndjson");
     let claude_outcome = invoke_claude(&prompt, &transcript_path)?;
     std::fs::write(log_dir.join("response.md"), &claude_outcome.tail)?;
     if !claude_outcome.success {
@@ -187,28 +210,34 @@ fn run_one_iteration(client: &ScryfallClient, opts: &Options) -> Result<Iteratio
         )));
     }
 
-    // 6. Verify with tier 1 + tier 2.
+    // Step 7: verify with tier 1 + tier 2.
+    step(7, "running `cargo xtask test --tier 2`");
     if !run_xtask(&["test", "--tier", "2"])? {
         return Ok(IterationOutcome::SurfaceToHuman(
             "cargo xtask test --tier 2 failed after the agent's pass".into(),
         ));
     }
 
-    // 7. Corpus regression gate. `cargo xtask corpus` is the source of
-    //    truth — it writes corpus_status.json on success and exits
-    //    non-zero on any new failure.
+    // Step 8: corpus regression gate. `cargo xtask corpus` is the
+    // source of truth — it writes corpus_status.json on success and
+    // exits non-zero on any new failure.
+    step(8, "running `cargo xtask corpus` (regression gate)");
     if !run_xtask(&["corpus"])? {
         return Ok(IterationOutcome::SurfaceToHuman(
             "cargo xtask corpus reported a regression".into(),
         ));
     }
 
-    // 8. Commit.
+    // Step 9: commit.
     let new_pass_count = read_corpus_passing(&corpus_status_path()).unwrap_or(baseline_pass_count);
     let total = read_corpus_total(&corpus_status_path()).unwrap_or(0);
     let new_passes = new_pass_count.saturating_sub(baseline_pass_count);
     let commit_msg = commit_message(&card, new_passes, new_pass_count, total);
     std::fs::write(log_dir.join("commit_message.txt"), &commit_msg)?;
+    step(
+        9,
+        &format!("committing (new passes: {new_passes}, status: {new_pass_count}/{total})"),
+    );
     git_commit(&commit_msg).context("git commit")?;
 
     // Log the diff against the parent for replay.
@@ -216,9 +245,45 @@ fn run_one_iteration(client: &ScryfallClient, opts: &Options) -> Result<Iteratio
         std::fs::write(log_dir.join("diff.patch"), diff).ok();
     }
 
-    println!();
-    println!("Committed. New passes: {new_passes}. Status: {new_pass_count}/{total}.");
     Ok(IterationOutcome::Committed)
+}
+
+fn step(n: u8, msg: &str) {
+    println!();
+    println!("── step {n}/9 ── {msg}");
+}
+
+fn print_card_overview(card: &Card, normalized: &str, error: &str) {
+    println!("    Name        : {}", card.name);
+    println!("    Set         : {}", card.set_code);
+    println!("    Collector # : {}", card.collector_number);
+    println!("    Layout      : {:?}", card.layout);
+    println!(
+        "    Mana cost   : {}",
+        if card.mana_cost.is_empty() {
+            "—"
+        } else {
+            card.mana_cost.as_str()
+        }
+    );
+    println!("    Oracle text :");
+    print_indented(&card.oracle_text, "      | ");
+    if normalized != card.oracle_text {
+        println!("    Normalized  :");
+        print_indented(normalized, "      | ");
+    }
+    println!("    Round-trip  :");
+    print_indented(error, "      | ");
+}
+
+fn print_indented(text: &str, prefix: &str) {
+    if text.is_empty() {
+        println!("{prefix}(empty)");
+        return;
+    }
+    for line in text.lines() {
+        println!("{prefix}{line}");
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -487,17 +552,22 @@ fn render_files_block(grammar: &str, ast: &str, lower: &str) -> String {
 struct ClaudeOutcome {
     success: bool,
     exit_code: i32,
-    /// Tail of claude's stdout. Used as a best-effort summary for the
-    /// per-iteration response.md log.
+    /// Concatenated text of every assistant message. Used as the body of
+    /// the per-iteration `response.md` log.
     tail: String,
 }
 
 fn invoke_claude(prompt: &str, transcript_path: &Path) -> Result<ClaudeOutcome> {
-    println!();
-    println!("Invoking `claude -p` (this can take a while)…");
+    // stream-json emits one NDJSON event per line, flushed as work
+    // happens — exactly what we need for live visibility. Default
+    // text output is buffered by claude and arrives all at once at
+    // the end, which leaves the operator staring at nothing.
     let mut child = Command::new("claude")
         .arg("-p")
         .arg("--dangerously-skip-permissions")
+        .arg("--output-format")
+        .arg("stream-json")
+        .arg("--verbose")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
@@ -517,15 +587,44 @@ fn invoke_claude(prompt: &str, transcript_path: &Path) -> Result<ClaudeOutcome> 
     let reader = BufReader::new(stdout);
     let mut transcript = std::fs::File::create(transcript_path)
         .with_context(|| format!("create {}", transcript_path.display()))?;
-    let mut tail_lines: Vec<String> = Vec::new();
-    const TAIL_KEEP: usize = 80;
-    for line in reader.lines() {
-        let line = line?;
+    let start = SystemTime::now();
+    let mut assistant_text: Vec<String> = Vec::new();
+
+    for raw in reader.lines() {
+        let line = raw?;
+        // Mirror the raw NDJSON line into the transcript so replay
+        // tooling can re-render identically.
         writeln!(transcript, "{line}")?;
-        println!("[claude] {line}");
-        tail_lines.push(line);
-        if tail_lines.len() > TAIL_KEEP {
-            tail_lines.remove(0);
+        if line.trim().is_empty() {
+            continue;
+        }
+        let ev: serde_json::Value = match serde_json::from_str(&line) {
+            Ok(v) => v,
+            Err(_) => {
+                // Lines that aren't valid JSON (early stderr, oddities)
+                // still get echoed so the user sees them.
+                println!("    [stream] {}", trim_to(&line, 200));
+                continue;
+            }
+        };
+        for rendered in render_event(&ev, start) {
+            println!("    {rendered}");
+        }
+        // Stash assistant text content for response.md.
+        if ev.get("type").and_then(|v| v.as_str()) == Some("assistant") {
+            if let Some(content) = ev
+                .get("message")
+                .and_then(|m| m.get("content"))
+                .and_then(|c| c.as_array())
+            {
+                for c in content {
+                    if c.get("type").and_then(|v| v.as_str()) == Some("text") {
+                        if let Some(t) = c.get("text").and_then(|v| v.as_str()) {
+                            assistant_text.push(t.to_string());
+                        }
+                    }
+                }
+            }
         }
     }
     let status = child.wait()?;
@@ -533,8 +632,173 @@ fn invoke_claude(prompt: &str, transcript_path: &Path) -> Result<ClaudeOutcome> 
     Ok(ClaudeOutcome {
         success: status.success(),
         exit_code,
-        tail: tail_lines.join("\n"),
+        tail: assistant_text.join("\n\n"),
     })
+}
+
+/// Render one stream-json event into zero or more terminal lines.
+fn render_event(ev: &serde_json::Value, start: SystemTime) -> Vec<String> {
+    let kind = match ev.get("type").and_then(|v| v.as_str()) {
+        Some(k) => k,
+        None => return Vec::new(),
+    };
+    let ts = elapsed_prefix(start);
+    match kind {
+        "system" => {
+            if ev.get("subtype").and_then(|v| v.as_str()) == Some("init") {
+                let model = ev
+                    .get("model")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown");
+                vec![format!("{ts} [claude init] model={model}")]
+            } else {
+                Vec::new()
+            }
+        }
+        "assistant" => render_assistant_event(ev, &ts),
+        "user" => render_user_event(ev, &ts),
+        "result" => {
+            let subtype = ev
+                .get("subtype")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            let turns = ev.get("num_turns").and_then(|v| v.as_u64()).unwrap_or(0);
+            let cost = ev
+                .get("total_cost_usd")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            vec![format!(
+                "{ts} [claude done] subtype={subtype} turns={turns} cost=${cost:.4}"
+            )]
+        }
+        _ => Vec::new(),
+    }
+}
+
+fn render_assistant_event(ev: &serde_json::Value, ts: &str) -> Vec<String> {
+    let content = match ev
+        .get("message")
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_array())
+    {
+        Some(c) => c,
+        None => return Vec::new(),
+    };
+    let mut out = Vec::new();
+    for c in content {
+        match c.get("type").and_then(|v| v.as_str()) {
+            Some("text") => {
+                let text = c.get("text").and_then(|v| v.as_str()).unwrap_or("");
+                // Multi-line assistant text gets a [claude] prefix on the
+                // first line and bare indentation on continuations.
+                for (i, line) in text.lines().enumerate() {
+                    out.push(if i == 0 {
+                        format!("{ts} [claude] {line}")
+                    } else {
+                        format!("              {line}")
+                    });
+                }
+            }
+            Some("tool_use") => {
+                let name = c.get("name").and_then(|v| v.as_str()).unwrap_or("?");
+                let input_summary = c.get("input").map(brief_tool_input).unwrap_or_default();
+                out.push(format!("{ts} [tool_use] {name}{input_summary}"));
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
+fn render_user_event(ev: &serde_json::Value, ts: &str) -> Vec<String> {
+    let content = match ev
+        .get("message")
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_array())
+    {
+        Some(c) => c,
+        None => return Vec::new(),
+    };
+    let mut out = Vec::new();
+    for c in content {
+        if c.get("type").and_then(|v| v.as_str()) != Some("tool_result") {
+            continue;
+        }
+        let text = extract_tool_result_text(c);
+        let is_error = c.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false);
+        let tag = if is_error {
+            "tool_error"
+        } else {
+            "tool_result"
+        };
+        let first = text.lines().next().unwrap_or("");
+        out.push(format!("{ts} [{tag}] {}", trim_to(first, 200)));
+    }
+    out
+}
+
+fn extract_tool_result_text(item: &serde_json::Value) -> String {
+    // tool_result's "content" can be a string or an array of content
+    // blocks. We only need the first text-ish chunk to render a
+    // single-line summary.
+    let v = match item.get("content") {
+        Some(v) => v,
+        None => return String::new(),
+    };
+    if let Some(s) = v.as_str() {
+        return s.to_string();
+    }
+    if let Some(arr) = v.as_array() {
+        for c in arr {
+            if let Some(t) = c.get("text").and_then(|v| v.as_str()) {
+                return t.to_string();
+            }
+        }
+    }
+    String::new()
+}
+
+fn brief_tool_input(input: &serde_json::Value) -> String {
+    // Pick the most useful field for a one-line summary. Mirrors the
+    // common Claude Code tool input shapes (Read/Edit/Write/Bash/Grep).
+    if let Some(p) = input.get("file_path").and_then(|v| v.as_str()) {
+        return format!(" {}", relativize(p));
+    }
+    if let Some(c) = input.get("command").and_then(|v| v.as_str()) {
+        let first = c.lines().next().unwrap_or("");
+        return format!(" $ {}", trim_to(first, 160));
+    }
+    if let Some(p) = input.get("pattern").and_then(|v| v.as_str()) {
+        return format!(" /{p}/");
+    }
+    if let Some(d) = input.get("description").and_then(|v| v.as_str()) {
+        return format!(" {}", trim_to(d, 160));
+    }
+    String::new()
+}
+
+fn relativize(path: &str) -> String {
+    // Strip the repo root prefix when present to keep tool_use lines short.
+    let root = repo_root();
+    let root_str = root.to_string_lossy();
+    path.strip_prefix(root_str.as_ref())
+        .map(|p| p.trim_start_matches('/').to_string())
+        .unwrap_or_else(|| path.to_string())
+}
+
+fn trim_to(s: &str, n: usize) -> String {
+    if s.chars().count() <= n {
+        s.to_string()
+    } else {
+        let mut out: String = s.chars().take(n).collect();
+        out.push('…');
+        out
+    }
+}
+
+fn elapsed_prefix(start: SystemTime) -> String {
+    let secs = start.elapsed().map(|d| d.as_secs()).unwrap_or(0);
+    format!("[+{secs:>3}s]")
 }
 
 fn run_xtask(args: &[&str]) -> Result<bool> {
@@ -672,5 +936,68 @@ mod tests {
         assert!(block.contains("Air Elemental"));
         assert!(block.contains("Flying"));
         assert!(block.contains("Normal"));
+    }
+
+    #[test]
+    fn render_event_handles_init_assistant_tool_use_and_result() {
+        let start = SystemTime::now();
+
+        let init: serde_json::Value = serde_json::from_str(
+            r#"{"type":"system","subtype":"init","model":"claude-sonnet-4-5"}"#,
+        )
+        .unwrap();
+        let rendered = render_event(&init, start);
+        assert!(rendered
+            .iter()
+            .any(|l| l.contains("[claude init]") && l.contains("claude-sonnet-4-5")));
+
+        let assistant_text: serde_json::Value = serde_json::from_str(
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"Reading grammar.pest..."}]}}"#,
+        )
+        .unwrap();
+        let rendered = render_event(&assistant_text, start);
+        assert!(rendered
+            .iter()
+            .any(|l| l.contains("[claude]") && l.contains("Reading grammar.pest")));
+
+        let tool_use: serde_json::Value = serde_json::from_str(
+            r#"{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Edit","input":{"file_path":"/Users/x/grammar.pest"}}]}}"#,
+        )
+        .unwrap();
+        let rendered = render_event(&tool_use, start);
+        assert!(rendered.iter().any(|l| l.contains("[tool_use] Edit")));
+
+        let tool_result: serde_json::Value = serde_json::from_str(
+            r#"{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"x","content":"the result first line\nsecond line"}]}}"#,
+        )
+        .unwrap();
+        let rendered = render_event(&tool_result, start);
+        let line = rendered
+            .iter()
+            .find(|l| l.contains("[tool_result]"))
+            .expect("tool_result rendered");
+        assert!(line.contains("the result first line"));
+        assert!(
+            !line.contains("second line"),
+            "tool_result is one-line summary"
+        );
+
+        let result_ev: serde_json::Value = serde_json::from_str(
+            r#"{"type":"result","subtype":"success","num_turns":12,"total_cost_usd":0.0234}"#,
+        )
+        .unwrap();
+        let rendered = render_event(&result_ev, start);
+        let line = rendered
+            .iter()
+            .find(|l| l.contains("[claude done]"))
+            .expect("done rendered");
+        assert!(line.contains("turns=12"));
+        assert!(line.contains("$0.0234"));
+    }
+
+    #[test]
+    fn trim_to_appends_ellipsis() {
+        assert_eq!(trim_to("abcdef", 3), "abc…");
+        assert_eq!(trim_to("abc", 3), "abc");
     }
 }
