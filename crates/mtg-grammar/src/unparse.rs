@@ -13,6 +13,26 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::ManaCost(mc) => write_mana_cost(out, mc),
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
         Statement::Keyword(kw) => write_keyword(out, *kw),
+        Statement::TargetPlayerDrawsCards { count } => {
+            write!(out, "Target player draws {} cards.", u32_to_number_word(*count))
+                .expect("write to String never fails");
+        }
+    }
+}
+
+fn u32_to_number_word(n: u32) -> &'static str {
+    match n {
+        1 => "one",
+        2 => "two",
+        3 => "three",
+        4 => "four",
+        5 => "five",
+        6 => "six",
+        7 => "seven",
+        8 => "eight",
+        9 => "nine",
+        10 => "ten",
+        _ => panic!("u32_to_number_word: {n} outside supported range 1..=10"),
     }
 }
 

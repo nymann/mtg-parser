@@ -2,14 +2,13 @@
   "_v": 1,
   "generated_at": "2026-05-14",
   "total": 290,
-  "passing": 5,
+  "passing": 6,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
     },
     "lea/Ancestral Recall": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target player draws three cards.\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Animate Artifact": {
       "status": "fail",
@@ -105,7 +104,7 @@
     },
     "lea/Braingeyser": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Target player draws X cards.\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:21\n  |\n1 | Target player draws X cards.\n  |                     ^---\n  |\n  = expected number_word"
     },
     "lea/Burrowing": {
       "status": "fail",

@@ -4,3 +4,5 @@
 
 #[path = "generated/air_elemental.rs"]
 mod air_elemental;
+#[path = "generated/ancestral_recall.rs"]
+mod ancestral_recall;

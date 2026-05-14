@@ -13,6 +13,8 @@ pub enum CardEffect {
     DestroyTargetCreature,
     /// A single keyword ability such as `Flying`.
     Keyword(Keyword),
+    /// "Target player draws N cards."
+    TargetPlayerDrawsCards { count: u32 },
 }
 
 /// Per-color mana totals. The "mana value" of a cost is [`Self::total`].

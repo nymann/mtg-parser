@@ -13,6 +13,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::ManaCost(mc) => CardEffect::ManaCost(lower_mana_cost(mc)),
         Statement::DestroyTargetCreature => CardEffect::DestroyTargetCreature,
         Statement::Keyword(kw) => CardEffect::Keyword(*kw),
+        Statement::TargetPlayerDrawsCards { count } => {
+            CardEffect::TargetPlayerDrawsCards { count: *count }
+        }
     })
 }
 

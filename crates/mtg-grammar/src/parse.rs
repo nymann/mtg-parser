@@ -36,8 +36,35 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     match pair.as_rule() {
         Rule::mana_cost => Ok(Statement::ManaCost(mana_cost_from_pair(pair))),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
+        Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         _ => Err(ParseError::Internal("statement")),
+    }
+}
+
+fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let word = pair
+        .into_inner()
+        .next()
+        .expect("draw_cards always contains a number_word");
+    let count = number_word_to_u32(word.as_str())
+        .ok_or(ParseError::Internal("number_word"))?;
+    Ok(Statement::TargetPlayerDrawsCards { count })
+}
+
+fn number_word_to_u32(word: &str) -> Option<u32> {
+    match word.to_ascii_lowercase().as_str() {
+        "one" => Some(1),
+        "two" => Some(2),
+        "three" => Some(3),
+        "four" => Some(4),
+        "five" => Some(5),
+        "six" => Some(6),
+        "seven" => Some(7),
+        "eight" => Some(8),
+        "nine" => Some(9),
+        "ten" => Some(10),
+        _ => None,
     }
 }
 

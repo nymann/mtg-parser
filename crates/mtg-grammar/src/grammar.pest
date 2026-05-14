@@ -1,6 +1,7 @@
 // Walking-skeleton grammar. Covers:
 //   - Scryfall-style mana costs, e.g. `{2}{R}{R}`
 //   - "Destroy target creature."
+//   - "Target player draws N cards." (N as an English word)
 //   - Single keyword abilities, e.g. `Flying`
 //
 // Whitespace is implicit between tokens in non-atomic rules. Mana
@@ -11,7 +12,7 @@ WHITESPACE = _{ " " }
 
 card_text = { SOI ~ statement ~ EOI }
 
-statement = _{ mana_cost | destroy | keyword_ability }
+statement = _{ mana_cost | destroy | draw_cards | keyword_ability }
 
 mana_cost   = ${ mana_symbol+ }
 mana_symbol = ${ "{" ~ mana_body ~ "}" }
@@ -20,6 +21,12 @@ generic     = @{ ASCII_DIGIT+ }
 color       = @{ "W" | "U" | "B" | "R" | "G" | "C" }
 
 destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }
+
+draw_cards  = { ^"target" ~ ^"player" ~ ^"draws" ~ number_word ~ ^"cards" ~ "." }
+number_word = @{
+    ^"one" | ^"two" | ^"three" | ^"four" | ^"five"
+  | ^"six" | ^"seven" | ^"eight" | ^"nine" | ^"ten"
+}
 
 keyword_ability = { keyword }
 keyword         = _{ flying }

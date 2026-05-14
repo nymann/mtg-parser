@@ -5,6 +5,7 @@ pub enum Statement {
     ManaCost(ManaCost),
     DestroyTargetCreature,
     Keyword(Keyword),
+    TargetPlayerDrawsCards { count: u32 },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
