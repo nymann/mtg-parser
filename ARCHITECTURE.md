@@ -17,15 +17,56 @@ Three layers, strictly separated (ports & adapters):
 
 ## Canonical form
 
-The unparser emits Scryfall-style Oracle text:
+The unparser emits Scryfall-style Oracle text. Every value the grammar
+can produce has exactly one canonical printed form; that string is the
+one the unparser emits.
 
-- Mana symbols are curly-brace tokens with no whitespace between them
-  (`{2}{R}{R}`).
-- Sentence-form effects are capitalized and terminated with a period
-  (`Destroy target creature.`).
+### Mana costs
 
-Round-trip: `parse(unparse(ast)) == ast` for every AST the parser
-produces. This is the contract the grammar and unparser must keep.
+- Each symbol is a curly-brace token: `{2}`, `{R}`, `{C}`.
+- Symbols are concatenated with **no whitespace** between them. The
+  parser rejects `"{2} {R}"`.
+- Generic mana uses decimal digits with no leading zeros.
+- Color codes are single uppercase letters: `W`, `U`, `B`, `R`, `G`, and
+  `C` for colorless. Lowercase letters are not accepted as input.
+
+Examples:
+
+| AST | Canonical form |
+|-----|----------------|
+| `Generic(2), Red, Red` | `{2}{R}{R}` |
+| `White, Blue, Black, Red, Green` | `{W}{U}{B}{R}{G}` |
+| `Generic(0)` | `{0}` |
+
+### Sentence-form effects
+
+- Sentences begin with a capital letter.
+- Sentences end with a `.`.
+- Tokens within a sentence are separated by a single ASCII space.
+
+Examples:
+
+| AST | Canonical form |
+|-----|----------------|
+| `DestroyTargetCreature` | `Destroy target creature.` |
+
+The parser accepts case-insensitive sentence text (`"DESTROY target
+creature."` parses), but the unparser always emits the canonical
+capitalization.
+
+### The round-trip contract
+
+For every AST `a` the parser can produce:
+
+```
+parse(unparse(a)) == a
+```
+
+This is enforced by a `proptest` over 1000 generated ASTs in
+`crates/mtg-grammar/tests/prop.rs`. A round-trip failure is the
+clearest signal of either grammar ambiguity or unparser drift, so
+failures there block progress until the underlying disagreement is
+resolved (rather than papered over by tweaking the unparser).
 
 ## Test tiers
 

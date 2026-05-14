@@ -18,6 +18,13 @@ fn parses_generic_mana_symbol() {
 }
 
 #[test]
+fn parses_generic_zero_mana_symbol() {
+    // {0} is a real cost (Memnite, Spellbook). The canonical form is "{0}".
+    assert_eq!(parse("{0}").unwrap(), mc(vec![ManaSymbol::Generic(0)]));
+    assert_eq!(unparse(&mc(vec![ManaSymbol::Generic(0)])), "{0}");
+}
+
+#[test]
 fn parses_compound_mana_cost() {
     assert_eq!(
         parse("{2}{R}{R}").unwrap(),
