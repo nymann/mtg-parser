@@ -1940,6 +1940,8 @@ dependencies = [
  "anyhow",
  "mtg-corpus",
  "mtg-scryfall",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

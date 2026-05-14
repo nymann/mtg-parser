@@ -20,3 +20,19 @@ pub fn generated_tests_dir() -> PathBuf {
 pub fn generated_tests_manifest() -> PathBuf {
     repo_root().join("crates/mtg-grammar/tests/generated.rs")
 }
+
+pub fn grammar_fix_log_root() -> PathBuf {
+    repo_root().join(".grammar-fix")
+}
+
+pub fn grammar_pest_path() -> PathBuf {
+    repo_root().join("crates/mtg-grammar/src/grammar.pest")
+}
+
+pub fn ast_rs_path() -> PathBuf {
+    repo_root().join("crates/mtg-grammar/src/ast.rs")
+}
+
+pub fn lower_rs_path() -> PathBuf {
+    repo_root().join("crates/mtg-semantic/src/lower.rs")
+}

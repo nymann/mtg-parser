@@ -109,3 +109,63 @@ resolved (rather than papered over by tweaking the unparser).
 | 5    | one-off | Differential test vs. the Python/Lark parser during migration |
 
 Tier 1 staying under 1s is a hard rule. Slow tests move to a higher tier.
+
+## The grammar-fix orchestrator
+
+`cargo xtask grammar-fix [--set CODE] [--max-iterations N] [--dry-run]
+[--allow-dirty]` is the find-next-card workflow with every deterministic
+step automated. Only the creative step — extending the grammar to cover
+a new pattern — is delegated to a fresh `claude -p` subagent.
+
+### Loop
+
+For each iteration up to `--max-iterations`:
+
+1. `find_next_failing_card` over the configured set. If none, stop.
+2. Snapshot the card and the current corpus pass count into
+   `.grammar-fix/<unix-ts>-<slug>/`.
+3. Build the prompt (current `grammar.pest`, `ast.rs`, `lower.rs` inline
+   plus the card, the round-trip error, and the constraint list) and
+   write it to `prompt.md`.
+4. `--dry-run` stops here without touching the working tree.
+5. Promote the generated test (write it without `#[ignore]`).
+6. Invoke `claude -p --dangerously-skip-permissions`, streaming output
+   to `transcript.txt`.
+7. `cargo xtask test --tier 2` as the test gate.
+8. `cargo xtask corpus` as the regression gate (it exits non-zero on
+   any previously-passing card that now fails).
+9. `git commit` with a structured message:
+
+       grammar: support card <name>
+
+       Card: <name> (<set>)
+       New passes: <count>
+       Status: <total_pass>/<total>
+
+Anything that goes wrong between steps 5 and 9 surfaces to the human:
+the working tree is left as-is and the log dir keeps everything that
+went into the run.
+
+### What the orchestrator does *not* automate
+
+- Architectural decisions (new AST node vs. attribute on existing).
+- Regressions in `corpus_status.json` — stop-the-line.
+- Property test failures unrelated to the new pattern.
+- Snapshot test review.
+
+### Prompt contract
+
+Baked into the prompt and enforced by the gates afterwards:
+
+- Don't modify the unparser. Round-trip failures signal grammar issues,
+  not unparser issues.
+- Don't add a special-case rule for one card. Generalize.
+- Don't touch existing grammar rules unless necessary; additive is safer.
+- Don't disable or modify existing tests.
+- Stay within scope (`grammar.pest`, `ast.rs`, `lower.rs`, the generated
+  test). Don't touch the adapters or xtask.
+- If you can't solve it, say so. Don't ship a hack.
+
+Inspired by [argentum-press/scripts/fix_parser_gaps.py](https://github.com/nymann/argentum-press)
+— same deterministic-around-claude shape, simpler scope (one playbook,
+one prompt template).

@@ -6,6 +6,7 @@
 use std::process::ExitCode;
 
 mod corpus_cmd;
+mod grammar_fix;
 mod next_card;
 mod paths;
 mod testrun;
@@ -23,6 +24,11 @@ Commands:
                               if there are regressions (use with care).
   refresh-corpus [--set CODE] Force re-fetch a set from Scryfall, bypassing the cache.
                               Without --set, refreshes every set tracked by `corpus`.
+  grammar-fix [--set CODE]    Orchestrated loop: next-card → claude -p → tier-1/2 →
+              [--max-iterations N]  corpus diff → commit. Defaults: --set lea,
+              [--dry-run] [--allow-dirty]  --max-iterations 1. --dry-run builds the
+                                          prompt and stops; --allow-dirty skips the
+                                          clean-tree precondition.
 
 Flags:
   -h, --help        Show this message.
@@ -39,6 +45,7 @@ fn main() -> ExitCode {
         Some("next-card") => next_card::run(&args[1..]),
         Some("corpus") => corpus_cmd::run(&args[1..]),
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),
+        Some("grammar-fix") => grammar_fix::run(&args[1..]),
         Some(cmd) => {
             eprintln!("unknown command: {cmd}\n\n{HELP}");
             ExitCode::from(2)

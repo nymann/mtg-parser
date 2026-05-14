@@ -11,3 +11,5 @@ repository.workspace = true
 mtg-corpus = { path = "../crates/mtg-corpus" }
 mtg-scryfall = { path = "../crates/mtg-scryfall" }
 anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
