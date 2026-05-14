@@ -5,7 +5,10 @@
 
 use std::process::ExitCode;
 
+mod claude_events;
+mod console_sink;
 mod corpus_cmd;
+mod flow;
 mod grammar_fix;
 mod next_card;
 mod paths;
