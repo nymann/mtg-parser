@@ -11,3 +11,6 @@ repository.workspace = true
 mtg-grammar = { path = "../mtg-grammar" }
 serde = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

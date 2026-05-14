@@ -13,7 +13,36 @@ Three layers, strictly separated (ports & adapters):
 
 - `mtg_grammar::parse(text: &str) -> Result<Statement, ParseError>`
 - `mtg_grammar::unparse(stmt: &Statement) -> String`
-- `mtg_semantic::lower(ast: Statement) -> Result<Ir, SemanticError>` (later)
+- `mtg_semantic::lower(ast: &Statement) -> Result<CardEffect, SemanticError>`
+
+## Semantic IR
+
+The IR is what downstream consumers (game engines, deck analyzers,
+training data, eventually the Python binding) actually look at. The
+syntactic AST captures the *shape* of the text; the IR captures the
+*meaning*. Two surface forms that mean the same thing should lower to
+the same IR.
+
+Example: `{1}{1}{R}` and `{2}{R}` have different syntactic ASTs but
+both lower to `ManaValue { generic: 2, red: 1, .. }`.
+
+Today the IR is:
+
+- `CardEffect::ManaCost(ManaValue)` — per-color and generic counters,
+  with a `total()` helper for the mana value.
+- `CardEffect::DestroyTargetCreature` — placeholder. As the grammar
+  grows, this collapses into something like `Effect::Destroy { target:
+  TargetSpec::Creature }` with explicit target-shape data.
+
+### Lowering contract
+
+Lowering is **total** over every AST the parser can produce. There is
+no "partial lowering" — if the parser accepts a card, the lowering
+must succeed. `SemanticError` is uninhabited today; real variants
+arrive once lowering does reference resolution or type validation.
+
+Tier 2 enforces this with a 1000-case property test in
+`crates/mtg-semantic/tests/prop.rs`.
 
 ## Canonical form
 

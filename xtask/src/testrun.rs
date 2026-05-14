@@ -10,15 +10,18 @@ pub fn run(args: &[String]) -> ExitCode {
     };
 
     let invocations: &[&[&str]] = match tier {
-        1 => &[&[
-            "test",
-            "-p",
-            "mtg-grammar",
-            "--test",
-            "unit",
-            "--test",
-            "generated",
-        ]],
+        1 => &[
+            &[
+                "test",
+                "-p",
+                "mtg-grammar",
+                "--test",
+                "unit",
+                "--test",
+                "generated",
+            ],
+            &["test", "-p", "mtg-semantic", "--test", "unit"],
+        ],
         2 => &[
             &[
                 "test",
@@ -30,6 +33,8 @@ pub fn run(args: &[String]) -> ExitCode {
                 "generated",
             ],
             &["test", "-p", "mtg-grammar", "--test", "prop"],
+            &["test", "-p", "mtg-semantic", "--test", "unit"],
+            &["test", "-p", "mtg-semantic", "--test", "prop"],
         ],
         _ => {
             eprintln!("unsupported tier: {tier} (only 1 and 2 implemented so far)");
