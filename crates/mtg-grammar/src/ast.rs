@@ -128,6 +128,8 @@ pub struct ActivatedAbility {
 pub enum ActivatedCost {
     Mana(ManaCost),
     Tap,
+    /// "Sacrifice this <permanent_type>"
+    Sacrifice(SourceObject),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -136,6 +138,8 @@ pub enum ActivatedEffect {
     AddMana(ManaCost),
     /// "Add one mana of any color."
     AddOneManaOfAnyColor,
+    /// "Add N mana of any one color."
+    AddManaOfAnyOneColor { amount: u32 },
     /// "Untap this <permanent_type>."
     Untap(SourceObject),
 }

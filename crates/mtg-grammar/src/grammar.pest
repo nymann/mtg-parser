@@ -203,12 +203,17 @@ enchanted_object = _{ permanent_type | creature_type }
 // more effects after it. The cost pieces are kept explicit because tap
 // symbols are costs but not mana symbols.
 activated_ability = { activated_cost ~ ":" ~ activated_effect }
-activated_cost = { activated_cost_component+ }
-activated_cost_component = _{ mana_symbol | tap_symbol }
-activated_effect = _{ add_one_mana_of_any_color | add_mana | untap_source }
+// Multiple non-mana activated costs are printed comma-separated.
+activated_cost = { activated_cost_component ~ ("," ~ activated_cost_component)* }
+activated_cost_component = _{ sacrifice_source | mana_symbol | tap_symbol }
+activated_effect = _{ add_mana_of_any_one_color | add_one_mana_of_any_color | add_mana | untap_source }
+add_mana_of_any_one_color = {
+    ^"add" ~ number_word ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"one" ~ ^"color" ~ "."
+}
 add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"color" ~ "." }
 add_mana = { ^"add" ~ mana_cost ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
+sacrifice_source = { ^"sacrifice" ~ source_object }
 
 condition      = _{ enchanted_isnt }
 enchanted_isnt = {

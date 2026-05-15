@@ -32,3 +32,5 @@ mod berserk;
 mod birds_of_paradise;
 #[path = "generated/black_knight.rs"]
 mod black_knight;
+#[path = "generated/black_lotus.rs"]
+mod black_lotus;

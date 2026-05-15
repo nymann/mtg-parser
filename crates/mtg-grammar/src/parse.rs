@@ -562,6 +562,14 @@ fn activated_cost_from_pair(pair: Pair<Rule>) -> Result<Vec<ActivatedCost>, Pars
                 symbols: vec![mana_symbol_from_pair(child)],
             })),
             Rule::tap_symbol => Ok(ActivatedCost::Tap),
+            Rule::sacrifice_source => {
+                let source_pair = child.into_inner().next().ok_or(ParseError::Internal(
+                    "sacrifice_source missing source_object",
+                ))?;
+                Ok(ActivatedCost::Sacrifice(source_object_from_pair(
+                    source_pair,
+                )?))
+            }
             _ => Err(ParseError::Internal("activated_cost component")),
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -581,6 +589,14 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             Ok(ActivatedEffect::AddMana(mana_cost_from_pair(mana_pair)))
         }
         Rule::add_one_mana_of_any_color => Ok(ActivatedEffect::AddOneManaOfAnyColor),
+        Rule::add_mana_of_any_one_color => {
+            let amount_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "add_mana_of_any_one_color missing number",
+            ))?;
+            let amount = number_word_to_u32(amount_pair.as_str())
+                .ok_or(ParseError::Internal("number_word"))?;
+            Ok(ActivatedEffect::AddManaOfAnyOneColor { amount })
+        }
         Rule::untap_source => {
             let source_pair = pair
                 .into_inner()

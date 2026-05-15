@@ -21,3 +21,5 @@ mod berserk;
 mod birds_of_paradise;
 #[path = "generated_patterns/black_knight.rs"]
 mod black_knight;
+#[path = "generated_patterns/black_lotus.rs"]
+mod black_lotus;

@@ -195,7 +195,10 @@ fn write_mana_symbol(out: &mut String, sym: ManaSymbol) {
 }
 
 fn write_activated_ability(out: &mut String, aa: &ActivatedAbility) {
-    for cost in &aa.costs {
+    for (i, cost) in aa.costs.iter().enumerate() {
+        if i > 0 {
+            out.push_str(", ");
+        }
         write_activated_cost(out, cost);
     }
     out.push_str(": ");
@@ -206,6 +209,10 @@ fn write_activated_cost(out: &mut String, cost: &ActivatedCost) {
     match cost {
         ActivatedCost::Mana(mana) => write_mana_cost(out, mana),
         ActivatedCost::Tap => out.push_str("{T}"),
+        ActivatedCost::Sacrifice(source) => {
+            out.push_str("Sacrifice ");
+            write_source_object(out, *source);
+        }
     }
 }
 
@@ -218,6 +225,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
         }
         ActivatedEffect::AddOneManaOfAnyColor => {
             out.push_str("Add one mana of any color.");
+        }
+        ActivatedEffect::AddManaOfAnyOneColor { amount } => {
+            out.push_str("Add ");
+            out.push_str(u32_to_number_word(*amount));
+            out.push_str(" mana of any one color.");
         }
         ActivatedEffect::Untap(source) => {
             out.push_str("Untap ");
