@@ -56,6 +56,8 @@ pub enum Statement {
     StaticAbility(StaticAbility),
     ActivatedAbility(ActivatedAbility),
     TriggeredAbility(TriggeredAbility),
+    /// Physical dexterity instructions and their conditional results.
+    PhysicalAction(PhysicalAction),
     /// Two or more abilities printed on one card, in source order,
     /// separated by newlines on the printed face. A single-ability
     /// card is never wrapped in `Compound`, so each piece of card
@@ -199,7 +201,9 @@ pub enum ActivatedEffect {
     /// "Add one mana of any color."
     AddOneManaOfAnyColor,
     /// "Add N mana of any one color."
-    AddManaOfAnyOneColor { amount: u32 },
+    AddManaOfAnyOneColor {
+        amount: u32,
+    },
     /// "Untap this <permanent_type>."
     Untap(SourceObject),
     /// "Enchanted <type> gets <modifier> until end of turn."
@@ -207,6 +211,24 @@ pub enum ActivatedEffect {
         permanent_type: PermanentType,
         modifier: PtModifier,
     },
+    PhysicalAction(PhysicalAction),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PhysicalAction {
+    /// "If this <source> is on the battlefield, flip it onto the
+    /// battlefield from a height of at least N foot/feet."
+    IfSourceOnBattlefieldFlipOntoBattlefieldFromHeight {
+        source: SourceObject,
+        minimum_height_feet: u32,
+    },
+    /// "If this <source> turns over completely at least once during the
+    /// flip, destroy all nontoken permanents it touches."
+    IfSourceTurnsOverCompletelyAtLeastOnceDuringFlipDestroyAllNontokenPermanentsItTouches {
+        source: SourceObject,
+    },
+    /// "Then destroy this <source>."
+    ThenDestroySource { source: SourceObject },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

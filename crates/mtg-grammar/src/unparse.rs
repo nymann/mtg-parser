@@ -4,10 +4,10 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus,
     CreatureType, EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PtModifier, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility, Step,
-    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
+    Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -88,6 +88,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
         Statement::ActivatedAbility(aa) => write_activated_ability(out, aa),
         Statement::TriggeredAbility(ta) => write_triggered_ability(out, ta),
+        Statement::PhysicalAction(pa) => write_physical_action(out, *pa),
         Statement::Compound(stmts) => {
             for (i, s) in stmts.iter().enumerate() {
                 if i > 0 {
@@ -322,6 +323,36 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(" gets ");
             write_pt_modifier(out, *modifier);
             out.push_str(" until end of turn.");
+        }
+        ActivatedEffect::PhysicalAction(action) => write_physical_action(out, *action),
+    }
+}
+
+fn write_physical_action(out: &mut String, action: PhysicalAction) {
+    match action {
+        PhysicalAction::IfSourceOnBattlefieldFlipOntoBattlefieldFromHeight {
+            source,
+            minimum_height_feet,
+        } => {
+            out.push_str("If ");
+            write_source_object(out, source);
+            out.push_str(" is on the battlefield, flip it onto the battlefield from a height of at least ");
+            out.push_str(u32_to_number_word(minimum_height_feet));
+            out.push(' ');
+            out.push_str(if minimum_height_feet == 1 { "foot" } else { "feet" });
+            out.push('.');
+        }
+        PhysicalAction::IfSourceTurnsOverCompletelyAtLeastOnceDuringFlipDestroyAllNontokenPermanentsItTouches {
+            source,
+        } => {
+            out.push_str("If ");
+            write_source_object(out, source);
+            out.push_str(" turns over completely at least once during the flip, destroy all nontoken permanents it touches.");
+        }
+        PhysicalAction::ThenDestroySource { source } => {
+            out.push_str("Then destroy ");
+            write_source_object(out, source);
+            out.push('.');
         }
     }
 }

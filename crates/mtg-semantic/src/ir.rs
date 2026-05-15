@@ -1,7 +1,7 @@
 use mtg_grammar::{
     ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Color,
-    Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType, StaticAbility,
-    TriggeredAbility, VariableDefinition,
+    Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
+    StaticAbility, TriggeredAbility, VariableDefinition,
 };
 use serde::{Deserialize, Serialize};
 
@@ -61,6 +61,8 @@ pub enum CardEffect {
     /// An activated ability ("<cost>: <effect>."). Reused from the
     /// grammar AST until the IR grows cost payment and effect lowering.
     ActivatedAbility(ActivatedAbility),
+    /// Physical dexterity instructions and their conditional results.
+    PhysicalAction(PhysicalAction),
     /// Two or more lowered effects, in source order — the lowering of
     /// a multi-ability card.
     Compound(Vec<CardEffect>),

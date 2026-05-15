@@ -6,10 +6,10 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus,
     CreatureType, EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PtModifier, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility, Step,
-    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
+    Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -99,6 +99,11 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::triggered_ability => Ok(Statement::TriggeredAbility(triggered_ability_from_pair(
             pair,
         )?)),
+        Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
+        | Rule::if_source_turns_over_destroy_touched_nontoken_permanents
+        | Rule::then_destroy_source => {
+            Ok(Statement::PhysicalAction(physical_action_from_pair(pair)?))
+        }
         _ => Err(ParseError::Internal("statement")),
     }
 }
@@ -867,7 +872,51 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 modifier: pt_modifier_from_pair(modifier_pair)?,
             })
         }
+        Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
+        | Rule::if_source_turns_over_destroy_touched_nontoken_permanents
+        | Rule::then_destroy_source => Ok(ActivatedEffect::PhysicalAction(
+            physical_action_from_pair(pair)?,
+        )),
         _ => Err(ParseError::Internal("activated_effect")),
+    }
+}
+
+fn physical_action_from_pair(pair: Pair<Rule>) -> Result<PhysicalAction, ParseError> {
+    match pair.as_rule() {
+        Rule::if_source_on_battlefield_flip_onto_battlefield_from_height => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("physical flip missing source_object"))?;
+            let height_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("physical flip missing minimum height"))?;
+            let minimum_height_feet = number_word_to_u32(height_pair.as_str())
+                .ok_or(ParseError::Internal("physical flip height"))?;
+            Ok(
+                PhysicalAction::IfSourceOnBattlefieldFlipOntoBattlefieldFromHeight {
+                    source: source_object_from_pair(source_pair)?,
+                    minimum_height_feet,
+                },
+            )
+        }
+        Rule::if_source_turns_over_destroy_touched_nontoken_permanents => {
+            let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "physical turns-over missing source_object",
+            ))?;
+            Ok(PhysicalAction::IfSourceTurnsOverCompletelyAtLeastOnceDuringFlipDestroyAllNontokenPermanentsItTouches {
+                source: source_object_from_pair(source_pair)?,
+            })
+        }
+        Rule::then_destroy_source => {
+            let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "physical then-destroy missing source_object",
+            ))?;
+            Ok(PhysicalAction::ThenDestroySource {
+                source: source_object_from_pair(source_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("physical_action")),
     }
 }
 

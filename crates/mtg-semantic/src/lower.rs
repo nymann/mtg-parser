@@ -62,6 +62,7 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::StaticAbility(sa) => CardEffect::StaticAbility(sa.clone()),
         Statement::ActivatedAbility(aa) => CardEffect::ActivatedAbility(aa.clone()),
         Statement::TriggeredAbility(ta) => CardEffect::TriggeredAbility(ta.clone()),
+        Statement::PhysicalAction(pa) => CardEffect::PhysicalAction(*pa),
         Statement::Compound(stmts) => {
             let lowered = stmts.iter().map(lower).collect::<Result<Vec<_>, _>>()?;
             CardEffect::Compound(lowered)
