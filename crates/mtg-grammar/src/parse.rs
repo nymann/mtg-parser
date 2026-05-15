@@ -236,6 +236,11 @@ fn imperative_action_from_pair(pair: Pair<Rule>) -> Result<ImperativeAction, Par
         Rule::ante_top_card_of_your_library_action => {
             Ok(ImperativeAction::AnteTopCardOfYourLibrary)
         }
+        Rule::search_your_library_for_a_card_action => {
+            Ok(ImperativeAction::SearchYourLibraryForACard)
+        }
+        Rule::put_that_card_into_your_hand_action => Ok(ImperativeAction::PutThatCardIntoYourHand),
+        Rule::shuffle_action => Ok(ImperativeAction::Shuffle),
         Rule::draw_cards_action => {
             let count_pair = pair
                 .into_inner()

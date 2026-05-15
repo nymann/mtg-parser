@@ -147,6 +147,12 @@ pub enum ImperativeAction {
     DiscardYourHand,
     /// "ante the top card of your library"
     AnteTopCardOfYourLibrary,
+    /// "search your library for a card"
+    SearchYourLibraryForACard,
+    /// "put that card into your hand"
+    PutThatCardIntoYourHand,
+    /// "shuffle"
+    Shuffle,
     /// "draw N cards"
     DrawCards { count: CardCount },
     /// "tap this <source>"

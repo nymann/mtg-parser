@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 103,
+  "passing": 104,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -191,8 +191,7 @@
       "status": "pass"
     },
     "lea/Demonic Tutor": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Search your library for a card, put that card into your hand, then shuffle.\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Dingus Egg": {
       "status": "fail",

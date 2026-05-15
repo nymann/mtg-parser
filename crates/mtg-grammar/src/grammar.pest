@@ -143,6 +143,9 @@ imperative_action_sequence = {
 imperative_action = _{
     discard_your_hand_action
   | ante_top_card_of_your_library_action
+  | search_your_library_for_a_card_action
+  | put_that_card_into_your_hand_action
+  | shuffle_action
   | draw_cards_action
   | tap_source_action
   | sacrifice_permanent_of_opponents_choice_action
@@ -151,6 +154,13 @@ discard_your_hand_action = { ^"discard" ~ ^"your" ~ ^"hand" }
 ante_top_card_of_your_library_action = {
     ^"ante" ~ ^"the" ~ ^"top" ~ ^"card" ~ ^"of" ~ ^"your" ~ ^"library"
 }
+search_your_library_for_a_card_action = {
+    ^"search" ~ ^"your" ~ ^"library" ~ ^"for" ~ article ~ ^"card"
+}
+put_that_card_into_your_hand_action = {
+    ^"put" ~ ^"that" ~ ^"card" ~ ^"into" ~ ^"your" ~ ^"hand"
+}
+shuffle_action = { ^"shuffle" }
 draw_cards_action = { ^"draw" ~ draw_count ~ ^"cards" }
 tap_source_action = { ^"tap" ~ source_object }
 sacrifice_permanent_of_opponents_choice_action = {

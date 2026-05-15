@@ -104,3 +104,5 @@ mod deathgrip;
 mod demonic_attorney;
 #[path = "generated/demonic_hordes.rs"]
 mod demonic_hordes;
+#[path = "generated/demonic_tutor.rs"]
+mod demonic_tutor;

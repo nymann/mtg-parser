@@ -222,6 +222,13 @@ fn write_imperative_action(out: &mut String, action: ImperativeAction) {
         ImperativeAction::AnteTopCardOfYourLibrary => {
             out.push_str("ante the top card of your library");
         }
+        ImperativeAction::SearchYourLibraryForACard => {
+            out.push_str("Search your library for a card");
+        }
+        ImperativeAction::PutThatCardIntoYourHand => {
+            out.push_str("put that card into your hand");
+        }
+        ImperativeAction::Shuffle => out.push_str("shuffle"),
         ImperativeAction::DrawCards { count } => {
             out.push_str("draw ");
             write_card_count(out, count);
