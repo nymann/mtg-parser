@@ -37,6 +37,10 @@ pub fn grammar_fix_log_root() -> PathBuf {
     repo_root().join(".grammar-fix")
 }
 
+pub fn refactor_hotspot_log_root() -> PathBuf {
+    repo_root().join(".refactor-hotspot")
+}
+
 pub fn grammar_pest_path() -> PathBuf {
     repo_root().join("crates/mtg-grammar/src/grammar.pest")
 }

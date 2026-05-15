@@ -12,6 +12,7 @@ mod flow;
 mod grammar_fix;
 mod next_card;
 mod paths;
+mod refactor_hotspot;
 mod rules_context;
 mod rules_split;
 mod testrun;
@@ -36,6 +37,10 @@ Commands:
   rules-split                 Parse resources/comprehensive_rules.txt and emit a
                               browsable tree under resources/rules/. Run `just rules`
                               first to fetch the source document.
+  refactor-hotspot            Build a qmd-grounded refactor prompt for a hotspot.
+              [--theme THEME] Defaults to parser-boilerplate. Other themes include
+              [--target PATH] damage, destroy, prevention, keyword-abilities,
+              [--out PATH]    triggered-abilities, and unparse-templates.
   grammar-fix [--set CODE]    Orchestrated loop: next-card → agent → tier-1/2 →
               [--max-iterations N]  corpus diff → commit. Defaults: --set lea,
               [--dry-run] [--allow-dirty]  --max-iterations 0 (unbounded). --dry-run builds the
@@ -91,6 +96,7 @@ fn main() -> ExitCode {
         Some("corpus-advance") => corpus_cmd::advance(&args[1..]),
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),
         Some("rules-split") => rules_split::run(&args[1..]),
+        Some("refactor-hotspot") => refactor_hotspot::run(&args[1..]),
         Some("grammar-fix") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => grammar_fix::run(&args[1..]),
             Ok(Ui::Tui) => match grammar_fix::Options::parse(&args[1..]) {
