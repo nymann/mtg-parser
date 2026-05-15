@@ -46,6 +46,11 @@ rules-index-refresh:
 	qmd collection remove mtg-rules 2>/dev/null || true
 	just rules-index
 
+# Generate the local churn-vs-LOC audit report. Override refs with a
+# comma-separated list of REF:Label entries if you want a different window.
+audit-page out="audit-churn-complexity.html" refs="HEAD~3:Baseline,HEAD~2:Semantic collapse,HEAD~1:Damage refactor,HEAD:Current":
+	python3 scripts/generate_audit_page.py --out "{{out}}" --refs "{{refs}}"
+
 corpus-summary:
 	@jq '{total, passing, failing: (.total - .passing), grammar_left: ([.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text") | not))] | length), empty_oracle: ([.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text")))] | length)}' corpus_status.json
 
