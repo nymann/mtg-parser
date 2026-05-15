@@ -65,6 +65,8 @@ sentence_statement = _{
   | until_eot_you_may_pay_cost_at_timing
   // Gain-life must precede add-mana because both share the "If you do," prefix.
   | if_you_do_gain_life
+  | if_you_do_cast_that_card_face_down_without_paying_mana_cost
+  | if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead
   | if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
   | if_you_do_add_mana
   | if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step
@@ -113,6 +115,7 @@ sentence_statement = _{
   | this_ability_cant_cause_total_pt_counters_greater_than
   | activate_only_during_your_upkeep
   | activate_only_during_your_turn
+  | activate_only_as_sorcery
 }
 
 phrase_statement = _{
@@ -684,6 +687,7 @@ activated_effect = _{
   | prevent_next_damage_to_you_this_turn
   | put_up_to_variable_pt_counters_on_source
   | put_named_counter_on_target_non_basic_land
+  | choose_creature_card_in_hand_payable_by_mana_spent_on_variable
   | physical_action
 }
 add_mana_of_any_one_color = {
@@ -750,6 +754,13 @@ put_up_to_variable_pt_counters_on_source = {
 }
 put_named_counter_on_target_non_basic_land = {
     ^"put" ~ article ~ named_counter ~ ^"on" ~ ^"target" ~ non_basic_land_type ~ permanent_type ~ "."
+}
+choose_creature_card_in_hand_payable_by_mana_spent_on_variable = {
+    ^"you" ~ ^"may" ~ ^"choose" ~ article ~ ^"creature" ~ ^"card"
+  ~ ^"in" ~ ^"your" ~ ^"hand" ~ ^"whose" ~ ^"mana" ~ ^"cost"
+  ~ ^"could" ~ ^"be" ~ ^"paid" ~ ^"by" ~ ^"some" ~ ^"amount"
+  ~ ^"of" ~ "," ~ ^"or" ~ ^"all" ~ ^"of" ~ "," ~ ^"the"
+  ~ ^"mana" ~ ^"you" ~ ^"spent" ~ ^"on" ~ variable_mana_symbol ~ "."
 }
 variable_mana_symbol = ${ "{" ~ variable_name ~ "}" }
 sacrifice_source = { ^"sacrifice" ~ source_object }
@@ -1011,11 +1022,32 @@ if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_
   ~ "," ~ ^"sacrifice" ~ source_object ~ ^"at" ~ beginning_of_the_next_end_step ~ "."
 }
 
+if_you_do_cast_that_card_face_down_without_paying_mana_cost = {
+    ^"if" ~ ^"you" ~ ^"do" ~ "," ~ ^"you" ~ ^"may" ~ ^"cast"
+  ~ ^"that" ~ ^"card" ~ ^"face" ~ ^"down" ~ ^"as" ~ article
+  ~ unsigned_number ~ "/" ~ unsigned_number ~ ^"creature" ~ ^"spell"
+  ~ ^"without" ~ ^"paying" ~ ^"its" ~ ^"mana" ~ ^"cost" ~ "."
+}
+
+if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead = {
+    ^"if" ~ ^"the" ~ ^"creature" ~ ^"that" ~ ^"spell" ~ ^"becomes"
+  ~ ^"as" ~ ^"it" ~ ^"resolves" ~ ^"has" ~ ^"not" ~ ^"been"
+  ~ ^"turned" ~ ^"face" ~ ^"up" ~ ^"and" ~ ^"would" ~ ^"assign"
+  ~ ^"or" ~ ^"deal" ~ ^"damage" ~ "," ~ ^"be" ~ ^"dealt"
+  ~ ^"damage" ~ "," ~ ^"or" ~ ^"become" ~ ^"tapped" ~ ","
+  ~ ^"instead" ~ ^"it's" ~ ^"turned" ~ ^"face" ~ ^"up" ~ ^"and"
+  ~ ^"assigns" ~ ^"or" ~ ^"deals" ~ ^"damage" ~ "," ~ ^"is"
+  ~ ^"dealt" ~ ^"damage" ~ "," ~ ^"or" ~ ^"becomes" ~ ^"tapped" ~ "."
+}
+
 activate_only_during_your_upkeep = {
     ^"activate" ~ ^"only" ~ ^"during" ~ ^"your" ~ ^"upkeep" ~ "."
 }
 activate_only_during_your_turn = {
     ^"activate" ~ ^"only" ~ ^"during" ~ ^"your" ~ ^"turn" ~ "."
+}
+activate_only_as_sorcery = {
+    ^"activate" ~ ^"only" ~ ^"as" ~ article ~ ^"sorcery" ~ "."
 }
 
 destroy_that_creature_if_it_attacked_this_turn = {

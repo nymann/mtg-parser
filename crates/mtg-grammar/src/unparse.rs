@@ -190,6 +190,18 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::IfYouDoGainLife { amount } => {
             write!(out, "If you do, you gain {amount} life.").expect("write to String never fails");
         }
+        Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power, toughness } => {
+            write!(
+                out,
+                "If you do, you may cast that card face down as a {power}/{toughness} creature spell without paying its mana cost."
+            )
+            .expect("write to String never fails");
+        }
+        Statement::IfFaceDownSpellCreatureWouldAssignOrDealDamageOrTapTurnFaceUpInstead => {
+            out.push_str(
+                "If the creature that spell becomes as it resolves has not been turned face up and would assign or deal damage, be dealt damage, or become tapped, instead it's turned face up and assigns or deals damage, is dealt damage, or becomes tapped.",
+            );
+        }
         Statement::TargetSpellOrPermanentBecomesColor { color } => {
             out.push_str("Target spell or permanent becomes ");
             out.push_str(color_name(*color));
@@ -290,6 +302,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::ActivateOnlyDuringYourTurn => {
             out.push_str("Activate only during your turn.");
+        }
+        Statement::ActivateOnlyAsSorcery => {
+            out.push_str("Activate only as a sorcery.");
         }
         Statement::ModalChoice { modes } => write_modal_choice(out, modes),
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
@@ -840,6 +855,12 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(" counter on target non-");
             out.push_str(basic_land_type_name(*excluded_land_type));
             out.push_str(" land.");
+        }
+        ActivatedEffect::ChooseCreatureCardInHandPayableByManaSpentOnVariable { variable } => {
+            out.push_str(
+                "You may choose a creature card in your hand whose mana cost could be paid by some amount of, or all of, the mana you spent on ",
+            );
+            write!(out, "{{{}}}.", variable_name(*variable)).expect("write to String never fails");
         }
         ActivatedEffect::TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield {
             permanent_type,

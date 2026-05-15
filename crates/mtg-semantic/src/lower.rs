@@ -135,6 +135,15 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         },
         Statement::IfYouDoAddMana { mana } => CardEffect::IfYouDoAddMana { mana: mana.clone() },
         Statement::IfYouDoGainLife { amount } => CardEffect::IfYouDoGainLife { amount: *amount },
+        Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power, toughness } => {
+            CardEffect::IfYouDoCastThatCardFaceDownWithoutPayingManaCost {
+                power: *power,
+                toughness: *toughness,
+            }
+        }
+        Statement::IfFaceDownSpellCreatureWouldAssignOrDealDamageOrTapTurnFaceUpInstead => {
+            CardEffect::IfFaceDownSpellCreatureWouldAssignOrDealDamageOrTapTurnFaceUpInstead
+        }
         Statement::TargetSpellOrPermanentBecomesColor { color } => {
             CardEffect::TargetSpellOrPermanentBecomesColor { color: *color }
         }
@@ -205,6 +214,7 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         },
         Statement::ActivateOnlyDuringYourUpkeep => CardEffect::ActivateOnlyDuringYourUpkeep,
         Statement::ActivateOnlyDuringYourTurn => CardEffect::ActivateOnlyDuringYourTurn,
+        Statement::ActivateOnlyAsSorcery => CardEffect::ActivateOnlyAsSorcery,
         Statement::ModalChoice { modes } => CardEffect::ModalChoice {
             modes: modes.clone(),
         },

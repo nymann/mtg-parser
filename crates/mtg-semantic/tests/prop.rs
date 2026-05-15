@@ -286,6 +286,11 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::ActivateOnlyDuringYourTurn),
+        Just(Statement::ActivateOnlyAsSorcery),
+        (1u32..=10, 1u32..=10).prop_map(|(power, toughness)| {
+            Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power, toughness }
+        }),
+        Just(Statement::IfFaceDownSpellCreatureWouldAssignOrDealDamageOrTapTurnFaceUpInstead),
         (1u32..=10).prop_map(|threshold| {
             Statement::IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
                 threshold,

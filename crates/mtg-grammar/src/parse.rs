@@ -116,6 +116,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
             if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(pair)
         }
+        Rule::if_you_do_cast_that_card_face_down_without_paying_mana_cost => {
+            if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(pair)
+        }
+        Rule::if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead => {
+            Ok(Statement::IfFaceDownSpellCreatureWouldAssignOrDealDamageOrTapTurnFaceUpInstead)
+        }
         Rule::if_you_do_add_mana => if_you_do_add_mana_from_pair(pair),
         Rule::if_you_do_gain_life => if_you_do_gain_life_from_pair(pair),
         Rule::target_spell_or_permanent_becomes_color => {
@@ -142,6 +148,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::activate_only_during_your_upkeep => Ok(Statement::ActivateOnlyDuringYourUpkeep),
         Rule::activate_only_during_your_turn => Ok(Statement::ActivateOnlyDuringYourTurn),
+        Rule::activate_only_as_sorcery => Ok(Statement::ActivateOnlyAsSorcery),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::static_as_long_as
         | Rule::static_colored_spells_cost_mana_more_to_cast
@@ -856,6 +863,30 @@ fn if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from
         Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
             amount,
             recipient,
+        },
+    )
+}
+
+fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let power_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("face-down cast missing power"))?;
+    let toughness_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("face-down cast missing toughness"))?;
+    Ok(
+        Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost {
+            power: power_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("face-down cast power"))?,
+            toughness: toughness_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("face-down cast toughness"))?,
         },
     )
 }
@@ -2370,6 +2401,16 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 counter_name: counter_name_from_counter_pair(counter_pair)?,
                 excluded_land_type: basic_land_type_from_pair(excluded_land_type_pair)?,
             })
+        }
+        Rule::choose_creature_card_in_hand_payable_by_mana_spent_on_variable => {
+            let variable_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "choose creature card missing variable",
+            ))?;
+            Ok(
+                ActivatedEffect::ChooseCreatureCardInHandPayableByManaSpentOnVariable {
+                    variable: variable_from_mana_symbol_pair(variable_pair)?,
+                },
+            )
         }
         Rule::target_permanent_becomes_basic_land_type_until_source_leaves => {
             let mut inner = pair.into_inner();

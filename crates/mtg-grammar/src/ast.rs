@@ -131,6 +131,15 @@ pub enum Statement {
     IfYouDoGainLife {
         amount: u32,
     },
+    /// "If you do, you may cast that card face down as a N/N creature
+    /// spell without paying its mana cost."
+    IfYouDoCastThatCardFaceDownWithoutPayingManaCost {
+        power: u32,
+        toughness: u32,
+    },
+    /// Face-down creature-spell replacement effect that turns it face up
+    /// before assigning/dealing damage, being dealt damage, or tapping.
+    IfFaceDownSpellCreatureWouldAssignOrDealDamageOrTapTurnFaceUpInstead,
     /// "Target spell or permanent becomes <color>."
     TargetSpellOrPermanentBecomesColor {
         color: Color,
@@ -191,6 +200,8 @@ pub enum Statement {
     ActivateOnlyDuringYourUpkeep,
     /// "Activate only during your turn."
     ActivateOnlyDuringYourTurn,
+    /// "Activate only as a sorcery."
+    ActivateOnlyAsSorcery,
     /// "Choose one —" followed by one or more bullet-pointed modes.
     ModalChoice {
         modes: Vec<ModalMode>,
@@ -611,6 +622,11 @@ pub enum ActivatedEffect {
     PutNamedCounterOnTargetNonBasicLand {
         counter_name: String,
         excluded_land_type: BasicLandType,
+    },
+    /// "You may choose a creature card in your hand whose mana cost could
+    /// be paid by some amount of, or all of, the mana you spent on {X}."
+    ChooseCreatureCardInHandPayableByManaSpentOnVariable {
+        variable: Variable,
     },
     /// "Target <permanent_type> becomes a/an <basic_land_type> until
     /// this <source> leaves the battlefield."

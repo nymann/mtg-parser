@@ -188,3 +188,5 @@ mod hypnotic_specter;
 mod ice_storm;
 #[path = "generated/icy_manipulator.rs"]
 mod icy_manipulator;
+#[path = "generated/illusionary_mask.rs"]
+mod illusionary_mask;

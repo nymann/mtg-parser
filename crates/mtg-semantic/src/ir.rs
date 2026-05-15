@@ -113,6 +113,12 @@ pub enum CardEffect {
     IfYouDoAddMana { mana: ManaCost },
     /// "If you do, you gain N life."
     IfYouDoGainLife { amount: u32 },
+    /// "If you do, you may cast that card face down as a N/N creature
+    /// spell without paying its mana cost."
+    IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power: u32, toughness: u32 },
+    /// Face-down creature-spell replacement effect that turns it face up
+    /// before assigning/dealing damage, being dealt damage, or tapping.
+    IfFaceDownSpellCreatureWouldAssignOrDealDamageOrTapTurnFaceUpInstead,
     /// "Target spell or permanent becomes <color>."
     TargetSpellOrPermanentBecomesColor { color: Color },
     /// "Target <type> gets <modifier> until end of turn."
@@ -165,6 +171,8 @@ pub enum CardEffect {
     ActivateOnlyDuringYourUpkeep,
     /// "Activate only during your turn."
     ActivateOnlyDuringYourTurn,
+    /// "Activate only as a sorcery."
+    ActivateOnlyAsSorcery,
     /// A modal spell choice with one or more printed modes.
     ModalChoice { modes: Vec<ModalMode> },
     /// A static ability with a conditional continuous effect. The
