@@ -27,6 +27,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             }
         }
         Statement::IfYouDoAddMana { mana } => CardEffect::IfYouDoAddMana { mana: mana.clone() },
+        Statement::TargetSpellOrPermanentBecomesColor { color } => {
+            CardEffect::TargetSpellOrPermanentBecomesColor { color: *color }
+        }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             permanent_type,
             keyword,

@@ -23,6 +23,10 @@ pub enum Statement {
     IfYouDoAddMana {
         mana: ManaCost,
     },
+    /// "Target spell or permanent becomes <color>."
+    TargetSpellOrPermanentBecomesColor {
+        color: Color,
+    },
     /// "Target <type> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
     TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {

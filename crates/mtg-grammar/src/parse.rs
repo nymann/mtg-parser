@@ -62,6 +62,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             until_eot_you_may_pay_cost_at_timing_from_pair(pair)
         }
         Rule::if_you_do_add_mana => if_you_do_add_mana_from_pair(pair),
+        Rule::target_spell_or_permanent_becomes_color => {
+            target_spell_or_permanent_becomes_color_from_pair(pair)
+        }
         Rule::target_permanent_gains_keyword_and_gets_eot => {
             target_permanent_gains_keyword_and_gets_eot_from_pair(pair)
         }
@@ -204,6 +207,18 @@ fn target_permanent_gains_keyword_and_gets_eot_from_pair(
             definitions: where_clause_from_pair(where_pair)?,
         },
     )
+}
+
+fn target_spell_or_permanent_becomes_color_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let color_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("target becomes color missing color"))?;
+    Ok(Statement::TargetSpellOrPermanentBecomesColor {
+        color: color_from_pair(color_pair)?,
+    })
 }
 
 fn each_player_equalizes_controlled_permanents_from_pair(

@@ -1,6 +1,6 @@
 use mtg_grammar::{
-    ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Keyword,
-    ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType, StaticAbility,
+    ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Color,
+    Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType, StaticAbility,
     TriggeredAbility, VariableDefinition,
 };
 use serde::{Deserialize, Serialize};
@@ -30,6 +30,8 @@ pub enum CardEffect {
     },
     /// "If you do, add <mana>."
     IfYouDoAddMana { mana: ManaCost },
+    /// "Target spell or permanent becomes <color>."
+    TargetSpellOrPermanentBecomesColor { color: Color },
     /// "Target <type> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
     TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {

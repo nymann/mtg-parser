@@ -56,3 +56,5 @@ mod camouflage;
 mod castle;
 #[path = "generated/channel.rs"]
 mod channel;
+#[path = "generated/chaoslace.rs"]
+mod chaoslace;

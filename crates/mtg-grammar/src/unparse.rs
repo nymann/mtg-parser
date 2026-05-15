@@ -44,6 +44,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_mana_cost(out, mana);
             out.push('.');
         }
+        Statement::TargetSpellOrPermanentBecomesColor { color } => {
+            out.push_str("Target spell or permanent becomes ");
+            out.push_str(color_name(*color));
+            out.push('.');
+        }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             permanent_type,
             keyword,

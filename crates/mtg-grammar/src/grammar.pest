@@ -40,6 +40,7 @@ sentence_statement = _{
   | draw_cards
   | until_eot_you_may_pay_cost_at_timing
   | if_you_do_add_mana
+  | target_spell_or_permanent_becomes_color
   | target_permanent_gains_keyword_and_gets_eot
   | target_creature_defending_player_controls_can_block_any_number
   | it_blocks_each_attacking_creature_if_able
@@ -435,6 +436,10 @@ target_permanent_gains_keyword_and_gets_eot = {
     ^"target" ~ permanent_type ~ ^"gains" ~ keyword ~ ^"and"
   ~ ^"gets" ~ mixed_pt_modifier ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn"
   ~ "," ~ where_clause ~ "."
+}
+
+target_spell_or_permanent_becomes_color = {
+    ^"target" ~ ^"spell" ~ ^"or" ~ ^"permanent" ~ ^"becomes" ~ color_word ~ "."
 }
 
 destroy_that_creature_if_it_attacked_this_turn = {

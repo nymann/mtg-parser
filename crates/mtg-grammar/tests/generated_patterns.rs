@@ -45,3 +45,5 @@ mod camouflage;
 mod castle;
 #[path = "generated_patterns/channel.rs"]
 mod channel;
+#[path = "generated_patterns/chaoslace.rs"]
+mod chaoslace;
