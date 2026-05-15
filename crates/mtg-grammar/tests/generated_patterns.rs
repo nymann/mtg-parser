@@ -181,3 +181,5 @@ mod icy_manipulator;
 mod illusionary_mask;
 #[path = "generated_patterns/instill_energy.rs"]
 mod instill_energy;
+#[path = "generated_patterns/invisibility.rs"]
+mod invisibility;

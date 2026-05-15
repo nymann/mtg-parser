@@ -854,6 +854,12 @@ pub enum StaticAbility {
         object: EnchantedObject,
         keyword: Keyword,
     },
+    /// "Enchanted <object> can't be blocked except by <creature_type>s."
+    /// — evasion restriction that allows only a creature subtype to block.
+    EnchantedCantBeBlockedExceptByCreatureType {
+        object: EnchantedObject,
+        except_type: CreatureType,
+    },
     /// "You control enchanted <object>." — continuous control-changing
     /// effect from an Aura to the object it enchants.
     YouControlEnchanted { object: EnchantedObject },

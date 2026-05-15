@@ -1062,6 +1062,16 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_keyword_lowercase(out, *keyword);
             out.push('.');
         }
+        StaticAbility::EnchantedCantBeBlockedExceptByCreatureType {
+            object,
+            except_type,
+        } => {
+            out.push_str("Enchanted ");
+            write_enchanted_object(out, *object);
+            out.push_str(" can't be blocked except by ");
+            out.push_str(creature_type_plural_name(*except_type));
+            out.push('.');
+        }
         StaticAbility::YouControlEnchanted { object } => {
             out.push_str("You control enchanted ");
             write_enchanted_object(out, *object);

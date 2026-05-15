@@ -100,6 +100,7 @@ sentence_statement = _{
   | static_enchanted_is_basic_land_type
   | static_enchanted_can_attack_as_though_it_had
   | static_enchanted_can_attack_as_though_it_didnt_have
+  | static_enchanted_cant_be_blocked_except_by_creature_type
   | static_you_control_enchanted
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
   | static_you_may_have_source_enter_as_copy
@@ -469,6 +470,8 @@ creature_type_plural = @{ ^"goblins" | ^"walls" }
 //     restriction on the enchanted object.
 //   - "Enchanted <object> can attack as though it had/didn't have
 //     <keyword>." — permission effect that changes attack eligibility.
+//   - "Enchanted <object> can't be blocked except by <creature_type>s."
+//     — evasion restriction with an allowed blocking subtype.
 //   - "You control enchanted <object>." — continuous control-changing
 //     effect from an Aura to its enchanted object.
 //   - "You may have this <type> enter as a copy of any <type> on the
@@ -491,6 +494,7 @@ static_ability = _{
   | static_enchanted_is_basic_land_type
   | static_enchanted_can_attack_as_though_it_had
   | static_enchanted_can_attack_as_though_it_didnt_have
+  | static_enchanted_cant_be_blocked_except_by_creature_type
   | static_you_control_enchanted
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
   | static_you_may_have_source_enter_as_copy
@@ -568,6 +572,11 @@ static_enchanted_can_attack_as_though_it_had = {
 static_enchanted_can_attack_as_though_it_didnt_have = {
     ^"enchanted" ~ enchanted_object ~ ^"can" ~ ^"attack"
   ~ ^"as" ~ ^"though" ~ ^"it" ~ ^"didn't" ~ ^"have" ~ keyword ~ "."
+}
+
+static_enchanted_cant_be_blocked_except_by_creature_type = {
+    ^"enchanted" ~ enchanted_object ~ ^"can't" ~ ^"be" ~ ^"blocked"
+  ~ ^"except" ~ ^"by" ~ creature_type_plural ~ "."
 }
 
 static_you_control_enchanted = {

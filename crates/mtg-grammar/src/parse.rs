@@ -169,6 +169,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_is_basic_land_type
         | Rule::static_enchanted_can_attack_as_though_it_had
         | Rule::static_enchanted_can_attack_as_though_it_didnt_have
+        | Rule::static_enchanted_cant_be_blocked_except_by_creature_type
         | Rule::static_you_control_enchanted
         | Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns
         | Rule::static_you_may_have_source_enter_as_copy
@@ -2035,6 +2036,19 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::EnchantedCanAttackAsThoughItDidntHave {
                 object: enchanted_object_from_pair(object_pair)?,
                 keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
+        Rule::static_enchanted_cant_be_blocked_except_by_creature_type => {
+            let mut inner = pair.into_inner();
+            let object_pair = inner
+                .next()
+                .expect("static_enchanted_cant_be_blocked begins with enchanted object");
+            let except_type_pair = inner
+                .next()
+                .expect("static_enchanted_cant_be_blocked names blocking creature type");
+            Ok(StaticAbility::EnchantedCantBeBlockedExceptByCreatureType {
+                object: enchanted_object_from_pair(object_pair)?,
+                except_type: creature_type_from_plural_pair(except_type_pair)?,
             })
         }
         Rule::static_you_control_enchanted => {
