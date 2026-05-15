@@ -238,8 +238,10 @@ damage_prevention_amount_axis = { damage_prevention_all_amount | damage_preventi
 damage_prevention_all_amount = { ^"all" }
 damage_prevention_next_amount = { ^"the" ~ ^"next" ~ damage_prevention_amount }
 prevent_next_damage_that_would_be_dealt_to_recipient_this_turn = {
-    ^"prevent" ~ damage_prevention_next_amount ~ ^"damage"
-  ~ damage_that_would_be_dealt ~ damage_prevention_recipient ~ this_turn_period
+    prevent_next_damage_body ~ damage_prevention_recipient ~ this_turn_period
+}
+prevent_next_damage_body = _{
+    ^"prevent" ~ damage_prevention_next_amount ~ ^"damage" ~ damage_that_would_be_dealt
 }
 damage_that_would_be_dealt = _{
     ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"
@@ -983,8 +985,7 @@ redirect_that_damage_to_you = {
     ^"that" ~ ^"source" ~ ^"deals" ~ ^"that" ~ ^"damage" ~ ^"to" ~ ^"you" ~ ^"instead"
 }
 prevent_next_damage_this_turn = {
-    ^"prevent" ~ damage_prevention_next_amount ~ ^"damage"
-  ~ damage_that_would_be_dealt ~ ^"to" ~ activated_damage_prevention_recipient
+    prevent_next_damage_body ~ ^"to" ~ activated_damage_prevention_recipient
   ~ this_turn_period
 }
 put_up_to_variable_pt_counters_on_source = {

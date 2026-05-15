@@ -356,16 +356,31 @@ impl Statement {
                 None,
                 DamagePreventionDuration::ThisTurn,
             ) => Some(Statement::PreventAllCombatDamageThisTurn),
+            _ => effect.into_next_this_turn().map(|prevention| {
+                Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention }
+            }),
+        }
+    }
+}
+
+impl<R> DamagePreventionEffect<R> {
+    pub(crate) fn next_this_turn(prevention: DamagePrevention<R>) -> Self {
+        Self {
+            amount: DamagePreventionAmount::Next(prevention.amount),
+            kind: None,
+            recipient: Some(prevention.recipient),
+            duration: DamagePreventionDuration::ThisTurn,
+        }
+    }
+
+    pub(crate) fn into_next_this_turn(self) -> Option<DamagePrevention<R>> {
+        match (self.amount, self.kind, self.recipient, self.duration) {
             (
                 DamagePreventionAmount::Next(amount),
                 None,
                 Some(recipient),
                 DamagePreventionDuration::ThisTurn,
-            ) => Some(
-                Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                    prevention: DamagePrevention { amount, recipient },
-                },
-            ),
+            ) => Some(DamagePrevention { amount, recipient }),
             _ => None,
         }
     }

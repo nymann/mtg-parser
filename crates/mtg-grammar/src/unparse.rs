@@ -213,12 +213,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
             write_damage_prevention_effect(
                 out,
-                DamagePreventionEffect {
-                    amount: DamagePreventionAmount::Next(prevention.amount),
-                    kind: None,
-                    recipient: Some(prevention.recipient),
-                    duration: DamagePreventionDuration::ThisTurn,
-                },
+                DamagePreventionEffect::next_this_turn(*prevention),
             );
         }
         Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
@@ -714,15 +709,7 @@ fn write_prevent_next_damage_to_recipient(
     out: &mut String,
     prevention: DamagePrevention<PreventionRecipient>,
 ) {
-    write_damage_prevention_effect(
-        out,
-        DamagePreventionEffect {
-            amount: DamagePreventionAmount::Next(prevention.amount),
-            kind: None,
-            recipient: Some(prevention.recipient),
-            duration: DamagePreventionDuration::ThisTurn,
-        },
-    );
+    write_damage_prevention_effect(out, DamagePreventionEffect::next_this_turn(prevention));
 }
 
 fn write_prevent_next_damage_to_recipient_lowercase(
