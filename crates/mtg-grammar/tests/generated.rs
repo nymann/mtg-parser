@@ -44,3 +44,5 @@ mod blaze_of_glory;
 mod blessing;
 #[path = "generated/blue_elemental_blast.rs"]
 mod blue_elemental_blast;
+#[path = "generated/bog_wraith.rs"]
+mod bog_wraith;

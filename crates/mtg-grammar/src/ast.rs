@@ -182,6 +182,7 @@ pub enum Keyword {
     Defender,
     Banding,
     Trample,
+    Swampwalk,
     Protection(Color),
     Enchant(EnchantObject),
 }

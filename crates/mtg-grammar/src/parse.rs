@@ -285,6 +285,7 @@ fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         Rule::defender => Ok(Keyword::Defender),
         Rule::banding => Ok(Keyword::Banding),
         Rule::trample => Ok(Keyword::Trample),
+        Rule::swampwalk => Ok(Keyword::Swampwalk),
         Rule::protection => {
             let color = inner
                 .into_inner()
@@ -391,6 +392,7 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         Rule::defender => Ok(Keyword::Defender),
         Rule::banding => Ok(Keyword::Banding),
         Rule::trample => Ok(Keyword::Trample),
+        Rule::swampwalk => Ok(Keyword::Swampwalk),
         Rule::protection => {
             let color = pair
                 .into_inner()
