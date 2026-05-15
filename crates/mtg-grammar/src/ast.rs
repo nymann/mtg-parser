@@ -18,6 +18,11 @@ pub enum Statement {
         #[serde(flatten)]
         event: DamageEvent<String, DamageRecipients>,
     },
+    /// "Prevent <amount> [combat] damage that would be dealt [to <recipient>] this turn."
+    PreventDamageThisTurn {
+        #[serde(flatten)]
+        effect: DamagePreventionEffect<PreventionRecipient>,
+    },
     /// "Prevent all combat damage that would be dealt this turn."
     PreventAllCombatDamageThisTurn,
     /// "Spend only <color> mana on X."
@@ -343,7 +348,7 @@ impl Statement {
 
     pub(crate) fn damage_prevention_effect(
         effect: DamagePreventionEffect<PreventionRecipient>,
-    ) -> Option<Self> {
+    ) -> Self {
         match (
             effect.amount,
             effect.kind,
@@ -355,10 +360,13 @@ impl Statement {
                 Some(DamageKind::CombatDamage),
                 None,
                 DamagePreventionDuration::ThisTurn,
-            ) => Some(Statement::PreventAllCombatDamageThisTurn),
-            _ => effect.into_next_this_turn().map(|prevention| {
-                Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention }
-            }),
+            ) => Statement::PreventAllCombatDamageThisTurn,
+            _ => effect.into_next_this_turn().map_or(
+                Statement::PreventDamageThisTurn { effect },
+                |prevention| Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                    prevention,
+                },
+            ),
         }
     }
 }

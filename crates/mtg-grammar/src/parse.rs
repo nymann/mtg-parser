@@ -968,13 +968,14 @@ fn prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
     let prevention = next_prevention_recipient_damage_from_pair(pair)?;
-    Ok(Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention })
+    Ok(Statement::damage_prevention_effect(
+        DamagePreventionEffect::next_this_turn(prevention),
+    ))
 }
 
 fn damage_prevention_effect_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let effect = damage_prevention_effect_from_pair(pair)?;
-    Statement::damage_prevention_effect(effect)
-        .ok_or(ParseError::Internal("unsupported damage prevention effect"))
+    Ok(Statement::damage_prevention_effect(effect))
 }
 
 fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(

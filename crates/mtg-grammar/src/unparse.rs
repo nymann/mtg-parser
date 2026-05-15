@@ -42,6 +42,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_damage_event_recipients(out, &event.recipient);
             out.push('.');
         }
+        Statement::PreventDamageThisTurn { effect } => write_damage_prevention_effect(out, *effect),
         Statement::PreventAllCombatDamageThisTurn => {
             write_damage_prevention_effect(
                 out,
