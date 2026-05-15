@@ -308,7 +308,7 @@ fn run_inner(opts: Options) -> Result<()> {
     if opts.print {
         print!("{prompt}");
     }
-    let out = match opts.out {
+    let out = match opts.out.clone() {
         Some(path) => path,
         None => {
             let dir = create_log_dir(opts.theme)?;
@@ -606,7 +606,7 @@ fn invoke_jsonl_agent(
                 collect_assistant_text(provider, &parsed, &mut assistant_text);
                 let elapsed_secs = start.elapsed().as_secs();
                 for event in agent_events::parse(provider, &parsed) {
-                    println!("    [+{elapsed_secs:>3}s] {}", event.first_line);
+                    println!("    [+{elapsed_secs:>3}s] {}", render_agent_event(&event));
                 }
             }
             Err(_) => println!(
@@ -623,6 +623,38 @@ fn invoke_jsonl_agent(
         exit_code: status.code().unwrap_or(-1),
         assistant_text: assistant_text.join("\n\n"),
     })
+}
+
+fn render_agent_event(event: &agent_events::ParsedAgentEvent) -> String {
+    use agent_events::{ParsedAgentEvent, ToolUseTarget};
+
+    match event {
+        ParsedAgentEvent::Init { model } => format!("init model={model}"),
+        ParsedAgentEvent::AssistantText { text } => trim(text, 160),
+        ParsedAgentEvent::ToolUse { name, target } => match target {
+            ToolUseTarget::File(path) => format!("{name} {path}"),
+            ToolUseTarget::Command(cmd) => format!("{name} {cmd}"),
+            ToolUseTarget::Pattern(pattern) => format!("{name} {pattern}"),
+            ToolUseTarget::Description(desc) => format!("{name} {}", trim(desc, 120)),
+            ToolUseTarget::None => name.clone(),
+        },
+        ParsedAgentEvent::ToolResult {
+            first_line,
+            is_error,
+        } => {
+            if *is_error {
+                format!("tool error: {}", trim(first_line, 160))
+            } else {
+                trim(first_line, 160)
+            }
+        }
+        ParsedAgentEvent::Done {
+            subtype,
+            num_turns,
+            total_cost_usd,
+        } => format!("done {subtype}; turns={num_turns}; cost=${total_cost_usd:.4}"),
+        ParsedAgentEvent::Other => "event".to_string(),
+    }
 }
 
 fn collect_assistant_text(
