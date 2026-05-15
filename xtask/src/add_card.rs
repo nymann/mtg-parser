@@ -39,7 +39,7 @@ use crate::paths::{
 /// 0 means unbounded; positive values cap the loop.
 const DEFAULT_MAX_ITERATIONS: u32 = 0;
 const DEFAULT_SUPERVISOR_ATTEMPTS: u8 = 1;
-const TOTAL_STEPS: u8 = 13;
+const TOTAL_STEPS: u8 = 14;
 
 pub fn run(args: &[String]) -> ExitCode {
     let opts = match Options::parse(args) {
@@ -722,6 +722,19 @@ fn run_one_iteration(
     if let Ok(diff) = git_diff_against_head_parent() {
         std::fs::write(log_dir.join("diff.patch"), diff).ok();
     }
+
+    // Step 14 — push.
+    sink.emit(FlowEvent::StepStarted {
+        index: 14,
+        total: TOTAL_STEPS,
+        label: "git push".into(),
+    });
+    git_push().context("git push")?;
+    sink.emit(FlowEvent::StepFinished {
+        index: 14,
+        ok: true,
+        summary: Some("pushed committed changes".into()),
+    });
 
     let duration_secs = iter_start.elapsed().as_secs();
     let grammar_rules = count_grammar_rules();
@@ -2474,6 +2487,26 @@ fn git_commit_args(message: &str) -> Vec<&str> {
     vec!["commit", "--no-verify", "-m", message]
 }
 
+fn git_push() -> Result<()> {
+    let push = Command::new("git")
+        .args(git_push_args())
+        .current_dir(repo_root())
+        .output()?;
+    if !push.status.success() {
+        bail!(
+            "git push failed with status {}\nstdout:\n{}\nstderr:\n{}",
+            push.status,
+            String::from_utf8_lossy(&push.stdout),
+            String::from_utf8_lossy(&push.stderr)
+        );
+    }
+    Ok(())
+}
+
+fn git_push_args() -> Vec<&'static str> {
+    vec!["push"]
+}
+
 fn git_diff_against_head_parent() -> Result<String> {
     let out = Command::new("git")
         .args(["diff", "HEAD~1..HEAD"])
@@ -2613,6 +2646,11 @@ mod tests {
     fn git_commit_args_skip_duplicate_mutating_hook() {
         let args = git_commit_args("subject\n\nbody");
         assert_eq!(args, vec!["commit", "--no-verify", "-m", "subject\n\nbody"]);
+    }
+
+    #[test]
+    fn git_push_args_push_current_branch() {
+        assert_eq!(git_push_args(), vec!["push"]);
     }
 
     #[test]

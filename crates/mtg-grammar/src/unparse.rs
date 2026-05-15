@@ -18,9 +18,9 @@ use crate::ast::{
     Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost,
     SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TriggerCondition,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -1852,6 +1852,7 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
     out.push_str(match condition.event {
         TriggerEvent::PermanentEnters { .. }
         | TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { .. }
+        | TriggerEvent::PermanentDealtDamageBySourceThisTurnDies { .. }
         | TriggerEvent::YouPlayPermanent { .. }
         | TriggerEvent::PlayerCastsColoredSpell { .. }
         | TriggerEvent::PlayerTapsPermanentForMana { .. }
@@ -2016,6 +2017,17 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str(permanent_type_name(permanent_type));
             out.push_str(" is put into a graveyard from the battlefield");
         }
+        TriggerEvent::PermanentDealtDamageBySourceThisTurnDies {
+            permanent_type,
+            source,
+        } => {
+            out.push_str(indefinite_article(permanent_type));
+            out.push(' ');
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str(" dealt damage by ");
+            write_source_object(out, source);
+            out.push_str(" this turn dies");
+        }
         TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController { permanent_type } => {
             out.push_str("the beginning of the upkeep of enchanted ");
             out.push_str(permanent_type_name(permanent_type));
@@ -2088,6 +2100,13 @@ fn write_intervening_if(out: &mut String, iif: InterveningIf) {
     }
 }
 
+fn write_trigger_counter_recipient(out: &mut String, recipient: TriggerCounterRecipient) {
+    match recipient {
+        TriggerCounterRecipient::It => out.push_str("it"),
+        TriggerCounterRecipient::Source(source) => write_source_object(out, source),
+    }
+}
+
 fn write_trigger_effect(
     out: &mut String,
     eff: &TriggerEffect,
@@ -2148,10 +2167,12 @@ fn write_trigger_effect(
             write_pt_modifier(out, *counter);
             out.push_str(" counter from it.");
         }
-        TriggerEffect::PutCounterOnIt { counter } => {
+        TriggerEffect::PutCounter { counter, recipient } => {
             out.push_str("put a ");
             write_pt_modifier(out, *counter);
-            out.push_str(" counter on it.");
+            out.push_str(" counter on ");
+            write_trigger_counter_recipient(out, *recipient);
+            out.push('.');
         }
         TriggerEffect::PutNamedCountersOnSource {
             amount,

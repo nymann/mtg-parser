@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 228,
+  "passing": 229,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -685,8 +685,7 @@
       "status": "pass"
     },
     "lea/Sengir Vampire": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:12\n  |\n2 | Whenever a creature dealt damage by this creature this turn dies, put a +1/+1 counter on this creature.\n  |            ^---\n  |\n  = expected basic_land_type"
+      "status": "pass"
     },
     "lea/Serra Angel": {
       "status": "fail",

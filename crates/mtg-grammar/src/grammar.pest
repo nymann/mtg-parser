@@ -1334,6 +1334,7 @@ trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
 trigger_event = _{
     you_are_dealt_damage
   | permanent_put_into_graveyard_from_battlefield
+  | permanent_dealt_damage_by_source_this_turn_dies
   | source_put_into_graveyard_from_battlefield
   | source_dies
   | source_deals_damage_to_an_opponent
@@ -1376,6 +1377,10 @@ source_deals_damage_to_an_opponent = {
 permanent_put_into_graveyard_from_battlefield = {
     article ~ permanent_type ~ ^"is" ~ ^"put" ~ ^"into" ~ article ~ zone
   ~ ^"from" ~ ^"the" ~ ^"battlefield"
+}
+permanent_dealt_damage_by_source_this_turn_dies = {
+    article ~ permanent_type ~ ^"dealt" ~ ^"damage" ~ ^"by" ~ source_object
+  ~ ^"this" ~ ^"turn" ~ ^"dies"
 }
 enchanted_permanent_dies = { ^"enchanted" ~ permanent_type ~ ^"dies" }
 source_dies = { source_object ~ ^"dies" }
@@ -1675,8 +1680,11 @@ remove_pt_counter_from_it = {
     ^"remove" ~ article ~ pt_counter ~ ^"from" ~ ^"it" ~ "."
 }
 put_pt_counter_on_it = {
-    ^"put" ~ article ~ pt_counter ~ ^"on" ~ ^"it" ~ "."
+    ^"put" ~ article ~ pt_counter ~ ^"on" ~ trigger_counter_recipient ~ "."
 }
+trigger_counter_recipient = { it_counter_recipient | source_counter_recipient }
+it_counter_recipient = { ^"it" }
+source_counter_recipient = { source_object }
 put_named_counters_on_source = _{
     that_many_named_counters
   | one_named_counter_for_each_permanent_died_this_turn

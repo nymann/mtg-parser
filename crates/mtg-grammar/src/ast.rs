@@ -823,6 +823,11 @@ pub enum TriggerEvent {
     SourceIsDealtDamage { source: SourceObject },
     /// "a/an <permanent_type> is put into a graveyard from the battlefield"
     PermanentPutIntoGraveyardFromBattlefield { permanent_type: PermanentType },
+    /// "a/an <permanent_type> dealt damage by this <source> this turn dies"
+    PermanentDealtDamageBySourceThisTurnDies {
+        permanent_type: PermanentType,
+        source: SourceObject,
+    },
     /// "the beginning of the upkeep of enchanted <permanent_type>'s
     /// controller"
     BeginningOfUpkeepOfEnchantedPermanentController { permanent_type: PermanentType },
@@ -906,8 +911,11 @@ pub enum TriggerEffect {
     },
     /// "remove a <pt_modifier> counter from it"
     RemoveCounterFromIt { counter: PtModifier },
-    /// "put a <pt_modifier> counter on it"
-    PutCounterOnIt { counter: PtModifier },
+    /// "put a <pt_modifier> counter on <recipient>"
+    PutCounter {
+        counter: PtModifier,
+        recipient: TriggerCounterRecipient,
+    },
     /// "put <amount> <counter> counter(s) on this <source>"
     PutNamedCountersOnSource {
         amount: NamedCounterAmount,
@@ -988,6 +996,14 @@ pub enum TriggerEffect {
     },
     /// "its controller adds an additional <mana_symbol>"
     ItsControllerAddsAdditionalMana { mana: ManaSymbol },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TriggerCounterRecipient {
+    /// "it"
+    It,
+    /// "this <source>"
+    Source(SourceObject),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

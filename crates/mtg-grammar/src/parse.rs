@@ -20,9 +20,9 @@ use crate::ast::{
     PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
     StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect,
-    TargetPermanentSelector, TriggerCondition, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    TargetPermanentSelector, TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition,
+    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
+    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -1854,6 +1854,9 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
         Rule::permanent_put_into_graveyard_from_battlefield => {
             permanent_put_into_graveyard_from_battlefield_from_pair(event_pair)
         }
+        Rule::permanent_dealt_damage_by_source_this_turn_dies => {
+            permanent_dealt_damage_by_source_this_turn_dies_from_pair(event_pair)
+        }
         Rule::beginning_of_upkeep_of_enchanted_permanent_controller => {
             beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(event_pair)
         }
@@ -2200,6 +2203,22 @@ fn source_deals_damage_to_an_opponent_from_pair(
 ) -> Result<TriggerEvent, ParseError> {
     let source_pair = only_inner(pair, "source deals damage to opponent missing source")?;
     Ok(TriggerEvent::SourceDealsDamageToAnOpponent {
+        source: source_object_from_pair(source_pair)?,
+    })
+}
+
+fn permanent_dealt_damage_by_source_this_turn_dies_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEvent, ParseError> {
+    let mut inner = pair.into_inner();
+    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+        "damage-dealt dies event missing permanent type",
+    ))?;
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "damage-dealt dies event missing source",
+    ))?;
+    Ok(TriggerEvent::PermanentDealtDamageBySourceThisTurnDies {
+        permanent_type: permanent_type_from_pair(permanent_type_pair)?,
         source: source_object_from_pair(source_pair)?,
     })
 }
@@ -2884,13 +2903,34 @@ fn remove_pt_counter_from_it_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect
 }
 
 fn put_pt_counter_on_it_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
-    let counter_pair = pair
-        .into_inner()
+    let mut inner = pair.into_inner();
+    let counter_pair = inner
         .next()
         .ok_or(ParseError::Internal("put counter missing counter"))?;
-    Ok(TriggerEffect::PutCounterOnIt {
+    let recipient_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("put counter missing recipient"))?;
+    Ok(TriggerEffect::PutCounter {
         counter: pt_modifier_from_counter_pair(counter_pair)?,
+        recipient: trigger_counter_recipient_from_pair(recipient_pair)?,
     })
+}
+
+fn trigger_counter_recipient_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerCounterRecipient, ParseError> {
+    let recipient_pair = only_inner(pair, "trigger counter recipient missing inner")?;
+    match recipient_pair.as_rule() {
+        Rule::it_counter_recipient => Ok(TriggerCounterRecipient::It),
+        Rule::source_counter_recipient => {
+            let source_pair =
+                only_inner(recipient_pair, "source counter recipient missing source")?;
+            Ok(TriggerCounterRecipient::Source(source_object_from_pair(
+                source_pair,
+            )?))
+        }
+        _ => Err(ParseError::Internal("trigger counter recipient")),
+    }
 }
 
 fn put_named_counters_on_source_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
