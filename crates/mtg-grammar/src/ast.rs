@@ -162,6 +162,10 @@ pub enum Statement {
     IfYouDoAddMana {
         mana: ManaCost,
     },
+    /// "If you do, untap this <source>."
+    IfYouDoUntap {
+        source: SourceObject,
+    },
     /// "If you do, you gain N life."
     IfYouDoGainLife {
         amount: u32,
@@ -436,6 +440,8 @@ pub enum TriggerEvent {
     BeginningOfEachPlayersUpkeep,
     /// "the beginning of each player's draw step"
     BeginningOfEachPlayersDrawStep,
+    /// "the beginning of your draw step"
+    BeginningOfYourDrawStep,
     /// "the beginning of your upkeep"
     BeginningOfYourUpkeep,
     /// "this <source> is put into a graveyard from the battlefield"
@@ -507,6 +513,8 @@ pub enum TriggerEffect {
     SourceDealsDamageToThatPlayer { source: SourceObject, amount: u32 },
     /// "this <source> deals N damage to you"
     SourceDealsDamageToYou { source: SourceObject, amount: u32 },
+    /// "it deals N damage to you"
+    ItDealsDamageToYou { amount: u32 },
     /// "this <source> deals N damage to you unless you pay <mana_cost>"
     SourceDealsDamageToYouUnlessYouPay {
         source: SourceObject,

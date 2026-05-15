@@ -237,6 +237,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_mana_cost(out, mana);
             out.push('.');
         }
+        Statement::IfYouDoUntap { source } => {
+            out.push_str("If you do, untap ");
+            write_source_object(out, *source);
+            out.push('.');
+        }
         Statement::IfYouDoGainLife { amount } => {
             write!(out, "If you do, you gain {amount} life.").expect("write to String never fails");
         }
@@ -1351,6 +1356,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
         | TriggerEvent::BeginningOfEachPlayersDrawStep
+        | TriggerEvent::BeginningOfYourDrawStep
         | TriggerEvent::BeginningOfEachPlayersUpkeep
         | TriggerEvent::BeginningOfYourUpkeep
         | TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController { .. }
@@ -1448,6 +1454,9 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         }
         TriggerEvent::BeginningOfEachPlayersDrawStep => {
             out.push_str("the beginning of each player's draw step");
+        }
+        TriggerEvent::BeginningOfYourDrawStep => {
+            out.push_str("the beginning of your draw step");
         }
         TriggerEvent::BeginningOfYourUpkeep => {
             out.push_str("the beginning of your upkeep");
@@ -1551,6 +1560,9 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
         TriggerEffect::SourceDealsDamageToYou { source, amount } => {
             write_source_object(out, *source);
             write!(out, " deals {amount} damage to you.").expect("write to String never fails");
+        }
+        TriggerEffect::ItDealsDamageToYou { amount } => {
+            write!(out, "it deals {amount} damage to you.").expect("write to String never fails");
         }
         TriggerEffect::SourceDealsDamageToYouUnlessYouPay {
             source,

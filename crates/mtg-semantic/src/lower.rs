@@ -170,6 +170,7 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             recipient: *recipient,
         },
         Statement::IfYouDoAddMana { mana } => CardEffect::IfYouDoAddMana { mana: mana.clone() },
+        Statement::IfYouDoUntap { source } => CardEffect::IfYouDoUntap { source: *source },
         Statement::IfYouDoGainLife { amount } => CardEffect::IfYouDoGainLife { amount: *amount },
         Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
             keywords,

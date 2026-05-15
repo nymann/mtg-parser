@@ -360,6 +360,9 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         ),
         Just(Statement::YouMayChooseNewTargetsForTheCopy),
         (1u32..=10).prop_map(|amount| Statement::IfYouDoGainLife { amount }),
+        arb_permanent_type().prop_map(|permanent_type| Statement::IfYouDoUntap {
+            source: SourceObject::This(permanent_type),
+        }),
         prop::collection::vec(arb_evasion_keyword(), 1..3).prop_map(|keywords| {
             Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
                 keywords,

@@ -139,6 +139,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
             if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(pair)
         }
+        Rule::if_you_do_untap_source => if_you_do_untap_source_from_pair(pair),
         Rule::if_you_do_cast_that_card_face_down_without_paying_mana_cost => {
             if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(pair)
         }
@@ -1093,6 +1094,21 @@ fn if_you_do_add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseErro
     })
 }
 
+fn if_you_do_untap_source_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let source_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal(
+            "if_you_do_untap_source missing untap_source",
+        ))?
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("untap_source missing source_object"))?;
+    Ok(Statement::IfYouDoUntap {
+        source: source_object_from_pair(source_pair)?,
+    })
+}
+
 fn add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let mana_pair = pair
         .into_inner()
@@ -1267,6 +1283,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::beginning_of_each_players_draw_step => {
                 event = Some(TriggerEvent::BeginningOfEachPlayersDrawStep);
             }
+            Rule::beginning_of_your_draw_step => {
+                event = Some(TriggerEvent::BeginningOfYourDrawStep);
+            }
             Rule::beginning_of_your_upkeep => {
                 event = Some(TriggerEvent::BeginningOfYourUpkeep);
             }
@@ -1421,6 +1440,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::source_deals_damage_to_you => {
                 effects.push(source_deals_damage_to_you_from_pair(child)?);
+            }
+            Rule::it_deals_damage_to_you => {
+                effects.push(it_deals_damage_to_you_from_pair(child)?);
             }
             Rule::source_deals_damage_to_that_permanent => {
                 effects.push(source_deals_damage_to_that_permanent_from_pair(child)?);
@@ -1895,6 +1917,17 @@ fn source_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggerEffec
         source: source_object_from_pair(source_pair)?,
         amount,
     })
+}
+
+fn it_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let amount_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "it-damage-to-you effect missing amount",
+    ))?;
+    let amount = amount_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("it-damage-to-you amount"))?;
+    Ok(TriggerEffect::ItDealsDamageToYou { amount })
 }
 
 fn source_deals_damage_to_you_unless_you_pay_from_pair(

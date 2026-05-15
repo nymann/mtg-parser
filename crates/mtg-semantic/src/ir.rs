@@ -141,6 +141,8 @@ pub enum CardEffect {
     },
     /// "If you do, add <mana>."
     IfYouDoAddMana { mana: ManaCost },
+    /// "If you do, untap this <source>."
+    IfYouDoUntap { source: SourceObject },
     /// "If you do, you gain N life."
     IfYouDoGainLife { amount: u32 },
     /// "If you do, until your next turn, you can't be attacked except

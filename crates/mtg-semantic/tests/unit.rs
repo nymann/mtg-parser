@@ -222,6 +222,19 @@ fn lowers_if_you_do_gain_life() {
 }
 
 #[test]
+fn lowers_if_you_do_untap() {
+    assert_eq!(
+        lower(&Statement::IfYouDoUntap {
+            source: SourceObject::This(PermanentType::Artifact),
+        })
+        .unwrap(),
+        CardEffect::IfYouDoUntap {
+            source: SourceObject::This(PermanentType::Artifact),
+        },
+    );
+}
+
+#[test]
 fn lowers_if_you_would_draw_during_draw_step_skip_that_draw() {
     assert_eq!(
         lower(&Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw).unwrap(),
