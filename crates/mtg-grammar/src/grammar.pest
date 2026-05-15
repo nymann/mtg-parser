@@ -37,6 +37,7 @@ sentence_statement = _{
   | cast_restriction
   | ante_play_restriction
   | imperative_action_sequence
+  | counter_target_spell
   | destroy_all
   | destroy
   | draw_cards
@@ -103,6 +104,7 @@ tap_symbol  = ${ "{" ~ "T" ~ "}" }
 
 destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }
 destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural ~ "." }
+counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }
 
 draw_cards  = { ^"target" ~ ^"player" ~ ^"draws" ~ draw_count ~ ^"cards" ~ "." }
 draw_count  = _{ number_word | variable_name }

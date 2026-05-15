@@ -57,6 +57,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::cast_restriction => cast_restriction_from_pair(pair),
         Rule::ante_play_restriction => Ok(Statement::AntePlayRestriction),
         Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
+        Rule::counter_target_spell => Ok(Statement::CounterTargetSpell),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),

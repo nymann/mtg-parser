@@ -16,6 +16,14 @@ fn lowers_destroy_target_creature() {
 }
 
 #[test]
+fn lowers_counter_target_spell() {
+    assert_eq!(
+        lower(&Statement::CounterTargetSpell).unwrap(),
+        CardEffect::CounterTargetSpell,
+    );
+}
+
+#[test]
 fn lowers_pure_generic_mana_cost() {
     assert_eq!(
         lower(&mc(vec![ManaSymbol::Generic(2)])).unwrap(),

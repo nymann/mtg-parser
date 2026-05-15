@@ -82,3 +82,5 @@ mod conversion;
 mod copper_tablet;
 #[path = "generated/copy_artifact.rs"]
 mod copy_artifact;
+#[path = "generated/counterspell.rs"]
+mod counterspell;

@@ -12,6 +12,7 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
     Ok(match ast {
         Statement::ManaCost(mc) => CardEffect::ManaCost(lower_mana_cost(mc)),
         Statement::CastRestriction(restriction) => CardEffect::CastRestriction(*restriction),
+        Statement::CounterTargetSpell => CardEffect::CounterTargetSpell,
         Statement::DestroyTargetCreature => CardEffect::DestroyTargetCreature,
         Statement::DestroyAll { permanent_type } => CardEffect::DestroyAll {
             permanent_type: *permanent_type,

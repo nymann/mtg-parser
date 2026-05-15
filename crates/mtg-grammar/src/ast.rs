@@ -5,6 +5,8 @@ pub enum Statement {
     ManaCost(ManaCost),
     /// "Cast this spell only <restriction>."
     CastRestriction(CastRestriction),
+    /// "Counter target spell."
+    CounterTargetSpell,
     DestroyTargetCreature,
     /// "Destroy all <permanent_type>s."
     DestroyAll {

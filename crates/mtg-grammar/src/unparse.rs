@@ -20,6 +20,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
     match statement {
         Statement::ManaCost(mc) => write_mana_cost(out, mc),
         Statement::CastRestriction(restriction) => write_cast_restriction(out, *restriction),
+        Statement::CounterTargetSpell => out.push_str("Counter target spell."),
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
         Statement::DestroyAll { permanent_type } => {
             out.push_str("Destroy all ");

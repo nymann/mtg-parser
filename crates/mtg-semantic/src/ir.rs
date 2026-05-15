@@ -15,6 +15,8 @@ pub enum CardEffect {
     ManaCost(ManaValue),
     /// "Cast this spell only <restriction>."
     CastRestriction(CastRestriction),
+    /// "Counter target spell."
+    CounterTargetSpell,
     /// "Destroy target creature."
     DestroyTargetCreature,
     /// "Destroy all <permanent_type>s."

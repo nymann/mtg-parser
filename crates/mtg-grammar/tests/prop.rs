@@ -40,6 +40,7 @@ fn arb_imperative_action() -> impl Strategy<Value = ImperativeAction> {
 fn arb_statement() -> impl Strategy<Value = Statement> {
     prop_oneof![
         arb_mana_cost().prop_map(Statement::ManaCost),
+        Just(Statement::CounterTargetSpell),
         Just(Statement::DestroyTargetCreature),
         Just(Statement::AntePlayRestriction),
         prop::collection::vec(arb_imperative_action(), 2..5)
