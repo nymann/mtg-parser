@@ -15,6 +15,7 @@ use crate::flow::AgentProvider;
 use crate::paths::{refactor_hotspot_log_root, repo_root};
 
 const DEFAULT_CHURN_WINDOW: usize = 200;
+const DEFAULT_MAX_ITERATIONS: u32 = 3;
 
 const HOT_FILES: &[(&str, &str)] = &[
     ("grammar.pest", "crates/mtg-grammar/src/grammar.pest"),
@@ -31,11 +32,11 @@ const HOT_FILES: &[(&str, &str)] = &[
     ("corpus_status.json", "corpus_status.json"),
 ];
 
-const AUTO_HOTSPOTS: &[(&str, Theme)] = &[
-    ("crates/mtg-grammar/src/parse.rs", Theme::ParserBoilerplate),
-    ("crates/mtg-grammar/src/unparse.rs", Theme::UnparseTemplates),
-    ("crates/mtg-grammar/src/grammar.pest", Theme::Damage),
-    ("crates/mtg-grammar/src/ast.rs", Theme::Damage),
+const GRAMMAR_CORE_FILES: &[&str] = &[
+    "crates/mtg-grammar/src/grammar.pest",
+    "crates/mtg-grammar/src/ast.rs",
+    "crates/mtg-grammar/src/parse.rs",
+    "crates/mtg-grammar/src/unparse.rs",
 ];
 
 pub fn run(args: &[String]) -> ExitCode {
@@ -62,6 +63,7 @@ struct Options {
     allow_dirty: bool,
     agent: AgentProvider,
     churn_window: usize,
+    max_iterations: u32,
 }
 
 impl Options {
@@ -74,6 +76,7 @@ impl Options {
         let mut allow_dirty = false;
         let mut agent = AgentProvider::Codex;
         let mut churn_window = DEFAULT_CHURN_WINDOW;
+        let mut max_iterations = DEFAULT_MAX_ITERATIONS;
 
         let mut iter = args.iter();
         while let Some(arg) = iter.next() {
@@ -131,8 +134,24 @@ impl Options {
                         .parse()
                         .with_context(|| format!("--churn-window value: {s:?}"))?;
                 }
+                "--max-iterations" => {
+                    let value = iter
+                        .next()
+                        .ok_or_else(|| anyhow!("--max-iterations requires a value"))?;
+                    max_iterations = value
+                        .parse()
+                        .with_context(|| format!("--max-iterations value: {value:?}"))?;
+                }
+                s if s.starts_with("--max-iterations=") => {
+                    max_iterations = s["--max-iterations=".len()..]
+                        .parse()
+                        .with_context(|| format!("--max-iterations value: {s:?}"))?;
+                }
                 other => bail!("unknown argument: {other}\n\n{HELP}"),
             }
+        }
+        if max_iterations == 0 {
+            bail!("--max-iterations must be at least 1");
         }
 
         Ok(Self {
@@ -144,21 +163,25 @@ impl Options {
             allow_dirty,
             agent,
             churn_window,
+            max_iterations,
         })
     }
 }
 
 const HELP: &str = "\
 cargo xtask refactor-hotspot [--theme THEME] [--target PATH] [--agent codex|claude]
-                             [--dry-run] [--allow-dirty] [--out PATH] [--print]
+                             [--max-iterations N] [--dry-run] [--allow-dirty]
+                             [--out PATH] [--print]
 
-Autonomous by default: ranks source hotspots by churn × LOC, builds a
-qmd-grounded prompt for the top candidate, invokes the agent, runs `cargo test`,
-`cargo xtask corpus`, `just audit-page`, and commits the result. Use --theme or
---target to override auto-selection. Use --dry-run or --print to stop after
-writing/printing the prompt.
+Autonomous by default: runs N coupled grammar-core refactor passes over
+grammar.pest, ast.rs, parse.rs, and unparse.rs. Each pass builds a qmd-grounded
+prompt, invokes the agent, runs `cargo test`, `cargo xtask corpus`,
+`just audit-page`, and commits the result. Use --theme or --target to override
+the default selection. Use --dry-run or --print to stop after writing/printing
+the first prompt.
 
 Themes:
+  grammar-core         Coupled grammar/AST/parser/unparser cleanup.
   parser-boilerplate   Parser helper/extraction cleanup without AST changes.
   damage               Damage phenomenon factoring.
   destroy              Destroy/tap/sacrifice/attach keyword-action factoring.
@@ -178,6 +201,7 @@ fn parse_agent(value: &str) -> Result<AgentProvider> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Theme {
+    GrammarCore,
     ParserBoilerplate,
     Damage,
     Destroy,
@@ -190,6 +214,7 @@ enum Theme {
 impl Theme {
     fn parse(value: &str) -> Result<Self> {
         match value {
+            "grammar-core" | "grammar" | "core" => Ok(Self::GrammarCore),
             "parser-boilerplate" | "parser" | "parse.rs" => Ok(Self::ParserBoilerplate),
             "damage" => Ok(Self::Damage),
             "destroy" | "keyword-actions" => Ok(Self::Destroy),
@@ -203,6 +228,7 @@ impl Theme {
 
     fn label(self) -> &'static str {
         match self {
+            Self::GrammarCore => "grammar-core",
             Self::ParserBoilerplate => "parser-boilerplate",
             Self::Damage => "damage",
             Self::Destroy => "destroy",
@@ -215,6 +241,9 @@ impl Theme {
 
     fn qmd_query(self) -> &'static str {
         match self {
+            Self::GrammarCore => {
+                "grammar syntax oracle text ability statement keyword action keyword ability damage prevention triggered abilities unparse template"
+            }
             Self::ParserBoilerplate => {
                 "parse grammar syntax oracle text ability statement keyword action keyword ability"
             }
@@ -241,6 +270,7 @@ impl Theme {
 
     fn default_files(self) -> &'static [&'static str] {
         match self {
+            Self::GrammarCore => GRAMMAR_CORE_FILES,
             Self::ParserBoilerplate => &["crates/mtg-grammar/src/parse.rs"],
             Self::Damage => &[
                 "crates/mtg-grammar/src/grammar.pest",
@@ -281,6 +311,9 @@ impl Theme {
 
     fn instructions(self) -> &'static str {
         match self {
+            Self::GrammarCore => {
+                "Refactor the coupled grammar/AST/parser/unparser surface together. Prefer reducing sentence-shaped grammar branches and replacing them with phenomenon-shaped rules, AST data, parser extraction, and unparse templates that move in lockstep. Do not do parser-only cleanup if the grammar shape is the source of complexity."
+            }
             Self::ParserBoilerplate => {
                 "Extract parser mechanics without changing AST shape or grammar acceptance. Prefer helpers that remove repeated child-pair extraction, list parsing, or rule dispatch boilerplate."
             }
@@ -311,15 +344,35 @@ fn run_inner(opts: Options) -> Result<()> {
         ensure_clean_working_tree()
             .context("working tree must be clean (or pass --allow-dirty)")?;
     }
+    if opts.out.is_some() && opts.max_iterations > 1 {
+        bail!("--out can only be used with --max-iterations 1");
+    }
+    if (opts.dry_run || opts.print) && opts.max_iterations > 1 {
+        println!("dry-run/print mode only builds the first prompt");
+    }
 
+    let iterations = if opts.dry_run || opts.print {
+        1
+    } else {
+        opts.max_iterations
+    };
+
+    for iteration in 1..=iterations {
+        run_iteration(&opts, iteration)?;
+    }
+    Ok(())
+}
+
+fn run_iteration(opts: &Options, iteration: u32) -> Result<()> {
     let selected = resolve_selection(&opts)?;
     println!(
-        "selected: {} ({})",
+        "iteration {iteration}/{}: selected: {} ({})",
+        opts.max_iterations,
         selected.files.join(", "),
         selected.reason
     );
 
-    let prompt = build_prompt(&opts, &selected)?;
+    let prompt = build_prompt(opts, &selected, iteration)?;
     if opts.print {
         print!("{prompt}");
     }
@@ -369,8 +422,8 @@ fn run_inner(opts: Options) -> Result<()> {
     run_gate("cargo xtask corpus", "cargo", &["xtask", "corpus"])?;
     run_gate("just audit-page", "just", &["audit-page"])?;
 
-    match git_commit(&commit_message(&selected)?)? {
-        CommitOutcome::Committed => println!("committed refactor-hotspot result"),
+    match git_commit(&commit_message(&selected, iteration)?)? {
+        CommitOutcome::Committed => println!("committed refactor-hotspot iteration {iteration}"),
         CommitOutcome::NoChanges => bail!("no changes to commit after successful refactor gates"),
     }
     Ok(())
@@ -405,7 +458,12 @@ fn resolve_selection(opts: &Options) -> Result<SelectedRefactor> {
         });
     }
 
-    auto_select_hotspot(opts.churn_window)
+    Ok(SelectedRefactor {
+        theme: Theme::GrammarCore,
+        files: GRAMMAR_CORE_FILES.iter().map(|s| (*s).to_string()).collect(),
+        reason: "default coupled grammar-core selection; grammar, AST, parser, and unparser are refactored together while churn × LOC stats guide the patch"
+            .to_string(),
+    })
 }
 
 fn infer_theme_for_target(target: &str) -> Theme {
@@ -418,32 +476,6 @@ fn infer_theme_for_target(target: &str) -> Theme {
     }
 }
 
-fn auto_select_hotspot(churn_window: usize) -> Result<SelectedRefactor> {
-    let root = repo_root();
-    let mut best = None::<(String, Theme, usize, usize, usize)>;
-    for (path, theme) in AUTO_HOTSPOTS {
-        let churn = git_churn(path, churn_window)?;
-        let loc = line_count(&root.join(path)).unwrap_or(0);
-        let score = churn.saturating_mul(loc);
-        match &best {
-            Some((_, _, _, _, best_score)) if score <= *best_score => {}
-            _ => best = Some(((*path).to_string(), *theme, churn, loc, score)),
-        }
-    }
-
-    let Some((path, theme, churn, loc, score)) = best else {
-        bail!("no auto refactor hotspots configured");
-    };
-    Ok(SelectedRefactor {
-        theme,
-        files: vec![path],
-        reason: format!(
-            "auto-selected by churn × LOC: {churn} × {loc} = {score}; theme={}",
-            theme.label()
-        ),
-    })
-}
-
 fn create_log_dir(theme: Theme) -> Result<PathBuf> {
     let since_epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -454,7 +486,7 @@ fn create_log_dir(theme: Theme) -> Result<PathBuf> {
     Ok(dir)
 }
 
-fn build_prompt(opts: &Options, selected: &SelectedRefactor) -> Result<String> {
+fn build_prompt(opts: &Options, selected: &SelectedRefactor, iteration: u32) -> Result<String> {
     let target_files = &selected.files;
     let rules = crate::rules_context::render_rules_block(selected.theme.qmd_query());
     let stats = render_hotspot_stats(opts.churn_window)?;
@@ -465,6 +497,10 @@ fn build_prompt(opts: &Options, selected: &SelectedRefactor) -> Result<String> {
 # Refactor Hotspot: {theme}
 
 You are working in `mtg-parser`. This is a refactoring task, not a card-coverage task.
+
+This is autonomous refactor iteration {iteration} of {max_iterations}. Make one
+bounded, coherent improvement; the orchestrator will run gates and commit before
+starting the next iteration.
 
 ## Goal
 
@@ -485,9 +521,12 @@ Reduce future edit cost in the selected hotspot while preserving parser behavior
 3. Prefer phenomenon-shaped rules and AST nodes over sentence-shaped variants.
 4. Use the Comprehensive Rules context for vocabulary and abstraction names.
 5. Keep the patch narrow. Touch only files justified by this theme.
-6. Run `cargo test`.
-7. Run `cargo xtask corpus`.
-8. Run `just audit-page` and inspect LOC/churn movement.
+6. For default grammar-core passes, treat grammar, AST, parse, and unparse as
+   one coupled surface. If the grammar shape is causing parser complexity,
+   simplify the grammar shape first and update parser/unparser together.
+7. Stop after one coherent refactor. Do not start a second unrelated cleanup.
+8. The orchestrator owns `cargo test`, `cargo xtask corpus`, `just audit-page`,
+   and commit.
 
 ## Selected Files
 
@@ -515,6 +554,8 @@ Make one coherent refactor commit. In the commit message, include:
 - whether behavior changed
 ",
         theme = selected.theme.label(),
+        iteration = iteration,
+        max_iterations = opts.max_iterations,
         theme_instructions = selected.theme.instructions(),
         selection_reason = selected.reason,
         files = target_files
@@ -860,11 +901,12 @@ fn git_commit(message: &str) -> Result<CommitOutcome> {
     Ok(CommitOutcome::Committed)
 }
 
-fn commit_message(selected: &SelectedRefactor) -> Result<String> {
+fn commit_message(selected: &SelectedRefactor, iteration: u32) -> Result<String> {
     let stat = git_diff_stat()?;
     Ok(format!(
-        "Refactor {} hotspot\n\nGates: cargo test; cargo xtask corpus; just audit-page.\nBehavior: intended unchanged.\nPrimary LOC delta:\n{}",
+        "Refactor {} hotspot iteration {}\n\nGates: cargo test; cargo xtask corpus; just audit-page.\nBehavior: intended unchanged.\nPrimary LOC delta:\n{}",
         selected.theme.label(),
+        iteration,
         stat.trim()
     ))
 }
@@ -892,6 +934,7 @@ mod tests {
 
     #[test]
     fn parses_theme_aliases() {
+        assert_eq!(Theme::parse("grammar").unwrap(), Theme::GrammarCore);
         assert_eq!(Theme::parse("parser").unwrap(), Theme::ParserBoilerplate);
         assert_eq!(Theme::parse("damage").unwrap(), Theme::Damage);
         assert_eq!(Theme::parse("keywords").unwrap(), Theme::KeywordAbilities);

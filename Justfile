@@ -66,10 +66,12 @@ rules-index-refresh:
 audit-page out="audit-churn-complexity.html" refs="d6cb122:Baseline,HEAD:Current":
 	python3 scripts/generate_audit_page.py --out "{{out}}" --refs "{{refs}}"
 
-# Run the autonomous refactor workflow. With no args, xtask picks the top
-# source hotspot by churn × LOC. Pass extra flags directly, e.g.
+# Run the autonomous refactor workflow. With no args, xtask runs coupled
+# grammar-core passes over grammar.pest, ast.rs, parse.rs, and unparse.rs.
+# Pass extra flags directly, e.g.
 #   just refactor-hotspot --dry-run
-#   just refactor-hotspot --theme unparse-templates
+#   just refactor-hotspot --max-iterations 5
+#   just refactor-hotspot --theme unparse-templates --max-iterations 2
 refactor-hotspot *args:
 	cargo xtask refactor-hotspot {{args}}
 
