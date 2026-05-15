@@ -7,3 +7,7 @@ mod ankh_of_mishra;
 mod armageddon;
 #[path = "generated_patterns/aspect_of_wolf.rs"]
 mod aspect_of_wolf;
+#[path = "generated_patterns/bad_moon.rs"]
+mod bad_moon;
+#[path = "generated_patterns/balance.rs"]
+mod balance;

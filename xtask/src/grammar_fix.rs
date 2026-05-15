@@ -38,7 +38,7 @@ const DEFAULT_SET: &str = "lea";
 /// 0 means unbounded; positive values cap the loop.
 const DEFAULT_MAX_ITERATIONS: u32 = 0;
 const DEFAULT_SUPERVISOR_ATTEMPTS: u8 = 1;
-const TOTAL_STEPS: u8 = 11;
+const TOTAL_STEPS: u8 = 12;
 
 pub fn run(args: &[String]) -> ExitCode {
     let opts = match Options::parse(args) {
@@ -387,24 +387,21 @@ fn run_one_iteration(
         summary: Some(focused_before.short_summary()),
     });
 
-    // Step 7 — delegate to the configured agent only when the
-    // orchestrator-owned focused tests say there is real work left.
+    // Step 7 — build the orchestrator-owned repair recipe. This is the
+    // deterministic half of the LM conversation: the orchestrator
+    // gathers the failing commands, generated tests, and relevant code
+    // map, then gives the LM a bounded patch task.
     sink.emit(FlowEvent::StepStarted {
         index: 7,
         total: TOTAL_STEPS,
-        label: format!("{} agent repair", opts.agent.label()),
+        label: "build repair recipe".into(),
     });
-    let mut agent_ran = false;
     let transcript_path = log_dir.join("transcript.ndjson");
-    if focused_before.success() {
-        sink.emit(FlowEvent::StepFinished {
-            index: 7,
-            ok: true,
-            summary: Some("skipped; focused tests already pass".into()),
-        });
+    let mut agent_ran = false;
+    let pattern_prompt = if focused_before.success() {
+        None
     } else {
-        agent_ran = true;
-        let pattern_prompt = build_pattern_prompt(
+        let prompt = build_pattern_prompt(
             &card,
             &error,
             &normalized,
@@ -413,11 +410,32 @@ fn run_one_iteration(
             &patterns,
             &focused_before,
         )?;
-        std::fs::write(log_dir.join("agent_recipe.md"), &pattern_prompt)?;
+        std::fs::write(log_dir.join("agent_recipe.md"), &prompt)?;
+        Some(prompt)
+    };
+    sink.emit(FlowEvent::StepFinished {
+        index: 7,
+        ok: true,
+        summary: Some(if pattern_prompt.is_some() {
+            "recipe written for focused failure".into()
+        } else {
+            "skipped; focused tests already pass".into()
+        }),
+    });
+
+    // Step 8 — delegate to the configured agent only when the
+    // orchestrator-owned focused tests say there is real work left.
+    sink.emit(FlowEvent::StepStarted {
+        index: 8,
+        total: TOTAL_STEPS,
+        label: format!("{} agent repair", opts.agent.label()),
+    });
+    if let Some(pattern_prompt) = pattern_prompt {
+        agent_ran = true;
         let agent_outcome = invoke_agent(opts.agent, &pattern_prompt, &transcript_path, sink)?;
         std::fs::write(log_dir.join("response.md"), &agent_outcome.assistant_text)?;
         sink.emit(FlowEvent::StepFinished {
-            index: 7,
+            index: 8,
             ok: agent_outcome.success,
             summary: Some(format!(
                 "exit={} · {} assistant blocks",
@@ -438,12 +456,18 @@ fn run_one_iteration(
             });
             return Ok(IterationOutcome::SurfaceToHuman(reason));
         }
+    } else {
+        sink.emit(FlowEvent::StepFinished {
+            index: 8,
+            ok: true,
+            summary: Some("skipped; focused tests already pass".into()),
+        });
     }
 
-    // Step 8 — deterministic validation of the agent's patch, or a
+    // Step 9 — deterministic validation of the agent's patch, or a
     // second confirmation when the agent was skipped.
     sink.emit(FlowEvent::StepStarted {
-        index: 8,
+        index: 9,
         total: TOTAL_STEPS,
         label: "focused validation".into(),
     });
@@ -453,7 +477,7 @@ fn run_one_iteration(
         focused_after.summary_text(),
     )?;
     sink.emit(FlowEvent::StepFinished {
-        index: 8,
+        index: 9,
         ok: focused_after.success(),
         summary: Some(focused_after.short_summary()),
     });
@@ -473,15 +497,15 @@ fn run_one_iteration(
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
 
-    // Step 9 — tier 1 + tier 2.
+    // Step 10 — tier 1 + tier 2.
     sink.emit(FlowEvent::StepStarted {
-        index: 9,
+        index: 10,
         total: TOTAL_STEPS,
         label: "cargo xtask test --tier 2".into(),
     });
     let tests_ok = run_xtask(&["test", "--tier", "2"])?;
     sink.emit(FlowEvent::StepFinished {
-        index: 9,
+        index: 10,
         ok: tests_ok,
         summary: None,
     });
@@ -501,15 +525,15 @@ fn run_one_iteration(
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
 
-    // Step 10 — corpus regression gate.
+    // Step 11 — corpus regression gate.
     sink.emit(FlowEvent::StepStarted {
-        index: 10,
+        index: 11,
         total: TOTAL_STEPS,
         label: "cargo xtask corpus (regression gate)".into(),
     });
     let corpus_ok = run_xtask(&["corpus"])?;
     sink.emit(FlowEvent::StepFinished {
-        index: 10,
+        index: 11,
         ok: corpus_ok,
         summary: None,
     });
@@ -524,21 +548,21 @@ fn run_one_iteration(
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
 
-    // Step 11 — commit.
+    // Step 12 — commit.
     let new_pass_count = read_corpus_passing(&corpus_status_path()).unwrap_or(baseline_pass_count);
     let total = read_corpus_total(&corpus_status_path()).unwrap_or(0);
     let new_passes = new_pass_count.saturating_sub(baseline_pass_count);
     let commit_msg = commit_message(&card, new_passes, new_pass_count, total);
     std::fs::write(log_dir.join("commit_message.txt"), &commit_msg)?;
     sink.emit(FlowEvent::StepStarted {
-        index: 11,
+        index: 12,
         total: TOTAL_STEPS,
         label: "git commit".into(),
     });
     match git_commit(&commit_msg).context("git commit")? {
         CommitOutcome::Committed => {
             sink.emit(FlowEvent::StepFinished {
-                index: 11,
+                index: 12,
                 ok: true,
                 summary: Some(format!(
                     "+{new_passes} pass · status {new_pass_count}/{total}"
@@ -548,7 +572,7 @@ fn run_one_iteration(
         CommitOutcome::NoChanges => {
             let reason = "no changes to commit after successful tests and corpus gate".to_string();
             sink.emit(FlowEvent::StepFinished {
-                index: 11,
+                index: 12,
                 ok: true,
                 summary: Some("no changes to commit".into()),
             });
@@ -1089,6 +1113,8 @@ fn build_pattern_prompt(
             text = pattern.text
         ));
     }
+    prompt.push_str("\n## Orchestrator Code Map\n\n");
+    prompt.push_str(&render_code_map(patterns));
     prompt.push_str(
         "\n## Focused Test Failure\n\n\
          The orchestrator already ran the focused generated tests. Fix the underlying grammar, AST, \
@@ -1098,13 +1124,73 @@ fn build_pattern_prompt(
     prompt.push_str(
         "```\n\n\
          ## Recipe\n\n\
-         1. Inspect only the files needed to explain the focused failure.\n\
-         2. Make the smallest general grammar/AST/parser/lowering change for this pattern.\n\
-         3. Run the focused generated test command(s) shown above until they pass.\n\
-         4. Do not run `cargo xtask corpus`; the orchestrator owns corpus regression checks.\n\
-         5. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n",
+         1. Start from the code map above instead of re-reading the whole repository.\n\
+         2. Inspect additional code only if the map is insufficient.\n\
+         3. Make the smallest general grammar/AST/parser/lowering change for this pattern.\n\
+         4. Run the focused generated test command(s) shown above until they pass.\n\
+         5. Do not run `cargo xtask corpus`; the orchestrator owns corpus regression checks.\n\
+         6. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n",
     );
     Ok(prompt)
+}
+
+fn render_code_map(patterns: &[PatternCase]) -> String {
+    let mut hints = vec![
+        "StaticAbility",
+        "PtModifier",
+        "PermanentType",
+        "Rule::static",
+        "Rule::pt_modifier",
+        "unparse_static",
+        "parse_static",
+    ];
+    if patterns
+        .iter()
+        .any(|p| p.text.to_ascii_lowercase().contains(" get "))
+    {
+        hints.extend([" get ", "static_", "modifier"]);
+    }
+    if patterns.iter().any(|p| {
+        let lower = p.text.to_ascii_lowercase();
+        ["white", "blue", "black", "red", "green"]
+            .iter()
+            .any(|color| lower.contains(color))
+    }) {
+        hints.extend(["Color", "color", "colored"]);
+    }
+
+    let files = [
+        grammar_pest_path(),
+        ast_rs_path(),
+        repo_root().join("crates/mtg-grammar/src/parse.rs"),
+        repo_root().join("crates/mtg-grammar/src/unparse.rs"),
+        repo_root().join("crates/mtg-grammar/src/lib.rs"),
+        lower_rs_path(),
+    ];
+    let mut out = String::new();
+    for file in files {
+        let Ok(text) = std::fs::read_to_string(&file) else {
+            continue;
+        };
+        let rel = file.strip_prefix(repo_root()).unwrap_or(&file);
+        out.push_str(&format!("### {}\n\n```text\n", rel.display()));
+        let mut matched = 0usize;
+        for (idx, line) in text.lines().enumerate() {
+            if hints.iter().any(|hint| line.contains(hint)) {
+                matched += 1;
+                out.push_str(&format!("{:>4}: {}\n", idx + 1, line));
+                if matched >= 40 {
+                    out.push_str("... truncated ...\n");
+                    break;
+                }
+            }
+        }
+        if matched == 0 {
+            out.push_str("(no direct hint matches)\n");
+        }
+        out.push_str("```\n\n");
+    }
+    out
 }
 
 fn build_supervisor_prompt(error: &anyhow::Error, iter_index: u32, attempt: u8) -> Result<String> {
@@ -1531,6 +1617,7 @@ fn run_xtask(args: &[&str]) -> Result<bool> {
 fn run_cargo_fmt() -> Result<bool> {
     let status = Command::new("cargo")
         .arg("fmt")
+        .arg("--all")
         .current_dir(repo_root())
         .status()
         .context("run cargo fmt")?;
@@ -1588,6 +1675,13 @@ enum CommitOutcome {
 }
 
 fn git_commit(message: &str) -> Result<CommitOutcome> {
+    if !run_cargo_fmt()? {
+        bail!("cargo fmt failed before git commit");
+    }
+    if !run_xtask(&["corpus"])? {
+        bail!("cargo xtask corpus failed before git commit");
+    }
+
     let add = Command::new("git")
         .args(["add", "-A"])
         .current_dir(repo_root())

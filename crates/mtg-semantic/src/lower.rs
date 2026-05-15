@@ -19,6 +19,16 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }
+        Statement::EachPlayerEqualizesControlledPermanents { permanent_type } => {
+            CardEffect::EachPlayerEqualizesControlledPermanents {
+                permanent_type: *permanent_type,
+            }
+        }
+        Statement::PlayersDoActionsTheSameWay { actions } => {
+            CardEffect::PlayersDoActionsTheSameWay {
+                actions: actions.clone(),
+            }
+        }
         Statement::StaticAbility(sa) => CardEffect::StaticAbility(sa.clone()),
         Statement::TriggeredAbility(ta) => CardEffect::TriggeredAbility(ta.clone()),
         Statement::Compound(stmts) => {

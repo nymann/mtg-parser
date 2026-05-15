@@ -1,4 +1,4 @@
-use mtg_grammar::{Keyword, PermanentType, StaticAbility, TriggeredAbility};
+use mtg_grammar::{BalanceSameWayAction, Keyword, PermanentType, StaticAbility, TriggeredAbility};
 use serde::{Deserialize, Serialize};
 
 /// Semantic IR for one Oracle-text effect. The grammar's syntactic
@@ -17,6 +17,12 @@ pub enum CardEffect {
     Keyword(Keyword),
     /// "Target player draws N cards."
     TargetPlayerDrawsCards { count: u32 },
+    /// Balance-style equalization of a controlled permanent type by
+    /// sacrificing permanents above the table minimum.
+    EachPlayerEqualizesControlledPermanents { permanent_type: PermanentType },
+    /// Follow-up Balance-style actions that reuse the preceding
+    /// equalization method.
+    PlayersDoActionsTheSameWay { actions: Vec<BalanceSameWayAction> },
     /// A static ability with a conditional continuous effect. The
     /// grammar-side AST is reused verbatim until the IR grows real
     /// reference-resolution work to do here.

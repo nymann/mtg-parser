@@ -37,10 +37,13 @@ sentence_statement = _{
   | destroy
   | draw_cards
   | static_as_long_as
+  | static_colored_permanents_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
   | static_enchanted_can_attack_as_though
   | triggered_ability
+  | each_player_equalizes_controlled_permanents
+  | players_do_actions_the_same_way
 }
 
 phrase_statement = _{
@@ -62,6 +65,27 @@ number_word = @{
     ^"one" | ^"two" | ^"three" | ^"four" | ^"five"
   | ^"six" | ^"seven" | ^"eight" | ^"nine" | ^"ten"
 }
+
+// Balance-style resource equalization:
+// each player keeps a count of objects matching the least-stocked player,
+// then follow-up actions can apply "the same way" to other resources.
+each_player_equalizes_controlled_permanents = {
+    ^"each" ~ ^"player" ~ ^"chooses" ~ article ~ ^"number" ~ ^"of"
+  ~ permanent_type_plural ~ ^"they" ~ ^"control" ~ ^"equal" ~ ^"to"
+  ~ ^"the" ~ ^"number" ~ ^"of" ~ permanent_type_plural ~ ^"controlled"
+  ~ ^"by" ~ ^"the" ~ ^"player" ~ ^"who" ~ ^"controls" ~ ^"the"
+  ~ ^"fewest" ~ "," ~ ^"then" ~ ^"sacrifices" ~ ^"the" ~ ^"rest" ~ "."
+}
+
+players_do_actions_the_same_way = {
+    ^"players" ~ balance_same_way_action
+  ~ (^"and" ~ balance_same_way_action)*
+  ~ ^"the" ~ ^"same" ~ ^"way" ~ "."
+}
+
+balance_same_way_action = _{ discard_cards_action | sacrifice_permanents_action }
+discard_cards_action = { ^"discard" ~ ^"cards" }
+sacrifice_permanents_action = { ^"sacrifice" ~ permanent_type_plural }
 
 keyword_ability = { keyword }
 keyword         = _{ enchant | flying | defender }
@@ -101,11 +125,21 @@ permanent_type_plural = @{
   | ^"planeswalkers"
 }
 
+color_word = @{
+    ^"white"
+  | ^"blue"
+  | ^"black"
+  | ^"red"
+  | ^"green"
+ }
+
 // Creature subtypes that appear as Aura targets or enchanted objects.
 creature_type = @{ ^"wall" }
 
-// Static abilities. Four surface shapes today:
+// Static abilities. Five surface shapes today:
 //   - "As long as <cond>, <effect>." — conditional continuous effect.
+//   - "<Color> <type>s get <pt_modifier>." — P/T modifier on objects
+//     matching a color and permanent type.
 //   - "Enchanted <type> gets <pt_modifier>." — unconditional P/T
 //     modifier on the enchanted permanent (e.g. Animate Dead).
 //   - "Enchanted <type> gets <variable_pt_modifier>, where ..." — a
@@ -114,6 +148,7 @@ creature_type = @{ ^"wall" }
 //     <keyword>." — permission effect that ignores an attack restriction.
 static_ability = _{
     static_as_long_as
+  | static_colored_permanents_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
   | static_enchanted_can_attack_as_though
@@ -121,6 +156,10 @@ static_ability = _{
 
 static_as_long_as = {
     ^"as" ~ ^"long" ~ ^"as" ~ condition ~ "," ~ continuous_effect ~ "."
+}
+
+static_colored_permanents_get = {
+    color_word ~ permanent_type_plural ~ ^"get" ~ pt_modifier ~ "."
 }
 
 static_enchanted_gets = {

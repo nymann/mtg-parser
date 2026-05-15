@@ -12,6 +12,16 @@ pub enum Statement {
     TargetPlayerDrawsCards {
         count: u32,
     },
+    /// "Each player chooses a number of <permanent_type>s they control
+    /// equal to the number of <permanent_type>s controlled by the player
+    /// who controls the fewest, then sacrifices the rest."
+    EachPlayerEqualizesControlledPermanents {
+        permanent_type: PermanentType,
+    },
+    /// "Players <action>[ and <action>]* the same way."
+    PlayersDoActionsTheSameWay {
+        actions: Vec<BalanceSameWayAction>,
+    },
     StaticAbility(StaticAbility),
     TriggeredAbility(TriggeredAbility),
     /// Two or more abilities printed on one card, in source order,
@@ -19,6 +29,14 @@ pub enum Statement {
     /// card is never wrapped in `Compound`, so each piece of card
     /// text has exactly one canonical AST.
     Compound(Vec<Statement>),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BalanceSameWayAction {
+    /// "discard cards"
+    DiscardCards,
+    /// "sacrifice <permanent_type>s"
+    SacrificePermanents { permanent_type: PermanentType },
 }
 
 /// "When/Whenever <event>, [if <intervening-if>,] <effect>[. <effect>]*."
@@ -113,6 +131,15 @@ pub enum PermanentType {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Color {
+    White,
+    Blue,
+    Black,
+    Red,
+    Green,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CreatureType {
     Wall,
 }
@@ -134,7 +161,7 @@ pub enum ManaSymbol {
 }
 
 /// A static ability printed on a permanent. This covers conditional
-/// continuous effects, unconditional P/T modifiers on enchanted
+/// continuous effects, P/T modifiers on matching objects or enchanted
 /// objects, and permission effects that let an enchanted object attack
 /// through a keyword restriction such as defender.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -148,6 +175,13 @@ pub enum StaticAbility {
     /// "Enchanted <type> gets <modifier>." — P/T modifier on the
     /// enchanted permanent, active while the Aura is attached.
     EnchantedGets {
+        permanent_type: PermanentType,
+        modifier: PtModifier,
+    },
+    /// "<color> <permanent_type>s get <modifier>." — P/T modifier on
+    /// every permanent matching the color and type filters.
+    ColoredPermanentsGet {
+        color: Color,
         permanent_type: PermanentType,
         modifier: PtModifier,
     },

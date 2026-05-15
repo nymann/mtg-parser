@@ -1,11 +1,11 @@
 use std::fmt::Write;
 
 use crate::ast::{
-    BasicLandType, Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject,
-    InterveningIf, Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Rounding, Sign,
-    SignedNumber, SignedVariable, SourceObject, Statement, StaticAbility, TriggerEffect,
-    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    BalanceSameWayAction, BasicLandType, Color, Condition, ContinuousEffect, CreatureType,
+    EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, PermanentType,
+    PtModifier, Rounding, Sign, SignedNumber, SignedVariable, SourceObject, Statement,
+    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -32,6 +32,20 @@ fn write_statement(out: &mut String, statement: &Statement) {
             )
             .expect("write to String never fails");
         }
+        Statement::EachPlayerEqualizesControlledPermanents { permanent_type } => {
+            out.push_str("Each player chooses a number of ");
+            out.push_str(permanent_type_plural_name(*permanent_type));
+            out.push_str(" they control equal to the number of ");
+            out.push_str(permanent_type_plural_name(*permanent_type));
+            out.push_str(
+                " controlled by the player who controls the fewest, then sacrifices the rest.",
+            );
+        }
+        Statement::PlayersDoActionsTheSameWay { actions } => {
+            out.push_str("Players ");
+            write_same_way_actions(out, actions);
+            out.push_str(" the same way.");
+        }
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
         Statement::TriggeredAbility(ta) => write_triggered_ability(out, ta),
         Statement::Compound(stmts) => {
@@ -41,6 +55,29 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 }
                 write_statement(out, s);
             }
+        }
+    }
+}
+
+fn write_same_way_actions(out: &mut String, actions: &[BalanceSameWayAction]) {
+    for (i, action) in actions.iter().enumerate() {
+        if i > 0 {
+            if i + 1 == actions.len() {
+                out.push_str(" and ");
+            } else {
+                out.push_str(", ");
+            }
+        }
+        write_same_way_action(out, *action);
+    }
+}
+
+fn write_same_way_action(out: &mut String, action: BalanceSameWayAction) {
+    match action {
+        BalanceSameWayAction::DiscardCards => out.push_str("discard cards"),
+        BalanceSameWayAction::SacrificePermanents { permanent_type } => {
+            out.push_str("sacrifice ");
+            out.push_str(permanent_type_plural_name(permanent_type));
         }
     }
 }
@@ -136,6 +173,18 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str("Enchanted ");
             out.push_str(permanent_type_name(*permanent_type));
             out.push_str(" gets ");
+            write_pt_modifier(out, *modifier);
+            out.push('.');
+        }
+        StaticAbility::ColoredPermanentsGet {
+            color,
+            permanent_type,
+            modifier,
+        } => {
+            out.push_str(color_name_capitalized(*color));
+            out.push(' ');
+            out.push_str(permanent_type_plural_name(*permanent_type));
+            out.push_str(" get ");
             write_pt_modifier(out, *modifier);
             out.push('.');
         }
@@ -381,6 +430,16 @@ fn permanent_type_plural_name(pt: PermanentType) -> &'static str {
         PermanentType::Enchantment => "enchantments",
         PermanentType::Land => "lands",
         PermanentType::Planeswalker => "planeswalkers",
+    }
+}
+
+fn color_name_capitalized(color: Color) -> &'static str {
+    match color {
+        Color::White => "White",
+        Color::Blue => "Blue",
+        Color::Black => "Black",
+        Color::Red => "Red",
+        Color::Green => "Green",
     }
 }
 

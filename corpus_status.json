@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 20,
+  "passing": 23,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -29,16 +29,14 @@
       "status": "pass"
     },
     "lea/Bad Moon": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Black creatures get +1/+1.\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Badlands": {
       "status": "fail",
       "error": "empty oracle text (vanilla card)"
     },
     "lea/Balance": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards and sacrifice creatures the same way.\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Basalt Monolith": {
       "status": "fail",
@@ -170,7 +168,7 @@
     },
     "lea/Control Magic": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted creature.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted creature.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Conversion": {
       "status": "fail",
@@ -197,8 +195,7 @@
       "error": "parse: parse error:  --> 2:6\n  |\n2 | When enchanted creature dies, this Aura deals damage equal to that creature's toughness to the creature's controller.\n  |      ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, or permanent_enters"
     },
     "lea/Crusade": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | White creatures get +1/+1.\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Crystal Rod": {
       "status": "fail",
@@ -206,7 +203,7 @@
     },
     "lea/Cursed Land": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted land's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted land's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Cyclopean Tomb": {
       "status": "fail",
@@ -322,7 +319,7 @@
     },
     "lea/Feedback": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Fire Elemental": {
       "status": "fail",
@@ -378,7 +375,7 @@
     },
     "lea/Gauntlet of Might": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Red creatures get +1/+1.\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 2:12\n  |\n2 | Whenever a Mountain is tapped for mana, its controller adds an additional {R}.\n  |            ^---\n  |\n  = expected permanent_type"
     },
     "lea/Giant Growth": {
       "status": "fail",
@@ -394,7 +391,7 @@
     },
     "lea/Gloom": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | White spells cost {3} more to cast.\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:7\n  |\n1 | White spells cost {3} more to cast.\n  |       ^---\n  |\n  = expected permanent_type_plural"
     },
     "lea/Goblin Balloon Brigade": {
       "status": "fail",
@@ -601,7 +598,7 @@
     },
     "lea/Lure": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | All creatures able to block enchanted creature do so.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | All creatures able to block enchanted creature do so.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Magical Hack": {
       "status": "fail",
@@ -688,7 +685,7 @@
     },
     "lea/Nightmare": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | Nightmare's power and toughness are each equal to the number of Swamps you control.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | Nightmare's power and toughness are each equal to the number of Swamps you control.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Northern Paladin": {
       "status": "fail",
@@ -724,11 +721,11 @@
     },
     "lea/Phantasmal Forces": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of your upkeep, sacrifice this creature unless you pay {U}.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of your upkeep, sacrifice this creature unless you pay {U}.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Phantasmal Terrain": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | As this Aura enters, choose a basic land type.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | As this Aura enters, choose a basic land type.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Phantom Monster": {
       "status": "pass"
@@ -751,7 +748,7 @@
     },
     "lea/Power Leak": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Power Sink": {
       "status": "fail",
@@ -873,7 +870,7 @@
     },
     "lea/Serra Angel": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | Vigilance\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | Vigilance\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Shanodin Dryads": {
       "status": "fail",
@@ -905,7 +902,7 @@
     },
     "lea/Smoke": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Players can't untap more than one creature during their untap steps.\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:9\n  |\n1 | Players can't untap more than one creature during their untap steps.\n  |         ^---\n  |\n  = expected discard_cards_action or sacrifice_permanents_action"
     },
     "lea/Sol Ring": {
       "status": "fail",
@@ -921,11 +918,11 @@
     },
     "lea/Stasis": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Players skip their untap steps.\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:9\n  |\n1 | Players skip their untap steps.\n  |         ^---\n  |\n  = expected discard_cards_action or sacrifice_permanents_action"
     },
     "lea/Steal Artifact": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted artifact.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted artifact.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Stone Giant": {
       "status": "fail",
@@ -1083,7 +1080,7 @@
     },
     "lea/Wanderlust": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted creature's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted creature's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/War Mammoth": {
       "status": "fail",
@@ -1091,7 +1088,7 @@
     },
     "lea/Warp Artifact": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted artifact's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted artifact's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, keyword_ability, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Water Elemental": {
       "status": "fail",
@@ -1138,7 +1135,7 @@
     },
     "lea/Wrath of God": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:24\n  |\n1 | Destroy all creatures. They can't be regenerated.\n  |                        ^---\n  |\n  = expected EOI, destroy, destroy_all, draw_cards, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
+      "error": "parse: parse error:  --> 1:24\n  |\n1 | Destroy all creatures. They can't be regenerated.\n  |                        ^---\n  |\n  = expected EOI, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Zombie Master": {
       "status": "fail",

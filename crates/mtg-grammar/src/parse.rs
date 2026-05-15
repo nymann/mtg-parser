@@ -3,11 +3,11 @@ use pest::Parser;
 use pest_derive::Parser;
 
 use crate::ast::{
-    BasicLandType, Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject,
-    InterveningIf, Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Rounding, Sign,
-    SignedNumber, SignedVariable, SourceObject, Statement, StaticAbility, TriggerEffect,
-    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    BalanceSameWayAction, BasicLandType, Color, Condition, ContinuousEffect, CreatureType,
+    EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, PermanentType,
+    PtModifier, Rounding, Sign, SignedNumber, SignedVariable, SourceObject, Statement,
+    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -51,8 +51,13 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),
+        Rule::each_player_equalizes_controlled_permanents => {
+            each_player_equalizes_controlled_permanents_from_pair(pair)
+        }
+        Rule::players_do_actions_the_same_way => players_do_actions_the_same_way_from_pair(pair),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::static_as_long_as
+        | Rule::static_colored_permanents_get
         | Rule::static_enchanted_gets_with_definitions
         | Rule::static_enchanted_gets
         | Rule::static_enchanted_can_attack_as_though => {
@@ -62,6 +67,49 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             pair,
         )?)),
         _ => Err(ParseError::Internal("statement")),
+    }
+}
+
+fn each_player_equalizes_controlled_permanents_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut types = pair.into_inner();
+    let chosen_type = types.next().ok_or(ParseError::Internal(
+        "equalize permanents missing chosen permanent_type_plural",
+    ))?;
+    let comparison_type = types.next().ok_or(ParseError::Internal(
+        "equalize permanents missing comparison permanent_type_plural",
+    ))?;
+    let permanent_type = permanent_type_from_plural_pair(chosen_type)?;
+    if permanent_type != permanent_type_from_plural_pair(comparison_type)? {
+        return Err(ParseError::Internal("equalize permanents type mismatch"));
+    }
+    Ok(Statement::EachPlayerEqualizesControlledPermanents { permanent_type })
+}
+
+fn players_do_actions_the_same_way_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let actions = pair
+        .into_inner()
+        .map(balance_same_way_action_from_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    if actions.is_empty() {
+        return Err(ParseError::Internal("same-way action list"));
+    }
+    Ok(Statement::PlayersDoActionsTheSameWay { actions })
+}
+
+fn balance_same_way_action_from_pair(pair: Pair<Rule>) -> Result<BalanceSameWayAction, ParseError> {
+    match pair.as_rule() {
+        Rule::discard_cards_action => Ok(BalanceSameWayAction::DiscardCards),
+        Rule::sacrifice_permanents_action => {
+            let pt = pair.into_inner().next().ok_or(ParseError::Internal(
+                "sacrifice action missing permanent_type_plural",
+            ))?;
+            Ok(BalanceSameWayAction::SacrificePermanents {
+                permanent_type: permanent_type_from_plural_pair(pt)?,
+            })
+        }
+        _ => Err(ParseError::Internal("same-way action")),
     }
 }
 
@@ -325,6 +373,23 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 effect: continuous_effect_from_pair(effect_pair)?,
             })
         }
+        Rule::static_colored_permanents_get => {
+            let mut inner = pair.into_inner();
+            let color_pair = inner
+                .next()
+                .expect("static_colored_permanents_get begins with a color");
+            let pt_pair = inner
+                .next()
+                .expect("static_colored_permanents_get names the affected permanent type");
+            let modifier_pair = inner
+                .next()
+                .expect("static_colored_permanents_get has a pt_modifier");
+            Ok(StaticAbility::ColoredPermanentsGet {
+                color: color_from_pair(color_pair)?,
+                permanent_type: permanent_type_from_plural_pair(pt_pair)?,
+                modifier: pt_modifier_from_pair(modifier_pair)?,
+            })
+        }
         Rule::static_enchanted_gets => {
             let mut inner = pair.into_inner();
             let pt_pair = inner
@@ -579,6 +644,20 @@ fn permanent_type_from_plural_pair(pair: Pair<Rule>) -> Result<PermanentType, Pa
         "lands" => Ok(PermanentType::Land),
         "planeswalkers" => Ok(PermanentType::Planeswalker),
         _ => Err(ParseError::Internal("permanent_type_plural variant")),
+    }
+}
+
+fn color_from_pair(pair: Pair<Rule>) -> Result<Color, ParseError> {
+    if pair.as_rule() != Rule::color_word {
+        return Err(ParseError::Internal("color_word"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "white" => Ok(Color::White),
+        "blue" => Ok(Color::Blue),
+        "black" => Ok(Color::Black),
+        "red" => Ok(Color::Red),
+        "green" => Ok(Color::Green),
+        _ => Err(ParseError::Internal("color_word variant")),
     }
 }
 
