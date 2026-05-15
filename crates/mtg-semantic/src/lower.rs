@@ -22,6 +22,12 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }
         Statement::AntePlayRestriction => CardEffect::AntePlayRestriction,
+        Statement::YouOwnTargetCardInZone { zone } => {
+            CardEffect::YouOwnTargetCardInZone { zone: *zone }
+        }
+        Statement::ExchangeThatCardWithTopCardOfYourLibrary => {
+            CardEffect::ExchangeThatCardWithTopCardOfYourLibrary
+        }
         Statement::ImperativeActionSequence { actions } => CardEffect::ImperativeActionSequence {
             actions: actions.clone(),
         },

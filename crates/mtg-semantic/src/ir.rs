@@ -2,6 +2,7 @@ use mtg_grammar::{
     ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Color,
     ImperativeAction, Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType,
     PhysicalAction, PtModifier, SourceObject, StaticAbility, TriggeredAbility, VariableDefinition,
+    Zone,
 };
 use serde::{Deserialize, Serialize};
 
@@ -28,6 +29,10 @@ pub enum CardEffect {
     /// "Remove this card from your deck before playing if you're not
     /// playing for ante."
     AntePlayRestriction,
+    /// "You own target card in the <zone>."
+    YouOwnTargetCardInZone { zone: Zone },
+    /// "Exchange that card with the top card of your library."
+    ExchangeThatCardWithTopCardOfYourLibrary,
     /// Ordered imperative actions such as "discard your hand, ante the
     /// top card of your library, then draw seven cards."
     ImperativeActionSequence { actions: Vec<ImperativeAction> },

@@ -56,6 +56,10 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }),
         Rule::cast_restriction => cast_restriction_from_pair(pair),
         Rule::ante_play_restriction => Ok(Statement::AntePlayRestriction),
+        Rule::you_own_target_card_in_zone => you_own_target_card_in_zone_from_pair(pair),
+        Rule::exchange_that_card_with_top_card_of_your_library => {
+            Ok(Statement::ExchangeThatCardWithTopCardOfYourLibrary)
+        }
         Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
         Rule::counter_target_spell => Ok(Statement::CounterTargetSpell),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
@@ -200,6 +204,15 @@ fn step_from_pair(pair: Pair<Rule>) -> Result<Step, ParseError> {
         "declare attackers" => Ok(Step::DeclareAttackers),
         _ => Err(ParseError::Internal("step variant")),
     }
+}
+
+fn you_own_target_card_in_zone_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let zone_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "you_own_target_card_in_zone missing zone",
+    ))?;
+    Ok(Statement::YouOwnTargetCardInZone {
+        zone: zone_from_pair(zone_pair)?,
+    })
 }
 
 fn imperative_action_sequence_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
@@ -1030,6 +1043,7 @@ fn zone_from_pair(pair: Pair<Rule>) -> Result<Zone, ParseError> {
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
         "graveyard" => Ok(Zone::Graveyard),
+        "ante" => Ok(Zone::Ante),
         _ => Err(ParseError::Internal("zone variant")),
     }
 }

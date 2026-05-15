@@ -81,3 +81,5 @@ mod crystal_rod;
 mod cursed_land;
 #[path = "generated_patterns/cyclopean_tomb.rs"]
 mod cyclopean_tomb;
+#[path = "generated_patterns/darkpact.rs"]
+mod darkpact;

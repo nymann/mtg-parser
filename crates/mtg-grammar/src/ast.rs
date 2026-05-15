@@ -19,6 +19,12 @@ pub enum Statement {
     /// "Remove this card from your deck before playing if you're not
     /// playing for ante."
     AntePlayRestriction,
+    /// "You own target card in the <zone>."
+    YouOwnTargetCardInZone {
+        zone: Zone,
+    },
+    /// "Exchange that card with the top card of your library."
+    ExchangeThatCardWithTopCardOfYourLibrary,
     /// "<action>, [<action>, ]then <action>."
     ImperativeActionSequence {
         actions: Vec<ImperativeAction>,
@@ -377,6 +383,7 @@ pub enum EnchantObject {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Zone {
     Graveyard,
+    Ante,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -38,6 +38,14 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 "Remove this card from your deck before playing if you're not playing for ante.",
             );
         }
+        Statement::YouOwnTargetCardInZone { zone } => {
+            out.push_str("You own target card in the ");
+            out.push_str(zone_name(*zone));
+            out.push('.');
+        }
+        Statement::ExchangeThatCardWithTopCardOfYourLibrary => {
+            out.push_str("Exchange that card with the top card of your library.");
+        }
         Statement::ImperativeActionSequence { actions } => {
             write_imperative_action_sequence(out, actions);
         }
@@ -314,12 +322,14 @@ fn write_enchant_object(out: &mut String, object: EnchantObject) {
 fn zone_name(zone: Zone) -> &'static str {
     match zone {
         Zone::Graveyard => "graveyard",
+        Zone::Ante => "ante",
     }
 }
 
 fn zone_article(zone: Zone) -> &'static str {
     match zone {
         Zone::Graveyard => "a",
+        Zone::Ante => "the",
     }
 }
 

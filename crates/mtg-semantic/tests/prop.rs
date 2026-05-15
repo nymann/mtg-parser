@@ -11,7 +11,7 @@
 
 use mtg_grammar::{
     CardCount, Color, ImperativeAction, ManaCost, ManaSymbol, Statement, TriggerEffect,
-    TriggerEvent, TriggeredAbility,
+    TriggerEvent, TriggeredAbility, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -70,6 +70,8 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         Just(Statement::CounterTargetSpell),
         Just(Statement::DestroyTargetCreature),
         Just(Statement::AntePlayRestriction),
+        Just(Statement::YouOwnTargetCardInZone { zone: Zone::Ante }),
+        Just(Statement::ExchangeThatCardWithTopCardOfYourLibrary),
         (1u32..=10).prop_map(|amount| Statement::IfYouDoGainLife { amount }),
         (arb_player_casts_colored_spell_pay_mana_trigger(), 1u32..=10,).prop_map(
             |(trigger, amount)| {
