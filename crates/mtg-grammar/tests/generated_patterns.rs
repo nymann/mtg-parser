@@ -193,3 +193,5 @@ mod jade_monolith;
 mod jade_statue;
 #[path = "generated_patterns/jayemdae_tome.rs"]
 mod jayemdae_tome;
+#[path = "generated_patterns/juggernaut.rs"]
+mod juggernaut;

@@ -106,6 +106,8 @@ sentence_statement = _{
   | static_you_control_enchanted
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
   | static_you_may_have_source_enter_as_copy
+  | static_source_attacks_each_combat_if_able
+  | static_source_cant_be_blocked_by_creature_type
   | static_source_doesnt_untap_during_your_untap_step
   | static_source_cant_block_creatures_with_power_or_greater
   | static_effect_doesnt_remove_this_aura
@@ -492,6 +494,9 @@ creature_type_plural = @{ ^"goblins" | ^"golems" | ^"walls" }
 //     effect from an Aura to its enchanted object.
 //   - "You may have this <type> enter as a copy of any <type> on the
 //     battlefield." — optional as-enters copy replacement effect.
+//   - "This <type> attacks each combat if able." — attack requirement.
+//   - "This <type> can't be blocked by <creature_type>s." — evasion
+//     restriction against a blocking subtype.
 //   - "This effect doesn't remove this Aura." — effect-continuity text
 //     that preserves the Aura while applying the preceding static effect.
 static_ability = _{
@@ -514,6 +519,8 @@ static_ability = _{
   | static_you_control_enchanted
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
   | static_you_may_have_source_enter_as_copy
+  | static_source_attacks_each_combat_if_able
+  | static_source_cant_be_blocked_by_creature_type
   | static_source_cant_block_creatures_with_power_or_greater
   | static_effect_doesnt_remove_this_aura
   | static_basic_lands_are_basic_lands
@@ -618,6 +625,14 @@ copy_exception = {
 
 static_effect_doesnt_remove_this_aura = {
     ^"this" ~ ^"effect" ~ ^"doesn't" ~ ^"remove" ~ ^"this" ~ ^"aura" ~ "."
+}
+
+static_source_attacks_each_combat_if_able = {
+    source_object ~ ^"attacks" ~ ^"each" ~ ^"combat" ~ ^"if" ~ ^"able" ~ "."
+}
+
+static_source_cant_be_blocked_by_creature_type = {
+    source_object ~ ^"can't" ~ ^"be" ~ ^"blocked" ~ ^"by" ~ creature_type_plural ~ "."
 }
 
 static_basic_lands_are_basic_lands = {

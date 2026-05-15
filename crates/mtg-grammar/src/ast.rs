@@ -909,6 +909,13 @@ pub enum StaticAbility {
     /// "This effect doesn't remove this Aura." — effect-continuity text
     /// for Aura effects that otherwise might remove their own attachment.
     EffectDoesntRemoveThisAura,
+    /// "This <permanent_type> attacks each combat if able."
+    SourceAttacksEachCombatIfAble { source: SourceObject },
+    /// "This <permanent_type> can't be blocked by <creature_type>s."
+    SourceCantBeBlockedByCreatureType {
+        source: SourceObject,
+        blocked_by: CreatureType,
+    },
     /// "This <permanent_type> doesn't untap during your untap step."
     SourceDoesntUntapDuringYourUntapStep { source: SourceObject },
     /// "This <permanent_type> can't block creatures with power N or greater."

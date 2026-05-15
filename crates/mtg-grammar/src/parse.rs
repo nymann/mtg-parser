@@ -180,6 +180,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_you_control_enchanted
         | Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns
         | Rule::static_you_may_have_source_enter_as_copy
+        | Rule::static_source_attacks_each_combat_if_able
+        | Rule::static_source_cant_be_blocked_by_creature_type
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::static_source_cant_block_creatures_with_power_or_greater
         | Rule::static_basic_lands_are_basic_lands
@@ -2119,6 +2121,28 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
         }
         Rule::static_effect_doesnt_remove_this_aura => {
             Ok(StaticAbility::EffectDoesntRemoveThisAura)
+        }
+        Rule::static_source_attacks_each_combat_if_able => {
+            let source_pair = pair
+                .into_inner()
+                .next()
+                .expect("static attack requirement begins with a source object");
+            Ok(StaticAbility::SourceAttacksEachCombatIfAble {
+                source: source_object_from_pair(source_pair)?,
+            })
+        }
+        Rule::static_source_cant_be_blocked_by_creature_type => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner
+                .next()
+                .expect("static blocking restriction begins with a source object");
+            let blocked_by_pair = inner
+                .next()
+                .expect("static blocking restriction names blocked-by creature type");
+            Ok(StaticAbility::SourceCantBeBlockedByCreatureType {
+                source: source_object_from_pair(source_pair)?,
+                blocked_by: creature_type_from_plural_pair(blocked_by_pair)?,
+            })
         }
         Rule::static_source_doesnt_untap_during_your_untap_step => {
             let source_pair = pair

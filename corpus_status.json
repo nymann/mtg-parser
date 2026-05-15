@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 167,
+  "passing": 168,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -410,8 +410,7 @@
       "status": "pass"
     },
     "lea/Juggernaut": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | This creature attacks each combat if able.\n  |      ^---\n  |\n  = expected aura_source_object"
+      "status": "pass"
     },
     "lea/Jump": {
       "status": "fail",

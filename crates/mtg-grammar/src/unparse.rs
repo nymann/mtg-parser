@@ -1146,6 +1146,16 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
         StaticAbility::EffectDoesntRemoveThisAura => {
             out.push_str("This effect doesn't remove this Aura.");
         }
+        StaticAbility::SourceAttacksEachCombatIfAble { source } => {
+            write_source_object_capitalized(out, *source);
+            out.push_str(" attacks each combat if able.");
+        }
+        StaticAbility::SourceCantBeBlockedByCreatureType { source, blocked_by } => {
+            write_source_object_capitalized(out, *source);
+            out.push_str(" can't be blocked by ");
+            out.push_str(creature_type_plural_name(*blocked_by));
+            out.push('.');
+        }
         StaticAbility::SourceDoesntUntapDuringYourUntapStep { source } => {
             write_source_object_capitalized(out, *source);
             out.push_str(" doesn't untap during your untap step.");
