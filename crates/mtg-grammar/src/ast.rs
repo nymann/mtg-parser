@@ -16,6 +16,10 @@ pub enum Statement {
     TargetPlayerDrawsCards {
         count: CardCount,
     },
+    /// "Add <mana>."
+    AddMana {
+        mana: ManaCost,
+    },
     /// "Remove this card from your deck before playing if you're not
     /// playing for ante."
     AntePlayRestriction,

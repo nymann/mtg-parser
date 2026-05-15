@@ -33,6 +33,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_card_count(out, *count);
             out.push_str(" cards.");
         }
+        Statement::AddMana { mana } => {
+            out.push_str("Add ");
+            write_mana_cost(out, mana);
+            out.push('.');
+        }
         Statement::AntePlayRestriction => {
             out.push_str(
                 "Remove this card from your deck before playing if you're not playing for ante.",

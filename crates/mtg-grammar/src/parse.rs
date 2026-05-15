@@ -65,6 +65,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),
+        Rule::add_mana => add_mana_from_pair(pair),
         Rule::until_eot_you_may_pay_cost_at_timing => {
             until_eot_you_may_pay_cost_at_timing_from_pair(pair)
         }
@@ -439,6 +440,16 @@ fn if_you_do_add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseErro
         .next()
         .ok_or(ParseError::Internal("add_mana missing mana_cost"))?;
     Ok(Statement::IfYouDoAddMana {
+        mana: mana_cost_from_pair(mana_pair),
+    })
+}
+
+fn add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mana_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("add_mana missing mana_cost"))?;
+    Ok(Statement::AddMana {
         mana: mana_cost_from_pair(mana_pair),
     })
 }

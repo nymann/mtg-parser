@@ -7,6 +7,10 @@ fn mc(symbols: Vec<ManaSymbol>) -> Statement {
     Statement::ManaCost(ManaCost { symbols })
 }
 
+fn mana(symbols: Vec<ManaSymbol>) -> ManaCost {
+    ManaCost { symbols }
+}
+
 #[test]
 fn lowers_destroy_target_creature() {
     assert_eq!(
@@ -28,6 +32,19 @@ fn lowers_if_you_do_gain_life() {
     assert_eq!(
         lower(&Statement::IfYouDoGainLife { amount: 1 }).unwrap(),
         CardEffect::IfYouDoGainLife { amount: 1 },
+    );
+}
+
+#[test]
+fn lowers_add_mana() {
+    let mana = mana(vec![
+        ManaSymbol::Black,
+        ManaSymbol::Black,
+        ManaSymbol::Black,
+    ]);
+    assert_eq!(
+        lower(&Statement::AddMana { mana: mana.clone() }).unwrap(),
+        CardEffect::AddMana { mana },
     );
 }
 

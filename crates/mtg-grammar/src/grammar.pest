@@ -43,6 +43,7 @@ sentence_statement = _{
   | destroy_all
   | destroy
   | draw_cards
+  | add_mana
   | until_eot_you_may_pay_cost_at_timing
   | if_you_do_add_mana
   | if_you_do_gain_life

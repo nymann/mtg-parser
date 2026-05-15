@@ -21,6 +21,7 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }
+        Statement::AddMana { mana } => CardEffect::AddMana { mana: mana.clone() },
         Statement::AntePlayRestriction => CardEffect::AntePlayRestriction,
         Statement::YouOwnTargetCardInZone { zone } => {
             CardEffect::YouOwnTargetCardInZone { zone: *zone }

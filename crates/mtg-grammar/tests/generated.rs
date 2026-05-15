@@ -92,5 +92,7 @@ mod crystal_rod;
 mod cursed_land;
 #[path = "generated/cyclopean_tomb.rs"]
 mod cyclopean_tomb;
+#[path = "generated/dark_ritual.rs"]
+mod dark_ritual;
 #[path = "generated/darkpact.rs"]
 mod darkpact;

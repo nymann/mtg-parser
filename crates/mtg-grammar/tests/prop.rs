@@ -63,6 +63,7 @@ fn arb_player_casts_colored_spell_pay_mana_trigger() -> impl Strategy<Value = St
 fn arb_statement() -> impl Strategy<Value = Statement> {
     prop_oneof![
         arb_mana_cost().prop_map(Statement::ManaCost),
+        arb_mana_cost().prop_map(|mana| Statement::AddMana { mana }),
         Just(Statement::CounterTargetSpell),
         Just(Statement::DestroyTargetCreature),
         Just(Statement::AntePlayRestriction),
