@@ -116,3 +116,5 @@ mod disintegrate;
 mod disrupting_scepter;
 #[path = "generated/dragon_whelp.rs"]
 mod dragon_whelp;
+#[path = "generated/drain_life.rs"]
+mod drain_life;

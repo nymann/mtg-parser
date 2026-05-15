@@ -3,12 +3,12 @@ use std::fmt::Write;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
-    CreatureStatus, CreatureType, EachPlayerAction, EnchantObject, EnchantedObject,
-    ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility, Step, TriggerEffect,
-    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    CreatureStatus, CreatureType, DamageLifeGainCap, EachPlayerAction, EnchantObject,
+    EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
+    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
+    Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -32,6 +32,18 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" deals ");
             out.push_str(variable_name(*amount));
             out.push_str(" damage to any target.");
+        }
+        Statement::SpendOnlyColorManaOnVariable { color, variable } => {
+            out.push_str("Spend only ");
+            out.push_str(color_name(*color));
+            out.push_str(" mana on ");
+            out.push_str(variable_name(*variable));
+            out.push('.');
+        }
+        Statement::YouGainLifeEqualToDamageDealtCapped { caps } => {
+            out.push_str("You gain life equal to the damage dealt, but not more life than ");
+            write_damage_life_gain_caps(out, caps);
+            out.push('.');
         }
         Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
             permanent_type,
@@ -217,6 +229,36 @@ fn write_modal_mode(out: &mut String, mode: ModalMode) {
             out.push_str("Destroy target ");
             out.push_str(color_name(color));
             out.push_str(" permanent.");
+        }
+    }
+}
+
+fn write_damage_life_gain_caps(out: &mut String, caps: &[DamageLifeGainCap]) {
+    for (i, cap) in caps.iter().enumerate() {
+        if i > 0 {
+            if i + 1 == caps.len() {
+                if caps.len() > 2 {
+                    out.push(',');
+                }
+                out.push_str(" or ");
+            } else {
+                out.push_str(", ");
+            }
+        }
+        write_damage_life_gain_cap(out, *cap);
+    }
+}
+
+fn write_damage_life_gain_cap(out: &mut String, cap: DamageLifeGainCap) {
+    match cap {
+        DamageLifeGainCap::PlayerLifeTotalBeforeDamageDealt => {
+            out.push_str("the player's life total before the damage was dealt");
+        }
+        DamageLifeGainCap::PlaneswalkerLoyaltyBeforeDamageDealt => {
+            out.push_str("the planeswalker's loyalty before the damage was dealt");
+        }
+        DamageLifeGainCap::CreatureToughness => {
+            out.push_str("the creature's toughness");
         }
     }
 }

@@ -5,12 +5,12 @@ use pest_derive::Parser;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
-    CreatureStatus, CreatureType, EachPlayerAction, EnchantObject, EnchantedObject,
-    ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility, Step, TriggerEffect,
-    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    CreatureStatus, CreatureType, DamageLifeGainCap, EachPlayerAction, EnchantObject,
+    EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
+    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
+    Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -67,6 +67,10 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
         Rule::named_source_deals_variable_damage_to_any_target => {
             named_source_deals_variable_damage_to_any_target_from_pair(pair)
+        }
+        Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
+        Rule::you_gain_life_equal_damage_dealt_capped => {
+            you_gain_life_equal_damage_dealt_capped_from_pair(pair)
         }
         Rule::if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn => {
             if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(
@@ -493,6 +497,43 @@ fn named_source_deals_variable_damage_to_any_target_from_pair(
         source_name: source_pair.as_str().to_string(),
         amount: variable_from_str(amount_pair.as_str())?,
     })
+}
+
+fn spend_only_color_mana_on_variable_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let color_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("spend-only restriction missing color"))?;
+    let variable_pair = inner.next().ok_or(ParseError::Internal(
+        "spend-only restriction missing variable",
+    ))?;
+    Ok(Statement::SpendOnlyColorManaOnVariable {
+        color: color_from_pair(color_pair)?,
+        variable: variable_from_str(variable_pair.as_str())?,
+    })
+}
+
+fn you_gain_life_equal_damage_dealt_capped_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let caps = pair
+        .into_inner()
+        .map(damage_life_gain_cap_from_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(Statement::YouGainLifeEqualToDamageDealtCapped { caps })
+}
+
+fn damage_life_gain_cap_from_pair(pair: Pair<Rule>) -> Result<DamageLifeGainCap, ParseError> {
+    match pair.as_rule() {
+        Rule::player_life_total_before_damage_dealt => {
+            Ok(DamageLifeGainCap::PlayerLifeTotalBeforeDamageDealt)
+        }
+        Rule::planeswalker_loyalty_before_damage_dealt => {
+            Ok(DamageLifeGainCap::PlaneswalkerLoyaltyBeforeDamageDealt)
+        }
+        Rule::creature_toughness => Ok(DamageLifeGainCap::CreatureToughness),
+        _ => Err(ParseError::Internal("damage_life_gain_cap")),
+    }
 }
 
 fn if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(

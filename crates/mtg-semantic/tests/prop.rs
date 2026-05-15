@@ -10,9 +10,9 @@
 // xtask runner to enable that feature for tier 2.
 
 use mtg_grammar::{
-    ActivatedAbility, ActivatedCost, ActivatedEffect, CardCount, Color, EachPlayerAction,
-    ImperativeAction, ManaCost, ManaSymbol, PermanentType, SourceObject, Statement, TriggerEffect,
-    TriggerEvent, TriggeredAbility, Variable, Zone,
+    ActivatedAbility, ActivatedCost, ActivatedEffect, CardCount, Color, DamageLifeGainCap,
+    EachPlayerAction, ImperativeAction, ManaCost, ManaSymbol, PermanentType, SourceObject,
+    Statement, TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -54,6 +54,18 @@ fn arb_permanent_type() -> impl Strategy<Value = PermanentType> {
         Just(PermanentType::Enchantment),
         Just(PermanentType::Land),
         Just(PermanentType::Planeswalker),
+    ]
+}
+
+fn arb_variable() -> impl Strategy<Value = Variable> {
+    prop_oneof![Just(Variable::X), Just(Variable::Y)]
+}
+
+fn arb_damage_life_gain_cap() -> impl Strategy<Value = DamageLifeGainCap> {
+    prop_oneof![
+        Just(DamageLifeGainCap::PlayerLifeTotalBeforeDamageDealt),
+        Just(DamageLifeGainCap::PlaneswalkerLoyaltyBeforeDamageDealt),
+        Just(DamageLifeGainCap::CreatureToughness),
     ]
 }
 
@@ -99,6 +111,11 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             source_name: "Disintegrate".to_string(),
             amount: Variable::X,
         }),
+        (arb_color(), arb_variable()).prop_map(|(color, variable)| {
+            Statement::SpendOnlyColorManaOnVariable { color, variable }
+        }),
+        prop::collection::vec(arb_damage_life_gain_cap(), 2..5)
+            .prop_map(|caps| Statement::YouGainLifeEqualToDamageDealtCapped { caps }),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
                 permanent_type,

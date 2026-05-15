@@ -15,6 +15,15 @@ pub enum Statement {
         source_name: String,
         amount: Variable,
     },
+    /// "Spend only <color> mana on X."
+    SpendOnlyColorManaOnVariable {
+        color: Color,
+        variable: Variable,
+    },
+    /// "You gain life equal to the damage dealt, but not more life than ..."
+    YouGainLifeEqualToDamageDealtCapped {
+        caps: Vec<DamageLifeGainCap>,
+    },
     /// "If it's a <type>, it can't be regenerated this turn, and if it
     /// would die this turn, exile it instead."
     IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
@@ -137,6 +146,16 @@ pub enum ModalMode {
     CounterTargetColoredSpell { color: Color },
     /// "Destroy target <color> permanent."
     DestroyTargetColoredPermanent { color: Color },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamageLifeGainCap {
+    /// "the player's life total before the damage was dealt"
+    PlayerLifeTotalBeforeDamageDealt,
+    /// "the planeswalker's loyalty before the damage was dealt"
+    PlaneswalkerLoyaltyBeforeDamageDealt,
+    /// "the creature's toughness"
+    CreatureToughness,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

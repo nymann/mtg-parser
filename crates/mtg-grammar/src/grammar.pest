@@ -45,6 +45,8 @@ sentence_statement = _{
   | destroy
   | regenerate_target_creature
   | named_source_deals_variable_damage_to_any_target
+  | spend_only_color_mana_on_variable
+  | you_gain_life_equal_damage_dealt_capped
   | if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn
   | draw_cards
   | add_mana
@@ -125,6 +127,32 @@ named_source_deals_variable_damage_to_any_target = {
 }
 proper_name = @{ upper_alpha ~ (ASCII_ALPHANUMERIC | "'" | "-")* ~ (WHITESPACE ~ upper_alpha ~ (ASCII_ALPHANUMERIC | "'" | "-")*)* }
 upper_alpha = _{ 'A'..'Z' }
+
+spend_only_color_mana_on_variable = {
+    ^"spend" ~ ^"only" ~ color_word ~ ^"mana" ~ ^"on" ~ variable_name ~ "."
+}
+
+you_gain_life_equal_damage_dealt_capped = {
+    ^"you" ~ ^"gain" ~ ^"life" ~ ^"equal" ~ ^"to" ~ ^"the"
+  ~ ^"damage" ~ ^"dealt" ~ "," ~ ^"but" ~ ^"not" ~ ^"more"
+  ~ ^"life" ~ ^"than" ~ damage_life_gain_cap
+  ~ ("," ~ damage_life_gain_cap)* ~ ","? ~ ^"or" ~ damage_life_gain_cap ~ "."
+}
+
+damage_life_gain_cap = _{
+    player_life_total_before_damage_dealt
+  | planeswalker_loyalty_before_damage_dealt
+  | creature_toughness
+}
+player_life_total_before_damage_dealt = {
+    ^"the" ~ ^"player's" ~ ^"life" ~ ^"total" ~ ^"before"
+  ~ ^"the" ~ ^"damage" ~ ^"was" ~ ^"dealt"
+}
+planeswalker_loyalty_before_damage_dealt = {
+    ^"the" ~ ^"planeswalker's" ~ ^"loyalty" ~ ^"before"
+  ~ ^"the" ~ ^"damage" ~ ^"was" ~ ^"dealt"
+}
+creature_toughness = { ^"the" ~ ^"creature's" ~ ^"toughness" }
 
 if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn = {
     ^"if" ~ ^"it's" ~ article ~ permanent_type ~ "," ~ ^"it" ~ ^"can't"

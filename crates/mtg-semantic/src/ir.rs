@@ -1,8 +1,8 @@
 use mtg_grammar::{
     ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Color,
-    EachPlayerAction, ImperativeAction, Keyword, ManaCost, MixedPtModifier, ModalMode,
-    OptionalCost, PermanentType, PhysicalAction, PtModifier, SourceObject, StaticAbility,
-    TriggeredAbility, Variable, VariableDefinition, Zone,
+    DamageLifeGainCap, EachPlayerAction, ImperativeAction, Keyword, ManaCost, MixedPtModifier,
+    ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, SourceObject,
+    StaticAbility, TriggeredAbility, Variable, VariableDefinition, Zone,
 };
 use serde::{Deserialize, Serialize};
 
@@ -27,6 +27,10 @@ pub enum CardEffect {
         source_name: String,
         amount: Variable,
     },
+    /// "Spend only <color> mana on X."
+    SpendOnlyColorManaOnVariable { color: Color, variable: Variable },
+    /// "You gain life equal to the damage dealt, but not more life than ..."
+    YouGainLifeEqualToDamageDealtCapped { caps: Vec<DamageLifeGainCap> },
     /// "If it's a <type>, it can't be regenerated this turn, and if it
     /// would die this turn, exile it instead."
     IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn { permanent_type: PermanentType },

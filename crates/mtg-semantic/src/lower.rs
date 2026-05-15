@@ -22,6 +22,15 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             source_name: source_name.clone(),
             amount: *amount,
         },
+        Statement::SpendOnlyColorManaOnVariable { color, variable } => {
+            CardEffect::SpendOnlyColorManaOnVariable {
+                color: *color,
+                variable: *variable,
+            }
+        }
+        Statement::YouGainLifeEqualToDamageDealtCapped { caps } => {
+            CardEffect::YouGainLifeEqualToDamageDealtCapped { caps: caps.clone() }
+        }
         Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
             permanent_type,
         } => CardEffect::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
