@@ -1471,6 +1471,15 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str(permanent_type_name(*permanent_type));
             out.push_str("'s controller.");
         }
+        TriggerEffect::SourceDealsDamageEqualToNumberOfBasicLandsTheyControlToThatPlayer {
+            source,
+            basic_land_type,
+        } => {
+            write_source_object(out, *source);
+            out.push_str(" deals damage to that player equal to the number of ");
+            out.push_str(basic_land_type_plural_name(*basic_land_type));
+            out.push_str(" they control.");
+        }
         TriggerEffect::RemoveCounterFromIt { counter } => {
             out.push_str("remove a ");
             write_pt_modifier(out, *counter);

@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 169,
+  "passing": 170,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -416,8 +416,7 @@
       "status": "pass"
     },
     "lea/Karma": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:66\n  |\n1 | At the beginning of each player's upkeep, this enchantment deals damage to that player equal to the number of Swamps they control.\n  |                                                                  ^---\n  |\n  = expected variable_name or damage_amount"
+      "status": "pass"
     },
     "lea/Keldon Warlord": {
       "status": "fail",

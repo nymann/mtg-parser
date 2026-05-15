@@ -208,3 +208,5 @@ mod jayemdae_tome;
 mod juggernaut;
 #[path = "generated/jump.rs"]
 mod jump;
+#[path = "generated/karma.rs"]
+mod karma;

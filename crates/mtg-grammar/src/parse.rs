@@ -1238,6 +1238,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller => {
                 effects.push(source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller_from_pair(child)?);
             }
+            Rule::source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player => {
+                effects.push(source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player_from_pair(child)?);
+            }
             Rule::source_deals_damage_to_that_player => {
                 effects.push(source_deals_damage_to_that_player_from_pair(child)?);
             }
@@ -1580,6 +1583,24 @@ fn source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_cont
         TriggerEffect::SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {
             source: source_object_from_pair(source_pair)?,
             permanent_type: toughness_permanent_type,
+        },
+    )
+}
+
+fn source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "basic-land-count damage effect missing source",
+    ))?;
+    let land_type_pair = inner.next().ok_or(ParseError::Internal(
+        "basic-land-count damage effect missing basic land type",
+    ))?;
+    Ok(
+        TriggerEffect::SourceDealsDamageEqualToNumberOfBasicLandsTheyControlToThatPlayer {
+            source: source_object_from_pair(source_pair)?,
+            basic_land_type: basic_land_type_from_plural_pair(land_type_pair)?,
         },
     )
 }

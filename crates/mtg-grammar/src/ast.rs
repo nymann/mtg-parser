@@ -480,6 +480,12 @@ pub enum TriggerEffect {
         source: SourceObject,
         permanent_type: PermanentType,
     },
+    /// "this <source> deals damage to that player equal to the number of
+    /// <basic_land_type>s they control"
+    SourceDealsDamageEqualToNumberOfBasicLandsTheyControlToThatPlayer {
+        source: SourceObject,
+        basic_land_type: BasicLandType,
+    },
     /// "remove a <pt_modifier> counter from it"
     RemoveCounterFromIt { counter: PtModifier },
     /// "put a <pt_modifier> counter on it"
