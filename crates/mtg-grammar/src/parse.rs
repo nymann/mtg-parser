@@ -1,4 +1,4 @@
-use pest::iterators::Pair;
+use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use pest_derive::Parser;
 
@@ -31,6 +31,22 @@ impl From<pest::error::Error<Rule>> for ParseError {
     fn from(value: pest::error::Error<Rule>) -> Self {
         ParseError::Pest(Box::new(value))
     }
+}
+
+fn next_inner<'i>(
+    inner: &mut Pairs<'i, Rule>,
+    context: &'static str,
+) -> Result<Pair<'i, Rule>, ParseError> {
+    inner.next().ok_or(ParseError::Internal(context))
+}
+
+fn only_inner<'i>(
+    pair: Pair<'i, Rule>,
+    context: &'static str,
+) -> Result<Pair<'i, Rule>, ParseError> {
+    pair.into_inner()
+        .next()
+        .ok_or(ParseError::Internal(context))
 }
 
 pub fn parse(text: &str) -> Result<Statement, ParseError> {
@@ -649,9 +665,7 @@ fn balance_same_way_action_from_pair(pair: Pair<Rule>) -> Result<BalanceSameWayA
     match pair.as_rule() {
         Rule::discard_cards_action => Ok(BalanceSameWayAction::DiscardCards),
         Rule::sacrifice_permanents_action => {
-            let pt = pair.into_inner().next().ok_or(ParseError::Internal(
-                "sacrifice action missing permanent_type_plural",
-            ))?;
+            let pt = only_inner(pair, "sacrifice action missing permanent_type_plural")?;
             Ok(BalanceSameWayAction::SacrificePermanents {
                 permanent_type: permanent_type_from_plural_pair(pt)?,
             })
@@ -661,20 +675,18 @@ fn balance_same_way_action_from_pair(pair: Pair<Rule>) -> Result<BalanceSameWayA
 }
 
 fn destroy_all_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let permanent_type_list_pair = pair
-        .into_inner()
-        .next()
-        .expect("destroy_all always contains a permanent_type_plural_list");
+    let permanent_type_list_pair =
+        only_inner(pair, "destroy_all missing permanent_type_plural_list")?;
     Ok(Statement::DestroyAll {
         permanent_types: permanent_type_plural_list_from_pair(permanent_type_list_pair)?,
     })
 }
 
 fn destroy_all_basic_lands_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let land_type = pair
-        .into_inner()
-        .next()
-        .expect("destroy_all_basic_lands always contains a basic_land_type_plural");
+    let land_type = only_inner(
+        pair,
+        "destroy_all_basic_lands missing basic_land_type_plural",
+    )?;
     Ok(Statement::DestroyAllBasicLands {
         basic_land_type: basic_land_type_from_plural_pair(land_type)?,
     })
@@ -689,10 +701,7 @@ fn destroy_target_permanent_choice_from_pair(pair: Pair<Rule>) -> Result<Stateme
 }
 
 fn destroy_target_permanent_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let permanent_type = pair
-        .into_inner()
-        .next()
-        .expect("destroy_target_permanent always contains a permanent_type");
+    let permanent_type = only_inner(pair, "destroy_target_permanent missing permanent_type")?;
     Ok(Statement::DestroyTargetPermanent {
         permanent_type: permanent_type_from_pair(permanent_type)?,
     })
@@ -702,18 +711,18 @@ fn that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice_
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
     let mut inner = pair.into_inner();
-    let controller_pair = inner.next().ok_or(ParseError::Internal(
+    let controller_pair = next_inner(
+        &mut inner,
         "controller attach effect missing controlled permanent_type",
-    ))?;
-    let controller_type_pair = controller_pair
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal(
-            "controller attach effect missing controller permanent_type",
-        ))?;
-    let attach_to_pair = inner.next().ok_or(ParseError::Internal(
+    )?;
+    let controller_type_pair = only_inner(
+        controller_pair,
+        "controller attach effect missing controller permanent_type",
+    )?;
+    let attach_to_pair = next_inner(
+        &mut inner,
         "controller attach effect missing destination permanent_type",
-    ))?;
+    )?;
     Ok(
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of: permanent_type_from_pair(controller_type_pair)?,
@@ -725,10 +734,7 @@ fn that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice_
 fn this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let mana_pair = pair
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal("additional target cost missing mana"))?;
+    let mana_pair = only_inner(pair, "additional target cost missing mana")?;
     Ok(
         Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst {
             mana: mana_cost_from_pair(mana_pair),
@@ -738,15 +744,9 @@ fn this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair
 
 fn named_source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let mut inner = pair.into_inner();
-    let source_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("named damage missing source name"))?;
-    let amount_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("named damage missing amount"))?;
-    let recipients_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("named damage missing recipients"))?;
+    let source_pair = next_inner(&mut inner, "named damage missing source name")?;
+    let amount_pair = next_inner(&mut inner, "named damage missing amount")?;
+    let recipients_pair = next_inner(&mut inner, "named damage missing recipients")?;
     Ok(Statement::NamedSourceDealsDamage {
         source_name: source_pair.as_str().to_string(),
         amount: named_source_damage_amount_from_pair(amount_pair)?,
@@ -755,9 +755,7 @@ fn named_source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<Statement, Pa
 }
 
 fn named_source_damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
-    let inner = pair.into_inner().next().ok_or(ParseError::Internal(
-        "named damage amount missing inner rule",
-    ))?;
+    let inner = only_inner(pair, "named damage amount missing inner rule")?;
     match inner.as_rule() {
         Rule::unsigned_number => {
             let amount = inner
@@ -774,9 +772,7 @@ fn named_source_damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount
 fn named_source_damage_recipients_from_pair(
     pair: Pair<Rule>,
 ) -> Result<DamageRecipients, ParseError> {
-    let inner = pair.into_inner().next().ok_or(ParseError::Internal(
-        "named damage recipients missing inner rule",
-    ))?;
+    let inner = only_inner(pair, "named damage recipients missing inner rule")?;
     match inner.as_rule() {
         Rule::named_source_damage_any_target => Ok(DamageRecipients::AnyTarget),
         Rule::named_source_damage_divided_evenly_rounded_down_among_any_number_of_targets => {
@@ -794,23 +790,16 @@ fn named_source_damage_recipients_from_pair(
 }
 
 fn damage_recipient_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient, ParseError> {
-    let inner = pair
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal("damage recipient missing inner rule"))?;
+    let inner = only_inner(pair, "damage recipient missing inner rule")?;
     match inner.as_rule() {
         Rule::each_creature_with_keyword => {
-            let keyword_pair = inner.into_inner().next().ok_or(ParseError::Internal(
-                "creature damage recipient missing keyword",
-            ))?;
+            let keyword_pair = only_inner(inner, "creature damage recipient missing keyword")?;
             Ok(DamageRecipient::EachCreatureWithKeyword {
                 keyword: keyword_from_inner_pair(keyword_pair)?,
             })
         }
         Rule::each_creature_without_keyword => {
-            let keyword_pair = inner.into_inner().next().ok_or(ParseError::Internal(
-                "creature damage recipient missing keyword",
-            ))?;
+            let keyword_pair = only_inner(inner, "creature damage recipient missing keyword")?;
             Ok(DamageRecipient::EachCreatureWithoutKeyword {
                 keyword: keyword_from_inner_pair(keyword_pair)?,
             })
@@ -822,12 +811,8 @@ fn damage_recipient_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient, Parse
 
 fn spend_only_color_mana_on_variable_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let mut inner = pair.into_inner();
-    let color_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("spend-only restriction missing color"))?;
-    let variable_pair = inner.next().ok_or(ParseError::Internal(
-        "spend-only restriction missing variable",
-    ))?;
+    let color_pair = next_inner(&mut inner, "spend-only restriction missing color")?;
+    let variable_pair = next_inner(&mut inner, "spend-only restriction missing variable")?;
     Ok(Statement::SpendOnlyColorManaOnVariable {
         color: color_from_pair(color_pair)?,
         variable: variable_from_str(variable_pair.as_str())?,
