@@ -973,6 +973,9 @@ pub enum StaticAbility {
         object: EnchantedObject,
         except_type: CreatureType,
     },
+    /// "All creatures able to block enchanted <object> do so." —
+    /// blocking requirement for creatures that can block the enchanted object.
+    AllCreaturesAbleToBlockEnchantedDoSo { object: EnchantedObject },
     /// "You control enchanted <object>." — continuous control-changing
     /// effect from an Aura to the object it enchants.
     YouControlEnchanted { object: EnchantedObject },

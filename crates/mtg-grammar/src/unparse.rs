@@ -1181,6 +1181,11 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str(creature_type_plural_name(*except_type));
             out.push('.');
         }
+        StaticAbility::AllCreaturesAbleToBlockEnchantedDoSo { object } => {
+            out.push_str("All creatures able to block enchanted ");
+            write_enchanted_object(out, *object);
+            out.push_str(" do so.");
+        }
         StaticAbility::YouControlEnchanted { object } => {
             out.push_str("You control enchanted ");
             write_enchanted_object(out, *object);

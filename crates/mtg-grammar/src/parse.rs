@@ -196,6 +196,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_can_attack_as_though_it_had
         | Rule::static_enchanted_can_attack_as_though_it_didnt_have
         | Rule::static_enchanted_cant_be_blocked_except_by_creature_type
+        | Rule::static_all_creatures_able_to_block_enchanted_do_so
         | Rule::static_you_control_enchanted
         | Rule::static_you_have_no_maximum_hand_size
         | Rule::you_dont_lose_game_for_having_zero_or_less_life
@@ -2346,6 +2347,15 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::EnchantedCantBeBlockedExceptByCreatureType {
                 object: enchanted_object_from_pair(object_pair)?,
                 except_type: creature_type_from_plural_pair(except_type_pair)?,
+            })
+        }
+        Rule::static_all_creatures_able_to_block_enchanted_do_so => {
+            let object_pair = pair
+                .into_inner()
+                .next()
+                .expect("static_all_creatures_able_to_block_enchanted names enchanted object");
+            Ok(StaticAbility::AllCreaturesAbleToBlockEnchantedDoSo {
+                object: enchanted_object_from_pair(object_pair)?,
             })
         }
         Rule::static_you_control_enchanted => {

@@ -234,3 +234,5 @@ mod living_lands;
 mod lord_of_atlantis;
 #[path = "generated/lord_of_the_pit.rs"]
 mod lord_of_the_pit;
+#[path = "generated/lure.rs"]
+mod lure;
