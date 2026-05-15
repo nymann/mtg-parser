@@ -97,6 +97,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_you_may_have_source_enter_as_copy
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::static_basic_lands_are_basic_lands
+        | Rule::static_that_permanent_is_basic_land_type_while_has_named_counter
         | Rule::target_creature_defending_player_controls_can_block_any_number
         | Rule::it_blocks_each_attacking_creature_if_able
         | Rule::this_turn_defending_players_make_random_blocking_piles
@@ -546,6 +547,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::beginning_of_your_upkeep => {
                 event = Some(TriggerEvent::BeginningOfYourUpkeep);
             }
+            Rule::source_put_into_graveyard_from_battlefield => {
+                event = Some(source_put_into_graveyard_from_battlefield_from_pair(child)?);
+            }
             Rule::beginning_of_upkeep_of_enchanted_permanent_controller => {
                 event = Some(beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(
                     child,
@@ -592,6 +596,11 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::you_may_pay_mana => {
                 effects.push(you_may_pay_mana_from_pair(child)?);
+            }
+            Rule::delayed_remove_all_named_counters_from_linked_land => {
+                effects.push(delayed_remove_all_named_counters_from_linked_land_from_pair(
+                    child,
+                )?);
             }
             Rule::source_deals_damage_to_that_permanents_controller => {
                 effects.push(source_deals_damage_to_that_permanents_controller_from_pair(
@@ -664,6 +673,24 @@ fn beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(
             permanent_type: permanent_type_from_pair(pt)?,
         },
     )
+}
+
+fn source_put_into_graveyard_from_battlefield_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEvent, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "put-into-graveyard event missing source",
+    ))?;
+    let zone_pair = inner.next().ok_or(ParseError::Internal(
+        "put-into-graveyard event missing zone",
+    ))?;
+    if zone_from_pair(zone_pair)? != Zone::Graveyard {
+        return Err(ParseError::Internal("put-into-graveyard event zone"));
+    }
+    Ok(TriggerEvent::SourcePutIntoGraveyardFromBattlefield {
+        source: source_object_from_pair(source_pair)?,
+    })
 }
 
 fn source_blocks_or_becomes_blocked_by_non_creature_type_creature_from_pair(
@@ -872,6 +899,54 @@ fn remove_pt_counter_from_it_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect
     Ok(TriggerEffect::RemoveCounterFromIt {
         counter: pt_modifier_from_counter_pair(counter_pair)?,
     })
+}
+
+fn delayed_remove_all_named_counters_from_linked_land_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let plural_counter_pair = inner.next().ok_or(ParseError::Internal(
+        "delayed remove counters missing plural counter",
+    ))?;
+    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+        "delayed remove counters missing permanent type",
+    ))?;
+    let put_counter_pair = inner.next().ok_or(ParseError::Internal(
+        "delayed remove counters missing put counter",
+    ))?;
+    let put_source_pair = inner.next().ok_or(ParseError::Internal(
+        "delayed remove counters missing put source",
+    ))?;
+    let removed_counter_pair = inner.next().ok_or(ParseError::Internal(
+        "delayed remove counters missing removed counter",
+    ))?;
+    let removed_source_pair = inner.next().ok_or(ParseError::Internal(
+        "delayed remove counters missing removed source",
+    ))?;
+
+    let counter_name = counter_name_from_counter_pair(plural_counter_pair)?;
+    let put_counter_name = counter_name_from_counter_pair(put_counter_pair)?;
+    let removed_counter_name = counter_name_from_counter_pair(removed_counter_pair)?;
+    let source = source_object_from_pair(put_source_pair)?;
+    let removed_source = source_object_from_pair(removed_source_pair)?;
+    if counter_name != put_counter_name || counter_name != removed_counter_name {
+        return Err(ParseError::Internal(
+            "delayed remove counter names mismatch",
+        ));
+    }
+    if source != removed_source {
+        return Err(ParseError::Internal(
+            "delayed remove counter sources mismatch",
+        ));
+    }
+
+    Ok(
+        TriggerEffect::DelayedRemoveAllNamedCountersFromLinkedPermanent {
+            counter_name,
+            permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            source,
+        },
+    )
 }
 
 fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError> {
@@ -1129,6 +1204,23 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 to: basic_land_type_from_plural_pair(to_pair)?,
             })
         }
+        Rule::static_that_permanent_is_basic_land_type_while_has_named_counter => {
+            let mut inner = pair.into_inner();
+            let permanent_type_pair = inner
+                .next()
+                .expect("linked land type effect names affected permanent type");
+            let land_type_pair = inner
+                .next()
+                .expect("linked land type effect names basic land type");
+            let counter_pair = inner
+                .next()
+                .expect("linked land type effect names counter");
+            Ok(StaticAbility::ThatPermanentIsBasicLandTypeWhileHasNamedCounter {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                land_type: basic_land_type_from_pair(land_type_pair)?,
+                counter_name: counter_name_from_counter_pair(counter_pair)?,
+            })
+        }
         Rule::target_creature_defending_player_controls_can_block_any_number => Ok(
             StaticAbility::TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn,
         ),
@@ -1285,6 +1377,29 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 amount: variable_from_str(amount_pair.as_str())?,
                 counter: pt_modifier_from_counter_pair(counter_pair)?,
                 source: source_object_from_pair(source_pair)?,
+            })
+        }
+        Rule::put_named_counter_on_target_non_basic_land => {
+            let mut inner = pair.into_inner();
+            let counter_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("put named counter missing counter"))?;
+            let excluded_pair = inner.next().ok_or(ParseError::Internal(
+                "put named counter missing excluded land type",
+            ))?;
+            let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+                "put named counter missing target permanent type",
+            ))?;
+            if permanent_type_from_pair(permanent_type_pair)? != PermanentType::Land {
+                return Err(ParseError::Internal("put named counter target type"));
+            }
+            let excluded_land_type_pair = excluded_pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("non basic land missing land type"))?;
+            Ok(ActivatedEffect::PutNamedCounterOnTargetNonBasicLand {
+                counter_name: counter_name_from_counter_pair(counter_pair)?,
+                excluded_land_type: basic_land_type_from_pair(excluded_land_type_pair)?,
             })
         }
         Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
@@ -1520,6 +1635,33 @@ fn basic_land_type_from_plural_pair(pair: Pair<Rule>) -> Result<BasicLandType, P
         "mountains" => Ok(BasicLandType::Mountain),
         "forests" => Ok(BasicLandType::Forest),
         _ => Err(ParseError::Internal("basic_land_type_plural variant")),
+    }
+}
+
+fn basic_land_type_from_pair(pair: Pair<Rule>) -> Result<BasicLandType, ParseError> {
+    if pair.as_rule() != Rule::basic_land_type {
+        return Err(ParseError::Internal("basic_land_type"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "plains" => Ok(BasicLandType::Plains),
+        "island" => Ok(BasicLandType::Island),
+        "swamp" => Ok(BasicLandType::Swamp),
+        "mountain" => Ok(BasicLandType::Mountain),
+        "forest" => Ok(BasicLandType::Forest),
+        _ => Err(ParseError::Internal("basic_land_type variant")),
+    }
+}
+
+fn counter_name_from_counter_pair(pair: Pair<Rule>) -> Result<String, ParseError> {
+    match pair.as_rule() {
+        Rule::named_counter | Rule::named_counters => {
+            let name_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("named counter missing name"))?;
+            Ok(name_pair.as_str().to_ascii_lowercase())
+        }
+        _ => Err(ParseError::Internal("named counter")),
     }
 }
 

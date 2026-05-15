@@ -67,6 +67,7 @@ sentence_statement = _{
   | static_source_doesnt_untap_during_your_untap_step
   | static_effect_doesnt_remove_this_aura
   | static_basic_lands_are_basic_lands
+  | static_that_permanent_is_basic_land_type_while_has_named_counter
   | triggered_ability
   | physical_action
   | each_player_equalizes_controlled_permanents
@@ -282,6 +283,7 @@ static_ability = _{
   | static_you_may_have_source_enter_as_copy
   | static_effect_doesnt_remove_this_aura
   | static_basic_lands_are_basic_lands
+  | static_that_permanent_is_basic_land_type_while_has_named_counter
 }
 
 static_as_long_as = {
@@ -342,6 +344,12 @@ static_effect_doesnt_remove_this_aura = {
 
 static_basic_lands_are_basic_lands = {
     ^"all" ~ basic_land_type_plural ~ ^"are" ~ basic_land_type_plural ~ "."
+}
+
+static_that_permanent_is_basic_land_type_while_has_named_counter = {
+    ^"that" ~ permanent_type ~ ^"is" ~ article ~ basic_land_type
+  ~ ^"for" ~ ^"as" ~ ^"long" ~ ^"as" ~ ^"it" ~ ^"has"
+  ~ article ~ named_counter ~ ^"on" ~ ^"it" ~ "."
 }
 
 static_source_doesnt_untap_during_your_untap_step = {
@@ -406,6 +414,7 @@ activated_effect = _{
   | prevent_next_damage_from_colored_source
   | prevent_next_damage_to_you_this_turn
   | put_up_to_variable_pt_counters_on_source
+  | put_named_counter_on_target_non_basic_land
   | physical_action
 }
 add_mana_of_any_one_color = {
@@ -432,6 +441,9 @@ prevent_next_damage_to_you_this_turn = {
 put_up_to_variable_pt_counters_on_source = {
     ^"put" ~ ^"up" ~ ^"to" ~ variable_name ~ pt_counters
   ~ ^"on" ~ source_object ~ "."
+}
+put_named_counter_on_target_non_basic_land = {
+    ^"put" ~ article ~ named_counter ~ ^"on" ~ ^"target" ~ non_basic_land_type ~ permanent_type ~ "."
 }
 variable_mana_symbol = ${ "{" ~ variable_name ~ "}" }
 sacrifice_source = { ^"sacrifice" ~ source_object }
@@ -515,6 +527,17 @@ basic_land_type_plural = @{
   | ^"mountains"
   | ^"forests"
 }
+basic_land_type = @{
+    ^"plains"
+  | ^"island"
+  | ^"swamp"
+  | ^"mountain"
+  | ^"forest"
+}
+non_basic_land_type = { ^"non-" ~ basic_land_type }
+named_counter = { counter_name ~ ^"counter" }
+named_counters = { counter_name ~ ^"counters" }
+counter_name = @{ ASCII_ALPHA+ }
 
 // "When <event>, [if <cond>,] <effect>+"
 // Each trigger_effect rule below carries its own terminator (a closing
@@ -531,7 +554,8 @@ triggered_ability = {
 trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
 
 trigger_event = _{
-    aura_leaves_battlefield
+    source_put_into_graveyard_from_battlefield
+  | aura_leaves_battlefield
   | aura_enters
   | enchanted_permanent_dies
   | source_blocks_or_becomes_blocked_by_non_creature_type_creature
@@ -546,6 +570,10 @@ trigger_event = _{
 }
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
 aura_leaves_battlefield = { ^"this" ~ ^"aura" ~ ^"leaves" ~ ^"the" ~ ^"battlefield" }
+source_put_into_graveyard_from_battlefield = {
+    source_object ~ ^"is" ~ ^"put" ~ ^"into" ~ article ~ zone
+  ~ ^"from" ~ ^"the" ~ ^"battlefield"
+}
 enchanted_permanent_dies = { ^"enchanted" ~ permanent_type ~ ^"dies" }
 permanent_enters        = { article ~ permanent_type ~ ^"enters" }
 player_casts_colored_spell = { article ~ ^"player" ~ ^"casts" ~ article ~ color_word ~ ^"spell" }
@@ -580,6 +608,7 @@ source_attacked_or_blocked_this_combat = {
 trigger_effect = _{
     destroy_that_creature_if_it_attacked_this_turn
   | destroy_that_creature_at_end_of_combat
+  | delayed_remove_all_named_counters_from_linked_land
   | remove_pt_counter_from_it
   | loses_and_gains_keyword
   | return_enchanted_card_and_attach
@@ -638,6 +667,15 @@ you_may_pay_mana = { ^"you" ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
 
 remove_pt_counter_from_it = {
     ^"remove" ~ article ~ pt_counter ~ ^"from" ~ ^"it" ~ "."
+}
+delayed_remove_all_named_counters_from_linked_land = {
+    ^"at" ~ ^"the" ~ ^"beginning" ~ ^"of" ~ ^"each" ~ ^"of" ~ ^"your"
+  ~ ^"upkeeps" ~ ^"for" ~ ^"the" ~ ^"rest" ~ ^"of" ~ ^"the" ~ ^"game"
+  ~ "," ~ ^"remove" ~ ^"all" ~ named_counters ~ ^"from" ~ article
+  ~ permanent_type ~ ^"that" ~ article ~ named_counter ~ ^"was" ~ ^"put"
+  ~ ^"onto" ~ ^"with" ~ source_object ~ ^"but" ~ ^"that" ~ article
+  ~ named_counter ~ ^"has" ~ ^"not" ~ ^"been" ~ ^"removed" ~ ^"from"
+  ~ ^"with" ~ source_object ~ "."
 }
 
 source_deals_damage_to_that_permanents_controller = {

@@ -79,3 +79,5 @@ mod creature_bond;
 mod crystal_rod;
 #[path = "generated_patterns/cursed_land.rs"]
 mod cursed_land;
+#[path = "generated_patterns/cyclopean_tomb.rs"]
+mod cyclopean_tomb;

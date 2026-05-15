@@ -181,6 +181,8 @@ pub enum TriggerEvent {
     BeginningOfEachPlayersUpkeep,
     /// "the beginning of your upkeep"
     BeginningOfYourUpkeep,
+    /// "this <source> is put into a graveyard from the battlefield"
+    SourcePutIntoGraveyardFromBattlefield { source: SourceObject },
     /// "the beginning of the upkeep of enchanted <permanent_type>'s
     /// controller"
     BeginningOfUpkeepOfEnchantedPermanentController { permanent_type: PermanentType },
@@ -248,6 +250,13 @@ pub enum TriggerEffect {
     },
     /// "you may pay <mana_cost>"
     YouMayPayMana { cost: ManaCost },
+    /// "at the beginning of each of your upkeeps for the rest of the
+    /// game, remove all <counter> counters from a <type> that ..."
+    DelayedRemoveAllNamedCountersFromLinkedPermanent {
+        counter_name: String,
+        permanent_type: PermanentType,
+        source: SourceObject,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -306,6 +315,11 @@ pub enum ActivatedEffect {
         amount: Variable,
         counter: PtModifier,
         source: SourceObject,
+    },
+    /// "Put a <counter> counter on target non-<basic_land_type> land."
+    PutNamedCounterOnTargetNonBasicLand {
+        counter_name: String,
+        excluded_land_type: BasicLandType,
     },
     PhysicalAction(PhysicalAction),
 }
@@ -488,6 +502,13 @@ pub enum StaticAbility {
     BasicLandsAreBasicLands {
         from: BasicLandType,
         to: BasicLandType,
+    },
+    /// "That <type> is a <basic_land_type> for as long as it has a
+    /// <counter> counter on it."
+    ThatPermanentIsBasicLandTypeWhileHasNamedCounter {
+        permanent_type: PermanentType,
+        land_type: BasicLandType,
+        counter_name: String,
     },
     /// "Target creature defending player controls can block any number
     /// of creatures this turn."

@@ -427,6 +427,16 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_source_object(out, *source);
             out.push('.');
         }
+        ActivatedEffect::PutNamedCounterOnTargetNonBasicLand {
+            counter_name,
+            excluded_land_type,
+        } => {
+            out.push_str("Put a ");
+            out.push_str(counter_name);
+            out.push_str(" counter on target non-");
+            out.push_str(basic_land_type_name(*excluded_land_type));
+            out.push_str(" land.");
+        }
         ActivatedEffect::PhysicalAction(action) => write_physical_action(out, *action),
     }
 }
@@ -565,6 +575,19 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str(basic_land_type_plural_name(*to));
             out.push('.');
         }
+        StaticAbility::ThatPermanentIsBasicLandTypeWhileHasNamedCounter {
+            permanent_type,
+            land_type,
+            counter_name,
+        } => {
+            out.push_str("That ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" is a ");
+            out.push_str(basic_land_type_name(*land_type));
+            out.push_str(" for as long as it has a ");
+            out.push_str(counter_name);
+            out.push_str(" counter on it.");
+        }
         StaticAbility::TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn => {
             out.push_str(
                 "Target creature defending player controls can block any number of creatures this turn.",
@@ -599,7 +622,9 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::BeginningOfYourUpkeep
         | TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController { .. }
         | TriggerEvent::EndOfCombat => "At ",
-        TriggerEvent::ThisAuraEnters | TriggerEvent::ThisAuraLeavesTheBattlefield => "When ",
+        TriggerEvent::ThisAuraEnters
+        | TriggerEvent::ThisAuraLeavesTheBattlefield
+        | TriggerEvent::SourcePutIntoGraveyardFromBattlefield { .. } => "When ",
         TriggerEvent::EnchantedPermanentDies { .. } => "When ",
     });
     write_trigger_event(out, ta.event);
@@ -650,6 +675,10 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         }
         TriggerEvent::BeginningOfYourUpkeep => {
             out.push_str("the beginning of your upkeep");
+        }
+        TriggerEvent::SourcePutIntoGraveyardFromBattlefield { source } => {
+            write_source_object(out, source);
+            out.push_str(" is put into a graveyard from the battlefield");
         }
         TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController { permanent_type } => {
             out.push_str("the beginning of the upkeep of enchanted ");
@@ -757,6 +786,25 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
         TriggerEffect::YouMayPayMana { cost } => {
             out.push_str("you may pay ");
             write_mana_cost(out, cost);
+            out.push('.');
+        }
+        TriggerEffect::DelayedRemoveAllNamedCountersFromLinkedPermanent {
+            counter_name,
+            permanent_type,
+            source,
+        } => {
+            out.push_str("at the beginning of each of your upkeeps for the rest of the game, remove all ");
+            out.push_str(counter_name);
+            out.push_str(" counters from a ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" that a ");
+            out.push_str(counter_name);
+            out.push_str(" counter was put onto with ");
+            write_source_object(out, *source);
+            out.push_str(" but that a ");
+            out.push_str(counter_name);
+            out.push_str(" counter has not been removed from with ");
+            write_source_object(out, *source);
             out.push('.');
         }
     }
@@ -1021,6 +1069,16 @@ fn basic_land_type_plural_name(land_type: BasicLandType) -> &'static str {
         BasicLandType::Swamp => "Swamps",
         BasicLandType::Mountain => "Mountains",
         BasicLandType::Forest => "Forests",
+    }
+}
+
+fn basic_land_type_name(land_type: BasicLandType) -> &'static str {
+    match land_type {
+        BasicLandType::Plains => "Plains",
+        BasicLandType::Island => "Island",
+        BasicLandType::Swamp => "Swamp",
+        BasicLandType::Mountain => "Mountain",
+        BasicLandType::Forest => "Forest",
     }
 }
 
