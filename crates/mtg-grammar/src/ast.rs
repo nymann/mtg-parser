@@ -181,6 +181,9 @@ pub enum TriggerEvent {
     BeginningOfEachPlayersUpkeep,
     /// "the beginning of your upkeep"
     BeginningOfYourUpkeep,
+    /// "the beginning of the upkeep of enchanted <permanent_type>'s
+    /// controller"
+    BeginningOfUpkeepOfEnchantedPermanentController { permanent_type: PermanentType },
     /// "end of combat"
     EndOfCombat,
     /// "this <source> blocks or becomes blocked by a non-<creature_type>

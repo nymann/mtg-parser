@@ -88,3 +88,5 @@ mod counterspell;
 mod creature_bond;
 #[path = "generated/crystal_rod.rs"]
 mod crystal_rod;
+#[path = "generated/cursed_land.rs"]
+mod cursed_land;

@@ -546,6 +546,11 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::beginning_of_your_upkeep => {
                 event = Some(TriggerEvent::BeginningOfYourUpkeep);
             }
+            Rule::beginning_of_upkeep_of_enchanted_permanent_controller => {
+                event = Some(beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(
+                    child,
+                )?);
+            }
             Rule::end_of_combat => {
                 event = Some(TriggerEvent::EndOfCombat);
             }
@@ -646,6 +651,19 @@ fn enchanted_permanent_dies_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, 
     Ok(TriggerEvent::EnchantedPermanentDies {
         permanent_type: permanent_type_from_pair(pt)?,
     })
+}
+
+fn beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEvent, ParseError> {
+    let pt = pair.into_inner().next().ok_or(ParseError::Internal(
+        "beginning_of_upkeep_of_enchanted_permanent_controller missing permanent_type",
+    ))?;
+    Ok(
+        TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController {
+            permanent_type: permanent_type_from_pair(pt)?,
+        },
+    )
 }
 
 fn source_blocks_or_becomes_blocked_by_non_creature_type_creature_from_pair(

@@ -597,6 +597,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
         | TriggerEvent::BeginningOfEachPlayersUpkeep
         | TriggerEvent::BeginningOfYourUpkeep
+        | TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController { .. }
         | TriggerEvent::EndOfCombat => "At ",
         TriggerEvent::ThisAuraEnters | TriggerEvent::ThisAuraLeavesTheBattlefield => "When ",
         TriggerEvent::EnchantedPermanentDies { .. } => "When ",
@@ -649,6 +650,11 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         }
         TriggerEvent::BeginningOfYourUpkeep => {
             out.push_str("the beginning of your upkeep");
+        }
+        TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController { permanent_type } => {
+            out.push_str("the beginning of the upkeep of enchanted ");
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str("'s controller");
         }
         TriggerEvent::EndOfCombat => {
             out.push_str("end of combat");

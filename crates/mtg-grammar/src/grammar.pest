@@ -538,6 +538,7 @@ trigger_event = _{
   | end_of_combat
   | beginning_of_each_players_upkeep
   | beginning_of_your_upkeep
+  | beginning_of_upkeep_of_enchanted_permanent_controller
   | beginning_of_chosen_players_upkeep
   | beginning_of_the_next_end_step
   | player_casts_colored_spell
@@ -564,6 +565,10 @@ beginning_of_each_players_upkeep = {
 }
 beginning_of_your_upkeep = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"your" ~ ^"upkeep"
+}
+beginning_of_upkeep_of_enchanted_permanent_controller = {
+    ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"upkeep" ~ ^"of"
+  ~ ^"enchanted" ~ permanent_type ~ "'s" ~ ^"controller"
 }
 
 intervening_if         = _{ its_on_the_battlefield | source_attacked_or_blocked_this_combat }
