@@ -12,6 +12,7 @@ mod flow;
 mod grammar_fix;
 mod next_card;
 mod paths;
+mod rules_context;
 mod rules_split;
 mod testrun;
 mod tui;

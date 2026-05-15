@@ -1184,7 +1184,7 @@ fn build_pattern_prompt(
             "\n## Recipe\n\n\
              1. Start from the code map above instead of re-reading the whole repository.\n\
              2. Inspect additional code only if the map is insufficient.\n\
-             3. Make the smallest general grammar/AST/parser/unparser change for this pattern. Touch semantic files only because the focused failure points there.\n\
+             3. Generalize an existing grammar/AST/parser/unparser rule to cover this card's phenomenon if a near-neighbour rule exists. Add a new rule only when no existing rule can be widened along a single axis (verb, subject, recipient, quantity, polarity). Touch semantic files only because the focused failure points there.\n\
              4. Run the focused generated test command(s) shown above until they pass.\n\
              5. Do not run `cargo xtask corpus`; the orchestrator owns corpus regression checks.\n\
              6. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n",
@@ -1196,7 +1196,7 @@ fn build_pattern_prompt(
          ## Recipe\n\n\
          1. Start from the code map above instead of re-reading the whole repository.\n\
          2. Inspect additional code only if the map is insufficient.\n\
-         3. Make the smallest general grammar/AST/parser/unparser change for this pattern. Touch semantic files only if the focused failure points there.\n\
+         3. Generalize an existing grammar/AST/parser/unparser rule to cover this card's phenomenon if a near-neighbour rule exists. Add a new rule only when no existing rule can be widened along a single axis. Touch semantic files only if the focused failure points there.\n\
          4. Run the focused generated test command(s) shown above until they pass.\n\
          5. Do not run `cargo xtask corpus`; the orchestrator owns corpus regression checks.\n\
          6. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n",
@@ -1220,10 +1220,11 @@ fn render_context_block(
     test_paths: &[&Path],
 ) -> String {
     format!(
-        "## Retrieved Context\n\n\
+        "{rules}## Retrieved Context\n\n\
          The orchestrator selected these snippets from the generated tests and likely grammar \
          edit sites. Use this context first; inspect whole files only if it is insufficient.\n\n\
          {tests}{code_map}",
+        rules = crate::rules_context::render_rules_block(normalized),
         tests = render_generated_test_context(test_paths),
         code_map = render_code_map(card, error, normalized, patterns)
     )
@@ -1554,18 +1555,40 @@ points there.";
 const WORKFLOW_BLOCK: &str = "\
 ## Workflow
 
+The goal is not 'make this test pass with the smallest diff'. The goal
+is to extend the grammar so it captures the *phenomenon* this card is
+an instance of — at the right level of generality. A working test plus
+a one-off rule that re-encodes prior English is a regression in design
+even when it's an improvement in pass count.
+
 1. Start from the retrieved context and generated test snippets above.
    Do not read whole source files up front.
-2. Inspect additional source only when the retrieved snippets are
-   insufficient, and prefer narrow line ranges around the relevant rule,
+2. Identify the linguistic phenomenon. Name it using the spec's
+   vocabulary when applicable (§701 Keyword Actions, §702 Keyword
+   Abilities, §120 Damage, §614 Replacement Effects, §615 Prevention).
+3. Look for prior art before reaching for new code. In this order:
+   a. Does an existing pest rule already describe this phenomenon? If
+      yes, the card may be passing already on a fresh build — re-run
+      the focused test and confirm.
+   b. Does an existing rule describe a near-neighbour phenomenon that
+      differs from this card by ONE axis (verb, subject, recipient,
+      quantity, polarity)? If yes, *generalize that rule* by factoring
+      the axis out into an inner alternation. Update its AST variant
+      to carry the axis as data. This is almost always the right call.
+   c. Does an existing closed vocabulary (a `keyword`, `permanent_type`,
+      `creature_type`, `basic_land_type` alternation) need a new
+      alternative? Add the word, not a rule.
+   d. Only after a, b, c are ruled out: add a new pest rule + AST
+      variant + parse/unparse arms.
+4. State which of (a)–(d) you picked at the top of your final message,
+   in one sentence. If you picked (d), write one more sentence
+   explaining what made generalization non-viable.
+5. Inspect additional source only when the retrieved snippets are
+   insufficient. Prefer narrow line ranges around the relevant rule,
    enum, parser branch, or unparser branch.
-3. Decide what general pattern this card is an instance of (a keyword
-   ability, a triggered ability, a static effect, ...). Name it.
-4. Extend `grammar.pest` to recognize the pattern.
-5. Extend `ast.rs` with whatever new node(s) the grammar needs.
-6. Extend `parse.rs` and `unparse.rs` so the AST round-trips cleanly.
-7. Run only the focused generated test command(s) supplied by the orchestrator.
-8. Stop once focused generated tests pass. The orchestrator runs tier 2,
+6. Run only the focused generated test command(s) supplied by the
+   orchestrator.
+7. Stop once focused generated tests pass. The orchestrator runs tier 2,
    corpus, and commit gates.";
 
 const CONSTRAINTS_BLOCK: &str = "\
@@ -1578,9 +1601,15 @@ const CONSTRAINTS_BLOCK: &str = "\
 2. **Do not add a special-case rule for this one card.** If the pattern
    looks specific to one card, ask yourself what *general* pattern it's
    an instance of and encode that.
-3. **Do not touch existing grammar rules unless necessary.** Additive
-   changes are safer than modifications. If you must modify, leave a
-   one-line comment explaining why.
+3. **Generalize existing rules before adding new ones.** Two pest rules
+   that differ only in one axis (verb, subject, recipient, quantity,
+   polarity) are a refactor waiting to happen — fold the axis into the
+   existing rule and add the new card's variant as data. Three such
+   rules are a stronger signal still. The corpus regression gate
+   catches any breakage from widening a rule; you do not need to stay
+   additive to stay safe. Adding a new rule for a phenomenon a
+   neighbouring rule already half-describes is the failure mode this
+   project is trying to escape.
 4. **Do not disable or modify existing tests.** Tests under `tests/unit.rs`
    and `tests/prop.rs` are the contract; the new generated test is what
    you're making pass.
@@ -1594,7 +1623,14 @@ const CONSTRAINTS_BLOCK: &str = "\
 7. **If you can't solve it, say so.** Better to surface \"I don't see
    how to extend the grammar without restructuring X\" than to ship a
    hack. The orchestrator will leave the working tree as-is for human
-   triage.";
+   triage.
+8. **Prefer the comprehensive rules' wording over inventing new
+   wording.** The `## Comprehensive Rules` block above is the canonical
+   source for game vocabulary. If a phenomenon already has a name in
+   §701 (Keyword Actions) or §702 (Keyword Abilities), use that name in
+   both the AST variant and the pest rule. Before adding a new pest
+   rule, check whether an existing rule with the same shape but a
+   different axis (verb, recipient, quantity) can be generalized.";
 
 fn render_card_block(card: &Card, normalized: &str) -> String {
     let normalized_block = if normalized == card.oracle_text {
