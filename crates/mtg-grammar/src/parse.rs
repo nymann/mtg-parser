@@ -2179,6 +2179,13 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 .ok_or(ParseError::Internal("number_word"))?;
             Ok(ActivatedEffect::AddManaOfAnyOneColor { amount })
         }
+        Rule::tap_target_permanent_choice => {
+            let permanent_types = pair
+                .into_inner()
+                .map(permanent_type_from_pair)
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(ActivatedEffect::TapTargetPermanentChoice { permanent_types })
+        }
         Rule::untap_source => {
             let source_pair = pair
                 .into_inner()

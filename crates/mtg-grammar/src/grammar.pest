@@ -665,6 +665,7 @@ activated_effect = _{
     add_mana_of_any_one_color
   | add_one_mana_of_any_color
   | add_mana
+  | tap_target_permanent_choice
   | target_permanent_becomes_basic_land_type_until_source_leaves
   | regenerate_source
   | destroy_target_creature_type
@@ -690,6 +691,8 @@ add_mana_of_any_one_color = {
 }
 add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"color" ~ "." }
 add_mana = { ^"add" ~ mana_cost ~ "." }
+tap_target_permanent_choice = { ^"tap" ~ ^"target" ~ permanent_type_choice ~ "." }
+permanent_type_choice = _{ permanent_type ~ ("," ~ permanent_type)* ~ ","? ~ ^"or" ~ permanent_type }
 target_permanent_becomes_basic_land_type_until_source_leaves = {
     ^"target" ~ permanent_type ~ ^"becomes" ~ article ~ basic_land_type
   ~ ^"until" ~ source_object ~ ^"leaves" ~ ^"the" ~ ^"battlefield" ~ "."

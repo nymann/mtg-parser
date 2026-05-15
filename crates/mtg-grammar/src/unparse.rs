@@ -718,6 +718,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(u32_to_number_word(*amount));
             out.push_str(" mana of any one color.");
         }
+        ActivatedEffect::TapTargetPermanentChoice { permanent_types } => {
+            out.push_str("Tap target ");
+            write_permanent_type_choice(out, permanent_types);
+            out.push('.');
+        }
         ActivatedEffect::Untap(source) => {
             out.push_str("Untap ");
             write_source_object(out, *source);

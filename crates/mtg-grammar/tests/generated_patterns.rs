@@ -175,3 +175,5 @@ mod hurricane;
 mod hypnotic_specter;
 #[path = "generated_patterns/ice_storm.rs"]
 mod ice_storm;
+#[path = "generated_patterns/icy_manipulator.rs"]
+mod icy_manipulator;

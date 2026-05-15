@@ -537,6 +537,10 @@ pub enum ActivatedEffect {
     AddManaOfAnyOneColor {
         amount: u32,
     },
+    /// "Tap target <permanent_type>, <permanent_type>, or <permanent_type>."
+    TapTargetPermanentChoice {
+        permanent_types: Vec<PermanentType>,
+    },
     /// "Untap this <permanent_type>."
     Untap(SourceObject),
     /// "Regenerate this <permanent_type>."
