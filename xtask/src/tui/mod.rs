@@ -115,7 +115,14 @@ fn run_event_loop(
         let mut closed = false;
         loop {
             match rx.try_recv() {
-                Ok(ev) => state.apply(ev),
+                Ok(ev) => {
+                    let hard_redraw = matches!(ev, FlowEvent::IterationStarted { .. });
+                    state.apply(ev);
+                    if hard_redraw {
+                        terminal.autoresize()?;
+                        terminal.clear()?;
+                    }
+                }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
                     state.orchestrator_done = true;
@@ -127,37 +134,50 @@ fn run_event_loop(
         let _ = closed;
 
         // 2. Render.
+        terminal.autoresize()?;
         terminal.draw(|f| view::render(f, &state))?;
 
         // 3. Poll input. Short timeout so we redraw on a regular cadence
         //    (clock ticks for running step timers etc.).
         if event::poll(poll_timeout)? {
-            if let Event::Key(key) = event::read()? {
-                match input::handle(key, &mut state) {
+            match event::read()? {
+                Event::Key(key) => match input::handle(key, &mut state) {
                     input::Action::Quit => break,
-                    input::Action::CopyOutput => {
-                        let output = state.output_text();
-                        match copy_to_clipboard(&output) {
-                            Ok(()) => state.push_ui_note(format!(
-                                "copied {} output line(s) to clipboard",
-                                output.lines().count()
-                            )),
-                            Err(err) => state.events.push(state::TimelineRow {
-                                iteration_index: state.iterations.len() as u32,
-                                delta: 0,
-                                kind: state::TimelineKind::Note {
-                                    level: NoteLevel::Warn,
-                                    text: format!("copy failed: {err}"),
-                                },
-                            }),
-                        }
-                    }
+                    input::Action::Copy(target) => copy_target_to_clipboard(&mut state, target),
                     input::Action::None => {}
+                },
+                Event::Resize(_, _) => {
+                    terminal.autoresize()?;
+                    terminal.clear()?;
                 }
+                _ => {}
             }
         }
     }
     Ok(())
+}
+
+fn copy_target_to_clipboard(state: &mut AppState, target: input::CopyTarget) {
+    let (label, text) = match target {
+        input::CopyTarget::Output => ("output", state.output_text()),
+        input::CopyTarget::Card => ("card", state.card_text()),
+        input::CopyTarget::Steps => ("steps", state.steps_text()),
+        input::CopyTarget::All => ("all", state.all_json_text()),
+    };
+    match copy_to_clipboard(&text) {
+        Ok(()) => state.push_ui_note(format!(
+            "copied {label} ({} line(s)) to clipboard",
+            text.lines().count()
+        )),
+        Err(err) => state.events.push(state::TimelineRow {
+            iteration_index: state.iterations.len() as u32,
+            delta: 0,
+            kind: state::TimelineKind::Note {
+                level: NoteLevel::Warn,
+                text: format!("copy failed: {err}"),
+            },
+        }),
+    }
 }
 
 fn copy_to_clipboard(text: &str) -> Result<()> {

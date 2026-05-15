@@ -10,17 +10,31 @@ use crate::tui::state::{AppState, FocusPane, HistoryEntry, TimelineKind, Timelin
 pub enum Action {
     None,
     Quit,
-    CopyOutput,
+    Copy(CopyTarget),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CopyTarget {
+    Output,
+    Card,
+    Steps,
+    All,
 }
 
 pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
     let scroll_step = 1u16;
     let page_step = 10u16;
+    if matches!(key.code, KeyCode::Char('c')) && key.modifiers == KeyModifiers::CONTROL {
+        return Action::Quit;
+    }
     if state.search.editing {
         return handle_search_key(key, state);
     }
     if state.history.open {
         return handle_history_key(key, state);
+    }
+    if state.copy_mode {
+        return handle_copy_key(key, state);
     }
     match (key.code, key.modifiers) {
         (KeyCode::Char('q'), _) | (KeyCode::Char('c'), KeyModifiers::CONTROL) => Action::Quit,
@@ -69,7 +83,10 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
             state.autoscroll = !state.autoscroll;
             Action::None
         }
-        (KeyCode::Char('c'), m) if m.is_empty() => Action::CopyOutput,
+        (KeyCode::Char('c'), m) if m.is_empty() => {
+            state.copy_mode = true;
+            Action::None
+        }
         (KeyCode::Char('/'), _) => {
             state.search.editing = true;
             Action::None
@@ -107,6 +124,22 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
 
         _ => Action::None,
     }
+}
+
+fn handle_copy_key(key: KeyEvent, state: &mut AppState) -> Action {
+    let target = match key.code {
+        KeyCode::Esc => {
+            state.copy_mode = false;
+            return Action::None;
+        }
+        KeyCode::Char('o') => CopyTarget::Output,
+        KeyCode::Char('c') => CopyTarget::Card,
+        KeyCode::Char('s') => CopyTarget::Steps,
+        KeyCode::Char('a') => CopyTarget::All,
+        _ => return Action::None,
+    };
+    state.copy_mode = false;
+    Action::Copy(target)
 }
 
 fn handle_search_key(key: KeyEvent, state: &mut AppState) -> Action {

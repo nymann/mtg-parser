@@ -1,6 +1,7 @@
 //! ratatui rendering. Pure function of `&AppState` → frame.
 
 use ratatui::{
+    layout::Alignment,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
@@ -60,24 +61,34 @@ pub fn render(f: &mut Frame<'_>, state: &AppState) {
 // ---------------------------------------------------------------------------
 
 fn render_title_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
-    let mut spans = vec![Span::styled(
+    let cols = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(42),
+            Constraint::Percentage(18),
+            Constraint::Percentage(40),
+        ])
+        .split(area);
+
+    let mut left = vec![Span::styled(
         "grammar-fix",
         Style::default().fg(C_TITLE).add_modifier(Modifier::BOLD),
     )];
+    let mut center = Vec::new();
+    let mut right = Vec::new();
     if let Some(iter) = state.active_iteration() {
         if let Some(card) = &iter.card {
-            spans.push(Span::raw(" · "));
-            spans.push(Span::styled(
+            left.push(Span::raw(" · "));
+            left.push(Span::styled(
                 card.name.clone(),
                 Style::default().fg(C_TITLE).add_modifier(Modifier::BOLD),
             ));
-            spans.push(Span::raw(format!(
+            left.push(Span::raw(format!(
                 " ({}/{})",
                 card.set_code, card.collector_number
             )));
         }
-        spans.push(Span::raw("   "));
-        spans.push(Span::styled(
+        center.push(Span::styled(
             format!(
                 "iter {}/{}",
                 iter.index,
@@ -88,20 +99,19 @@ fn render_title_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         if let Some(step_idx) = iter.current_step {
             if let Some(step) = iter.step(step_idx) {
                 let dur = step.duration_secs().unwrap_or(0);
-                spans.push(Span::raw("  "));
-                spans.push(Span::styled(
+                right.push(Span::styled(
                     format!("step {step_idx}/{} · {}", step.total, step.label),
                     Style::default().fg(C_WARN).add_modifier(Modifier::BOLD),
                 ));
-                spans.push(Span::styled(
+                right.push(Span::styled(
                     format!(" (+{dur}s)"),
                     Style::default().fg(C_WARN),
                 ));
             }
         }
     } else if let Some(s) = &state.session {
-        spans.push(Span::raw("  "));
-        spans.push(Span::styled(
+        left.push(Span::raw("  "));
+        left.push(Span::styled(
             format!(
                 "set={} max-iter={}",
                 s.set,
@@ -110,8 +120,15 @@ fn render_title_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
             Style::default().fg(C_DIM),
         ));
     }
-    let paragraph = Paragraph::new(Line::from(spans)).style(Style::default().bg(Color::Reset));
-    f.render_widget(paragraph, area);
+    f.render_widget(Paragraph::new(Line::from(left)), cols[0]);
+    f.render_widget(
+        Paragraph::new(Line::from(center)).alignment(Alignment::Center),
+        cols[1],
+    );
+    f.render_widget(
+        Paragraph::new(Line::from(right)).alignment(Alignment::Right),
+        cols[2],
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -137,45 +154,88 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let avg = state.avg_iteration_secs();
     let elapsed_secs = state.elapsed().as_secs();
 
-    let spans: Vec<Span> = vec![
-        Span::styled("cards", Style::default().fg(C_FAINT)),
-        Span::raw(" "),
-        Span::raw(format!("{cards_done} done · {cards_active} active")),
-        sep(),
-        Span::styled("avg/card", Style::default().fg(C_FAINT)),
-        Span::raw(" "),
-        Span::raw(avg.map(|s| format!("{s}s")).unwrap_or_else(|| "—".into())),
-        sep(),
-        Span::styled("grammar", Style::default().fg(C_FAINT)),
-        Span::raw(" "),
-        Span::raw(format!(
-            "{}→{}",
-            s.baseline_grammar_rules, s.current_grammar_rules
-        )),
-        delta_span(s.grammar_delta(), " rules"),
-        sep(),
-        Span::styled("corpus", Style::default().fg(C_FAINT)),
-        Span::raw(" "),
-        Span::raw(format!(
-            "{}/{}→{}/{}",
-            s.baseline_corpus_passing,
-            s.baseline_corpus_total,
-            s.current_corpus_passing,
-            s.current_corpus_total
-        )),
-        delta_span(s.corpus_delta(), " passes"),
-        sep(),
-        Span::styled("elapsed", Style::default().fg(C_FAINT)),
-        Span::raw(" "),
-        Span::raw(format_secs(elapsed_secs)),
-    ];
+    let cols = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(20),
+            Constraint::Percentage(16),
+            Constraint::Percentage(20),
+            Constraint::Percentage(30),
+            Constraint::Percentage(14),
+        ])
+        .split(area);
 
-    let paragraph = Paragraph::new(Line::from(spans)).style(Style::default().fg(C_DIM));
-    f.render_widget(paragraph, area);
+    render_bar_segment(
+        f,
+        cols[0],
+        vec![
+            label_span("cards"),
+            Span::raw(format!("{cards_done} done · {cards_active} active")),
+        ],
+        Alignment::Left,
+    );
+    render_bar_segment(
+        f,
+        cols[1],
+        vec![
+            label_span("avg/card"),
+            Span::raw(avg.map(|s| format!("{s}s")).unwrap_or_else(|| "—".into())),
+        ],
+        Alignment::Center,
+    );
+    render_bar_segment(
+        f,
+        cols[2],
+        vec![
+            label_span("grammar"),
+            Span::raw(format!(
+                "{}→{}",
+                s.baseline_grammar_rules, s.current_grammar_rules
+            )),
+            delta_span(s.grammar_delta(), " rules"),
+        ],
+        Alignment::Center,
+    );
+    render_bar_segment(
+        f,
+        cols[3],
+        vec![
+            label_span("corpus"),
+            Span::raw(format!(
+                "{}/{}→{}/{}",
+                s.baseline_corpus_passing,
+                s.baseline_corpus_total,
+                s.current_corpus_passing,
+                s.current_corpus_total
+            )),
+            delta_span(s.corpus_delta(), " passes"),
+        ],
+        Alignment::Center,
+    );
+    render_bar_segment(
+        f,
+        cols[4],
+        vec![label_span("elapsed"), Span::raw(format_secs(elapsed_secs))],
+        Alignment::Right,
+    );
 }
 
-fn sep() -> Span<'static> {
-    Span::styled(" · ", Style::default().fg(C_FAINT))
+fn label_span(label: &'static str) -> Span<'static> {
+    Span::styled(format!("{label} "), Style::default().fg(C_FAINT))
+}
+
+fn render_bar_segment(
+    f: &mut Frame<'_>,
+    area: Rect,
+    spans: Vec<Span<'static>>,
+    alignment: Alignment,
+) {
+    f.render_widget(
+        Paragraph::new(Line::from(spans))
+            .style(Style::default().fg(C_DIM))
+            .alignment(alignment),
+        area,
+    );
 }
 
 fn delta_span(delta: i64, suffix: &str) -> Span<'static> {
@@ -237,7 +297,7 @@ fn render_card_panel(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(C_FAINT))
-        .title(" card ")
+        .title(copy_title("card", 'c', state.copy_mode))
         .title_style(Style::default().fg(C_DIM).add_modifier(Modifier::BOLD));
 
     let lines: Vec<Line> = match state.active_iteration().and_then(|i| i.card.as_ref()) {
@@ -336,7 +396,7 @@ fn render_steps(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(C_FAINT))
-        .title(" steps ")
+        .title(copy_title("steps", 's', state.copy_mode))
         .title_style(Style::default().fg(C_DIM).add_modifier(Modifier::BOLD));
 
     let mut lines = Vec::new();
@@ -408,7 +468,7 @@ fn render_output(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(C_FAINT))
-        .title(" output ")
+        .title(copy_title("output", 'o', state.copy_mode))
         .title_style(Style::default().fg(C_DIM).add_modifier(Modifier::BOLD));
 
     let inner = block.inner(area);
@@ -671,30 +731,80 @@ fn kind_cell(name: &str, color: Color) -> Span<'static> {
     Span::styled(padded, Style::default().fg(color))
 }
 
+fn copy_title(name: &'static str, hotkey: char, active: bool) -> Line<'static> {
+    let mut spans = vec![Span::raw(" ")];
+    for ch in name.chars() {
+        if active && ch == hotkey {
+            spans.push(Span::styled(
+                ch.to_string(),
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(C_WARN)
+                    .add_modifier(Modifier::BOLD),
+            ));
+        } else {
+            spans.push(Span::styled(
+                ch.to_string(),
+                Style::default().fg(C_DIM).add_modifier(Modifier::BOLD),
+            ));
+        }
+    }
+    spans.push(Span::raw(" "));
+    Line::from(spans)
+}
+
 // ---------------------------------------------------------------------------
 // status bar
 // ---------------------------------------------------------------------------
 
 fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
-    let left = vec![
-        Span::styled(" q ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
-        Span::raw(" quit · "),
-        Span::styled(" ↑↓ ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
-        Span::raw(" scroll · "),
-        Span::styled(" p ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
-        Span::raw(" pause autoscroll · "),
-        Span::styled(" g/G ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
+    let cols = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(38),
+            Constraint::Percentage(38),
+            Constraint::Percentage(24),
+        ])
+        .split(area);
+    let nav = vec![
+        key_span("q"),
+        Span::raw(" quit  "),
+        key_span("↑↓"),
+        Span::raw(" scroll  "),
+        key_span("p"),
+        Span::raw(" pause  "),
+        key_span("g/G"),
         Span::raw(" top/bottom"),
-        Span::raw(" · "),
-        Span::styled(" c ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
-        Span::raw(" copy · "),
-        Span::styled(" / ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
-        Span::raw(" search · "),
-        Span::styled(" f ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
-        Span::raw(" filter · "),
-        Span::styled(" H ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
-        Span::raw(" history"),
     ];
+    let copy = if state.copy_mode {
+        vec![
+            Span::styled(
+                "copy ",
+                Style::default().fg(C_WARN).add_modifier(Modifier::BOLD),
+            ),
+            hotkey_span("c"),
+            Span::raw(" card  "),
+            hotkey_span("s"),
+            Span::raw(" steps  "),
+            hotkey_span("o"),
+            Span::raw(" output  "),
+            hotkey_span("a"),
+            Span::raw(" all  "),
+            key_span("Esc"),
+            Span::raw(" cancel"),
+        ]
+    } else {
+        vec![
+            key_span("c"),
+            Span::raw(" copy  "),
+            key_span("/"),
+            Span::raw(" search  "),
+            key_span("f"),
+            Span::raw(" filter  "),
+            key_span("H"),
+            Span::raw(" history"),
+        ]
+    };
     let right = format!(
         "{} · {} events",
         if state.autoscroll {
@@ -704,17 +814,33 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         },
         state.events.len()
     );
-    let line = Line::from(
-        left.into_iter()
-            .chain(std::iter::once(Span::raw("  ")))
-            .chain(std::iter::once(Span::styled(
-                right,
-                Style::default().fg(C_DIM),
-            )))
-            .collect::<Vec<_>>(),
+    f.render_widget(Paragraph::new(Line::from(nav)), cols[0]);
+    f.render_widget(
+        Paragraph::new(Line::from(copy)).alignment(Alignment::Center),
+        cols[1],
     );
-    let paragraph = Paragraph::new(line).style(Style::default().bg(Color::Reset).fg(C_DIM));
-    f.render_widget(paragraph, area);
+    f.render_widget(
+        Paragraph::new(Line::from(Span::styled(right, Style::default().fg(C_DIM))))
+            .alignment(Alignment::Right),
+        cols[2],
+    );
+}
+
+fn key_span(key: &'static str) -> Span<'static> {
+    Span::styled(
+        format!(" {key} "),
+        Style::default().fg(C_DIM).bg(Color::DarkGray),
+    )
+}
+
+fn hotkey_span(key: &'static str) -> Span<'static> {
+    Span::styled(
+        format!(" {key} "),
+        Style::default()
+            .fg(Color::Black)
+            .bg(C_WARN)
+            .add_modifier(Modifier::BOLD),
+    )
 }
 
 fn render_search_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
