@@ -228,22 +228,23 @@ damage_event_recipient_list = {
     ^"to" ~ damage_recipient ~ (^"and" ~ damage_recipient)+
 }
 damage_prevention_effect = {
-    prevent_all_damage_this_turn
-  | prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
+    prevent_damage_this_turn
 }
-prevent_all_damage_this_turn = {
-    ^"prevent" ~ damage_prevention_all_amount ~ damage_kind ~ ^"damage" ~ ^"that"
-  ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"this" ~ ^"turn" ~ "."
+prevent_damage_this_turn = {
+    ^"prevent" ~ damage_prevention_amount_axis ~ damage_kind? ~ ^"damage"
+  ~ damage_that_would_be_dealt ~ damage_prevention_recipient? ~ this_turn_period
 }
+damage_prevention_amount_axis = { damage_prevention_all_amount | damage_prevention_next_amount }
 damage_prevention_all_amount = { ^"all" }
+damage_prevention_next_amount = { ^"the" ~ ^"next" ~ damage_prevention_amount }
 prevent_next_damage_that_would_be_dealt_to_recipient_this_turn = {
-    prevent_next_damage_prefix ~ damage_prevention_amount
-  ~ damage_that_would_be_dealt_to ~ prevention_recipient ~ this_turn_period
+    ^"prevent" ~ damage_prevention_next_amount ~ ^"damage"
+  ~ damage_that_would_be_dealt ~ damage_prevention_recipient ~ this_turn_period
 }
-prevent_next_damage_prefix = _{ ^"prevent" ~ ^"the" ~ ^"next" }
-damage_that_would_be_dealt_to = _{
-    ^"damage" ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"to"
+damage_that_would_be_dealt = _{
+    ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"
 }
+damage_prevention_recipient = { ^"to" ~ prevention_recipient }
 this_turn_period = _{ ^"this" ~ ^"turn" ~ "." }
 damage_prevention_amount = _{ damage_amount_expression }
 prevention_recipient = _{ any_target_prevention_recipient | that_permanent_or_player_prevention_recipient }
@@ -982,8 +983,9 @@ redirect_that_damage_to_you = {
     ^"that" ~ ^"source" ~ ^"deals" ~ ^"that" ~ ^"damage" ~ ^"to" ~ ^"you" ~ ^"instead"
 }
 prevent_next_damage_this_turn = {
-    prevent_next_damage_prefix ~ damage_prevention_amount ~ damage_that_would_be_dealt_to
-  ~ activated_damage_prevention_recipient ~ this_turn_period
+    ^"prevent" ~ damage_prevention_next_amount ~ ^"damage"
+  ~ damage_that_would_be_dealt ~ ^"to" ~ activated_damage_prevention_recipient
+  ~ this_turn_period
 }
 put_up_to_variable_pt_counters_on_source = {
     ^"put" ~ ^"up" ~ ^"to" ~ variable_name ~ pt_counters

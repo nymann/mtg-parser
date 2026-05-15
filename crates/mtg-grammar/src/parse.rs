@@ -973,30 +973,8 @@ fn prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(
 
 fn damage_prevention_effect_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let effect = damage_prevention_effect_from_pair(pair)?;
-    match (
-        effect.amount,
-        effect.kind,
-        effect.recipient,
-        effect.duration,
-    ) {
-        (
-            DamagePreventionAmount::All,
-            Some(DamageKind::CombatDamage),
-            None,
-            DamagePreventionDuration::ThisTurn,
-        ) => Ok(Statement::PreventAllCombatDamageThisTurn),
-        (
-            DamagePreventionAmount::Next(amount),
-            None,
-            Some(recipient),
-            DamagePreventionDuration::ThisTurn,
-        ) => Ok(
-            Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                prevention: DamagePrevention { amount, recipient },
-            },
-        ),
-        _ => Err(ParseError::Internal("unsupported damage prevention effect")),
-    }
+    Statement::damage_prevention_effect(effect)
+        .ok_or(ParseError::Internal("unsupported damage prevention effect"))
 }
 
 fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
@@ -1026,16 +1004,27 @@ fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
 fn prevent_next_damage_parts_from_pair(
     pair: Pair<Rule>,
 ) -> Result<DamagePrevention<PreventionRecipient>, ParseError> {
-    let mut inner = pair.into_inner();
-    let amount_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("prevent next damage missing amount"))?;
-    let recipient_pair = inner.next().ok_or(ParseError::Internal(
-        "prevent next damage missing recipient",
-    ))?;
+    let mut amount = None;
+    let mut recipient = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::damage_prevention_next_amount => {
+                amount = Some(damage_prevention_next_amount_from_pair(child)?);
+            }
+            Rule::damage_prevention_recipient => {
+                recipient = Some(prevention_recipient_from_pair(only_inner(
+                    child,
+                    "prevent next damage missing recipient",
+                )?)?);
+            }
+            _ => return Err(ParseError::Internal("prevent next damage child")),
+        }
+    }
     Ok(DamagePrevention {
-        amount: damage_amount_from_pair(amount_pair)?,
-        recipient: prevention_recipient_from_pair(recipient_pair)?,
+        amount: amount.ok_or(ParseError::Internal("prevent next damage missing amount"))?,
+        recipient: recipient.ok_or(ParseError::Internal(
+            "prevent next damage missing recipient",
+        ))?,
     })
 }
 
@@ -1044,38 +1033,54 @@ fn damage_prevention_effect_from_pair(
 ) -> Result<DamagePreventionEffect<PreventionRecipient>, ParseError> {
     let inner = only_inner(pair, "damage prevention effect missing inner rule")?;
     match inner.as_rule() {
-        Rule::prevent_all_damage_this_turn => {
+        Rule::prevent_damage_this_turn => {
             let mut amount = None;
             let mut kind = None;
+            let mut recipient = None;
             for child in inner.into_inner() {
                 match child.as_rule() {
-                    Rule::damage_prevention_all_amount => {
-                        amount = Some(DamagePreventionAmount::All);
+                    Rule::damage_prevention_amount_axis => {
+                        amount = Some(damage_prevention_amount_axis_from_pair(child)?);
                     }
                     Rule::damage_kind => {
                         kind = Some(damage_kind_from_pair(child)?);
                     }
-                    _ => return Err(ParseError::Internal("prevent all damage child")),
+                    Rule::damage_prevention_recipient => {
+                        recipient = Some(prevention_recipient_from_pair(only_inner(
+                            child,
+                            "damage prevention missing recipient",
+                        )?)?);
+                    }
+                    _ => return Err(ParseError::Internal("damage prevention child")),
                 }
             }
             Ok(DamagePreventionEffect {
-                amount: amount.ok_or(ParseError::Internal("prevent all damage missing amount"))?,
+                amount: amount.ok_or(ParseError::Internal("damage prevention missing amount"))?,
                 kind,
-                recipient: None,
-                duration: DamagePreventionDuration::ThisTurn,
-            })
-        }
-        Rule::prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
-            let prevention = prevent_next_damage_parts_from_pair(inner)?;
-            Ok(DamagePreventionEffect {
-                amount: DamagePreventionAmount::Next(prevention.amount),
-                kind: None,
-                recipient: Some(prevention.recipient),
+                recipient,
                 duration: DamagePreventionDuration::ThisTurn,
             })
         }
         _ => Err(ParseError::Internal("damage prevention effect")),
     }
+}
+
+fn damage_prevention_amount_axis_from_pair(
+    pair: Pair<Rule>,
+) -> Result<DamagePreventionAmount, ParseError> {
+    let inner = only_inner(pair, "damage prevention amount missing inner rule")?;
+    match inner.as_rule() {
+        Rule::damage_prevention_all_amount => Ok(DamagePreventionAmount::All),
+        Rule::damage_prevention_next_amount => Ok(DamagePreventionAmount::Next(
+            damage_prevention_next_amount_from_pair(inner)?,
+        )),
+        _ => Err(ParseError::Internal("damage prevention amount")),
+    }
+}
+
+fn damage_prevention_next_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
+    let amount_pair = only_inner(pair, "damage prevention next amount missing amount")?;
+    damage_amount_from_pair(amount_pair)
 }
 
 fn damage_kind_from_pair(pair: Pair<Rule>) -> Result<DamageKind, ParseError> {
@@ -2061,17 +2066,26 @@ fn activated_damage_effect_from_pair(
     match pair.as_rule() {
         Rule::next_damage_event_effect => next_damage_event_effect_from_pair(pair),
         Rule::prevent_next_damage_this_turn => {
-            let mut inner = pair.into_inner();
-            let amount_pair = inner
-                .next()
-                .ok_or(ParseError::Internal("prevent next damage missing amount"))?;
-            let recipient_pair = inner.next().ok_or(ParseError::Internal(
-                "prevent next damage missing recipient",
-            ))?;
+            let mut amount = None;
+            let mut recipient = None;
+            for child in pair.into_inner() {
+                match child.as_rule() {
+                    Rule::damage_prevention_next_amount => {
+                        amount = Some(damage_prevention_next_amount_from_pair(child)?);
+                    }
+                    Rule::you_damage_recipient | Rule::any_target_prevention_recipient => {
+                        recipient = Some(activated_damage_recipient_from_pair(child)?);
+                    }
+                    _ => return Err(ParseError::Internal("prevent next damage child")),
+                }
+            }
             Ok(ActivatedDamageEffect::PreventNextDamageThisTurn {
                 prevention: DamagePrevention {
-                    amount: damage_amount_from_pair(amount_pair)?,
-                    recipient: activated_damage_recipient_from_pair(recipient_pair)?,
+                    amount: amount
+                        .ok_or(ParseError::Internal("prevent next damage missing amount"))?,
+                    recipient: recipient.ok_or(ParseError::Internal(
+                        "prevent next damage missing recipient",
+                    ))?,
                 },
             })
         }

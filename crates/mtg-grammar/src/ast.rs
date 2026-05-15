@@ -340,6 +340,35 @@ impl Statement {
             IfYouDoEffect::GainLife { amount } => Statement::IfYouDoGainLife { amount },
         }
     }
+
+    pub(crate) fn damage_prevention_effect(
+        effect: DamagePreventionEffect<PreventionRecipient>,
+    ) -> Option<Self> {
+        match (
+            effect.amount,
+            effect.kind,
+            effect.recipient,
+            effect.duration,
+        ) {
+            (
+                DamagePreventionAmount::All,
+                Some(DamageKind::CombatDamage),
+                None,
+                DamagePreventionDuration::ThisTurn,
+            ) => Some(Statement::PreventAllCombatDamageThisTurn),
+            (
+                DamagePreventionAmount::Next(amount),
+                None,
+                Some(recipient),
+                DamagePreventionDuration::ThisTurn,
+            ) => Some(
+                Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                    prevention: DamagePrevention { amount, recipient },
+                },
+            ),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
