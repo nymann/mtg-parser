@@ -11,7 +11,7 @@
 
 use mtg_grammar::{
     CardCount, Color, EachPlayerAction, ImperativeAction, ManaCost, ManaSymbol, PermanentType,
-    Statement, TriggerEffect, TriggerEvent, TriggeredAbility, Zone,
+    Statement, TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -80,6 +80,15 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_mana_cost().prop_map(|mana| Statement::AddMana { mana }),
         Just(Statement::CounterTargetSpell),
         Just(Statement::DestroyTargetCreature),
+        Just(Statement::NamedSourceDealsVariableDamageToAnyTarget {
+            source_name: "Disintegrate".to_string(),
+            amount: Variable::X,
+        }),
+        arb_permanent_type().prop_map(|permanent_type| {
+            Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
+                permanent_type,
+            }
+        }),
         (arb_permanent_type(), arb_permanent_type()).prop_map(|(a, b)| {
             Statement::DestroyTargetPermanentChoice {
                 permanent_types: vec![a, b],

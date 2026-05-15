@@ -24,6 +24,26 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::CounterTargetSpell => out.push_str("Counter target spell."),
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
         Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
+        Statement::NamedSourceDealsVariableDamageToAnyTarget {
+            source_name,
+            amount,
+        } => {
+            out.push_str(source_name);
+            out.push_str(" deals ");
+            out.push_str(variable_name(*amount));
+            out.push_str(" damage to any target.");
+        }
+        Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
+            permanent_type,
+        } => {
+            out.push_str("If it's ");
+            out.push_str(indefinite_article(*permanent_type));
+            out.push(' ');
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(
+                ", it can't be regenerated this turn, and if it would die this turn, exile it instead.",
+            );
+        }
         Statement::DestroyTargetPermanentChoice { permanent_types } => {
             out.push_str("Destroy target ");
             write_permanent_type_choice(out, permanent_types);

@@ -10,6 +10,16 @@ pub enum Statement {
     DestroyTargetCreature,
     /// "Regenerate target creature."
     RegenerateTargetCreature,
+    /// "<source name> deals X damage to any target."
+    NamedSourceDealsVariableDamageToAnyTarget {
+        source_name: String,
+        amount: Variable,
+    },
+    /// "If it's a <type>, it can't be regenerated this turn, and if it
+    /// would die this turn, exile it instead."
+    IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
+        permanent_type: PermanentType,
+    },
     /// "Destroy target <permanent_type> or <permanent_type>."
     DestroyTargetPermanentChoice {
         permanent_types: Vec<PermanentType>,

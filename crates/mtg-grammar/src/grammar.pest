@@ -44,6 +44,8 @@ sentence_statement = _{
   | destroy_target_permanent_choice
   | destroy
   | regenerate_target_creature
+  | named_source_deals_variable_damage_to_any_target
+  | if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn
   | draw_cards
   | add_mana
   | until_eot_you_may_pay_cost_at_timing
@@ -115,6 +117,19 @@ destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural ~ "." }
 destroy_target_permanent_choice = { ^"destroy" ~ ^"target" ~ permanent_type ~ (^"or" ~ permanent_type)+ ~ "." }
 counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
+
+named_source_deals_variable_damage_to_any_target = {
+    proper_name ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to" ~ ^"any" ~ ^"target" ~ "."
+}
+proper_name = @{ upper_alpha ~ (ASCII_ALPHANUMERIC | "'" | "-")* ~ (WHITESPACE ~ upper_alpha ~ (ASCII_ALPHANUMERIC | "'" | "-")*)* }
+upper_alpha = _{ 'A'..'Z' }
+
+if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn = {
+    ^"if" ~ ^"it's" ~ article ~ permanent_type ~ "," ~ ^"it" ~ ^"can't"
+  ~ ^"be" ~ ^"regenerated" ~ ^"this" ~ ^"turn" ~ "," ~ ^"and"
+  ~ ^"if" ~ ^"it" ~ ^"would" ~ ^"die" ~ ^"this" ~ ^"turn" ~ ","
+  ~ ^"exile" ~ ^"it" ~ ^"instead" ~ "."
+}
 
 draw_cards  = { ^"target" ~ ^"player" ~ ^"draws" ~ draw_count ~ ^"cards" ~ "." }
 draw_count  = _{ number_word | variable_name }

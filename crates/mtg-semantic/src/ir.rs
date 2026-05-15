@@ -2,7 +2,7 @@ use mtg_grammar::{
     ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Color,
     EachPlayerAction, ImperativeAction, Keyword, ManaCost, MixedPtModifier, ModalMode,
     OptionalCost, PermanentType, PhysicalAction, PtModifier, SourceObject, StaticAbility,
-    TriggeredAbility, VariableDefinition, Zone,
+    TriggeredAbility, Variable, VariableDefinition, Zone,
 };
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +22,14 @@ pub enum CardEffect {
     DestroyTargetCreature,
     /// "Regenerate target creature."
     RegenerateTargetCreature,
+    /// "<source name> deals X damage to any target."
+    NamedSourceDealsVariableDamageToAnyTarget {
+        source_name: String,
+        amount: Variable,
+    },
+    /// "If it's a <type>, it can't be regenerated this turn, and if it
+    /// would die this turn, exile it instead."
+    IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn { permanent_type: PermanentType },
     /// "Destroy target <permanent_type> or <permanent_type>."
     DestroyTargetPermanentChoice { permanent_types: Vec<PermanentType> },
     /// "Destroy all <permanent_type>s."

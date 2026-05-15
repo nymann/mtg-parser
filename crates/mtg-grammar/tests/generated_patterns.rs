@@ -99,3 +99,5 @@ mod demonic_tutor;
 mod dingus_egg;
 #[path = "generated_patterns/disenchant.rs"]
 mod disenchant;
+#[path = "generated_patterns/disintegrate.rs"]
+mod disintegrate;

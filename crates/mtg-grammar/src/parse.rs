@@ -65,6 +65,14 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::counter_target_spell => Ok(Statement::CounterTargetSpell),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
+        Rule::named_source_deals_variable_damage_to_any_target => {
+            named_source_deals_variable_damage_to_any_target_from_pair(pair)
+        }
+        Rule::if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn => {
+            if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(
+                pair,
+            )
+        }
         Rule::destroy_target_permanent_choice => destroy_target_permanent_choice_from_pair(pair),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),
@@ -445,6 +453,35 @@ fn destroy_target_permanent_choice_from_pair(pair: Pair<Rule>) -> Result<Stateme
         .map(permanent_type_from_pair)
         .collect::<Result<Vec<_>, _>>()?;
     Ok(Statement::DestroyTargetPermanentChoice { permanent_types })
+}
+
+fn named_source_deals_variable_damage_to_any_target_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("named damage missing source name"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("named damage missing amount"))?;
+    Ok(Statement::NamedSourceDealsVariableDamageToAnyTarget {
+        source_name: source_pair.as_str().to_string(),
+        amount: variable_from_str(amount_pair.as_str())?,
+    })
+}
+
+fn if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "conditional exile missing permanent type",
+    ))?;
+    Ok(
+        Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
+            permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+        },
+    )
 }
 
 fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
