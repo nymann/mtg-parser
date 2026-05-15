@@ -247,3 +247,5 @@ mod natural_selection;
 mod nether_shadow;
 #[path = "generated_patterns/nettling_imp.rs"]
 mod nettling_imp;
+#[path = "generated_patterns/nevinyrral_s_disk.rs"]
+mod nevinyrral_s_disk;

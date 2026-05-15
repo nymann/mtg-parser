@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 196,
+  "passing": 197,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -536,8 +536,7 @@
       "status": "pass"
     },
     "lea/Nevinyrral's Disk": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | This artifact enters tapped.\n  |      ^---\n  |\n  = expected aura_source_object"
+      "status": "pass"
     },
     "lea/Nightmare": {
       "status": "fail",
@@ -569,7 +568,7 @@
     },
     "lea/Personal Incarnation": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {0}: The next 1 damage that would be dealt to this creature this turn is dealt to its owner instead. Only this creatures owner may activate this ability.\n  |      ^---\n  |\n  = expected counter_target_colored_spell, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, destroy_target_creature_type, destroy_target_permanent, untap_target_permanent, untap_source, untap_enchanted_object, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_all_but_damage_from_unblocked_creature, next_damage_from_source_to_target_permanent_is_dealt_to_you_instead, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {0}: The next 1 damage that would be dealt to this creature this turn is dealt to its owner instead. Only this creatures owner may activate this ability.\n  |      ^---\n  |\n  = expected counter_target_colored_spell, destroy_all, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, destroy_target_creature_type, destroy_target_permanent, untap_target_permanent, untap_source, untap_enchanted_object, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_all_but_damage_from_unblocked_creature, next_damage_from_source_to_target_permanent_is_dealt_to_you_instead, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
     },
     "lea/Pestilence": {
       "status": "fail",
@@ -682,7 +681,7 @@
     },
     "lea/Samite Healer": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Prevent the next 1 damage that would be dealt to any target this turn.\n  |      ^---\n  |\n  = expected counter_target_colored_spell, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, destroy_target_creature_type, destroy_target_permanent, untap_target_permanent, untap_source, untap_enchanted_object, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_all_but_damage_from_unblocked_creature, next_damage_from_source_to_target_permanent_is_dealt_to_you_instead, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Prevent the next 1 damage that would be dealt to any target this turn.\n  |      ^---\n  |\n  = expected counter_target_colored_spell, destroy_all, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, destroy_target_creature_type, destroy_target_permanent, untap_target_permanent, untap_source, untap_enchanted_object, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_all_but_damage_from_unblocked_creature, next_damage_from_source_to_target_permanent_is_dealt_to_you_instead, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
     },
     "lea/Savannah": {
       "status": "fail",
@@ -772,7 +771,7 @@
     },
     "lea/Stone Giant": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.\n  |      ^---\n  |\n  = expected counter_target_colored_spell, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, destroy_target_creature_type, destroy_target_permanent, untap_target_permanent, untap_source, untap_enchanted_object, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_all_but_damage_from_unblocked_creature, next_damage_from_source_to_target_permanent_is_dealt_to_you_instead, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.\n  |      ^---\n  |\n  = expected counter_target_colored_spell, destroy_all, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, destroy_target_creature_type, destroy_target_permanent, untap_target_permanent, untap_source, untap_enchanted_object, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_all_but_damage_from_unblocked_creature, next_damage_from_source_to_target_permanent_is_dealt_to_you_instead, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
     },
     "lea/Stone Rain": {
       "status": "pass"
@@ -803,7 +802,7 @@
     },
     "lea/The Hive": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {5}, {T}: Create a 1/1 colorless Insect artifact creature token with flying named Wasp.\n  |           ^---\n  |\n  = expected counter_target_colored_spell, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, destroy_target_creature_type, destroy_target_permanent, untap_target_permanent, untap_source, untap_enchanted_object, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_all_but_damage_from_unblocked_creature, next_damage_from_source_to_target_permanent_is_dealt_to_you_instead, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {5}, {T}: Create a 1/1 colorless Insect artifact creature token with flying named Wasp.\n  |           ^---\n  |\n  = expected counter_target_colored_spell, destroy_all, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, destroy_target_creature_type, destroy_target_permanent, untap_target_permanent, untap_source, untap_enchanted_object, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_all_but_damage_from_unblocked_creature, next_damage_from_source_to_target_permanent_is_dealt_to_you_instead, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
     },
     "lea/Thicket Basilisk": {
       "status": "pass"
@@ -819,7 +818,7 @@
     },
     "lea/Time Vault": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | This artifact enters tapped.\n  |      ^---\n  |\n  = expected aura_source_object"
+      "error": "parse: parse error:  --> 3:4\n  |\n3 | If you would begin your turn while this artifact is tapped, you may skip that turn instead. If you do, untap this artifact.\n  |    ^---\n  |\n  = expected source_object"
     },
     "lea/Time Walk": {
       "status": "fail",

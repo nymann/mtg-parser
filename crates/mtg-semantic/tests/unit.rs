@@ -53,6 +53,22 @@ fn lowers_destroy_target_permanent() {
 }
 
 #[test]
+fn lowers_destroy_all_permanent_types() {
+    let permanent_types = vec![
+        PermanentType::Artifact,
+        PermanentType::Creature,
+        PermanentType::Enchantment,
+    ];
+    assert_eq!(
+        lower(&Statement::DestroyAll {
+            permanent_types: permanent_types.clone(),
+        })
+        .unwrap(),
+        CardEffect::DestroyAll { permanent_types },
+    );
+}
+
+#[test]
 fn lowers_that_permanents_controller_may_attach_this_aura() {
     assert_eq!(
         lower(

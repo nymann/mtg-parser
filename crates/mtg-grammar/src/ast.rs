@@ -77,9 +77,9 @@ pub enum Statement {
         controller_of: PermanentType,
         attach_to: PermanentType,
     },
-    /// "Destroy all <permanent_type>s."
+    /// "Destroy all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]."
     DestroyAll {
-        permanent_type: PermanentType,
+        permanent_types: Vec<PermanentType>,
     },
     /// "Destroy all <basic_land_type>s."
     DestroyAllBasicLands {
@@ -711,6 +711,10 @@ pub enum ActivatedEffect {
     DestroyTargetCreatureType {
         creature_type: CreatureType,
     },
+    /// "Destroy all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]."
+    DestroyAll {
+        permanent_types: Vec<PermanentType>,
+    },
     /// "Look at target player's hand."
     LookAtTargetPlayersHand,
     /// "Draw N cards."
@@ -1055,6 +1059,8 @@ pub enum StaticAbility {
         permanent_type: PermanentType,
         exception: Option<CopyException>,
     },
+    /// "This <permanent_type> enters tapped."
+    SourceEntersTapped { source: SourceObject },
     /// "This effect doesn't remove this Aura." — effect-continuity text
     /// for Aura effects that otherwise might remove their own attachment.
     EffectDoesntRemoveThisAura,

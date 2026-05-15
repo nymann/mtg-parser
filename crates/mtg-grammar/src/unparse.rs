@@ -134,9 +134,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(permanent_type_name(*attach_to));
             out.push_str(" of their choice.");
         }
-        Statement::DestroyAll { permanent_type } => {
+        Statement::DestroyAll { permanent_types } => {
             out.push_str("Destroy all ");
-            out.push_str(permanent_type_plural_name(*permanent_type));
+            write_permanent_type_plural_list(out, permanent_types);
             out.push('.');
         }
         Statement::DestroyAllBasicLands { basic_land_type } => {
@@ -892,6 +892,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(permanent_type_name(*permanent_type));
             out.push('.');
         }
+        ActivatedEffect::DestroyAll { permanent_types } => {
+            out.push_str("Destroy all ");
+            write_permanent_type_plural_list(out, permanent_types);
+            out.push('.');
+        }
         ActivatedEffect::DestroyTargetCreatureType { creature_type } => {
             out.push_str("Destroy target ");
             write_creature_type(out, *creature_type);
@@ -1279,6 +1284,10 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
                 write_copy_exception(out, *exception);
             }
             out.push('.');
+        }
+        StaticAbility::SourceEntersTapped { source } => {
+            write_source_object_capitalized(out, *source);
+            out.push_str(" enters tapped.");
         }
         StaticAbility::EffectDoesntRemoveThisAura => {
             out.push_str("This effect doesn't remove this Aura.");
@@ -2063,6 +2072,23 @@ fn write_permanent_type_choice(out: &mut String, permanent_types: &[PermanentTyp
             }
         }
         out.push_str(permanent_type_name(*permanent_type));
+    }
+}
+
+fn write_permanent_type_plural_list(out: &mut String, permanent_types: &[PermanentType]) {
+    for (index, permanent_type) in permanent_types.iter().enumerate() {
+        if index > 0 {
+            if index == permanent_types.len() - 1 {
+                if permanent_types.len() > 2 {
+                    out.push_str(", and ");
+                } else {
+                    out.push_str(" and ");
+                }
+            } else {
+                out.push_str(", ");
+            }
+        }
+        out.push_str(permanent_type_plural_name(*permanent_type));
     }
 }
 

@@ -293,6 +293,9 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_noncreature_permanent_type().prop_map(|permanent_type| {
             Statement::DestroyTargetPermanent { permanent_type }
         }),
+        prop::collection::vec(arb_permanent_type(), 1..5).prop_map(|permanent_types| {
+            Statement::DestroyAll { permanent_types }
+        }),
         (arb_permanent_type(), arb_permanent_type()).prop_map(|(controller_of, attach_to)| {
             Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
                 controller_of,

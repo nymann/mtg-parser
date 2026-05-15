@@ -229,6 +229,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead
         | Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns
         | Rule::static_you_may_have_source_enter_as_copy
+        | Rule::static_source_enters_tapped
         | Rule::static_source_attacks_each_combat_if_able
         | Rule::static_source_cant_be_blocked_by_creature_type
         | Rule::static_source_doesnt_untap_during_your_untap_step
@@ -670,12 +671,12 @@ fn balance_same_way_action_from_pair(pair: Pair<Rule>) -> Result<BalanceSameWayA
 }
 
 fn destroy_all_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let pt = pair
+    let permanent_type_list_pair = pair
         .into_inner()
         .next()
-        .expect("destroy_all always contains a permanent_type_plural");
+        .expect("destroy_all always contains a permanent_type_plural_list");
     Ok(Statement::DestroyAll {
-        permanent_type: permanent_type_from_plural_pair(pt)?,
+        permanent_types: permanent_type_plural_list_from_pair(permanent_type_list_pair)?,
     })
 }
 
@@ -2581,6 +2582,15 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 },
             )
         }
+        Rule::static_source_enters_tapped => {
+            let source_pair = pair
+                .into_inner()
+                .next()
+                .expect("enters-tapped ability begins with source object");
+            Ok(StaticAbility::SourceEntersTapped {
+                source: source_object_from_pair(source_pair)?,
+            })
+        }
         Rule::static_effect_doesnt_remove_this_aura => {
             Ok(StaticAbility::EffectDoesntRemoveThisAura)
         }
@@ -2886,6 +2896,14 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             ))?;
             Ok(ActivatedEffect::DestroyTargetPermanent {
                 permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            })
+        }
+        Rule::destroy_all => {
+            let permanent_type_list_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "destroy all missing permanent_type list",
+            ))?;
+            Ok(ActivatedEffect::DestroyAll {
+                permanent_types: permanent_type_plural_list_from_pair(permanent_type_list_pair)?,
             })
         }
         Rule::destroy_target_creature_type => {
@@ -3542,6 +3560,17 @@ fn permanent_type_from_plural_pair(pair: Pair<Rule>) -> Result<PermanentType, Pa
         "planeswalkers" => Ok(PermanentType::Planeswalker),
         _ => Err(ParseError::Internal("permanent_type_plural variant")),
     }
+}
+
+fn permanent_type_plural_list_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Vec<PermanentType>, ParseError> {
+    if pair.as_rule() != Rule::permanent_type_plural_list {
+        return Err(ParseError::Internal("permanent_type_plural_list"));
+    }
+    pair.into_inner()
+        .map(permanent_type_from_plural_pair)
+        .collect()
 }
 
 fn color_from_pair(pair: Pair<Rule>) -> Result<Color, ParseError> {

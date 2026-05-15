@@ -72,8 +72,8 @@ pub enum CardEffect {
         controller_of: PermanentType,
         attach_to: PermanentType,
     },
-    /// "Destroy all <permanent_type>s."
-    DestroyAll { permanent_type: PermanentType },
+    /// "Destroy all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]."
+    DestroyAll { permanent_types: Vec<PermanentType> },
     /// "Destroy all <basic_land_type>s."
     DestroyAllBasicLands { basic_land_type: BasicLandType },
     /// A single keyword ability such as `Flying` or `Enchant artifact`.

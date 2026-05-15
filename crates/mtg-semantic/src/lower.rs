@@ -94,8 +94,8 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             controller_of: *controller_of,
             attach_to: *attach_to,
         },
-        Statement::DestroyAll { permanent_type } => CardEffect::DestroyAll {
-            permanent_type: *permanent_type,
+        Statement::DestroyAll { permanent_types } => CardEffect::DestroyAll {
+            permanent_types: permanent_types.clone(),
         },
         Statement::DestroyAllBasicLands { basic_land_type } => CardEffect::DestroyAllBasicLands {
             basic_land_type: *basic_land_type,
