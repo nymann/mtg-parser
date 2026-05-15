@@ -269,6 +269,8 @@ pub enum TriggerEvent {
     PermanentEnters { permanent_type: PermanentType },
     /// "a player casts a/an <color> spell"
     PlayerCastsColoredSpell { color: Color },
+    /// "you play a/an <permanent_type>"
+    YouPlayPermanent { permanent_type: PermanentType },
     /// "enchanted <permanent_type> dies"
     EnchantedPermanentDies { permanent_type: PermanentType },
     /// "the beginning of the next end step"
@@ -305,6 +307,8 @@ pub enum InterveningIf {
         object: EnchantedObject,
         keyword: Keyword,
     },
+    /// "if it wasn't the first <permanent_type> you played this turn"
+    ItWasntFirstPermanentYouPlayedThisTurn { permanent_type: PermanentType },
     /// "if this <source> attacked or blocked this combat"
     SourceAttackedOrBlockedThisCombat { source: SourceObject },
 }
@@ -325,6 +329,8 @@ pub enum TriggerEffect {
     },
     /// "this <source> deals N damage to that player"
     SourceDealsDamageToThatPlayer { source: SourceObject, amount: u32 },
+    /// "this <source> deals N damage to you"
+    SourceDealsDamageToYou { source: SourceObject, amount: u32 },
     /// "this <source> deals N damage to that <permanent_type>"
     SourceDealsDamageToThatPermanent {
         source: SourceObject,
@@ -655,6 +661,10 @@ pub enum StaticAbility {
     /// "You control enchanted <object>." — continuous control-changing
     /// effect from an Aura to the object it enchants.
     YouControlEnchanted { object: EnchantedObject },
+    /// "You may play any number of <permanent_type>s on each of your
+    /// turns." — permission effect that lifts the normal per-turn play
+    /// limit for that permanent type.
+    YouMayPlayAnyNumberOfPermanentsOnEachOfYourTurns { permanent_type: PermanentType },
     /// "You may have this <source> enter as a copy of any
     /// <permanent_type> on the battlefield[, except it's a/an
     /// <permanent_type> in addition to its other types]."

@@ -132,6 +132,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_is_basic_land_type
         | Rule::static_enchanted_can_attack_as_though
         | Rule::static_you_control_enchanted
+        | Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns
         | Rule::static_you_may_have_source_enter_as_copy
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::static_basic_lands_are_basic_lands
@@ -774,6 +775,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::player_casts_colored_spell => {
                 event = Some(player_casts_colored_spell_from_pair(child)?);
             }
+            Rule::you_play_permanent => {
+                event = Some(you_play_permanent_from_pair(child)?);
+            }
             Rule::enchanted_permanent_dies => {
                 event = Some(enchanted_permanent_dies_from_pair(child)?);
             }
@@ -836,6 +840,14 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                     keyword: keyword_from_inner_pair(keyword_pair)?,
                 });
             }
+            Rule::it_wasnt_first_permanent_you_played_this_turn => {
+                let permanent_type_pair = child.into_inner().next().ok_or(
+                    ParseError::Internal("first-play condition missing permanent_type"),
+                )?;
+                intervening_if = Some(InterveningIf::ItWasntFirstPermanentYouPlayedThisTurn {
+                    permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                });
+            }
             Rule::destroy_that_creature_if_it_attacked_this_turn => {
                 effects.push(TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn);
             }
@@ -881,6 +893,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::source_deals_damage_to_that_player => {
                 effects.push(source_deals_damage_to_that_player_from_pair(child)?);
             }
+            Rule::source_deals_damage_to_you => {
+                effects.push(source_deals_damage_to_you_from_pair(child)?);
+            }
             Rule::source_deals_damage_to_that_permanent => {
                 effects.push(source_deals_damage_to_that_permanent_from_pair(child)?);
             }
@@ -924,6 +939,15 @@ fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent
     ))?;
     Ok(TriggerEvent::PlayerCastsColoredSpell {
         color: color_from_pair(color)?,
+    })
+}
+
+fn you_play_permanent_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let permanent_type = pair.into_inner().next().ok_or(ParseError::Internal(
+        "you_play_permanent missing permanent_type",
+    ))?;
+    Ok(TriggerEvent::YouPlayPermanent {
+        permanent_type: permanent_type_from_pair(permanent_type)?,
     })
 }
 
@@ -1165,6 +1189,24 @@ fn source_deals_damage_to_that_player_from_pair(
         .parse::<u32>()
         .map_err(|_| ParseError::Internal("damage-to-player amount"))?;
     Ok(TriggerEffect::SourceDealsDamageToThatPlayer {
+        source: source_object_from_pair(source_pair)?,
+        amount,
+    })
+}
+
+fn source_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("damage-to-you effect missing source"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("damage-to-you effect missing amount"))?;
+    let amount = amount_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("damage-to-you amount"))?;
+    Ok(TriggerEffect::SourceDealsDamageToYou {
         source: source_object_from_pair(source_pair)?,
         amount,
     })
@@ -1545,6 +1587,17 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::YouControlEnchanted {
                 object: enchanted_object_from_pair(object_pair)?,
             })
+        }
+        Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns => {
+            let permanent_type_pair = pair
+                .into_inner()
+                .next()
+                .expect("play permission names a permanent type");
+            Ok(
+                StaticAbility::YouMayPlayAnyNumberOfPermanentsOnEachOfYourTurns {
+                    permanent_type: permanent_type_from_plural_pair(permanent_type_pair)?,
+                },
+            )
         }
         Rule::static_you_may_have_source_enter_as_copy => {
             let mut inner = pair.into_inner();

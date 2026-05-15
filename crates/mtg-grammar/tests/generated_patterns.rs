@@ -125,3 +125,5 @@ mod evil_presence;
 mod false_orders;
 #[path = "generated_patterns/farmstead.rs"]
 mod farmstead;
+#[path = "generated_patterns/fastbond.rs"]
+mod fastbond;

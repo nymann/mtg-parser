@@ -808,6 +808,11 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_enchanted_object(out, *object);
             out.push('.');
         }
+        StaticAbility::YouMayPlayAnyNumberOfPermanentsOnEachOfYourTurns { permanent_type } => {
+            out.push_str("You may play any number of ");
+            out.push_str(permanent_type_plural_name(*permanent_type));
+            out.push_str(" on each of your turns.");
+        }
         StaticAbility::YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield {
             source,
             permanent_type,
@@ -886,6 +891,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
     out.push_str(match ta.event {
         TriggerEvent::PermanentEnters { .. }
         | TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { .. }
+        | TriggerEvent::YouPlayPermanent { .. }
         | TriggerEvent::PlayerCastsColoredSpell { .. }
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
@@ -934,6 +940,12 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str("a player casts a ");
             out.push_str(color_name(color));
             out.push_str(" spell");
+        }
+        TriggerEvent::YouPlayPermanent { permanent_type } => {
+            out.push_str("you play ");
+            out.push_str(indefinite_article(permanent_type));
+            out.push(' ');
+            out.push_str(permanent_type_name(permanent_type));
         }
         TriggerEvent::EnchantedPermanentDies { permanent_type } => {
             out.push_str("enchanted ");
@@ -991,6 +1003,11 @@ fn write_intervening_if(out: &mut String, iif: InterveningIf) {
             out.push_str(" has ");
             write_keyword_lowercase(out, keyword);
         }
+        InterveningIf::ItWasntFirstPermanentYouPlayedThisTurn { permanent_type } => {
+            out.push_str("it wasn't the first ");
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str(" you played this turn");
+        }
         InterveningIf::SourceAttackedOrBlockedThisCombat { source } => {
             write_source_object(out, source);
             out.push_str(" attacked or blocked this combat");
@@ -1023,6 +1040,10 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             write_source_object(out, *source);
             write!(out, " deals {amount} damage to that player.")
                 .expect("write to String never fails");
+        }
+        TriggerEffect::SourceDealsDamageToYou { source, amount } => {
+            write_source_object(out, *source);
+            write!(out, " deals {amount} damage to you.").expect("write to String never fails");
         }
         TriggerEffect::SourceDealsDamageToThatPermanent {
             source,
