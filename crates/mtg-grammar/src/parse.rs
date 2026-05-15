@@ -5,12 +5,13 @@ use pest_derive::Parser;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
-    CreatureStatus, CreatureType, DamageLifeGainCap, DamageRecipient, EachPlayerAction,
-    EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, LandCountController,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    SpellType, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
+    EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
+    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -106,6 +107,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::add_mana => add_mana_from_pair(pair),
         Rule::until_eot_you_may_pay_cost_at_timing => {
             until_eot_you_may_pay_cost_at_timing_from_pair(pair)
+        }
+        Rule::prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
+            prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(pair)
+        }
+        Rule::if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
+            if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(pair)
         }
         Rule::if_you_do_add_mana => if_you_do_add_mana_from_pair(pair),
         Rule::if_you_do_gain_life => if_you_do_gain_life_from_pair(pair),
@@ -753,17 +760,86 @@ fn card_count_from_pair(count_pair: Pair<Rule>) -> Result<CardCount, ParseError>
 fn until_eot_you_may_pay_cost_at_timing_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let mut inner = pair.into_inner();
-    let timing_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("until_eot missing action timing"))?;
-    let cost_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("until_eot missing optional cost"))?;
+    let mut timing = None;
+    let mut cost = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::any_time_you_could_activate_a_mana_ability
+            | Rule::any_time_you_could_cast_an_instant => {
+                timing = Some(action_timing_from_pair(child)?);
+            }
+            Rule::pay_life_cost | Rule::pay_mana_cost => {
+                cost = Some(optional_cost_from_pair(child)?);
+            }
+            _ => return Err(ParseError::Internal("until_eot child")),
+        }
+    }
     Ok(Statement::UntilEndOfTurnYouMayPayCostAtTiming {
-        timing: action_timing_from_pair(timing_pair)?,
-        cost: optional_cost_from_pair(cost_pair)?,
+        timing: timing.ok_or(ParseError::Internal("until_eot missing action timing"))?,
+        cost: cost.ok_or(ParseError::Internal("until_eot missing optional cost"))?,
     })
+}
+
+fn prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let (amount, recipient) = prevent_next_damage_parts_from_pair(pair)?;
+    Ok(Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient })
+}
+
+fn if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let inner = pair.into_inner().next().ok_or(ParseError::Internal(
+        "if_you_do prevent missing prevention effect",
+    ))?;
+    let (amount, recipient) = prevent_next_damage_parts_from_pair(inner)?;
+    Ok(
+        Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+            amount,
+            recipient,
+        },
+    )
+}
+
+fn prevent_next_damage_parts_from_pair(
+    pair: Pair<Rule>,
+) -> Result<(DamageAmount, PreventionRecipient), ParseError> {
+    let mut inner = pair.into_inner();
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("prevent next damage missing amount"))?;
+    let recipient_pair = inner.next().ok_or(ParseError::Internal(
+        "prevent next damage missing recipient",
+    ))?;
+    Ok((
+        damage_amount_from_pair(amount_pair)?,
+        prevention_recipient_from_pair(recipient_pair)?,
+    ))
+}
+
+fn damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
+    match pair.as_rule() {
+        Rule::unsigned_number => {
+            let amount = pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("damage amount"))?;
+            Ok(DamageAmount::Number(amount))
+        }
+        Rule::variable_name => Ok(DamageAmount::Variable(variable_from_str(pair.as_str())?)),
+        _ => Err(ParseError::Internal("damage amount")),
+    }
+}
+
+fn prevention_recipient_from_pair(pair: Pair<Rule>) -> Result<PreventionRecipient, ParseError> {
+    match pair.as_rule() {
+        Rule::any_target_prevention_recipient => Ok(PreventionRecipient::AnyTarget),
+        Rule::that_permanent_or_player_prevention_recipient => {
+            Ok(PreventionRecipient::ThatPermanentOrPlayer)
+        }
+        _ => Err(ParseError::Internal("prevention recipient")),
+    }
 }
 
 fn if_you_do_add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
@@ -811,6 +887,7 @@ fn action_timing_from_pair(pair: Pair<Rule>) -> Result<ActionTiming, ParseError>
         Rule::any_time_you_could_activate_a_mana_ability => {
             Ok(ActionTiming::AnyTimeYouCouldActivateAManaAbility)
         }
+        Rule::any_time_you_could_cast_an_instant => Ok(ActionTiming::AnyTimeYouCouldCastAnInstant),
         _ => Err(ParseError::Internal("action_timing")),
     }
 }
@@ -827,6 +904,15 @@ fn optional_cost_from_pair(pair: Pair<Rule>) -> Result<OptionalCost, ParseError>
                 .parse::<u32>()
                 .map_err(|_| ParseError::Internal("pay_life_cost amount"))?;
             Ok(OptionalCost::PayLife { amount })
+        }
+        Rule::pay_mana_cost => {
+            let mana_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("pay_mana_cost missing mana"))?;
+            Ok(OptionalCost::PayMana {
+                mana: mana_cost_from_pair(mana_pair),
+            })
         }
         _ => Err(ParseError::Internal("optional_cost")),
     }

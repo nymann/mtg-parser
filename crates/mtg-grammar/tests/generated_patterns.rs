@@ -159,3 +159,5 @@ mod gloom;
 mod goblin_balloon_brigade;
 #[path = "generated_patterns/goblin_king.rs"]
 mod goblin_king;
+#[path = "generated_patterns/guardian_angel.rs"]
+mod guardian_angel;

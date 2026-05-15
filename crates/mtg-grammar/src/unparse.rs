@@ -3,12 +3,13 @@ use std::fmt::Write;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
-    CreatureStatus, CreatureType, DamageLifeGainCap, DamageRecipient, EachPlayerAction,
-    EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, LandCountController,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    SpellType, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
+    EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
+    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -160,8 +161,18 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str("Until end of turn, ");
             write_action_timing(out, *timing);
             out.push_str(", you may ");
-            write_optional_cost(out, *cost);
+            write_optional_cost(out, cost);
             out.push('.');
+        }
+        Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient } => {
+            write_prevent_next_damage_to_recipient(out, *amount, *recipient);
+        }
+        Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+            amount,
+            recipient,
+        } => {
+            out.push_str("If you do, ");
+            write_prevent_next_damage_to_recipient_lowercase(out, *amount, *recipient);
         }
         Statement::IfYouDoAddMana { mana } => {
             out.push_str("If you do, add ");
@@ -508,14 +519,59 @@ fn write_action_timing(out: &mut String, timing: ActionTiming) {
         ActionTiming::AnyTimeYouCouldActivateAManaAbility => {
             out.push_str("any time you could activate a mana ability");
         }
+        ActionTiming::AnyTimeYouCouldCastAnInstant => {
+            out.push_str("any time you could cast an instant");
+        }
     }
 }
 
-fn write_optional_cost(out: &mut String, cost: OptionalCost) {
+fn write_optional_cost(out: &mut String, cost: &OptionalCost) {
     match cost {
         OptionalCost::PayLife { amount } => {
             write!(out, "pay {amount} life").expect("write to String never fails");
         }
+        OptionalCost::PayMana { mana } => {
+            out.push_str("pay ");
+            write_mana_cost(out, mana);
+        }
+    }
+}
+
+fn write_prevent_next_damage_to_recipient(
+    out: &mut String,
+    amount: DamageAmount,
+    recipient: PreventionRecipient,
+) {
+    out.push_str("Prevent the next ");
+    write_damage_amount(out, amount);
+    out.push_str(" damage that would be dealt to ");
+    write_prevention_recipient(out, recipient);
+    out.push_str(" this turn.");
+}
+
+fn write_prevent_next_damage_to_recipient_lowercase(
+    out: &mut String,
+    amount: DamageAmount,
+    recipient: PreventionRecipient,
+) {
+    out.push_str("prevent the next ");
+    write_damage_amount(out, amount);
+    out.push_str(" damage that would be dealt to ");
+    write_prevention_recipient(out, recipient);
+    out.push_str(" this turn.");
+}
+
+fn write_damage_amount(out: &mut String, amount: DamageAmount) {
+    match amount {
+        DamageAmount::Number(n) => write!(out, "{n}").expect("write to String never fails"),
+        DamageAmount::Variable(variable) => out.push_str(variable_name(variable)),
+    }
+}
+
+fn write_prevention_recipient(out: &mut String, recipient: PreventionRecipient) {
+    match recipient {
+        PreventionRecipient::AnyTarget => out.push_str("any target"),
+        PreventionRecipient::ThatPermanentOrPlayer => out.push_str("that permanent or player"),
     }
 }
 

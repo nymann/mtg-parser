@@ -1,9 +1,9 @@
 use mtg_grammar::{
     ActionTiming, ActivatedAbility, BalanceSameWayAction, BasicLandType, CardCount,
-    CastRestriction, Color, DamageLifeGainCap, DamageRecipient, EachPlayerAction, ImperativeAction,
-    Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
-    PtModifier, SourceObject, SpellType, StaticAbility, TriggeredAbility, Variable,
-    VariableDefinition, Zone,
+    CastRestriction, Color, DamageAmount, DamageLifeGainCap, DamageRecipient, EachPlayerAction,
+    ImperativeAction, Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, SourceObject, SpellType, StaticAbility,
+    TriggeredAbility, Variable, VariableDefinition, Zone,
 };
 use serde::{Deserialize, Serialize};
 
@@ -93,6 +93,17 @@ pub enum CardEffect {
     UntilEndOfTurnYouMayPayCostAtTiming {
         timing: ActionTiming,
         cost: OptionalCost,
+    },
+    /// "Prevent the next N damage that would be dealt to <recipient> this turn."
+    PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+        amount: DamageAmount,
+        recipient: PreventionRecipient,
+    },
+    /// "If you do, prevent the next N damage that would be dealt to
+    /// <recipient> this turn."
+    IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+        amount: DamageAmount,
+        recipient: PreventionRecipient,
     },
     /// "If you do, add <mana>."
     IfYouDoAddMana { mana: ManaCost },

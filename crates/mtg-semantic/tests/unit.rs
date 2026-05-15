@@ -1,8 +1,8 @@
 // Tier 1 lowering unit tests. Hand-written AST → expected IR.
 
 use mtg_grammar::{
-    BasicLandType, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber,
-    SourceObject, Statement,
+    BasicLandType, DamageAmount, ManaCost, ManaSymbol, PermanentType, PreventionRecipient,
+    PtModifier, Sign, SignedNumber, SourceObject, Statement,
 };
 use mtg_semantic::{lower, CardEffect, ManaValue};
 
@@ -64,6 +64,40 @@ fn lowers_counter_target_spell() {
     assert_eq!(
         lower(&Statement::CounterTargetSpell).unwrap(),
         CardEffect::CounterTargetSpell,
+    );
+}
+
+#[test]
+fn lowers_prevent_next_damage_to_recipient_this_turn() {
+    assert_eq!(
+        lower(
+            &Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                amount: DamageAmount::Variable(mtg_grammar::Variable::X),
+                recipient: PreventionRecipient::AnyTarget,
+            }
+        )
+        .unwrap(),
+        CardEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+            amount: DamageAmount::Variable(mtg_grammar::Variable::X),
+            recipient: PreventionRecipient::AnyTarget,
+        },
+    );
+}
+
+#[test]
+fn lowers_if_you_do_prevent_next_damage_to_recipient_this_turn() {
+    assert_eq!(
+        lower(
+            &Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                amount: DamageAmount::Number(1),
+                recipient: PreventionRecipient::ThatPermanentOrPlayer,
+            }
+        )
+        .unwrap(),
+        CardEffect::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+            amount: DamageAmount::Number(1),
+            recipient: PreventionRecipient::ThatPermanentOrPlayer,
+        },
     );
 }
 

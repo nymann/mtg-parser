@@ -109,9 +109,22 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::UntilEndOfTurnYouMayPayCostAtTiming { timing, cost } => {
             CardEffect::UntilEndOfTurnYouMayPayCostAtTiming {
                 timing: *timing,
-                cost: *cost,
+                cost: cost.clone(),
             }
         }
+        Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient } => {
+            CardEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                amount: *amount,
+                recipient: *recipient,
+            }
+        }
+        Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+            amount,
+            recipient,
+        } => CardEffect::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+            amount: *amount,
+            recipient: *recipient,
+        },
         Statement::IfYouDoAddMana { mana } => CardEffect::IfYouDoAddMana { mana: mana.clone() },
         Statement::IfYouDoGainLife { amount } => CardEffect::IfYouDoGainLife { amount: *amount },
         Statement::TargetSpellOrPermanentBecomesColor { color } => {

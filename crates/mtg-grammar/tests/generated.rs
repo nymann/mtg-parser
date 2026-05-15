@@ -170,3 +170,5 @@ mod gloom;
 mod goblin_balloon_brigade;
 #[path = "generated/goblin_king.rs"]
 mod goblin_king;
+#[path = "generated/guardian_angel.rs"]
+mod guardian_angel;

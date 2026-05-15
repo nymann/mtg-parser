@@ -11,10 +11,10 @@
 
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount, Color,
-    DamageLifeGainCap, DamageRecipient, EachPlayerAction, EnchantedObject, ImperativeAction,
-    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber, SourceObject,
-    SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
-    Zone,
+    DamageAmount, DamageLifeGainCap, DamageRecipient, EachPlayerAction, EnchantedObject,
+    ImperativeAction, Keyword, ManaCost, ManaSymbol, PermanentType, PreventionRecipient,
+    PtModifier, Sign, SignedNumber, SourceObject, SpellType, Statement, StaticAbility,
+    TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -92,6 +92,20 @@ fn arb_damage_life_gain_cap() -> impl Strategy<Value = DamageLifeGainCap> {
         Just(DamageLifeGainCap::PlayerLifeTotalBeforeDamageDealt),
         Just(DamageLifeGainCap::PlaneswalkerLoyaltyBeforeDamageDealt),
         Just(DamageLifeGainCap::CreatureToughness),
+    ]
+}
+
+fn arb_damage_amount() -> impl Strategy<Value = DamageAmount> {
+    prop_oneof![
+        (1u32..=10).prop_map(DamageAmount::Number),
+        arb_variable().prop_map(DamageAmount::Variable),
+    ]
+}
+
+fn arb_prevention_recipient() -> impl Strategy<Value = PreventionRecipient> {
+    prop_oneof![
+        Just(PreventionRecipient::AnyTarget),
+        Just(PreventionRecipient::ThatPermanentOrPlayer),
     ]
 }
 
@@ -188,6 +202,15 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             }
         ),
         Just(Statement::PreventAllCombatDamageThisTurn),
+        (arb_damage_amount(), arb_prevention_recipient()).prop_map(|(amount, recipient)| {
+            Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient }
+        }),
+        (arb_damage_amount(), arb_prevention_recipient()).prop_map(|(amount, recipient)| {
+            Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                amount,
+                recipient,
+            }
+        }),
         (arb_color(), arb_variable()).prop_map(|(color, variable)| {
             Statement::SpendOnlyColorManaOnVariable { color, variable }
         }),

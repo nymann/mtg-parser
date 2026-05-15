@@ -105,6 +105,16 @@ pub enum Statement {
         timing: ActionTiming,
         cost: OptionalCost,
     },
+    /// "Prevent the next N damage that would be dealt to <recipient> this turn."
+    PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+        amount: DamageAmount,
+        recipient: PreventionRecipient,
+    },
+    /// "If you do, prevent the next N damage that would be dealt to <recipient> this turn."
+    IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+        amount: DamageAmount,
+        recipient: PreventionRecipient,
+    },
     /// "If you do, add <mana>."
     IfYouDoAddMana {
         mana: ManaCost,
@@ -210,6 +220,20 @@ pub enum DamageRecipient {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamageAmount {
+    Number(u32),
+    Variable(Variable),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PreventionRecipient {
+    /// "any target"
+    AnyTarget,
+    /// "that permanent or player"
+    ThatPermanentOrPlayer,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CastRestriction {
     /// "before the <step> step"
     BeforeStep { step: Step },
@@ -272,12 +296,16 @@ pub enum CardCount {
 pub enum ActionTiming {
     /// "any time you could activate a mana ability"
     AnyTimeYouCouldActivateAManaAbility,
+    /// "any time you could cast an instant"
+    AnyTimeYouCouldCastAnInstant,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OptionalCost {
     /// "pay N life"
     PayLife { amount: u32 },
+    /// "pay <mana>"
+    PayMana { mana: ManaCost },
 }
 
 /// "When/Whenever <event>, [if <intervening-if>,] <effect>[. <effect>]*."
