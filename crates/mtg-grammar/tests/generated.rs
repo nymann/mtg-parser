@@ -216,3 +216,5 @@ mod keldon_warlord;
 mod kormus_bell;
 #[path = "generated/kudzu.rs"]
 mod kudzu;
+#[path = "generated/ley_druid.rs"]
+mod ley_druid;

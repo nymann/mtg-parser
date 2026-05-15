@@ -205,3 +205,5 @@ mod keldon_warlord;
 mod kormus_bell;
 #[path = "generated_patterns/kudzu.rs"]
 mod kudzu;
+#[path = "generated_patterns/ley_druid.rs"]
+mod ley_druid;

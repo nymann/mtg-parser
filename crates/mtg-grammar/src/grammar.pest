@@ -748,6 +748,7 @@ activated_effect = _{
   | destroy_target_creature_type
   | destroy_target_permanent
   | counter_target_colored_spell
+  | untap_target_permanent
   | untap_source
   | untap_enchanted_object
   | activated_draw_cards
@@ -787,6 +788,7 @@ target_permanent_becomes_basic_land_type_until_source_leaves = {
 regenerate_source = { ^"regenerate" ~ source_object ~ "." }
 destroy_target_creature_type = { ^"destroy" ~ ^"target" ~ creature_type ~ "." }
 destroy_target_permanent = { ^"destroy" ~ ^"target" ~ permanent_type ~ "." }
+untap_target_permanent = { ^"untap" ~ ^"target" ~ permanent_type ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
 untap_enchanted_object = { ^"untap" ~ ^"enchanted" ~ enchanted_object ~ "." }
 look_at_target_players_hand = { ^"look" ~ ^"at" ~ ^"target" ~ ^"player's" ~ ^"hand" ~ "." }

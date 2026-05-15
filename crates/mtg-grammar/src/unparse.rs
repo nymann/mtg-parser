@@ -783,6 +783,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_source_object(out, *source);
             out.push('.');
         }
+        ActivatedEffect::UntapTargetPermanent { permanent_type } => {
+            out.push_str("Untap target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push('.');
+        }
         ActivatedEffect::UntapEnchanted(object) => {
             out.push_str("Untap enchanted ");
             write_enchanted_object(out, *object);

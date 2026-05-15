@@ -590,6 +590,10 @@ pub enum ActivatedEffect {
     },
     /// "Untap this <permanent_type>."
     Untap(SourceObject),
+    /// "Untap target <permanent_type>."
+    UntapTargetPermanent {
+        permanent_type: PermanentType,
+    },
     /// "Untap enchanted <object>."
     UntapEnchanted(EnchantedObject),
     /// "Regenerate this <permanent_type>."

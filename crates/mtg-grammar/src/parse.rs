@@ -2460,6 +2460,14 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 source_pair,
             )?))
         }
+        Rule::untap_target_permanent => {
+            let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "untap_target_permanent missing permanent_type",
+            ))?;
+            Ok(ActivatedEffect::UntapTargetPermanent {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            })
+        }
         Rule::untap_enchanted_object => {
             let object_pair = pair.into_inner().next().ok_or(ParseError::Internal(
                 "untap_enchanted_object missing object",
