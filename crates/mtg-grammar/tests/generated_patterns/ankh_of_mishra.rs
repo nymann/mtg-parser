@@ -10,3 +10,4 @@ fn pattern_01_triggered_ability() {
     let text = "Whenever a land enters, this artifact deals 2 damage to that land's controller.";
     mtg_grammar::parse(text).expect("parse pattern");
 }
+
