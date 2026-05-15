@@ -376,9 +376,7 @@ fn step_from_pair(pair: Pair<Rule>) -> Result<Step, ParseError> {
 }
 
 fn you_own_target_card_in_zone_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let zone_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-        "you_own_target_card_in_zone missing zone",
-    ))?;
+    let zone_pair = only_inner(pair, "you_own_target_card_in_zone missing zone")?;
     Ok(Statement::YouOwnTargetCardInZone {
         zone: zone_from_pair(zone_pair)?,
     })
@@ -463,9 +461,7 @@ fn imperative_action_from_pair(pair: Pair<Rule>) -> Result<ImperativeAction, Par
 }
 
 fn each_player_performs_action_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let action_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-        "each_player_performs_action missing action",
-    ))?;
+    let action_pair = only_inner(pair, "each_player_performs_action missing action")?;
     Ok(Statement::EachPlayerPerformsAction {
         action: each_player_action_from_pair(action_pair)?,
     })
@@ -589,9 +585,7 @@ fn players_do_actions_the_same_way_from_pair(pair: Pair<Rule>) -> Result<Stateme
 fn as_this_permanent_enters_choose_opponent_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-        "as enters choose opponent missing source",
-    ))?;
+    let source_pair = only_inner(pair, "as enters choose opponent missing source")?;
     let permanent_type = match source_object_from_pair(source_pair)? {
         SourceObject::This(permanent_type) => permanent_type,
         SourceObject::ThisAura => return Err(ParseError::Internal("as enters source is aura")),
@@ -845,9 +839,7 @@ fn damage_life_gain_cap_from_pair(pair: Pair<Rule>) -> Result<DamageLifeGainCap,
 fn as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-        "as_source_enters_you_lose_life missing source",
-    ))?;
+    let source_pair = only_inner(pair, "as_source_enters_you_lose_life missing source")?;
     Ok(Statement::AsSourceEntersYouLoseLifeEqualToYourLifeTotal {
         source: source_object_from_pair(source_pair)?,
     })
@@ -856,9 +848,7 @@ fn as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(
 fn if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-        "conditional exile missing permanent type",
-    ))?;
+    let permanent_type_pair = only_inner(pair, "conditional exile missing permanent type")?;
     Ok(
         Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
             permanent_type: permanent_type_from_pair(permanent_type_pair)?,
@@ -879,9 +869,7 @@ fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
 fn target_player_discards_cards_at_random_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let count_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-        "target player discards at random missing count",
-    ))?;
+    let count_pair = only_inner(pair, "target player discards at random missing count")?;
     Ok(Statement::TargetPlayerDiscardsCardsAtRandom {
         count: discard_count_from_pair(count_pair)?,
     })
@@ -894,9 +882,7 @@ fn target_player_gains_life_from_pair(pair: Pair<Rule>) -> Result<Statement, Par
 }
 
 fn target_player_gains_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, ParseError> {
-    let amount_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-        "target_player_gains_life missing amount",
-    ))?;
+    let amount_pair = only_inner(pair, "target_player_gains_life missing amount")?;
     amount_pair
         .as_str()
         .parse::<u32>()
@@ -906,9 +892,10 @@ fn target_player_gains_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, Pa
 fn tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+    let permanent_type_pair = only_inner(
+        pair,
         "tap all permanents target player controls missing permanent_type_plural",
-    ))?;
+    )?;
     Ok(
         Statement::TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
             permanent_type: permanent_type_from_plural_pair(permanent_type_pair)?,
@@ -919,9 +906,10 @@ fn tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana_
 fn target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+    let permanent_type_pair = only_inner(
+        pair,
         "target player activates mana ability missing permanent_type",
-    ))?;
+    )?;
     Ok(
         Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
             permanent_type: permanent_type_from_pair(permanent_type_pair)?,
@@ -989,9 +977,7 @@ fn prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(
 fn if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let inner = pair.into_inner().next().ok_or(ParseError::Internal(
-        "if_you_do prevent missing prevention effect",
-    ))?;
+    let inner = only_inner(pair, "if_you_do prevent missing prevention effect")?;
     let (amount, recipient) = prevent_next_damage_parts_from_pair(inner)?;
     Ok(
         Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
@@ -1128,9 +1114,7 @@ fn if_you_do_gain_life_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseErr
 fn if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let list_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-        "attack restriction missing keyword list",
-    ))?;
+    let list_pair = only_inner(pair, "attack restriction missing keyword list")?;
     let keywords = list_pair
         .into_inner()
         .map(keyword_from_inner_pair)
@@ -1336,9 +1320,7 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                 intervening_if = Some(InterveningIf::ItsOnTheBattlefield);
             }
             Rule::source_attacked_or_blocked_this_combat => {
-                let source_pair = child.into_inner().next().ok_or(ParseError::Internal(
-                    "attacked-or-blocked condition missing source",
-                ))?;
+                let source_pair = only_inner(child, "attacked-or-blocked condition missing source")?;
                 intervening_if = Some(InterveningIf::SourceAttackedOrBlockedThisCombat {
                     source: source_object_from_pair(source_pair)?,
                 });
@@ -1529,27 +1511,24 @@ fn this_card_in_your_graveyard_with_cards_above_it_from_pair(
 }
 
 fn permanent_enters_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
-    let pt = pair.into_inner().next().ok_or(ParseError::Internal(
-        "permanent_enters missing permanent_type",
-    ))?;
+    let pt = only_inner(pair, "permanent_enters missing permanent_type")?;
     Ok(TriggerEvent::PermanentEnters {
         permanent_type: permanent_type_from_pair(pt)?,
     })
 }
 
 fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
-    let color = pair.into_inner().next().ok_or(ParseError::Internal(
-        "player_casts_colored_spell missing color",
-    ))?;
+    let color = only_inner(pair, "player_casts_colored_spell missing color")?;
     Ok(TriggerEvent::PlayerCastsColoredSpell {
         color: color_from_pair(color)?,
     })
 }
 
 fn player_taps_permanent_for_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
-    let permanent_type = pair.into_inner().next().ok_or(ParseError::Internal(
+    let permanent_type = only_inner(
+        pair,
         "player_taps_permanent_for_mana missing permanent_type",
-    ))?;
+    )?;
     Ok(TriggerEvent::PlayerTapsPermanentForMana {
         permanent_type: permanent_type_from_pair(permanent_type)?,
     })
@@ -1558,9 +1537,10 @@ fn player_taps_permanent_for_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerE
 fn basic_land_type_is_tapped_for_mana_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEvent, ParseError> {
-    let land_type = pair.into_inner().next().ok_or(ParseError::Internal(
+    let land_type = only_inner(
+        pair,
         "basic_land_type_is_tapped_for_mana missing basic_land_type",
-    ))?;
+    )?;
     Ok(TriggerEvent::BasicLandTypeIsTappedForMana {
         land_type: basic_land_type_from_pair(land_type)?,
     })
@@ -1587,18 +1567,14 @@ fn basic_land_type_controller_becomes_status_from_pair(
 }
 
 fn you_play_permanent_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
-    let permanent_type = pair.into_inner().next().ok_or(ParseError::Internal(
-        "you_play_permanent missing permanent_type",
-    ))?;
+    let permanent_type = only_inner(pair, "you_play_permanent missing permanent_type")?;
     Ok(TriggerEvent::YouPlayPermanent {
         permanent_type: permanent_type_from_pair(permanent_type)?,
     })
 }
 
 fn enchanted_permanent_dies_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
-    let pt = pair.into_inner().next().ok_or(ParseError::Internal(
-        "enchanted_permanent_dies missing permanent_type",
-    ))?;
+    let pt = only_inner(pair, "enchanted_permanent_dies missing permanent_type")?;
     Ok(TriggerEvent::EnchantedPermanentDies {
         permanent_type: permanent_type_from_pair(pt)?,
     })
@@ -1621,9 +1597,10 @@ fn enchanted_object_becomes_status_from_pair(pair: Pair<Rule>) -> Result<Trigger
 fn beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEvent, ParseError> {
-    let pt = pair.into_inner().next().ok_or(ParseError::Internal(
+    let pt = only_inner(
+        pair,
         "beginning_of_upkeep_of_enchanted_permanent_controller missing permanent_type",
-    ))?;
+    )?;
     Ok(
         TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController {
             permanent_type: permanent_type_from_pair(pt)?,
@@ -1662,9 +1639,7 @@ fn source_is_dealt_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, Pa
 fn source_deals_damage_to_an_opponent_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEvent, ParseError> {
-    let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-        "source deals damage to opponent missing source",
-    ))?;
+    let source_pair = only_inner(pair, "source deals damage to opponent missing source")?;
     Ok(TriggerEvent::SourceDealsDamageToAnOpponent {
         source: source_object_from_pair(source_pair)?,
     })
@@ -1729,9 +1704,10 @@ fn that_player_adds_mana_of_any_type_that_permanent_produced_from_pair(
 fn its_controller_adds_an_additional_mana_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEffect, ParseError> {
-    let mana_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+    let mana_pair = only_inner(
+        pair,
         "its_controller_adds_an_additional_mana missing mana_symbol",
-    ))?;
+    )?;
     Ok(TriggerEffect::ItsControllerAddsAdditionalMana {
         mana: mana_symbol_from_pair(mana_pair),
     })
@@ -1961,9 +1937,7 @@ fn source_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggerEffec
 }
 
 fn it_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
-    let amount_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-        "it-damage-to-you effect missing amount",
-    ))?;
+    let amount_pair = only_inner(pair, "it-damage-to-you effect missing amount")?;
     let amount = amount_pair
         .as_str()
         .parse::<u32>()
@@ -2167,10 +2141,7 @@ fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError>
     if pair.as_rule() != Rule::source_object {
         return Err(ParseError::Internal("source_object"));
     }
-    let kind = pair
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal("source_object missing kind"))?;
+    let kind = only_inner(pair, "source_object missing kind")?;
     match kind.as_rule() {
         Rule::permanent_type => Ok(SourceObject::This(permanent_type_from_pair(kind)?)),
         Rule::aura_source_object => Ok(SourceObject::ThisAura),
@@ -2182,9 +2153,7 @@ fn that_permanents_controller_from_pair(pair: Pair<Rule>) -> Result<PermanentTyp
     if pair.as_rule() != Rule::that_permanents_controller {
         return Err(ParseError::Internal("that_permanents_controller"));
     }
-    let pt = pair.into_inner().next().ok_or(ParseError::Internal(
-        "that_permanents_controller missing permanent_type",
-    ))?;
+    let pt = only_inner(pair, "that_permanents_controller missing permanent_type")?;
     permanent_type_from_pair(pt)
 }
 
@@ -2763,9 +2732,7 @@ fn activated_cost_from_pair(pair: Pair<Rule>) -> Result<Vec<ActivatedCost>, Pars
             )),
             Rule::tap_symbol => Ok(ActivatedCost::Tap),
             Rule::sacrifice_source => {
-                let source_pair = child.into_inner().next().ok_or(ParseError::Internal(
-                    "sacrifice_source missing source_object",
-                ))?;
+                let source_pair = only_inner(child, "sacrifice_source missing source_object")?;
                 Ok(ActivatedCost::Sacrifice(source_object_from_pair(
                     source_pair,
                 )?))
@@ -2782,17 +2749,12 @@ fn activated_cost_from_pair(pair: Pair<Rule>) -> Result<Vec<ActivatedCost>, Pars
 fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, ParseError> {
     match pair.as_rule() {
         Rule::add_mana => {
-            let mana_pair = pair
-                .into_inner()
-                .next()
-                .ok_or(ParseError::Internal("add_mana missing mana_cost"))?;
+            let mana_pair = only_inner(pair, "add_mana missing mana_cost")?;
             Ok(ActivatedEffect::AddMana(mana_cost_from_pair(mana_pair)))
         }
         Rule::add_one_mana_of_any_color => Ok(ActivatedEffect::AddOneManaOfAnyColor),
         Rule::add_mana_of_any_one_color => {
-            let amount_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "add_mana_of_any_one_color missing number",
-            ))?;
+            let amount_pair = only_inner(pair, "add_mana_of_any_one_color missing number")?;
             let amount = number_word_to_u32(amount_pair.as_str())
                 .ok_or(ParseError::Internal("number_word"))?;
             Ok(ActivatedEffect::AddManaOfAnyOneColor { amount })
@@ -2814,25 +2776,20 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             )?))
         }
         Rule::untap_target_permanent => {
-            let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "untap_target_permanent missing permanent_type",
-            ))?;
+            let permanent_type_pair =
+                only_inner(pair, "untap_target_permanent missing permanent_type")?;
             Ok(ActivatedEffect::UntapTargetPermanent {
                 permanent_type: permanent_type_from_pair(permanent_type_pair)?,
             })
         }
         Rule::untap_enchanted_object => {
-            let object_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "untap_enchanted_object missing object",
-            ))?;
+            let object_pair = only_inner(pair, "untap_enchanted_object missing object")?;
             Ok(ActivatedEffect::UntapEnchanted(enchanted_object_from_pair(
                 object_pair,
             )?))
         }
         Rule::regenerate_source => {
-            let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "regenerate_source missing source_object",
-            ))?;
+            let source_pair = only_inner(pair, "regenerate_source missing source_object")?;
             Ok(ActivatedEffect::Regenerate(source_object_from_pair(
                 source_pair,
             )?))
@@ -2847,17 +2804,14 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             })
         }
         Rule::destroy_target_permanent => {
-            let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "destroy target missing permanent_type",
-            ))?;
+            let permanent_type_pair = only_inner(pair, "destroy target missing permanent_type")?;
             Ok(ActivatedEffect::DestroyTargetPermanent {
                 permanent_type: permanent_type_from_pair(permanent_type_pair)?,
             })
         }
         Rule::destroy_all => {
-            let permanent_type_list_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "destroy all missing permanent_type list",
-            ))?;
+            let permanent_type_list_pair =
+                only_inner(pair, "destroy all missing permanent_type list")?;
             Ok(ActivatedEffect::DestroyAll {
                 permanent_types: permanent_type_plural_list_from_pair(permanent_type_list_pair)?,
             })
@@ -2900,9 +2854,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             })
         }
         Rule::target_creature_with_power_or_less_cant_be_blocked => {
-            let power_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "target creature unblockable missing power",
-            ))?;
+            let power_pair = only_inner(pair, "target creature unblockable missing power")?;
             let power = power_pair
                 .as_str()
                 .parse::<u32>()
@@ -3007,9 +2959,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             })
         }
         Rule::prevent_all_but_damage_from_unblocked_creature => {
-            let amount_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "prevent all but damage missing amount",
-            ))?;
+            let amount_pair = only_inner(pair, "prevent all but damage missing amount")?;
             let amount = amount_pair
                 .as_str()
                 .parse::<u32>()
@@ -3017,9 +2967,8 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             Ok(ActivatedEffect::PreventAllButDamageFromUnblockedCreature { amount })
         }
         Rule::next_damage_from_source_to_target_permanent_is_dealt_to_you_instead => {
-            let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "damage redirection missing permanent_type",
-            ))?;
+            let permanent_type_pair =
+                only_inner(pair, "damage redirection missing permanent_type")?;
             Ok(
                 ActivatedEffect::NextDamageFromSourceToTargetPermanentIsDealtToYouInstead {
                     permanent_type: permanent_type_from_pair(permanent_type_pair)?,
@@ -3078,9 +3027,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             })
         }
         Rule::choose_creature_card_in_hand_payable_by_mana_spent_on_variable => {
-            let variable_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "choose creature card missing variable",
-            ))?;
+            let variable_pair = only_inner(pair, "choose creature card missing variable")?;
             Ok(
                 ActivatedEffect::ChooseCreatureCardInHandPayableByManaSpentOnVariable {
                     variable: variable_from_mana_symbol_pair(variable_pair)?,
@@ -3088,9 +3035,10 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             )
         }
         Rule::choose_target_non_creature_type_creature_active_player_controlled_continuously => {
-            let excluded_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+            let excluded_pair = only_inner(
+                pair,
                 "choose target non creature type missing creature_type",
-            ))?;
+            )?;
             Ok(
                 ActivatedEffect::ChooseTargetNonCreatureTypeCreatureActivePlayerControlledContinuouslySinceBeginningOfTurn {
                     excluded_type: creature_type_from_pair(excluded_pair)?,
@@ -3159,17 +3107,13 @@ fn physical_action_from_pair(pair: Pair<Rule>) -> Result<PhysicalAction, ParseEr
             )
         }
         Rule::if_source_turns_over_destroy_touched_nontoken_permanents => {
-            let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "physical turns-over missing source_object",
-            ))?;
+            let source_pair = only_inner(pair, "physical turns-over missing source_object")?;
             Ok(PhysicalAction::IfSourceTurnsOverCompletelyAtLeastOnceDuringFlipDestroyAllNontokenPermanentsItTouches {
                 source: source_object_from_pair(source_pair)?,
             })
         }
         Rule::then_destroy_source => {
-            let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
-                "physical then-destroy missing source_object",
-            ))?;
+            let source_pair = only_inner(pair, "physical then-destroy missing source_object")?;
             Ok(PhysicalAction::ThenDestroySource {
                 source: source_object_from_pair(source_pair)?,
             })
@@ -3331,9 +3275,10 @@ fn value_expression_from_pair(pair: Pair<Rule>) -> Result<ValueExpression, Parse
         }
         Rule::its_power => Ok(ValueExpression::ItsPower),
         Rule::number_of_cards_in_their_hand_minus => {
-            let amount_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+            let amount_pair = only_inner(
+                pair,
                 "number-of-cards expression missing subtraction amount",
-            ))?;
+            )?;
             let amount = amount_pair
                 .as_str()
                 .parse::<u32>()
