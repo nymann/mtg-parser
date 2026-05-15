@@ -765,25 +765,26 @@ fn write_damage_prevention_effect(
     out: &mut String,
     effect: DamagePreventionEffect<PreventionRecipient>,
 ) {
-    write_damage_prevention_effect_with_prefix(out, effect, "Prevent ");
+    write_damage_prevention_effect_with_prefix(out, effect, "Prevent ", write_prevention_recipient);
 }
 
 fn write_damage_prevention_effect_lowercase(
     out: &mut String,
     effect: DamagePreventionEffect<PreventionRecipient>,
 ) {
-    write_damage_prevention_effect_with_prefix(out, effect, "prevent ");
+    write_damage_prevention_effect_with_prefix(out, effect, "prevent ", write_prevention_recipient);
 }
 
-fn write_damage_prevention_effect_with_prefix(
+fn write_damage_prevention_effect_with_prefix<R: Copy>(
     out: &mut String,
-    effect: DamagePreventionEffect<PreventionRecipient>,
+    effect: DamagePreventionEffect<R>,
     prefix: &str,
+    mut write_recipient: impl FnMut(&mut String, R),
 ) {
     write_damage_prevention_replacement_event(out, prefix, effect.amount, effect.kind);
     if let Some(recipient) = effect.recipient {
         out.push_str(" to ");
-        write_prevention_recipient(out, recipient);
+        write_recipient(out, recipient);
     }
     write_damage_prevention_duration(out, effect.duration);
 }
@@ -1986,12 +1987,12 @@ fn write_activated_damage_prevention_effect(
     out: &mut String,
     effect: DamagePreventionEffect<ActivatedDamageRecipient>,
 ) {
-    write_damage_prevention_replacement_event(out, "Prevent ", effect.amount, effect.kind);
-    if let Some(recipient) = effect.recipient {
-        out.push_str(" to ");
-        write_activated_damage_recipient(out, recipient);
-    }
-    write_damage_prevention_duration(out, effect.duration);
+    write_damage_prevention_effect_with_prefix(
+        out,
+        effect,
+        "Prevent ",
+        write_activated_damage_recipient,
+    );
 }
 
 fn write_activated_damage_source(out: &mut String, source: ActivatedDamageSource) {

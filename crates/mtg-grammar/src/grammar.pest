@@ -234,6 +234,8 @@ prevent_damage_this_turn = {
 }
 // Comprehensive Rules 614/615 split: a prevention effect replaces a
 // damage event; amount, kind, recipient, and duration are data axes.
+// This replacement event is shared by sentence, modal, and activated
+// prevention effects; only the recipient vocabulary varies by context.
 damage_prevention_replacement_effect = _{
     damage_prevention_replacement_event ~ damage_prevention_recipient?
 }

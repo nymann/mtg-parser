@@ -8,13 +8,13 @@ use crate::ast::{
     BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
     DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap, DamagePrevention,
-    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect, DamageRecipient,
-    DamageRecipients, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, KeywordAbilityName,
-    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    DamagePreventionAmount, DamagePreventionEffect, DamageRecipient, DamageRecipients,
+    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, KeywordAbilityName, LandCountController, ManaCost,
+    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedSourcePowerToughnessCount,
+    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -1015,6 +1015,25 @@ fn next_prevention_recipient_damage_from_pair(
 fn damage_prevention_effect_from_timed_prevention_pair(
     pair: Pair<Rule>,
 ) -> Result<DamagePreventionEffect<PreventionRecipient>, ParseError> {
+    damage_prevention_effect_from_timed_prevention_pair_with_recipient(
+        pair,
+        Rule::damage_prevention_recipient,
+        |recipient_pair| {
+            prevention_recipient_from_pair(only_inner(
+                recipient_pair,
+                "damage prevention missing recipient",
+            )?)
+        },
+        "damage prevention child",
+    )
+}
+
+fn damage_prevention_effect_from_timed_prevention_pair_with_recipient<R>(
+    pair: Pair<Rule>,
+    recipient_rule: Rule,
+    mut recipient_from_pair: impl FnMut(Pair<Rule>) -> Result<R, ParseError>,
+    unexpected_child_context: &'static str,
+) -> Result<DamagePreventionEffect<R>, ParseError> {
     let mut amount = None;
     let mut kind = None;
     let mut recipient = None;
@@ -1031,21 +1050,17 @@ fn damage_prevention_effect_from_timed_prevention_pair(
             Rule::damage_kind => {
                 kind = Some(damage_kind_from_pair(child)?);
             }
-            Rule::damage_prevention_recipient => {
-                recipient = Some(prevention_recipient_from_pair(only_inner(
-                    child,
-                    "damage prevention missing recipient",
-                )?)?);
+            rule if rule == recipient_rule => {
+                recipient = Some(recipient_from_pair(child)?);
             }
-            _ => return Err(ParseError::Internal("damage prevention child")),
+            _ => return Err(ParseError::Internal(unexpected_child_context)),
         }
     }
-    Ok(DamagePreventionEffect {
-        amount: amount.ok_or(ParseError::Internal("damage prevention missing amount"))?,
+    Ok(DamagePreventionEffect::this_turn(
+        amount.ok_or(ParseError::Internal("damage prevention missing amount"))?,
         kind,
         recipient,
-        duration: DamagePreventionDuration::ThisTurn,
-    })
+    ))
 }
 
 fn damage_prevention_effect_from_pair(
@@ -2120,39 +2135,17 @@ fn activated_damage_assignment_from_pair(
 fn activated_damage_prevention_effect_from_pair(
     pair: Pair<Rule>,
 ) -> Result<DamagePreventionEffect<ActivatedDamageRecipient>, ParseError> {
-    let mut amount = None;
-    let mut kind = None;
-    let mut recipient = None;
-    for child in pair.into_inner() {
-        match child.as_rule() {
-            Rule::damage_prevention_amount_axis => {
-                amount = Some(damage_prevention_amount_axis_from_pair(child)?);
-            }
-            Rule::damage_prevention_next_amount => {
-                amount = Some(DamagePreventionAmount::Next(
-                    damage_prevention_next_amount_from_pair(child)?,
-                ));
-            }
-            Rule::damage_kind => {
-                kind = Some(damage_kind_from_pair(child)?);
-            }
-            Rule::activated_damage_prevention_recipient_clause => {
-                recipient = Some(activated_damage_recipient_from_pair(only_inner(
-                    child,
-                    "activated damage prevention missing recipient",
-                )?)?);
-            }
-            _ => return Err(ParseError::Internal("activated damage prevention child")),
-        }
-    }
-    Ok(DamagePreventionEffect {
-        amount: amount.ok_or(ParseError::Internal(
-            "activated damage prevention missing amount",
-        ))?,
-        kind,
-        recipient,
-        duration: DamagePreventionDuration::ThisTurn,
-    })
+    damage_prevention_effect_from_timed_prevention_pair_with_recipient(
+        pair,
+        Rule::activated_damage_prevention_recipient_clause,
+        |recipient_pair| {
+            activated_damage_recipient_from_pair(only_inner(
+                recipient_pair,
+                "activated damage prevention missing recipient",
+            )?)
+        },
+        "activated damage prevention child",
+    )
 }
 
 fn next_damage_event_effect_from_pair(

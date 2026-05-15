@@ -372,13 +372,25 @@ impl Statement {
 }
 
 impl<R> DamagePreventionEffect<R> {
-    pub(crate) fn next_this_turn(prevention: DamagePrevention<R>) -> Self {
+    pub(crate) fn this_turn(
+        amount: DamagePreventionAmount,
+        kind: Option<DamageKind>,
+        recipient: Option<R>,
+    ) -> Self {
         Self {
-            amount: DamagePreventionAmount::Next(prevention.amount),
-            kind: None,
-            recipient: Some(prevention.recipient),
+            amount,
+            kind,
+            recipient,
             duration: DamagePreventionDuration::ThisTurn,
         }
+    }
+
+    pub(crate) fn next_this_turn(prevention: DamagePrevention<R>) -> Self {
+        Self::this_turn(
+            DamagePreventionAmount::Next(prevention.amount),
+            None,
+            Some(prevention.recipient),
+        )
     }
 
     pub(crate) fn into_next_this_turn(self) -> Option<DamagePrevention<R>> {
@@ -396,12 +408,11 @@ impl<R> DamagePreventionEffect<R> {
 
 impl DamagePreventionEffect<PreventionRecipient> {
     pub(crate) fn all_combat_this_turn() -> Self {
-        Self {
-            amount: DamagePreventionAmount::All,
-            kind: Some(DamageKind::CombatDamage),
-            recipient: None,
-            duration: DamagePreventionDuration::ThisTurn,
-        }
+        Self::this_turn(
+            DamagePreventionAmount::All,
+            Some(DamageKind::CombatDamage),
+            None,
+        )
     }
 }
 
