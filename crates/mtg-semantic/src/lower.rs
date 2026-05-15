@@ -102,6 +102,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         },
         Statement::Keyword(kw) => CardEffect::Keyword(*kw),
         Statement::KeywordList(keywords) => CardEffect::KeywordList(keywords.clone()),
+        Statement::SemicolonKeywordList(keywords) => {
+            CardEffect::SemicolonKeywordList(keywords.clone())
+        }
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }

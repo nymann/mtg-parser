@@ -275,6 +275,8 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             amount: DamageAmount::Number(amount),
         }),
         prop::collection::vec(arb_simple_keyword(), 2..5).prop_map(Statement::KeywordList),
+        prop::collection::vec(arb_simple_keyword(), 2..5)
+            .prop_map(Statement::SemicolonKeywordList),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
                 permanent_type,

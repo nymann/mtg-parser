@@ -88,6 +88,8 @@ pub enum Statement {
     Keyword(Keyword),
     /// "<keyword>, <keyword>[, ...]"
     KeywordList(Vec<Keyword>),
+    /// "<keyword>; <keyword>[; ...]"
+    SemicolonKeywordList(Vec<Keyword>),
     TargetPlayerDrawsCards {
         count: CardCount,
     },

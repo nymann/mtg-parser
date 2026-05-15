@@ -237,3 +237,5 @@ mod mana_vault;
 mod manabarbs;
 #[path = "generated_patterns/meekstone.rs"]
 mod meekstone;
+#[path = "generated_patterns/mesa_pegasus.rs"]
+mod mesa_pegasus;

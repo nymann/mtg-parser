@@ -146,6 +146,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::Keyword(kw) => write_keyword(out, *kw),
         Statement::KeywordList(keywords) => write_keyword_list(out, keywords),
+        Statement::SemicolonKeywordList(keywords) => write_semicolon_keyword_list(out, keywords),
         Statement::TargetPlayerDrawsCards { count } => {
             out.push_str("Target player draws ");
             write_card_count(out, *count);
@@ -727,6 +728,17 @@ fn write_keyword_list(out: &mut String, keywords: &[Keyword]) {
             write_keyword(out, *keyword);
         } else {
             out.push_str(", ");
+            write_keyword_lowercase(out, *keyword);
+        }
+    }
+}
+
+fn write_semicolon_keyword_list(out: &mut String, keywords: &[Keyword]) {
+    for (index, keyword) in keywords.iter().enumerate() {
+        if index == 0 {
+            write_keyword(out, *keyword);
+        } else {
+            out.push_str("; ");
             write_keyword_lowercase(out, *keyword);
         }
     }

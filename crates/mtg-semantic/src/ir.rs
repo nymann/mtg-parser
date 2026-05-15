@@ -80,6 +80,8 @@ pub enum CardEffect {
     Keyword(Keyword),
     /// Multiple keyword abilities printed as one comma-separated line.
     KeywordList(Vec<Keyword>),
+    /// Multiple keyword abilities printed as one semicolon-separated line.
+    SemicolonKeywordList(Vec<Keyword>),
     /// "Target player draws N cards."
     TargetPlayerDrawsCards { count: CardCount },
     /// "If you would draw a card during your draw step, instead you may

@@ -149,6 +149,7 @@ sentence_statement = _{
 phrase_statement = _{
     modal_choice
   | mana_cost
+  | semicolon_keyword_ability_list
   | keyword_ability_list
   | keyword_ability
   | triggered_ability_fragment
@@ -445,6 +446,7 @@ sacrifice_permanents_action = { ^"sacrifice" ~ permanent_type_plural }
 
 keyword_ability = { keyword }
 keyword_ability_list = { keyword ~ ("," ~ keyword)+ }
+semicolon_keyword_ability_list = { keyword ~ (";" ~ keyword)+ }
 keyword         = _{ enchant | first_strike | protection | flying | reach | haste | defender | banding | trample | islandwalk | mountainwalk | swampwalk | indestructible | fear }
 first_strike    = { ^"first" ~ ^"strike" }
 protection      = { ^"protection" ~ ^"from" ~ color_word }
