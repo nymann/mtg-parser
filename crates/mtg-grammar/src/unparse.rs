@@ -2518,6 +2518,16 @@ fn write_value_expression(out: &mut String, expression: &ValueExpression) {
             write!(out, "the number of cards in their hand minus {amount}")
                 .expect("write to String never fails");
         }
+        ValueExpression::NumberOfStatusPermanentsTheyControlledAtBeginningOfThisTurn {
+            status,
+            permanent_type,
+        } => {
+            out.push_str("the number of ");
+            out.push_str(object_status_name(*status));
+            out.push(' ');
+            out.push_str(permanent_type_plural_name(*permanent_type));
+            out.push_str(" they controlled at the beginning of this turn");
+        }
         ValueExpression::AmountOfManaThatPlayerPaidThisWay => {
             out.push_str("the amount of mana that player paid this way");
         }

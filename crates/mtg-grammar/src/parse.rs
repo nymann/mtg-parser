@@ -3870,6 +3870,21 @@ fn value_expression_from_pair(pair: Pair<Rule>) -> Result<ValueExpression, Parse
                 .map_err(|_| ParseError::Internal("number-of-cards subtraction amount"))?;
             Ok(ValueExpression::NumberOfCardsInTheirHandMinus { amount })
         }
+        Rule::number_of_status_permanents_they_controlled_at_beginning_of_this_turn => {
+            let mut inner = pair.into_inner();
+            let status_pair = inner
+                .next()
+                .expect("status-permanent count expression names a status");
+            let permanent_type_pair = inner
+                .next()
+                .expect("status-permanent count expression names a permanent type");
+            Ok(
+                ValueExpression::NumberOfStatusPermanentsTheyControlledAtBeginningOfThisTurn {
+                    status: object_status_from_pair(status_pair)?,
+                    permanent_type: permanent_type_from_plural_pair(permanent_type_pair)?,
+                },
+            )
+        }
         Rule::amount_of_mana_that_player_paid_this_way => {
             Ok(ValueExpression::AmountOfManaThatPlayerPaidThisWay)
         }

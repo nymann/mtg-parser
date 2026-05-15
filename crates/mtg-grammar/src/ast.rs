@@ -1787,6 +1787,12 @@ pub enum ValueExpression {
     ItsPower,
     /// "the number of cards in their hand minus <N>"
     NumberOfCardsInTheirHandMinus { amount: u32 },
+    /// "the number of <status> <permanent_type>s they controlled at the
+    /// beginning of this turn"
+    NumberOfStatusPermanentsTheyControlledAtBeginningOfThisTurn {
+        status: ObjectStatus,
+        permanent_type: PermanentType,
+    },
     /// "the amount of mana that player paid this way"
     AmountOfManaThatPlayerPaidThisWay,
 }

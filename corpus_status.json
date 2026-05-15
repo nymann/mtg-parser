@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 214,
+  "passing": 215,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -597,8 +597,7 @@
       "status": "pass"
     },
     "lea/Power Surge": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:102\n  |\n1 | At the beginning of each player's upkeep, this enchantment deals X damage to that player, where X is the number of untapped lands they controlled at the beginning of this turn.\n  |                                                                                                      ^---\n  |\n  = expected half_number_of_basic_lands_you_control, number_of_cards_in_their_hand_minus, amount_of_mana_that_player_paid_this_way, or its_power"
+      "status": "pass"
     },
     "lea/Prodigal Sorcerer": {
       "status": "pass"

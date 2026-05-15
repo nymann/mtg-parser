@@ -273,3 +273,5 @@ mod plague_rats;
 mod power_leak;
 #[path = "generated_patterns/power_sink.rs"]
 mod power_sink;
+#[path = "generated_patterns/power_surge.rs"]
+mod power_surge;
