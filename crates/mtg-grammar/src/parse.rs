@@ -2177,6 +2177,19 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 .map_err(|_| ParseError::Internal("target creature unblockable power"))?;
             Ok(ActivatedEffect::TargetCreatureWithPowerOrLessCantBeBlockedThisTurn { power })
         }
+        Rule::target_permanent_gains_keyword_until_eot => {
+            let mut inner = pair.into_inner();
+            let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+                "target permanent gains missing permanent_type",
+            ))?;
+            let keyword_pair = inner.next().ok_or(ParseError::Internal(
+                "target permanent gains missing keyword",
+            ))?;
+            Ok(ActivatedEffect::TargetPermanentGainsKeywordUntilEndOfTurn {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
         Rule::activated_enchanted_gets_until_eot => {
             let mut inner = pair.into_inner();
             let pt_pair = inner.next().ok_or(ParseError::Internal(

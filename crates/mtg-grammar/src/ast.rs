@@ -532,6 +532,11 @@ pub enum ActivatedEffect {
     TargetCreatureWithPowerOrLessCantBeBlockedThisTurn {
         power: u32,
     },
+    /// "Target <type> gains <keyword> until end of turn."
+    TargetPermanentGainsKeywordUntilEndOfTurn {
+        permanent_type: PermanentType,
+        keyword: Keyword,
+    },
     /// "Enchanted <type> gets <modifier> until end of turn."
     EnchantedGetsUntilEndOfTurn {
         permanent_type: PermanentType,

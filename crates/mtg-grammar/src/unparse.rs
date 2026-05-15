@@ -739,6 +739,16 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             )
             .expect("writing to String cannot fail");
         }
+        ActivatedEffect::TargetPermanentGainsKeywordUntilEndOfTurn {
+            permanent_type,
+            keyword,
+        } => {
+            out.push_str("Target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" gains ");
+            write_keyword_lowercase(out, *keyword);
+            out.push_str(" until end of turn.");
+        }
         ActivatedEffect::EnchantedGetsUntilEndOfTurn {
             permanent_type,
             modifier,

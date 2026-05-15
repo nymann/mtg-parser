@@ -174,3 +174,5 @@ mod goblin_king;
 mod guardian_angel;
 #[path = "generated/healing_salve.rs"]
 mod healing_salve;
+#[path = "generated/helm_of_chatzuk.rs"]
+mod helm_of_chatzuk;

@@ -668,6 +668,7 @@ activated_effect = _{
   | look_at_target_players_hand
   | target_player_discards_cards
   | target_creature_with_power_or_less_cant_be_blocked
+  | target_permanent_gains_keyword_until_eot
   | activated_source_gains_keyword_until_eot
   | activated_source_gets_until_eot
   | activated_enchanted_gets_until_eot
@@ -702,6 +703,10 @@ target_creature_with_power_or_less_cant_be_blocked = {
     ^"target" ~ ^"creature" ~ ^"with" ~ ^"power" ~ unsigned_number
   ~ ^"or" ~ ^"less" ~ ^"can't" ~ ^"be" ~ ^"blocked"
   ~ ^"this" ~ ^"turn" ~ "."
+}
+target_permanent_gains_keyword_until_eot = {
+    ^"target" ~ permanent_type ~ ^"gains" ~ keyword
+  ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
 }
 activated_source_gets_until_eot = {
     source_object ~ ^"gets" ~ pt_modifier ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
