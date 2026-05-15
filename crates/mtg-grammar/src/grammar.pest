@@ -48,8 +48,7 @@ sentence_statement = _{
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
   | regenerate_target_creature
   | named_source_deals_damage
-  | prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
-  | prevent_all_combat_damage_this_turn
+  | damage_prevention_effect
   | spend_only_color_mana_on_variable
   | as_source_enters_you_lose_life_equal_to_your_life_total
   | you_gain_life_equal_damage_dealt_capped
@@ -228,10 +227,15 @@ named_source_damage_divided_evenly_rounded_down_among_any_number_of_targets = {
 named_source_damage_recipient_list = {
     ^"to" ~ damage_recipient ~ (^"and" ~ damage_recipient)+
 }
-prevent_all_combat_damage_this_turn = {
-    ^"prevent" ~ ^"all" ~ ^"combat" ~ ^"damage" ~ ^"that"
+damage_prevention_effect = {
+    prevent_all_damage_this_turn
+  | prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
+}
+prevent_all_damage_this_turn = {
+    ^"prevent" ~ damage_prevention_all_amount ~ damage_kind ~ ^"damage" ~ ^"that"
   ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"this" ~ ^"turn" ~ "."
 }
+damage_prevention_all_amount = { ^"all" }
 prevent_next_damage_that_would_be_dealt_to_recipient_this_turn = {
     prevent_next_damage_prefix ~ damage_prevention_amount
   ~ damage_that_would_be_dealt_to ~ prevention_recipient ~ this_turn_period

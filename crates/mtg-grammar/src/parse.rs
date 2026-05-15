@@ -7,7 +7,8 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
-    DamageKind, DamageLifeGainCap, DamagePrevention, DamageRecipient, DamageRecipients,
+    DamageKind, DamageLifeGainCap, DamagePrevention, DamagePreventionAmount,
+    DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
     DestroyAllTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
     ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
     MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController, PermanentType,
@@ -96,7 +97,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::destroy_target_permanent => destroy_target_permanent_from_pair(pair),
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
         Rule::named_source_deals_damage => named_source_deals_damage_from_pair(pair),
-        Rule::prevent_all_combat_damage_this_turn => Ok(Statement::PreventAllCombatDamageThisTurn),
+        Rule::damage_prevention_effect => damage_prevention_effect_statement_from_pair(pair),
         Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
         Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
             as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(pair)
@@ -970,6 +971,34 @@ fn prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(
     Ok(Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention })
 }
 
+fn damage_prevention_effect_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let effect = damage_prevention_effect_from_pair(pair)?;
+    match (
+        effect.amount,
+        effect.kind,
+        effect.recipient,
+        effect.duration,
+    ) {
+        (
+            DamagePreventionAmount::All,
+            Some(DamageKind::CombatDamage),
+            None,
+            DamagePreventionDuration::ThisTurn,
+        ) => Ok(Statement::PreventAllCombatDamageThisTurn),
+        (
+            DamagePreventionAmount::Next(amount),
+            None,
+            Some(recipient),
+            DamagePreventionDuration::ThisTurn,
+        ) => Ok(
+            Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                prevention: DamagePrevention { amount, recipient },
+            },
+        ),
+        _ => Err(ParseError::Internal("unsupported damage prevention effect")),
+    }
+}
+
 fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
@@ -1008,6 +1037,55 @@ fn prevent_next_damage_parts_from_pair(
         amount: damage_amount_from_pair(amount_pair)?,
         recipient: prevention_recipient_from_pair(recipient_pair)?,
     })
+}
+
+fn damage_prevention_effect_from_pair(
+    pair: Pair<Rule>,
+) -> Result<DamagePreventionEffect<PreventionRecipient>, ParseError> {
+    let inner = only_inner(pair, "damage prevention effect missing inner rule")?;
+    match inner.as_rule() {
+        Rule::prevent_all_damage_this_turn => {
+            let mut amount = None;
+            let mut kind = None;
+            for child in inner.into_inner() {
+                match child.as_rule() {
+                    Rule::damage_prevention_all_amount => {
+                        amount = Some(DamagePreventionAmount::All);
+                    }
+                    Rule::damage_kind => {
+                        kind = Some(damage_kind_from_pair(child)?);
+                    }
+                    _ => return Err(ParseError::Internal("prevent all damage child")),
+                }
+            }
+            Ok(DamagePreventionEffect {
+                amount: amount.ok_or(ParseError::Internal("prevent all damage missing amount"))?,
+                kind,
+                recipient: None,
+                duration: DamagePreventionDuration::ThisTurn,
+            })
+        }
+        Rule::prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
+            let prevention = prevent_next_damage_parts_from_pair(inner)?;
+            Ok(DamagePreventionEffect {
+                amount: DamagePreventionAmount::Next(prevention.amount),
+                kind: None,
+                recipient: Some(prevention.recipient),
+                duration: DamagePreventionDuration::ThisTurn,
+            })
+        }
+        _ => Err(ParseError::Internal("damage prevention effect")),
+    }
+}
+
+fn damage_kind_from_pair(pair: Pair<Rule>) -> Result<DamageKind, ParseError> {
+    match pair.as_rule() {
+        Rule::damage_kind => match pair.as_str().to_ascii_lowercase().as_str() {
+            "combat" => Ok(DamageKind::CombatDamage),
+            _ => Err(ParseError::Internal("damage kind")),
+        },
+        _ => Err(ParseError::Internal("damage kind")),
+    }
 }
 
 fn damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {

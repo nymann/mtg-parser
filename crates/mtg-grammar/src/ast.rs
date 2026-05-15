@@ -438,6 +438,28 @@ pub struct DamagePrevention<R, A = DamageAmount> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DamagePreventionEffect<R = PreventionRecipient> {
+    pub amount: DamagePreventionAmount,
+    pub kind: Option<DamageKind>,
+    pub recipient: Option<R>,
+    pub duration: DamagePreventionDuration,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamagePreventionAmount {
+    /// "all"
+    All,
+    /// "the next N"
+    Next(DamageAmount),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamagePreventionDuration {
+    /// "this turn"
+    ThisTurn,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PreventionRecipient {
     /// "any target"
     AnyTarget,

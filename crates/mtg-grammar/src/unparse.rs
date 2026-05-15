@@ -5,7 +5,8 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
-    DamageKind, DamageLifeGainCap, DamagePrevention, DamageRecipient, DamageRecipients,
+    DamageKind, DamageLifeGainCap, DamagePrevention, DamagePreventionAmount,
+    DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
     EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
     InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
     ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
@@ -46,7 +47,15 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push('.');
         }
         Statement::PreventAllCombatDamageThisTurn => {
-            out.push_str("Prevent all combat damage that would be dealt this turn.");
+            write_damage_prevention_effect(
+                out,
+                DamagePreventionEffect {
+                    amount: DamagePreventionAmount::All,
+                    kind: Some(DamageKind::CombatDamage),
+                    recipient: None,
+                    duration: DamagePreventionDuration::ThisTurn,
+                },
+            );
         }
         Statement::SpendOnlyColorManaOnVariable { color, variable } => {
             out.push_str("Spend only ");
@@ -206,7 +215,15 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push('.');
         }
         Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
-            write_prevent_next_damage_to_recipient(out, *prevention);
+            write_damage_prevention_effect(
+                out,
+                DamagePreventionEffect {
+                    amount: DamagePreventionAmount::Next(prevention.amount),
+                    kind: None,
+                    recipient: Some(prevention.recipient),
+                    duration: DamagePreventionDuration::ThisTurn,
+                },
+            );
         }
         Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
             write_if_you_do_effect(
@@ -701,11 +718,15 @@ fn write_prevent_next_damage_to_recipient(
     out: &mut String,
     prevention: DamagePrevention<PreventionRecipient>,
 ) {
-    out.push_str("Prevent the next ");
-    write_damage_amount(out, prevention.amount);
-    out.push_str(" damage that would be dealt to ");
-    write_prevention_recipient(out, prevention.recipient);
-    out.push_str(" this turn.");
+    write_damage_prevention_effect(
+        out,
+        DamagePreventionEffect {
+            amount: DamagePreventionAmount::Next(prevention.amount),
+            kind: None,
+            recipient: Some(prevention.recipient),
+            duration: DamagePreventionDuration::ThisTurn,
+        },
+    );
 }
 
 fn write_prevent_next_damage_to_recipient_lowercase(
@@ -717,6 +738,39 @@ fn write_prevent_next_damage_to_recipient_lowercase(
     out.push_str(" damage that would be dealt to ");
     write_prevention_recipient(out, prevention.recipient);
     out.push_str(" this turn.");
+}
+
+fn write_damage_prevention_effect(
+    out: &mut String,
+    effect: DamagePreventionEffect<PreventionRecipient>,
+) {
+    out.push_str("Prevent ");
+    match effect.amount {
+        DamagePreventionAmount::All => out.push_str("all "),
+        DamagePreventionAmount::Next(amount) => {
+            out.push_str("the next ");
+            write_damage_amount(out, amount);
+            out.push(' ');
+        }
+    }
+    if let Some(kind) = effect.kind {
+        write_damage_kind_prefix(out, kind);
+    }
+    out.push_str("damage that would be dealt");
+    if let Some(recipient) = effect.recipient {
+        out.push_str(" to ");
+        write_prevention_recipient(out, recipient);
+    }
+    match effect.duration {
+        DamagePreventionDuration::ThisTurn => out.push_str(" this turn."),
+    }
+}
+
+fn write_damage_kind_prefix(out: &mut String, kind: DamageKind) {
+    match kind {
+        DamageKind::Damage => {}
+        DamageKind::CombatDamage => out.push_str("combat "),
+    }
 }
 
 fn write_damage_amount(out: &mut String, amount: DamageAmount) {
