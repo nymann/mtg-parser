@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Statement {
     ManaCost(ManaCost),
+    /// "Cast this spell only <restriction>."
+    CastRestriction(CastRestriction),
     DestroyTargetCreature,
     /// "Destroy all <permanent_type>s."
     DestroyAll {
@@ -11,6 +13,14 @@ pub enum Statement {
     Keyword(Keyword),
     TargetPlayerDrawsCards {
         count: u32,
+    },
+    /// "Target <type> gains <keyword> and gets <modifier> until end of
+    /// turn, where ..."
+    TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
+        permanent_type: PermanentType,
+        keyword: Keyword,
+        modifier: MixedPtModifier,
+        definitions: Vec<VariableDefinition>,
     },
     /// "Each player chooses a number of <permanent_type>s they control
     /// equal to the number of <permanent_type>s controlled by the player
@@ -30,6 +40,17 @@ pub enum Statement {
     /// card is never wrapped in `Compound`, so each piece of card
     /// text has exactly one canonical AST.
     Compound(Vec<Statement>),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CastRestriction {
+    /// "before the <step> step"
+    BeforeStep { step: Step },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Step {
+    CombatDamage,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -56,6 +77,8 @@ pub enum TriggerEvent {
     ThisAuraLeavesTheBattlefield,
     /// "a/an <permanent_type> enters"
     PermanentEnters { permanent_type: PermanentType },
+    /// "the beginning of the next end step"
+    BeginningOfTheNextEndStep,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -66,6 +89,8 @@ pub enum InterveningIf {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TriggerEffect {
+    /// "destroy that creature if it attacked this turn"
+    DestroyThatCreatureIfItAttackedThisTurn,
     /// "that creature's controller sacrifices it"
     ThatCreaturesControllerSacrificesIt,
     /// "this <source> deals N damage to that <recipient>'s controller"
@@ -118,6 +143,7 @@ pub enum Keyword {
     Flying,
     Defender,
     Banding,
+    Trample,
     Enchant(EnchantObject),
 }
 
@@ -263,6 +289,18 @@ pub struct VariablePtModifier {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MixedPtModifier {
+    pub power: SignedPtComponent,
+    pub toughness: SignedPtComponent,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SignedPtComponent {
+    Number(SignedNumber),
+    Variable(SignedVariable),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SignedVariable {
     pub sign: Sign,
     pub variable: Variable,
@@ -287,6 +325,8 @@ pub enum ValueExpression {
         basic_land_type: BasicLandType,
         rounding: Rounding,
     },
+    /// "its power"
+    ItsPower,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

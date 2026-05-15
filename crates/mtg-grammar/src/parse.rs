@@ -3,11 +3,12 @@ use pest::Parser;
 use pest_derive::Parser;
 
 use crate::ast::{
-    ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType, Color,
-    Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject, InterveningIf,
-    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Rounding, Sign, SignedNumber,
-    SignedVariable, SourceObject, Statement, StaticAbility, TriggerEffect, TriggerEvent,
-    TriggeredAbility, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType,
+    CastRestriction, Color, Condition, ContinuousEffect, CreatureType, EnchantObject,
+    EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, PermanentType,
+    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
+    Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
+    Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -48,9 +49,13 @@ pub fn parse(text: &str) -> Result<Statement, ParseError> {
 fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     match pair.as_rule() {
         Rule::mana_cost => Ok(Statement::ManaCost(mana_cost_from_pair(pair))),
+        Rule::cast_restriction => cast_restriction_from_pair(pair),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),
+        Rule::target_permanent_gains_keyword_and_gets_eot => {
+            target_permanent_gains_keyword_and_gets_eot_from_pair(pair)
+        }
         Rule::each_player_equalizes_controlled_permanents => {
             each_player_equalizes_controlled_permanents_from_pair(pair)
         }
@@ -72,6 +77,62 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         )?)),
         _ => Err(ParseError::Internal("statement")),
     }
+}
+
+fn cast_restriction_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let timing = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("cast_restriction missing timing"))?;
+    let restriction = match timing.as_rule() {
+        Rule::before_step => {
+            let step_pair = timing
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("before_step missing step"))?;
+            CastRestriction::BeforeStep {
+                step: step_from_pair(step_pair)?,
+            }
+        }
+        _ => return Err(ParseError::Internal("cast_timing")),
+    };
+    Ok(Statement::CastRestriction(restriction))
+}
+
+fn step_from_pair(pair: Pair<Rule>) -> Result<Step, ParseError> {
+    if pair.as_rule() != Rule::step {
+        return Err(ParseError::Internal("step"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "combat damage" => Ok(Step::CombatDamage),
+        _ => Err(ParseError::Internal("step variant")),
+    }
+}
+
+fn target_permanent_gains_keyword_and_gets_eot_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let pt_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("target gains missing permanent_type"))?;
+    let keyword_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("target gains missing keyword"))?;
+    let modifier_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("target gains missing modifier"))?;
+    let where_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("target gains missing where_clause"))?;
+    Ok(
+        Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
+            permanent_type: permanent_type_from_pair(pt_pair)?,
+            keyword: keyword_from_inner_pair(keyword_pair)?,
+            modifier: mixed_pt_modifier_from_pair(modifier_pair)?,
+            definitions: where_clause_from_pair(where_pair)?,
+        },
+    )
 }
 
 fn each_player_equalizes_controlled_permanents_from_pair(
@@ -161,6 +222,7 @@ fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         Rule::flying => Ok(Keyword::Flying),
         Rule::defender => Ok(Keyword::Defender),
         Rule::banding => Ok(Keyword::Banding),
+        Rule::trample => Ok(Keyword::Trample),
         Rule::enchant => {
             let object = inner
                 .into_inner()
@@ -185,8 +247,14 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::permanent_enters => {
                 event = Some(permanent_enters_from_pair(child)?);
             }
+            Rule::beginning_of_the_next_end_step => {
+                event = Some(TriggerEvent::BeginningOfTheNextEndStep);
+            }
             Rule::its_on_the_battlefield => {
                 intervening_if = Some(InterveningIf::ItsOnTheBattlefield);
+            }
+            Rule::destroy_that_creature_if_it_attacked_this_turn => {
+                effects.push(TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn);
             }
             Rule::that_creatures_controller_sacrifices_it => {
                 effects.push(TriggerEffect::ThatCreaturesControllerSacrificesIt);
@@ -244,6 +312,7 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         Rule::flying => Ok(Keyword::Flying),
         Rule::defender => Ok(Keyword::Defender),
         Rule::banding => Ok(Keyword::Banding),
+        Rule::trample => Ok(Keyword::Trample),
         Rule::enchant => {
             let object = pair
                 .into_inner()
@@ -518,6 +587,31 @@ fn enchanted_object_from_pair(pair: Pair<Rule>) -> Result<EnchantedObject, Parse
     }
 }
 
+fn mixed_pt_modifier_from_pair(pair: Pair<Rule>) -> Result<MixedPtModifier, ParseError> {
+    if pair.as_rule() != Rule::mixed_pt_modifier {
+        return Err(ParseError::Internal("mixed_pt_modifier"));
+    }
+    let mut inner = pair.into_inner();
+    let power_pair = inner.next().expect("mixed_pt_modifier has power first");
+    let toughness_pair = inner
+        .next()
+        .expect("mixed_pt_modifier has toughness second");
+    Ok(MixedPtModifier {
+        power: signed_pt_component_from_pair(power_pair)?,
+        toughness: signed_pt_component_from_pair(toughness_pair)?,
+    })
+}
+
+fn signed_pt_component_from_pair(pair: Pair<Rule>) -> Result<SignedPtComponent, ParseError> {
+    match pair.as_rule() {
+        Rule::signed_number => Ok(SignedPtComponent::Number(signed_number_from_pair(pair)?)),
+        Rule::signed_variable => Ok(SignedPtComponent::Variable(signed_variable_from_pair(
+            pair,
+        )?)),
+        _ => Err(ParseError::Internal("signed_pt_component")),
+    }
+}
+
 fn pt_modifier_from_pair(pair: Pair<Rule>) -> Result<PtModifier, ParseError> {
     if pair.as_rule() != Rule::pt_modifier {
         return Err(ParseError::Internal("pt_modifier"));
@@ -621,6 +715,7 @@ fn value_expression_from_pair(pair: Pair<Rule>) -> Result<ValueExpression, Parse
                 rounding: rounding_from_pair(rounding_pair)?,
             })
         }
+        Rule::its_power => Ok(ValueExpression::ItsPower),
         _ => Err(ParseError::Internal("value_expression")),
     }
 }

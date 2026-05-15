@@ -33,9 +33,11 @@ line      = _{ sentence_chain | phrase_statement }
 // `parse("{2} {R}")` from silently accepting two mana costs.
 sentence_chain     = _{ sentence_statement+ }
 sentence_statement = _{
-    destroy_all
+    cast_restriction
+  | destroy_all
   | destroy
   | draw_cards
+  | target_permanent_gains_keyword_and_gets_eot
   | activated_ability
   | static_as_long_as
   | static_colored_permanents_get
@@ -91,10 +93,18 @@ discard_cards_action = { ^"discard" ~ ^"cards" }
 sacrifice_permanents_action = { ^"sacrifice" ~ permanent_type_plural }
 
 keyword_ability = { keyword }
-keyword         = _{ enchant | flying | defender | banding }
+keyword         = _{ enchant | flying | defender | banding | trample }
 flying          = @{ ^"flying" }
 defender        = @{ ^"defender" }
 banding         = @{ ^"banding" }
+trample         = @{ ^"trample" }
+
+cast_restriction = {
+    ^"cast" ~ ^"this" ~ ^"spell" ~ ^"only" ~ cast_timing ~ "."
+}
+cast_timing = _{ before_step }
+before_step = { ^"before" ~ ^"the" ~ step ~ ^"step" }
+step = { ^"combat" ~ ^"damage" }
 
 // `Enchant <object>`. Order the longer alternatives first so PEG's
 // first-match doesn't stop at the bare permanent type.
@@ -219,13 +229,17 @@ variable_pt_modifier = { signed_variable ~ "/" ~ signed_variable }
 signed_variable      = @{ ("+" | "-") ~ variable_name }
 variable_name        = @{ "X" | "Y" }
 
-where_clause        = { ^"where" ~ variable_definition ~ "," ~ ^"and" ~ variable_definition }
+mixed_pt_modifier = { signed_pt_component ~ "/" ~ signed_pt_component }
+signed_pt_component = _{ signed_variable | signed_number }
+
+where_clause        = { ^"where" ~ variable_definition ~ ("," ~ ^"and" ~ variable_definition)? }
 variable_definition = { variable_name ~ ^"is" ~ value_expression }
-value_expression    = _{ half_number_of_basic_lands_you_control }
+value_expression    = _{ half_number_of_basic_lands_you_control | its_power }
 half_number_of_basic_lands_you_control = {
     ^"half" ~ ^"the" ~ ^"number" ~ ^"of" ~ basic_land_type_plural
   ~ ^"you" ~ ^"control" ~ "," ~ rounding
 }
+its_power = { ^"its" ~ ^"power" }
 rounding = { ^"rounded" ~ rounding_direction }
 rounding_direction = @{ ^"down" | ^"up" }
 basic_land_type_plural = @{ ^"forests" }
@@ -242,21 +256,41 @@ triggered_ability = {
 }
 
 // "Whenever" is listed first because "When" is its prefix.
-trigger_word = _{ ^"whenever" | ^"when" }
+trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
 
-trigger_event = _{ aura_leaves_battlefield | aura_enters | permanent_enters }
+trigger_event = _{
+    aura_leaves_battlefield
+  | aura_enters
+  | beginning_of_the_next_end_step
+  | permanent_enters
+}
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
 aura_leaves_battlefield = { ^"this" ~ ^"aura" ~ ^"leaves" ~ ^"the" ~ ^"battlefield" }
 permanent_enters        = { article ~ permanent_type ~ ^"enters" }
+beginning_of_the_next_end_step = {
+    ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"next" ~ ^"end" ~ ^"step"
+}
 
 intervening_if         = _{ its_on_the_battlefield }
 its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
 
 trigger_effect = _{
-    loses_and_gains_keyword
+    destroy_that_creature_if_it_attacked_this_turn
+  | loses_and_gains_keyword
   | return_enchanted_card_and_attach
   | source_deals_damage_to_that_permanents_controller
   | that_creatures_controller_sacrifices_it
+}
+
+target_permanent_gains_keyword_and_gets_eot = {
+    ^"target" ~ permanent_type ~ ^"gains" ~ keyword ~ ^"and"
+  ~ ^"gets" ~ mixed_pt_modifier ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn"
+  ~ "," ~ where_clause ~ "."
+}
+
+destroy_that_creature_if_it_attacked_this_turn = {
+    ^"destroy" ~ ^"that" ~ ^"creature" ~ ^"if" ~ ^"it"
+  ~ ^"attacked" ~ ^"this" ~ ^"turn" ~ "."
 }
 
 that_creatures_controller_sacrifices_it = {

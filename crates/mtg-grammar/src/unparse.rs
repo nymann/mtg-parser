@@ -1,11 +1,12 @@
 use std::fmt::Write;
 
 use crate::ast::{
-    ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType, Color,
-    Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject, InterveningIf,
-    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Rounding, Sign, SignedNumber,
-    SignedVariable, SourceObject, Statement, StaticAbility, TriggerEffect, TriggerEvent,
-    TriggeredAbility, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType,
+    CastRestriction, Color, Condition, ContinuousEffect, CreatureType, EnchantObject,
+    EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, PermanentType,
+    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
+    Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
+    Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -17,6 +18,7 @@ pub fn unparse(statement: &Statement) -> String {
 fn write_statement(out: &mut String, statement: &Statement) {
     match statement {
         Statement::ManaCost(mc) => write_mana_cost(out, mc),
+        Statement::CastRestriction(restriction) => write_cast_restriction(out, *restriction),
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
         Statement::DestroyAll { permanent_type } => {
             out.push_str("Destroy all ");
@@ -31,6 +33,22 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 u32_to_number_word(*count)
             )
             .expect("write to String never fails");
+        }
+        Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
+            permanent_type,
+            keyword,
+            modifier,
+            definitions,
+        } => {
+            out.push_str("Target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" gains ");
+            write_keyword_lowercase(out, *keyword);
+            out.push_str(" and gets ");
+            write_mixed_pt_modifier(out, *modifier);
+            out.push_str(" until end of turn, where ");
+            write_variable_definitions(out, definitions);
+            out.push('.');
         }
         Statement::EachPlayerEqualizesControlledPermanents { permanent_type } => {
             out.push_str("Each player chooses a number of ");
@@ -56,6 +74,17 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 }
                 write_statement(out, s);
             }
+        }
+    }
+}
+
+fn write_cast_restriction(out: &mut String, restriction: CastRestriction) {
+    out.push_str("Cast this spell only ");
+    match restriction {
+        CastRestriction::BeforeStep { step } => {
+            out.push_str("before the ");
+            out.push_str(step_name(step));
+            out.push_str(" step.");
         }
     }
 }
@@ -104,6 +133,7 @@ fn write_keyword(out: &mut String, kw: Keyword) {
         Keyword::Flying => out.push_str("Flying"),
         Keyword::Defender => out.push_str("Defender"),
         Keyword::Banding => out.push_str("Banding"),
+        Keyword::Trample => out.push_str("Trample"),
         Keyword::Enchant(object) => {
             out.push_str("Enchant ");
             write_enchant_object(out, object);
@@ -250,6 +280,7 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
 fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
     out.push_str(match ta.event {
         TriggerEvent::PermanentEnters { .. } => "Whenever ",
+        TriggerEvent::BeginningOfTheNextEndStep => "At ",
         TriggerEvent::ThisAuraEnters | TriggerEvent::ThisAuraLeavesTheBattlefield => "When ",
     });
     write_trigger_event(out, ta.event);
@@ -279,6 +310,9 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str(permanent_type_name(permanent_type));
             out.push_str(" enters");
         }
+        TriggerEvent::BeginningOfTheNextEndStep => {
+            out.push_str("the beginning of the next end step");
+        }
     }
 }
 
@@ -290,6 +324,9 @@ fn write_intervening_if(out: &mut String, iif: InterveningIf) {
 
 fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
     match eff {
+        TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn => {
+            out.push_str("destroy that creature if it attacked this turn.");
+        }
         TriggerEffect::ThatCreaturesControllerSacrificesIt => {
             out.push_str("that creature's controller sacrifices it.");
         }
@@ -344,6 +381,7 @@ fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
         Keyword::Flying => out.push_str("flying"),
         Keyword::Defender => out.push_str("defender"),
         Keyword::Banding => out.push_str("banding"),
+        Keyword::Trample => out.push_str("trample"),
         Keyword::Enchant(object) => {
             out.push_str("enchant ");
             write_enchant_object(out, object);
@@ -355,6 +393,19 @@ fn write_enchanted_object(out: &mut String, object: EnchantedObject) {
     match object {
         EnchantedObject::Permanent(pt) => out.push_str(permanent_type_name(pt)),
         EnchantedObject::CreatureType(ct) => out.push_str(creature_type_name(ct)),
+    }
+}
+
+fn write_mixed_pt_modifier(out: &mut String, m: MixedPtModifier) {
+    write_signed_pt_component(out, m.power);
+    out.push('/');
+    write_signed_pt_component(out, m.toughness);
+}
+
+fn write_signed_pt_component(out: &mut String, component: SignedPtComponent) {
+    match component {
+        SignedPtComponent::Number(n) => write_signed_number(out, n),
+        SignedPtComponent::Variable(v) => write_signed_variable(out, v),
     }
 }
 
@@ -416,6 +467,7 @@ fn write_value_expression(out: &mut String, expression: &ValueExpression) {
             out.push_str(" you control, rounded ");
             out.push_str(rounding_name(*rounding));
         }
+        ValueExpression::ItsPower => out.push_str("its power"),
     }
 }
 
@@ -492,6 +544,12 @@ fn color_name_capitalized(color: Color) -> &'static str {
 fn creature_type_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Wall => "Wall",
+    }
+}
+
+fn step_name(step: Step) -> &'static str {
+    match step {
+        Step::CombatDamage => "combat damage",
     }
 }
 

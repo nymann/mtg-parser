@@ -1,5 +1,6 @@
 use mtg_grammar::{
-    ActivatedAbility, BalanceSameWayAction, Keyword, PermanentType, StaticAbility, TriggeredAbility,
+    ActivatedAbility, BalanceSameWayAction, CastRestriction, Keyword, MixedPtModifier,
+    PermanentType, StaticAbility, TriggeredAbility, VariableDefinition,
 };
 use serde::{Deserialize, Serialize};
 
@@ -11,6 +12,8 @@ pub enum CardEffect {
     /// color has a dedicated counter, so `{1}{1}{R}` lowers identically
     /// to `{2}{R}`.
     ManaCost(ManaValue),
+    /// "Cast this spell only <restriction>."
+    CastRestriction(CastRestriction),
     /// "Destroy target creature."
     DestroyTargetCreature,
     /// "Destroy all <permanent_type>s."
@@ -19,6 +22,14 @@ pub enum CardEffect {
     Keyword(Keyword),
     /// "Target player draws N cards."
     TargetPlayerDrawsCards { count: u32 },
+    /// "Target <type> gains <keyword> and gets <modifier> until end of
+    /// turn, where ..."
+    TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
+        permanent_type: PermanentType,
+        keyword: Keyword,
+        modifier: MixedPtModifier,
+        definitions: Vec<VariableDefinition>,
+    },
     /// Balance-style equalization of a controlled permanent type by
     /// sacrificing permanents above the table minimum.
     EachPlayerEqualizesControlledPermanents { permanent_type: PermanentType },

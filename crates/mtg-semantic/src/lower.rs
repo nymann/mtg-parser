@@ -11,6 +11,7 @@ use crate::ir::{CardEffect, ManaValue};
 pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
     Ok(match ast {
         Statement::ManaCost(mc) => CardEffect::ManaCost(lower_mana_cost(mc)),
+        Statement::CastRestriction(restriction) => CardEffect::CastRestriction(*restriction),
         Statement::DestroyTargetCreature => CardEffect::DestroyTargetCreature,
         Statement::DestroyAll { permanent_type } => CardEffect::DestroyAll {
             permanent_type: *permanent_type,
@@ -19,6 +20,17 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }
+        Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
+            permanent_type,
+            keyword,
+            modifier,
+            definitions,
+        } => CardEffect::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
+            permanent_type: *permanent_type,
+            keyword: *keyword,
+            modifier: *modifier,
+            definitions: definitions.clone(),
+        },
         Statement::EachPlayerEqualizesControlledPermanents { permanent_type } => {
             CardEffect::EachPlayerEqualizesControlledPermanents {
                 permanent_type: *permanent_type,

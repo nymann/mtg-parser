@@ -15,3 +15,5 @@ mod balance;
 mod basalt_monolith;
 #[path = "generated_patterns/benalish_hero.rs"]
 mod benalish_hero;
+#[path = "generated_patterns/berserk.rs"]
+mod berserk;
