@@ -10,8 +10,8 @@ use std::time::{Duration, Instant};
 
 use mtg_scryfall::Card;
 
-use crate::claude_events::{self, ParsedClaudeEvent, ToolUseTarget};
-use crate::flow::{FlowEvent, IterationOutcomeSummary, NoteLevel, SessionEndReason};
+use crate::agent_events::{self, ParsedAgentEvent, ToolUseTarget};
+use crate::flow::{AgentProvider, FlowEvent, IterationOutcomeSummary, NoteLevel, SessionEndReason};
 
 #[derive(Default)]
 pub struct AppState {
@@ -23,7 +23,11 @@ pub struct AppState {
 
     // view state
     pub scroll: u16, // first row visible in the output pane
+    pub card_scroll: u16,
     pub autoscroll: bool,
+    pub focus: FocusPane,
+    pub search: SearchState,
+    pub history: HistoryState,
 }
 
 impl AppState {
@@ -194,14 +198,18 @@ impl AppState {
                 self.bump_last_event();
             }
 
-            FlowEvent::ClaudeEvent { raw, elapsed_secs } => {
+            FlowEvent::AgentEvent {
+                provider,
+                raw,
+                elapsed_secs,
+            } => {
                 let _ = elapsed_secs; // computed locally via delta
                 let delta = self.delta_since_last();
-                for parsed in claude_events::parse(&raw) {
+                for parsed in agent_events::parse(provider, &raw) {
                     self.events.push(TimelineRow {
                         iteration_index: self.iterations.len() as u32,
                         delta,
-                        kind: TimelineKind::Claude(parsed),
+                        kind: TimelineKind::Agent { provider, parsed },
                     });
                 }
                 self.bump_last_event();
@@ -423,11 +431,52 @@ impl TimelineRow {
 
 #[derive(Debug, Clone)]
 pub enum TimelineKind {
-    StepHeader { index: u8, label: String },
-    StepResult { ok: bool, summary: String },
-    Claude(ParsedClaudeEvent),
-    Note { level: NoteLevel, text: String },
+    StepHeader {
+        index: u8,
+        label: String,
+    },
+    StepResult {
+        ok: bool,
+        summary: String,
+    },
+    Agent {
+        provider: AgentProvider,
+        parsed: ParsedAgentEvent,
+    },
+    Note {
+        level: NoteLevel,
+        text: String,
+    },
     IterationFooter(IterationOutcomeSummary),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum FocusPane {
+    #[default]
+    Output,
+    Card,
+    Modal,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SearchState {
+    pub query: String,
+    pub editing: bool,
+    pub filter_mode: bool,
+    pub current_match: usize,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct HistoryState {
+    pub open: bool,
+    pub entries: Vec<HistoryEntry>,
+    pub selected: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct HistoryEntry {
+    pub name: String,
+    pub path: std::path::PathBuf,
 }
 
 #[cfg(test)]
@@ -486,10 +535,10 @@ mod tests {
 /// paths shortened to repo-relative form.
 pub fn format_tool_target(target: &ToolUseTarget, repo_root: &std::path::Path) -> String {
     match target {
-        ToolUseTarget::File(p) => claude_events::relativize(p, repo_root),
-        ToolUseTarget::Command(c) => format!("$ {}", claude_events::trim_to(c, 160)),
+        ToolUseTarget::File(p) => agent_events::relativize(p, repo_root),
+        ToolUseTarget::Command(c) => format!("$ {}", agent_events::trim_to(c, 160)),
         ToolUseTarget::Pattern(p) => format!("/{p}/"),
-        ToolUseTarget::Description(d) => claude_events::trim_to(d, 160),
+        ToolUseTarget::Description(d) => agent_events::trim_to(d, 160),
         ToolUseTarget::None => String::new(),
     }
 }

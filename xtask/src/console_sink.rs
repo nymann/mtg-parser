@@ -4,7 +4,7 @@
 
 use mtg_scryfall::Card;
 
-use crate::claude_events::{self, ParsedClaudeEvent, ToolUseTarget};
+use crate::agent_events::{self, ParsedAgentEvent, ToolUseTarget};
 use crate::flow::{FlowEvent, FlowSink, IterationOutcomeSummary, NoteLevel, SessionEndReason};
 use crate::paths::repo_root;
 
@@ -30,7 +30,8 @@ impl FlowSink for ConsoleSink {
                 println!(
                     "grammar-fix  set={set}  max-iter={max_iterations}  \
                      corpus={baseline_corpus_passing}/{baseline_corpus_total}  \
-                     grammar={baseline_grammar_rules} rules"
+                     grammar={baseline_grammar_rules} rules",
+                    max_iterations = format_max_iterations(max_iterations),
                 );
             }
 
@@ -51,7 +52,10 @@ impl FlowSink for ConsoleSink {
                 round_trip_error,
             } => {
                 println!();
-                println!("== iteration {index} / {max_iterations} ==");
+                println!(
+                    "== iteration {index} / {} ==",
+                    format_max_iterations(max_iterations)
+                );
                 print_card_overview(&card, &normalized, &round_trip_error);
             }
 
@@ -71,10 +75,14 @@ impl FlowSink for ConsoleSink {
                 println!("{prefix}{text}");
             }
 
-            FlowEvent::ClaudeEvent { raw, elapsed_secs } => {
+            FlowEvent::AgentEvent {
+                provider,
+                raw,
+                elapsed_secs,
+            } => {
                 let ts = format!("[+{elapsed_secs:>3}s]");
-                for parsed in claude_events::parse(&raw) {
-                    for line in render_claude_for_console(&parsed) {
+                for parsed in agent_events::parse(provider, &raw) {
+                    for line in render_agent_for_console(provider, &parsed) {
                         println!("    {ts} {line}");
                     }
                 }
@@ -107,7 +115,7 @@ impl FlowSink for ConsoleSink {
             FlowEvent::SessionFinished { reason } => match reason {
                 SessionEndReason::MaxIterationsReached(n) => {
                     println!();
-                    println!("Reached --max-iterations={n}.");
+                    println!("Reached --max-iterations={}.", format_max_iterations(n));
                 }
                 SessionEndReason::AllPass => {
                     println!();
@@ -116,13 +124,21 @@ impl FlowSink for ConsoleSink {
                 SessionEndReason::DryRunStop => {
                     println!();
                     println!(
-                        "--dry-run: not invoking claude, not promoting the test, not committing."
+                        "--dry-run: not invoking an agent, not promoting tests, not committing."
                     );
                 }
                 // The IterationFinished message already covered this case.
                 SessionEndReason::SurfacedToHuman(_) => {}
             },
         }
+    }
+}
+
+fn format_max_iterations(n: u32) -> String {
+    if n == 0 {
+        "∞".to_string()
+    } else {
+        n.to_string()
     }
 }
 
@@ -159,32 +175,36 @@ fn print_indented(text: &str, prefix: &str) {
     }
 }
 
-fn render_claude_for_console(ev: &ParsedClaudeEvent) -> Vec<String> {
+fn render_agent_for_console(
+    provider: crate::flow::AgentProvider,
+    ev: &ParsedAgentEvent,
+) -> Vec<String> {
+    let label = provider.label();
     match ev {
-        ParsedClaudeEvent::Init { model } => {
-            vec![format!("[claude init] model={model}")]
+        ParsedAgentEvent::Init { model } => {
+            vec![format!("[{label} init] model={model}")]
         }
-        ParsedClaudeEvent::AssistantText { text } => {
+        ParsedAgentEvent::AssistantText { text } => {
             // Multi-line prose: prefix the first line, indent the rest
             // so the prefix lines up.
             let mut out = Vec::new();
             for (i, line) in text.lines().enumerate() {
                 out.push(if i == 0 {
-                    format!("[claude] {line}")
+                    format!("[{label}] {line}")
                 } else {
-                    format!("              {line}")
+                    format!("            {line}")
                 });
             }
             if out.is_empty() {
-                out.push("[claude]".to_string());
+                out.push(format!("[{label}]"));
             }
             out
         }
-        ParsedClaudeEvent::ToolUse { name, target } => {
+        ParsedAgentEvent::ToolUse { name, target } => {
             let summary = format_tool_target(target);
             vec![format!("[tool_use] {name}{summary}")]
         }
-        ParsedClaudeEvent::ToolResult {
+        ParsedAgentEvent::ToolResult {
             first_line,
             is_error,
         } => {
@@ -195,30 +215,30 @@ fn render_claude_for_console(ev: &ParsedClaudeEvent) -> Vec<String> {
             };
             vec![format!(
                 "[{tag}] {}",
-                claude_events::trim_to(first_line, 200)
+                agent_events::trim_to(first_line, 200)
             )]
         }
-        ParsedClaudeEvent::Done {
+        ParsedAgentEvent::Done {
             subtype,
             num_turns,
             total_cost_usd,
         } => {
             vec![format!(
-                "[claude done] subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"
+                "[{label} done] subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"
             )]
         }
-        ParsedClaudeEvent::Other => Vec::new(),
+        ParsedAgentEvent::Other => Vec::new(),
     }
 }
 
 fn format_tool_target(target: &ToolUseTarget) -> String {
     match target {
-        ToolUseTarget::File(p) => format!(" {}", claude_events::relativize(p, &repo_root())),
+        ToolUseTarget::File(p) => format!(" {}", agent_events::relativize(p, &repo_root())),
         ToolUseTarget::Command(c) => {
-            format!(" $ {}", claude_events::trim_to(c, 160))
+            format!(" $ {}", agent_events::trim_to(c, 160))
         }
         ToolUseTarget::Pattern(p) => format!(" /{p}/"),
-        ToolUseTarget::Description(d) => format!(" {}", claude_events::trim_to(d, 160)),
+        ToolUseTarget::Description(d) => format!(" {}", agent_events::trim_to(d, 160)),
         ToolUseTarget::None => String::new(),
     }
 }

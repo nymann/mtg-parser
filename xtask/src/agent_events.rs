@@ -1,15 +1,15 @@
-//! Parse Claude Code's `--output-format stream-json` NDJSON events
-//! into a typed shape both sinks can render.
+//! Parse agent JSONL events into a typed shape both sinks can render.
 //!
-//! Each line from `claude -p --output-format stream-json --verbose` is
-//! one `serde_json::Value` of `type` one of `system` / `assistant` /
-//! `user` / `result`. This module turns each into a [`ParsedClaudeEvent`]
-//! that strips out the noise and keeps the display-relevant bits.
+//! Claude and Codex use different JSONL event shapes. This module
+//! normalizes both into [`ParsedAgentEvent`] so the console and TUI do
+//! not care which provider produced the stream.
 
 use std::path::Path;
 
+use crate::flow::AgentProvider;
+
 #[derive(Debug, Clone)]
-pub enum ParsedClaudeEvent {
+pub enum ParsedAgentEvent {
     Init {
         model: String,
     },
@@ -48,10 +48,17 @@ pub enum ToolUseTarget {
     None,
 }
 
-/// Parse one stream-json event value into [`ParsedClaudeEvent`].
+/// Parse one JSONL event value into [`ParsedAgentEvent`].
 /// Returns a `Vec` because `assistant` events can carry both text
 /// content and tool_use blocks in the same message.
-pub fn parse(ev: &serde_json::Value) -> Vec<ParsedClaudeEvent> {
+pub fn parse(provider: AgentProvider, ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
+    match provider {
+        AgentProvider::Claude => parse_claude(ev),
+        AgentProvider::Codex => parse_codex(ev),
+    }
+}
+
+fn parse_claude(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
     let kind = match ev.get("type").and_then(|v| v.as_str()) {
         Some(k) => k,
         None => return vec![],
@@ -64,9 +71,9 @@ pub fn parse(ev: &serde_json::Value) -> Vec<ParsedClaudeEvent> {
                     .and_then(|v| v.as_str())
                     .unwrap_or("unknown")
                     .to_string();
-                vec![ParsedClaudeEvent::Init { model }]
+                vec![ParsedAgentEvent::Init { model }]
             } else {
-                vec![ParsedClaudeEvent::Other]
+                vec![ParsedAgentEvent::Other]
             }
         }
         "assistant" => parse_assistant(ev),
@@ -82,17 +89,83 @@ pub fn parse(ev: &serde_json::Value) -> Vec<ParsedClaudeEvent> {
                 .get("total_cost_usd")
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.0);
-            vec![ParsedClaudeEvent::Done {
+            vec![ParsedAgentEvent::Done {
                 subtype,
                 num_turns,
                 total_cost_usd,
             }]
         }
-        _ => vec![ParsedClaudeEvent::Other],
+        _ => vec![ParsedAgentEvent::Other],
     }
 }
 
-fn parse_assistant(ev: &serde_json::Value) -> Vec<ParsedClaudeEvent> {
+fn parse_codex(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
+    let kind = ev
+        .get("type")
+        .or_else(|| ev.get("event"))
+        .or_else(|| ev.get("msg_type"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let lower = kind.to_ascii_lowercase();
+
+    if lower.contains("session") || lower.contains("init") || lower == "started" {
+        let model = string_at(ev, &["model", "model_slug"])
+            .or_else(|| string_at_path(ev, &["payload", "model"]))
+            .unwrap_or_else(|| "unknown".to_string());
+        return vec![ParsedAgentEvent::Init { model }];
+    }
+
+    if lower.contains("tool") || lower.contains("exec") || lower.contains("command") {
+        if lower.contains("result") || lower.contains("output") || lower.contains("end") {
+            return vec![ParsedAgentEvent::ToolResult {
+                first_line: first_text(ev).unwrap_or_default(),
+                is_error: bool_at(ev, &["is_error", "error"])
+                    || string_at(ev, &["status"]).as_deref() == Some("failed"),
+            }];
+        }
+        let name = string_at(ev, &["name", "tool", "call_id"])
+            .or_else(|| string_at_path(ev, &["payload", "name"]))
+            .unwrap_or_else(|| "tool".to_string());
+        let target = ev
+            .get("input")
+            .or_else(|| ev.get("arguments"))
+            .or_else(|| ev.get("payload"))
+            .map(tool_target)
+            .unwrap_or_else(|| {
+                string_at(ev, &["command", "cmd"])
+                    .map(ToolUseTarget::Command)
+                    .unwrap_or(ToolUseTarget::None)
+            });
+        return vec![ParsedAgentEvent::ToolUse { name, target }];
+    }
+
+    if lower.contains("assistant") || lower.contains("message") || lower.contains("text") {
+        if let Some(text) = first_text(ev) {
+            return vec![ParsedAgentEvent::AssistantText { text }];
+        }
+    }
+
+    if lower.contains("done") || lower.contains("completed") || lower.contains("result") {
+        return vec![ParsedAgentEvent::Done {
+            subtype: string_at(ev, &["subtype", "status"]).unwrap_or_else(|| "success".into()),
+            num_turns: ev.get("num_turns").and_then(|v| v.as_u64()).unwrap_or(0),
+            total_cost_usd: ev
+                .get("total_cost_usd")
+                .or_else(|| ev.get("cost_usd"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0),
+        }];
+    }
+
+    if let Some(text) = first_text(ev) {
+        if !text.trim().is_empty() {
+            return vec![ParsedAgentEvent::AssistantText { text }];
+        }
+    }
+    vec![ParsedAgentEvent::Other]
+}
+
+fn parse_assistant(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
     let content = match ev
         .get("message")
         .and_then(|m| m.get("content"))
@@ -106,7 +179,7 @@ fn parse_assistant(ev: &serde_json::Value) -> Vec<ParsedClaudeEvent> {
         match c.get("type").and_then(|v| v.as_str()) {
             Some("text") => {
                 if let Some(t) = c.get("text").and_then(|v| v.as_str()) {
-                    out.push(ParsedClaudeEvent::AssistantText {
+                    out.push(ParsedAgentEvent::AssistantText {
                         text: t.to_string(),
                     });
                 }
@@ -121,7 +194,7 @@ fn parse_assistant(ev: &serde_json::Value) -> Vec<ParsedClaudeEvent> {
                     .get("input")
                     .map(tool_target)
                     .unwrap_or(ToolUseTarget::None);
-                out.push(ParsedClaudeEvent::ToolUse { name, target });
+                out.push(ParsedAgentEvent::ToolUse { name, target });
             }
             _ => {}
         }
@@ -129,7 +202,7 @@ fn parse_assistant(ev: &serde_json::Value) -> Vec<ParsedClaudeEvent> {
     out
 }
 
-fn parse_user(ev: &serde_json::Value) -> Vec<ParsedClaudeEvent> {
+fn parse_user(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
     let content = match ev
         .get("message")
         .and_then(|m| m.get("content"))
@@ -145,12 +218,51 @@ fn parse_user(ev: &serde_json::Value) -> Vec<ParsedClaudeEvent> {
         }
         let is_error = c.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false);
         let first_line = tool_result_first_line(c);
-        out.push(ParsedClaudeEvent::ToolResult {
+        out.push(ParsedAgentEvent::ToolResult {
             first_line,
             is_error,
         });
     }
     out
+}
+
+fn string_at(ev: &serde_json::Value, keys: &[&str]) -> Option<String> {
+    keys.iter()
+        .find_map(|k| ev.get(*k).and_then(|v| v.as_str()).map(str::to_string))
+}
+
+fn string_at_path(ev: &serde_json::Value, path: &[&str]) -> Option<String> {
+    let mut cur = ev;
+    for key in path {
+        cur = cur.get(*key)?;
+    }
+    cur.as_str().map(str::to_string)
+}
+
+fn bool_at(ev: &serde_json::Value, keys: &[&str]) -> bool {
+    keys.iter()
+        .any(|k| ev.get(*k).and_then(|v| v.as_bool()).unwrap_or(false))
+}
+
+fn first_text(ev: &serde_json::Value) -> Option<String> {
+    for key in ["text", "message", "content", "output", "delta"] {
+        if let Some(v) = ev.get(key) {
+            if let Some(s) = v.as_str() {
+                return Some(s.lines().next().unwrap_or("").to_string());
+            }
+            if let Some(arr) = v.as_array() {
+                for item in arr {
+                    if let Some(s) = item.as_str() {
+                        return Some(s.lines().next().unwrap_or("").to_string());
+                    }
+                    if let Some(s) = item.get("text").and_then(|v| v.as_str()) {
+                        return Some(s.lines().next().unwrap_or("").to_string());
+                    }
+                }
+            }
+        }
+    }
+    None
 }
 
 fn tool_target(input: &serde_json::Value) -> ToolUseTarget {
@@ -218,10 +330,10 @@ mod tests {
         let v: serde_json::Value =
             serde_json::from_str(r#"{"type":"system","subtype":"init","model":"claude-opus-4-7"}"#)
                 .unwrap();
-        let out = parse(&v);
+        let out = parse(AgentProvider::Claude, &v);
         assert!(matches!(
             out.as_slice(),
-            [ParsedClaudeEvent::Init { model }] if model == "claude-opus-4-7"
+            [ParsedAgentEvent::Init { model }] if model == "claude-opus-4-7"
         ));
     }
 
@@ -237,12 +349,12 @@ mod tests {
             }"#,
         )
         .unwrap();
-        let out = parse(&v);
+        let out = parse(AgentProvider::Claude, &v);
         assert_eq!(out.len(), 2);
-        assert!(matches!(&out[0], ParsedClaudeEvent::AssistantText { text } if text == "reading…"));
+        assert!(matches!(&out[0], ParsedAgentEvent::AssistantText { text } if text == "reading…"));
         assert!(matches!(
             &out[1],
-            ParsedClaudeEvent::ToolUse { name, target: ToolUseTarget::File(p) }
+            ParsedAgentEvent::ToolUse { name, target: ToolUseTarget::File(p) }
                 if name == "Edit" && p == "/repo/g.pest"
         ));
     }
@@ -258,10 +370,10 @@ mod tests {
             }"#,
         )
         .unwrap();
-        let out = parse(&v);
+        let out = parse(AgentProvider::Claude, &v);
         assert!(matches!(
             &out[0],
-            ParsedClaudeEvent::ToolResult { first_line, is_error: false }
+            ParsedAgentEvent::ToolResult { first_line, is_error: false }
                 if first_line == "first line"
         ));
     }
@@ -272,11 +384,19 @@ mod tests {
             r#"{"type":"result","subtype":"success","num_turns":12,"total_cost_usd":0.0234}"#,
         )
         .unwrap();
-        let out = parse(&v);
+        let out = parse(AgentProvider::Claude, &v);
         assert!(matches!(
             &out[0],
-            ParsedClaudeEvent::Done { subtype, num_turns: 12, total_cost_usd }
+            ParsedAgentEvent::Done { subtype, num_turns: 12, total_cost_usd }
                 if subtype == "success" && (total_cost_usd - 0.0234).abs() < 1e-6
         ));
+    }
+
+    #[test]
+    fn parses_codex_message_text() {
+        let v: serde_json::Value =
+            serde_json::from_str(r#"{"type":"assistant_message","message":"hello"}"#).unwrap();
+        let out = parse(AgentProvider::Codex, &v);
+        assert!(matches!(&out[0], ParsedAgentEvent::AssistantText { text } if text == "hello"));
     }
 }

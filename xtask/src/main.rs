@@ -5,7 +5,7 @@
 
 use std::process::ExitCode;
 
-mod claude_events;
+mod agent_events;
 mod console_sink;
 mod corpus_cmd;
 mod flow;
@@ -28,12 +28,13 @@ Commands:
                               if there are regressions (use with care).
   refresh-corpus [--set CODE] Force re-fetch a set from Scryfall, bypassing the cache.
                               Without --set, refreshes every set tracked by `corpus`.
-  grammar-fix [--set CODE]    Orchestrated loop: next-card → claude -p → tier-1/2 →
+  grammar-fix [--set CODE]    Orchestrated loop: next-card → agent → tier-1/2 →
               [--max-iterations N]  corpus diff → commit. Defaults: --set lea,
-              [--dry-run] [--allow-dirty]  --max-iterations 1. --dry-run builds the
+              [--dry-run] [--allow-dirty]  --max-iterations 0 (unbounded). --dry-run builds the
               [--ui console|tui]          prompt and stops; --allow-dirty skips the
-                                          clean-tree precondition; --ui tui opens a
-                                          full-screen interactive view.
+              [--agent codex|claude]      clean-tree precondition; --agent defaults
+                                          to codex; --ui tui opens a full-screen
+                                          interactive view.
 
 Flags:
   -h, --help        Show this message.

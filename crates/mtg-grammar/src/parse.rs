@@ -52,9 +52,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::static_as_long_as | Rule::static_enchanted_gets => {
             Ok(Statement::StaticAbility(static_ability_from_pair(pair)?))
         }
-        Rule::triggered_ability => Ok(Statement::TriggeredAbility(
-            triggered_ability_from_pair(pair)?,
-        )),
+        Rule::triggered_ability => Ok(Statement::TriggeredAbility(triggered_ability_from_pair(
+            pair,
+        )?)),
         _ => Err(ParseError::Internal("statement")),
     }
 }
@@ -140,12 +140,12 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
 
 fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
     let mut inner = pair.into_inner();
-    let loses_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("loses_and_gains missing loses keyword"))?;
-    let gains_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("loses_and_gains missing gains keyword"))?;
+    let loses_pair = inner.next().ok_or(ParseError::Internal(
+        "loses_and_gains missing loses keyword",
+    ))?;
+    let gains_pair = inner.next().ok_or(ParseError::Internal(
+        "loses_and_gains missing gains keyword",
+    ))?;
     Ok(TriggerEffect::LosesAndGainsKeyword {
         loses: keyword_from_inner_pair(loses_pair)?,
         gains: keyword_from_inner_pair(gains_pair)?,

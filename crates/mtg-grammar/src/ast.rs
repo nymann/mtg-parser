@@ -47,16 +47,11 @@ pub enum TriggerEffect {
     /// rewrites its own printed rules text. Reanimator Auras use this
     /// to switch their `Enchant` target from a graveyard card to the
     /// battlefield permanent they just reanimated.
-    LosesAndGainsKeyword {
-        loses: Keyword,
-        gains: Keyword,
-    },
+    LosesAndGainsKeyword { loses: Keyword, gains: Keyword },
     /// "Return enchanted <type> card to the battlefield under your
     /// control and attach this Aura to it" — pulls the enchanted card
     /// out of its zone and re-attaches the Aura on the battlefield.
-    ReturnEnchantedCardAndAttach {
-        card_type: PermanentType,
-    },
+    ReturnEnchantedCardAndAttach { card_type: PermanentType },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

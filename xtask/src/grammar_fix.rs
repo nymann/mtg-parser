@@ -1,5 +1,5 @@
 //! The grammar-fix orchestrator. Walks a Scryfall set, hands one
-//! failing card at a time to a fresh `claude -p` agent, gates the
+//! failing card at a time to a fresh coding agent, gates the
 //! result through tier-1/2 tests and the corpus regression check, and
 //! commits per-iteration progress.
 //!
@@ -22,14 +22,18 @@ use mtg_corpus::{find_next_failing_card, NextCard};
 use mtg_scryfall::{Card, ScryfallClient};
 
 use crate::console_sink::ConsoleSink;
-use crate::flow::{FlowEvent, FlowSink, IterationOutcomeSummary, NoteLevel, SessionEndReason};
+use crate::flow::{
+    AgentProvider, FlowEvent, FlowSink, IterationOutcomeSummary, NoteLevel, SessionEndReason,
+};
 use crate::paths::{
-    ast_rs_path, corpus_status_path, generated_tests_dir, generated_tests_manifest,
-    grammar_fix_log_root, grammar_pest_path, lower_rs_path, repo_root,
+    ast_rs_path, corpus_status_path, generated_pattern_tests_dir, generated_pattern_tests_manifest,
+    generated_tests_dir, generated_tests_manifest, grammar_fix_log_root, grammar_pest_path,
+    lower_rs_path, repo_root,
 };
 
 const DEFAULT_SET: &str = "lea";
-const DEFAULT_MAX_ITERATIONS: u32 = 1;
+/// 0 means unbounded; positive values cap the loop.
+const DEFAULT_MAX_ITERATIONS: u32 = 0;
 const TOTAL_STEPS: u8 = 9;
 
 pub fn run(args: &[String]) -> ExitCode {
@@ -71,7 +75,7 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
 
     let mut iter = 0u32;
     let mut end_reason = None::<SessionEndReason>;
-    while iter < opts.max_iterations {
+    while opts.max_iterations == 0 || iter < opts.max_iterations {
         match run_one_iteration(&client, &opts, sink, iter + 1)? {
             IterationOutcome::AllPass => {
                 end_reason = Some(SessionEndReason::AllPass);
@@ -105,6 +109,7 @@ pub struct Options {
     pub max_iterations: u32,
     pub dry_run: bool,
     pub allow_dirty: bool,
+    pub agent: AgentProvider,
 }
 
 impl Options {
@@ -113,6 +118,7 @@ impl Options {
         let mut max_iterations = DEFAULT_MAX_ITERATIONS;
         let mut dry_run = false;
         let mut allow_dirty = false;
+        let mut agent = AgentProvider::Codex;
 
         let mut iter = args.iter();
         while let Some(a) = iter.next() {
@@ -134,6 +140,15 @@ impl Options {
                 }
                 "--dry-run" => dry_run = true,
                 "--allow-dirty" => allow_dirty = true,
+                "--agent" => {
+                    let v = iter
+                        .next()
+                        .ok_or_else(|| anyhow!("--agent requires a value"))?;
+                    agent = parse_agent(v)?;
+                }
+                s if s.starts_with("--agent=") => {
+                    agent = parse_agent(&s["--agent=".len()..])?;
+                }
                 // The --ui flag is handled in main.rs (it picks the
                 // sink before we get here); silently swallow it if it
                 // slips through.
@@ -149,7 +164,16 @@ impl Options {
             max_iterations,
             dry_run,
             allow_dirty,
+            agent,
         })
+    }
+}
+
+fn parse_agent(value: &str) -> Result<AgentProvider> {
+    match value {
+        "codex" => Ok(AgentProvider::Codex),
+        "claude" => Ok(AgentProvider::Claude),
+        other => bail!("--agent must be 'codex' or 'claude', got {other:?}"),
     }
 }
 
@@ -218,10 +242,11 @@ fn run_one_iteration(
         summary: Some(format!("{}", log_dir.display())),
     });
 
-    // The promoted-test path is deterministic from the card slug; we
-    // compute it now so the prompt can reference it but write the
-    // file only past the dry-run gate.
+    // The promoted-test paths are deterministic from the card slug; we
+    // compute them now so prompts can reference them but write the
+    // files only past the dry-run gate.
     let test_path = generated_test_path(&card);
+    let pattern_test_path = generated_pattern_test_path(&card);
 
     // Step 3 — snapshot card.json + baseline corpus stats.
     sink.emit(FlowEvent::StepStarted {
@@ -256,45 +281,62 @@ fn run_one_iteration(
         return Ok(IterationOutcome::DryRunStop);
     }
 
-    // Step 5 — promote the failing test.
+    // Step 5 — promote deterministic pattern tests first.
     sink.emit(FlowEvent::StepStarted {
         index: 5,
         total: TOTAL_STEPS,
-        label: "promote failing test".into(),
+        label: "promote pattern tests".into(),
     });
-    write_promoted_test(&test_path, &card, &normalized).context("generate promoted test file")?;
-    register_generated_test(&test_path).context("register generated test")?;
+    let patterns = extract_patterns(&normalized);
+    write_pattern_tests(&pattern_test_path, &card, &patterns)
+        .context("generate pattern test file")?;
+    register_generated_pattern_test(&pattern_test_path)
+        .context("register generated pattern test")?;
     sink.emit(FlowEvent::StepFinished {
         index: 5,
         ok: true,
-        summary: Some(
-            test_path
+        summary: Some(format!(
+            "{} patterns · {}",
+            patterns.len(),
+            pattern_test_path
                 .strip_prefix(repo_root())
-                .unwrap_or(&test_path)
+                .unwrap_or(&pattern_test_path)
                 .display()
-                .to_string(),
-        ),
+        )),
     });
 
-    // Step 6 — delegate to claude -p (the one non-deterministic step).
+    // Step 6 — delegate to the configured agent (the one non-deterministic step).
     sink.emit(FlowEvent::StepStarted {
         index: 6,
         total: TOTAL_STEPS,
-        label: "claude -p".into(),
+        label: format!("{} agent", opts.agent.label()),
     });
     let transcript_path = log_dir.join("transcript.ndjson");
-    let claude_outcome = invoke_claude(&prompt, &transcript_path, sink)?;
-    std::fs::write(log_dir.join("response.md"), &claude_outcome.assistant_text)?;
+    let pattern_prompt = build_pattern_prompt(
+        &card,
+        &error,
+        &normalized,
+        &test_path,
+        &pattern_test_path,
+        &patterns,
+    )?;
+    std::fs::write(log_dir.join("pattern_prompt.md"), &pattern_prompt)?;
+    let agent_outcome = invoke_agent(opts.agent, &pattern_prompt, &transcript_path, sink)?;
+    std::fs::write(log_dir.join("response.md"), &agent_outcome.assistant_text)?;
     sink.emit(FlowEvent::StepFinished {
         index: 6,
-        ok: claude_outcome.success,
+        ok: agent_outcome.success,
         summary: Some(format!(
             "exit={} · {} assistant blocks",
-            claude_outcome.exit_code, claude_outcome.assistant_blocks
+            agent_outcome.exit_code, agent_outcome.assistant_blocks
         )),
     });
-    if !claude_outcome.success {
-        let reason = format!("claude -p exited with status {}", claude_outcome.exit_code);
+    if !agent_outcome.success {
+        let reason = format!(
+            "{} agent exited with status {}",
+            opts.agent.label(),
+            agent_outcome.exit_code
+        );
         sink.emit(FlowEvent::IterationFinished {
             index: iter_index,
             outcome: IterationOutcomeSummary::SurfacedToHuman {
@@ -303,6 +345,11 @@ fn run_one_iteration(
         });
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
+
+    // If the agent got all parse-only patterns green, add the full
+    // round-trip test before the deterministic gates below.
+    write_promoted_test(&test_path, &card, &normalized).context("generate promoted test file")?;
+    register_generated_test(&test_path).context("register generated test")?;
 
     // Step 7 — tier 1 + tier 2.
     sink.emit(FlowEvent::StepStarted {
@@ -445,6 +492,11 @@ fn generated_test_path(card: &Card) -> PathBuf {
     generated_tests_dir().join(format!("{slug}.rs"))
 }
 
+fn generated_pattern_test_path(card: &Card) -> PathBuf {
+    let slug = slugify(&card.name);
+    generated_pattern_tests_dir().join(format!("{slug}.rs"))
+}
+
 fn write_promoted_test(path: &Path, card: &Card, normalized: &str) -> Result<()> {
     let dir = path
         .parent()
@@ -452,6 +504,165 @@ fn write_promoted_test(path: &Path, card: &Card, normalized: &str) -> Result<()>
     std::fs::create_dir_all(dir).with_context(|| format!("create {}", dir.display()))?;
     let body = render_promoted_test(card, normalized);
     std::fs::write(path, body).with_context(|| format!("write {}", path.display()))?;
+    Ok(())
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PatternCase {
+    name: String,
+    text: String,
+}
+
+fn extract_patterns(normalized: &str) -> Vec<PatternCase> {
+    let mut out = Vec::new();
+    for line in normalized.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        if !line.contains('.') {
+            push_pattern(&mut out, "phrase", line);
+            continue;
+        }
+        for sentence in split_sentences_quote_aware(line) {
+            let sentence = sentence.trim();
+            if sentence.is_empty() {
+                continue;
+            }
+            push_pattern(&mut out, pattern_name(sentence), sentence);
+            for quoted in quoted_segments(sentence) {
+                push_pattern(&mut out, "quoted_keyword", &quoted);
+            }
+        }
+    }
+    if out.is_empty() {
+        push_pattern(&mut out, "full_card", normalized);
+    }
+    out
+}
+
+fn push_pattern(out: &mut Vec<PatternCase>, name: &str, text: &str) {
+    if out.iter().any(|p| p.text == text) {
+        return;
+    }
+    out.push(PatternCase {
+        name: slugify(name),
+        text: text.to_string(),
+    });
+}
+
+fn pattern_name(sentence: &str) -> &'static str {
+    let lower = sentence.to_ascii_lowercase();
+    if lower.starts_with("when ") || lower.starts_with("whenever ") || lower.starts_with("at ") {
+        "triggered_ability"
+    } else if lower.starts_with("as long as ") || lower.starts_with("enchanted ") {
+        "static_ability"
+    } else {
+        "sentence"
+    }
+}
+
+fn split_sentences_quote_aware(line: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut start = 0usize;
+    let mut in_quote = false;
+    for (idx, ch) in line.char_indices() {
+        match ch {
+            '"' => in_quote = !in_quote,
+            '.' if !in_quote => {
+                let end = idx + ch.len_utf8();
+                out.push(line[start..end].trim().to_string());
+                start = end;
+                while line[start..].starts_with(' ') {
+                    start += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+    if start < line.len() {
+        out.push(line[start..].trim().to_string());
+    }
+    out
+}
+
+fn quoted_segments(sentence: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut start = None::<usize>;
+    for (idx, ch) in sentence.char_indices() {
+        if ch != '"' {
+            continue;
+        }
+        match start.take() {
+            Some(s) => {
+                let mut text = sentence[s..idx].trim().trim_end_matches('.').to_string();
+                if !text.is_empty() {
+                    if let Some(first) = text.get_mut(0..1) {
+                        first.make_ascii_uppercase();
+                    }
+                    out.push(text);
+                }
+            }
+            None => start = Some(idx + ch.len_utf8()),
+        }
+    }
+    out
+}
+
+fn write_pattern_tests(path: &Path, card: &Card, patterns: &[PatternCase]) -> Result<()> {
+    let dir = path
+        .parent()
+        .ok_or_else(|| anyhow!("pattern test path has no parent"))?;
+    std::fs::create_dir_all(dir).with_context(|| format!("create {}", dir.display()))?;
+    let body = render_pattern_tests(card, patterns);
+    std::fs::write(path, body).with_context(|| format!("write {}", path.display()))?;
+    Ok(())
+}
+
+fn render_pattern_tests(card: &Card, patterns: &[PatternCase]) -> String {
+    let mut body = format!(
+        "// Generated by `cargo xtask grammar-fix`.\n\
+         // Parse-only pattern tests for incrementally growing grammar support.\n\
+         //\n\
+         // Card           : {name}\n\
+         // Set            : {set}\n\
+         // Collector #    : {collector}\n\n",
+        name = card.name,
+        set = card.set_code,
+        collector = card.collector_number,
+    );
+    for (i, pattern) in patterns.iter().enumerate() {
+        body.push_str(&format!(
+            "#[test]\n\
+             fn pattern_{idx:02}_{name}() {{\n    \
+                 let text = {text:?};\n    \
+                 mtg_grammar::parse(text).expect(\"parse pattern\");\n\
+             }}\n\n",
+            idx = i + 1,
+            name = pattern.name,
+            text = pattern.text,
+        ));
+    }
+    body
+}
+
+fn register_generated_pattern_test(test_path: &Path) -> Result<()> {
+    let manifest = generated_pattern_tests_manifest();
+    let slug = test_path
+        .file_stem()
+        .expect("test file has a stem")
+        .to_string_lossy()
+        .to_string();
+    let entry = format!("#[path = \"generated_patterns/{slug}.rs\"]\nmod {slug};\n");
+    let mut text = if manifest.exists() {
+        std::fs::read_to_string(&manifest)?
+    } else {
+        "// Manifest of generated parse-only pattern tests.\n\n".to_string()
+    };
+    if text.contains(&format!("mod {slug};")) {
+        return Ok(());
+    }
+    if !text.ends_with('\n') {
+        text.push('\n');
+    }
+    text.push_str(&entry);
+    std::fs::write(&manifest, text)?;
     Ok(())
 }
 
@@ -589,6 +800,39 @@ pub(crate) fn build_prompt(
     ))
 }
 
+fn build_pattern_prompt(
+    card: &Card,
+    error: &str,
+    normalized: &str,
+    full_test_path: &Path,
+    pattern_test_path: &Path,
+    patterns: &[PatternCase],
+) -> Result<String> {
+    let mut prompt = build_prompt(card, error, normalized, full_test_path)?;
+    let pattern_rel = pattern_test_path
+        .strip_prefix(repo_root())
+        .unwrap_or(pattern_test_path)
+        .display()
+        .to_string();
+    prompt.push_str("\n\n## Deterministic Pattern Phase\n\n");
+    prompt.push_str("The orchestrator has generated parse-only tests at `");
+    prompt.push_str(&pattern_rel);
+    prompt.push_str("`. Make those pattern tests pass before relying on the full-card round-trip test. The patterns were extracted deterministically in source order:\n\n");
+    for (i, pattern) in patterns.iter().enumerate() {
+        prompt.push_str(&format!(
+            "{idx}. `{name}`\n```text\n{text}\n```\n\n",
+            idx = i + 1,
+            name = pattern.name,
+            text = pattern.text
+        ));
+    }
+    prompt.push_str(
+        "Work pattern by pattern. Keep changes general, then run `cargo xtask test --tier 2`. \
+         The orchestrator will add the full generated round-trip test after you exit successfully.\n",
+    );
+    Ok(prompt)
+}
+
 const PROMPT_INTRO: &str = "\
 You are extending the mtg-parser grammar to handle one specific
 Magic: The Gathering card. The orchestrator that invoked you is
@@ -681,37 +925,101 @@ fn render_files_block(grammar: &str, ast: &str, lower: &str) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// claude subprocess
+// agent subprocess
 // ---------------------------------------------------------------------------
 
-struct ClaudeOutcome {
+struct AgentOutcome {
     success: bool,
     exit_code: i32,
     assistant_text: String,
     assistant_blocks: usize,
 }
 
+fn invoke_agent(
+    provider: AgentProvider,
+    prompt: &str,
+    transcript_path: &Path,
+    sink: &mut dyn FlowSink,
+) -> Result<AgentOutcome> {
+    match provider {
+        AgentProvider::Codex => invoke_codex(prompt, transcript_path, sink),
+        AgentProvider::Claude => invoke_claude(prompt, transcript_path, sink),
+    }
+}
+
+fn base_agent_command(provider: AgentProvider) -> Command {
+    match provider {
+        AgentProvider::Codex => {
+            let mut cmd = Command::new("codex");
+            cmd.arg("exec")
+                .arg("--json")
+                .arg("--cd")
+                .arg(repo_root())
+                .arg("--sandbox")
+                .arg("workspace-write")
+                .arg("--ask-for-approval")
+                .arg("never")
+                .arg("-");
+            cmd
+        }
+        AgentProvider::Claude => {
+            let mut cmd = Command::new("claude");
+            cmd.arg("-p")
+                .arg("--dangerously-skip-permissions")
+                .arg("--output-format")
+                .arg("stream-json")
+                .arg("--verbose");
+            cmd
+        }
+    }
+}
+
+fn invoke_codex(
+    prompt: &str,
+    transcript_path: &Path,
+    sink: &mut dyn FlowSink,
+) -> Result<AgentOutcome> {
+    invoke_jsonl_agent(
+        AgentProvider::Codex,
+        base_agent_command(AgentProvider::Codex),
+        prompt,
+        transcript_path,
+        sink,
+    )
+    .context("spawn `codex exec --json`. Is the Codex CLI installed and authenticated?")
+}
+
 fn invoke_claude(
     prompt: &str,
     transcript_path: &Path,
     sink: &mut dyn FlowSink,
-) -> Result<ClaudeOutcome> {
-    let mut child = Command::new("claude")
-        .arg("-p")
-        .arg("--dangerously-skip-permissions")
-        .arg("--output-format")
-        .arg("stream-json")
-        .arg("--verbose")
+) -> Result<AgentOutcome> {
+    invoke_jsonl_agent(
+        AgentProvider::Claude,
+        base_agent_command(AgentProvider::Claude),
+        prompt,
+        transcript_path,
+        sink,
+    )
+    .context(
+        "spawn `claude`. Is the Claude Code CLI installed and on PATH? \
+         See https://docs.claude.com/claude-code for setup.",
+    )
+}
+
+fn invoke_jsonl_agent(
+    provider: AgentProvider,
+    mut command: Command,
+    prompt: &str,
+    transcript_path: &Path,
+    sink: &mut dyn FlowSink,
+) -> Result<AgentOutcome> {
+    let mut child = command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .current_dir(repo_root())
-        .spawn()
-        .context(
-            "spawn `claude`. Is the Claude Code CLI installed and on PATH? \
-             See https://docs.claude.com/claude-code for setup.",
-        )?;
-
+        .spawn()?;
     {
         let mut stdin = child.stdin.take().expect("piped stdin");
         stdin.write_all(prompt.as_bytes())?;
@@ -734,23 +1042,14 @@ fn invoke_claude(
         match serde_json::from_str::<serde_json::Value>(&line) {
             Ok(parsed) => {
                 let elapsed_secs = start.elapsed().as_secs();
-                if parsed.get("type").and_then(|v| v.as_str()) == Some("assistant") {
-                    if let Some(content) = parsed
-                        .get("message")
-                        .and_then(|m| m.get("content"))
-                        .and_then(|c| c.as_array())
-                    {
-                        for c in content {
-                            if c.get("type").and_then(|v| v.as_str()) == Some("text") {
-                                if let Some(t) = c.get("text").and_then(|v| v.as_str()) {
-                                    assistant_text.push(t.to_string());
-                                    assistant_blocks += 1;
-                                }
-                            }
-                        }
-                    }
-                }
-                sink.emit(FlowEvent::ClaudeEvent {
+                collect_assistant_text(
+                    provider,
+                    &parsed,
+                    &mut assistant_text,
+                    &mut assistant_blocks,
+                );
+                sink.emit(FlowEvent::AgentEvent {
+                    provider,
                     raw: parsed,
                     elapsed_secs,
                 });
@@ -758,19 +1057,70 @@ fn invoke_claude(
             Err(_) => {
                 sink.emit(FlowEvent::Note {
                     level: NoteLevel::Warn,
-                    text: format!("non-JSON line from claude: {}", trim(&line, 200)),
+                    text: format!(
+                        "non-JSON line from {}: {}",
+                        provider.label(),
+                        trim(&line, 200)
+                    ),
                 });
             }
         }
     }
     let status = child.wait()?;
     let exit_code = status.code().unwrap_or(-1);
-    Ok(ClaudeOutcome {
+    Ok(AgentOutcome {
         success: status.success(),
         exit_code,
         assistant_text: assistant_text.join("\n\n"),
         assistant_blocks,
     })
+}
+
+fn collect_assistant_text(
+    provider: AgentProvider,
+    parsed: &serde_json::Value,
+    assistant_text: &mut Vec<String>,
+    assistant_blocks: &mut usize,
+) {
+    match provider {
+        AgentProvider::Claude => {
+            if parsed.get("type").and_then(|v| v.as_str()) != Some("assistant") {
+                return;
+            }
+            if let Some(content) = parsed
+                .get("message")
+                .and_then(|m| m.get("content"))
+                .and_then(|c| c.as_array())
+            {
+                for c in content {
+                    if c.get("type").and_then(|v| v.as_str()) == Some("text") {
+                        if let Some(t) = c.get("text").and_then(|v| v.as_str()) {
+                            assistant_text.push(t.to_string());
+                            *assistant_blocks += 1;
+                        }
+                    }
+                }
+            }
+        }
+        AgentProvider::Codex => {
+            let kind = parsed
+                .get("type")
+                .or_else(|| parsed.get("event"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_ascii_lowercase();
+            if !(kind.contains("assistant") || kind.contains("message") || kind.contains("text")) {
+                return;
+            }
+            for key in ["text", "message", "content", "output"] {
+                if let Some(text) = parsed.get(key).and_then(|v| v.as_str()) {
+                    assistant_text.push(text.to_string());
+                    *assistant_blocks += 1;
+                    return;
+                }
+            }
+        }
+    }
 }
 
 fn trim(s: &str, n: usize) -> String {
@@ -853,9 +1203,10 @@ mod tests {
     fn options_default_to_lea_one_iteration() {
         let o = Options::parse(&[]).unwrap();
         assert_eq!(o.set, "lea");
-        assert_eq!(o.max_iterations, 1);
+        assert_eq!(o.max_iterations, 0);
         assert!(!o.dry_run);
         assert!(!o.allow_dirty);
+        assert_eq!(o.agent, AgentProvider::Codex);
     }
 
     #[test]
@@ -876,6 +1227,29 @@ mod tests {
         // explode if it slips through.
         let args = vec!["--ui".to_string(), "tui".to_string()];
         Options::parse(&args).expect("--ui tui should not error");
+    }
+
+    #[test]
+    fn options_parse_agent_flag() {
+        let args = vec!["--agent".to_string(), "claude".to_string()];
+        let o = Options::parse(&args).unwrap();
+        assert_eq!(o.agent, AgentProvider::Claude);
+    }
+
+    #[test]
+    fn pattern_extraction_is_quote_aware() {
+        let text = "Enchant creature card in a graveyard\nWhen this Aura enters, if it's on the battlefield, it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\" Return enchanted creature card to the battlefield under your control and attach this Aura to it. When this Aura leaves the battlefield, that creature's controller sacrifices it.\nEnchanted creature gets -1/-0.";
+        let patterns = extract_patterns(text);
+        assert!(patterns
+            .iter()
+            .any(|p| p.text == "Enchant creature card in a graveyard"));
+        assert!(patterns.iter().any(|p| p.text
+            == "When this Aura enters, if it's on the battlefield, it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\" Return enchanted creature card to the battlefield under your control and attach this Aura to it."));
+        assert!(patterns.iter().any(|p| p.text
+            == "When this Aura leaves the battlefield, that creature's controller sacrifices it."));
+        assert!(patterns
+            .iter()
+            .any(|p| p.text == "Enchanted creature gets -1/-0."));
     }
 
     #[test]

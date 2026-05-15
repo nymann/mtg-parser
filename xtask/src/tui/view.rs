@@ -4,12 +4,12 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph, Wrap},
+    widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Frame,
 };
 
-use crate::claude_events::ParsedClaudeEvent;
-use crate::flow::{IterationOutcomeSummary, NoteLevel, SessionEndReason};
+use crate::agent_events::ParsedAgentEvent;
+use crate::flow::{AgentProvider, IterationOutcomeSummary, NoteLevel, SessionEndReason};
 use crate::paths::repo_root;
 use crate::tui::state::{
     format_tool_target, AppState, Iteration, SessionMeta, StepState, StepStatus, TimelineKind,
@@ -37,14 +37,22 @@ pub fn render(f: &mut Frame<'_>, state: &AppState) {
             Constraint::Length(1), // title bar
             Constraint::Length(1), // session bar
             Constraint::Min(0),    // main (left + output)
+            if state.search.editing || !state.search.query.is_empty() {
+                Constraint::Length(1)
+            } else {
+                Constraint::Length(0)
+            },
             Constraint::Length(1), // status bar
+            Constraint::Length(1), // spacer above tmux/status lines outside the TUI
         ])
         .split(area);
 
     render_title_bar(f, chunks[0], state);
     render_session_bar(f, chunks[1], state);
     render_main(f, chunks[2], state);
-    render_status_bar(f, chunks[3], state);
+    render_search_bar(f, chunks[3], state);
+    render_status_bar(f, chunks[4], state);
+    render_history_modal(f, area, state);
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +78,11 @@ fn render_title_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         }
         spans.push(Span::raw("   "));
         spans.push(Span::styled(
-            format!("iter {}/{}", iter.index, iter.max_iterations),
+            format!(
+                "iter {}/{}",
+                iter.index,
+                format_max_iterations(iter.max_iterations)
+            ),
             Style::default().fg(C_DIM),
         ));
         if let Some(step_idx) = iter.current_step {
@@ -90,7 +102,11 @@ fn render_title_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     } else if let Some(s) = &state.session {
         spans.push(Span::raw("  "));
         spans.push(Span::styled(
-            format!("set={} max-iter={}", s.set, s.max_iterations),
+            format!(
+                "set={} max-iter={}",
+                s.set,
+                format_max_iterations(s.max_iterations)
+            ),
             Style::default().fg(C_DIM),
         ));
     }
@@ -186,13 +202,22 @@ fn format_secs(s: u64) -> String {
 // ---------------------------------------------------------------------------
 
 fn render_main(f: &mut Frame<'_>, area: Rect, state: &AppState) {
+    let left_width = responsive_left_width(area.width);
     let cols = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(44), Constraint::Min(0)])
+        .constraints([Constraint::Length(left_width), Constraint::Min(0)])
         .split(area);
 
     render_left_column(f, cols[0], state);
     render_output(f, cols[1], state);
+}
+
+fn responsive_left_width(total: u16) -> u16 {
+    if total < 96 {
+        (total / 2).clamp(44, 58)
+    } else {
+        (total / 3).clamp(52, 72)
+    }
 }
 
 fn render_left_column(f: &mut Frame<'_>, area: Rect, state: &AppState) {
@@ -271,7 +296,8 @@ fn render_card_panel(f: &mut Frame<'_>, area: Rect, state: &AppState) {
 
     let paragraph = Paragraph::new(lines)
         .block(block)
-        .wrap(Wrap { trim: false });
+        .wrap(Wrap { trim: false })
+        .scroll((state.card_scroll, 0));
     f.render_widget(paragraph, area);
 }
 
@@ -392,6 +418,12 @@ fn render_event_lines(state: &AppState, _width: u16) -> Vec<Line<'static>> {
     let mut current_iter: Option<u32> = None;
     let root = repo_root();
     for row in &state.events {
+        if state.search.filter_mode
+            && !state.search.query.is_empty()
+            && !row_search_text(row, &root).contains(&state.search.query.to_ascii_lowercase())
+        {
+            continue;
+        }
         if Some(row.iteration_index) != current_iter {
             out.push(iter_separator_line(state, row.iteration_index));
             current_iter = Some(row.iteration_index);
@@ -432,7 +464,10 @@ fn session_end_line(reason: &SessionEndReason) -> Line<'static> {
         SessionEndReason::DryRunStop => ("session · dry-run complete", C_DIM),
         SessionEndReason::MaxIterationsReached(n) => {
             return Line::from(Span::styled(
-                format!("session · reached --max-iterations={n}"),
+                format!(
+                    "session · reached --max-iterations={}",
+                    format_max_iterations(*n)
+                ),
                 Style::default().fg(C_DIM),
             ));
         }
@@ -489,7 +524,7 @@ fn render_row(row: &TimelineRow, repo: &std::path::Path) -> Vec<Line<'static>> {
             }
             out
         }
-        TimelineKind::Claude(parsed) => render_claude_row(row, parsed, repo),
+        TimelineKind::Agent { provider, parsed } => render_agent_row(row, *provider, parsed, repo),
         TimelineKind::IterationFooter(outcome) => {
             let (text, color) = match outcome {
                 IterationOutcomeSummary::Committed {
@@ -516,24 +551,26 @@ fn render_row(row: &TimelineRow, repo: &std::path::Path) -> Vec<Line<'static>> {
     }
 }
 
-fn render_claude_row(
+fn render_agent_row(
     row: &TimelineRow,
-    parsed: &ParsedClaudeEvent,
+    provider: AgentProvider,
+    parsed: &ParsedAgentEvent,
     repo: &std::path::Path,
 ) -> Vec<Line<'static>> {
+    let label = provider.label();
     match parsed {
-        ParsedClaudeEvent::Init { model } => vec![Line::from(vec![
+        ParsedAgentEvent::Init { model } => vec![Line::from(vec![
             delta_cell(row.delta),
-            kind_cell("claude init", C_INFO),
+            kind_cell(&format!("{label} init"), C_INFO),
             Span::styled(format!("model={model}"), Style::default().fg(C_DIM)),
         ])],
-        ParsedClaudeEvent::AssistantText { text } => {
+        ParsedAgentEvent::AssistantText { text } => {
             let mut out = Vec::new();
             for (i, line) in text.lines().enumerate() {
                 out.push(if i == 0 {
                     Line::from(vec![
                         delta_cell(row.delta),
-                        kind_cell("claude", C_TEXT),
+                        kind_cell(label, C_TEXT),
                         Span::styled(line.to_string(), Style::default().fg(C_TEXT)),
                     ])
                 } else {
@@ -545,7 +582,7 @@ fn render_claude_row(
             }
             out
         }
-        ParsedClaudeEvent::ToolUse { name, target } => {
+        ParsedAgentEvent::ToolUse { name, target } => {
             let target_str = format_tool_target(target, repo);
             let mut spans = vec![
                 delta_cell(row.delta),
@@ -558,15 +595,15 @@ fn render_claude_row(
             if !target_str.is_empty() {
                 spans.push(Span::raw(" "));
                 let color = match target {
-                    crate::claude_events::ToolUseTarget::Command(_) => C_CMD,
-                    crate::claude_events::ToolUseTarget::File(_) => C_FILE,
+                    crate::agent_events::ToolUseTarget::Command(_) => C_CMD,
+                    crate::agent_events::ToolUseTarget::File(_) => C_FILE,
                     _ => Color::Reset,
                 };
                 spans.push(Span::styled(target_str, Style::default().fg(color)));
             }
             vec![Line::from(spans)]
         }
-        ParsedClaudeEvent::ToolResult {
+        ParsedAgentEvent::ToolResult {
             first_line,
             is_error,
         } => vec![Line::from(vec![
@@ -584,7 +621,7 @@ fn render_claude_row(
                 Style::default().fg(if *is_error { C_BAD } else { C_FAINT }),
             ),
         ])],
-        ParsedClaudeEvent::Done {
+        ParsedAgentEvent::Done {
             subtype,
             num_turns,
             total_cost_usd,
@@ -592,14 +629,14 @@ fn render_claude_row(
             let color = if subtype == "success" { C_GOOD } else { C_BAD };
             vec![Line::from(vec![
                 delta_cell(row.delta),
-                kind_cell("claude done", color),
+                kind_cell(&format!("{label} done"), color),
                 Span::styled(
                     format!("subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"),
                     Style::default().fg(color),
                 ),
             ])]
         }
-        ParsedClaudeEvent::Other => Vec::new(),
+        ParsedAgentEvent::Other => Vec::new(),
     }
 }
 
@@ -632,6 +669,13 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         Span::raw(" pause autoscroll · "),
         Span::styled(" g/G ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
         Span::raw(" top/bottom"),
+        Span::raw(" · "),
+        Span::styled(" / ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
+        Span::raw(" search · "),
+        Span::styled(" f ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
+        Span::raw(" filter · "),
+        Span::styled(" H ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
+        Span::raw(" history"),
     ];
     let right = format!(
         "{} · {} events",
@@ -653,6 +697,120 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     );
     let paragraph = Paragraph::new(line).style(Style::default().bg(Color::Reset).fg(C_DIM));
     f.render_widget(paragraph, area);
+}
+
+fn render_search_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
+    if area.height == 0 {
+        return;
+    }
+    let mode = if state.search.filter_mode {
+        "filter"
+    } else {
+        "search"
+    };
+    let query = if state.search.editing {
+        format!("{}█", state.search.query)
+    } else {
+        state.search.query.clone()
+    };
+    let line = Line::from(vec![
+        Span::styled(format!(" {mode} /"), Style::default().fg(C_WARN)),
+        Span::styled(query, Style::default().fg(C_TITLE)),
+        Span::styled(
+            " · Enter confirm · n/N next/prev · Esc clear · f filter ",
+            Style::default().fg(C_DIM),
+        ),
+    ]);
+    let paragraph = Paragraph::new(line).style(Style::default().fg(C_DIM));
+    f.render_widget(paragraph, area);
+}
+
+fn format_max_iterations(n: u32) -> String {
+    if n == 0 {
+        "∞".to_string()
+    } else {
+        n.to_string()
+    }
+}
+
+fn render_history_modal(f: &mut Frame<'_>, area: Rect, state: &AppState) {
+    if !state.history.open {
+        return;
+    }
+    let width = (area.width.saturating_mul(3) / 5).max(40).min(area.width);
+    let height = (area.height.saturating_mul(2) / 3).max(8).min(area.height);
+    let x = area.x + area.width.saturating_sub(width) / 2;
+    let y = area.y + area.height.saturating_sub(height) / 2;
+    let rect = Rect::new(x, y, width, height);
+    f.render_widget(Clear, rect);
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(C_FAINT))
+        .title(" history ")
+        .title_style(Style::default().fg(C_DIM).add_modifier(Modifier::BOLD));
+    let lines = if state.history.entries.is_empty() {
+        vec![Line::from(Span::styled(
+            "  no transcript.ndjson files found",
+            Style::default().fg(C_FAINT),
+        ))]
+    } else {
+        state
+            .history
+            .entries
+            .iter()
+            .enumerate()
+            .map(|(i, entry)| {
+                let style = if i == state.history.selected {
+                    Style::default().fg(C_WARN).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(C_DIM)
+                };
+                Line::from(vec![
+                    Span::styled(
+                        if i == state.history.selected {
+                            "› "
+                        } else {
+                            "  "
+                        },
+                        style,
+                    ),
+                    Span::styled(entry.name.clone(), style),
+                    Span::styled(
+                        format!("  {}", entry.path.display()),
+                        Style::default().fg(C_FAINT),
+                    ),
+                ])
+            })
+            .collect()
+    };
+    f.render_widget(Paragraph::new(lines).block(block), rect);
+}
+
+fn row_search_text(row: &TimelineRow, repo: &std::path::Path) -> String {
+    let mut text = String::new();
+    match &row.kind {
+        TimelineKind::StepHeader { label, .. } => text.push_str(label),
+        TimelineKind::StepResult { summary, .. } => text.push_str(summary),
+        TimelineKind::Note { text: t, .. } => text.push_str(t),
+        TimelineKind::IterationFooter(outcome) => text.push_str(&format!("{outcome:?}")),
+        TimelineKind::Agent { provider, parsed } => {
+            text.push_str(provider.label());
+            text.push(' ');
+            match parsed {
+                ParsedAgentEvent::Init { model } => text.push_str(model),
+                ParsedAgentEvent::AssistantText { text: t } => text.push_str(t),
+                ParsedAgentEvent::ToolUse { name, target } => {
+                    text.push_str(name);
+                    text.push(' ');
+                    text.push_str(&format_tool_target(target, repo));
+                }
+                ParsedAgentEvent::ToolResult { first_line, .. } => text.push_str(first_line),
+                ParsedAgentEvent::Done { subtype, .. } => text.push_str(subtype),
+                ParsedAgentEvent::Other => {}
+            }
+        }
+    }
+    text.to_ascii_lowercase()
 }
 
 // `Iteration` and `SessionMeta` re-exports just so the view's grammar

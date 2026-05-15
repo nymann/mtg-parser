@@ -39,14 +39,15 @@ pub enum FlowEvent {
         round_trip_error: String,
     },
     /// Generic mid-step log line. Used sparingly — most output should
-    /// be carried by `StepFinished.summary` or `ClaudeEvent`.
+    /// be carried by `StepFinished.summary` or `AgentEvent`.
     Note { level: NoteLevel, text: String },
-    /// One claude stream-json event (already parsed from NDJSON).
+    /// One agent JSONL event (already parsed from NDJSON/JSONL).
     /// The orchestrator mirrors the raw line into `transcript.ndjson`
     /// on disk separately; sinks see only the parsed `serde_json::Value`.
-    ClaudeEvent {
+    AgentEvent {
+        provider: AgentProvider,
         raw: serde_json::Value,
-        /// Seconds since claude began for this iteration. Computed by
+        /// Seconds since the agent began for this iteration. Computed by
         /// the orchestrator so all sinks share the same clock.
         elapsed_secs: u64,
     },
@@ -91,6 +92,21 @@ pub enum NoteLevel {
     Info,
     Warn,
     Error,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AgentProvider {
+    Codex,
+    Claude,
+}
+
+impl AgentProvider {
+    pub fn label(self) -> &'static str {
+        match self {
+            AgentProvider::Codex => "codex",
+            AgentProvider::Claude => "claude",
+        }
+    }
 }
 
 /// Consumer of orchestrator events. `Send` lets the orchestrator run
