@@ -64,6 +64,36 @@ impl AppState {
         }
     }
 
+    /// Plain-text content for the output pane, used by the copy shortcut.
+    pub fn output_text(&self) -> String {
+        let repo = crate::paths::repo_root();
+        let mut lines = Vec::new();
+        let mut current_iter = None;
+        for row in &self.events {
+            if Some(row.iteration_index) != current_iter {
+                lines.push(output_iteration_separator(self, row.iteration_index));
+                current_iter = Some(row.iteration_index);
+            }
+            lines.extend(output_row_lines(row, &repo));
+        }
+        if let Some(end) = &self.session_end {
+            lines.push(String::new());
+            lines.push(output_session_end(end));
+        }
+        lines.join("\n")
+    }
+
+    pub fn push_ui_note(&mut self, text: impl Into<String>) {
+        self.events.push(TimelineRow {
+            iteration_index: self.iterations.len() as u32,
+            delta: 0,
+            kind: TimelineKind::Note {
+                level: NoteLevel::Info,
+                text: text.into(),
+            },
+        });
+    }
+
     /// Apply one event from the orchestrator. Pure state transition.
     pub fn apply(&mut self, event: FlowEvent) {
         match event {
@@ -448,6 +478,143 @@ pub enum TimelineKind {
         text: String,
     },
     IterationFooter(IterationOutcomeSummary),
+}
+
+fn output_iteration_separator(state: &AppState, iter_idx: u32) -> String {
+    let card_name = state
+        .iterations
+        .iter()
+        .find(|i| i.index == iter_idx)
+        .and_then(|i| i.card.as_ref().map(|c| c.name.clone()))
+        .unwrap_or_else(|| "(no card)".to_string());
+    format!("-- iteration {iter_idx} · {card_name} --")
+}
+
+fn output_row_lines(row: &TimelineRow, repo: &std::path::Path) -> Vec<String> {
+    match &row.kind {
+        TimelineKind::StepHeader { index, label } => vec![format!("step {index} · {label}")],
+        TimelineKind::StepResult { ok, summary } => {
+            vec![format!("{} {summary}", if *ok { "->" } else { "x" })]
+        }
+        TimelineKind::Note { level, text } => {
+            let prefix = match level {
+                NoteLevel::Info => "note",
+                NoteLevel::Warn => "warn",
+                NoteLevel::Error => "error",
+            };
+            text.lines()
+                .enumerate()
+                .map(|(i, line)| {
+                    if i == 0 {
+                        format_timed_row(row.delta, prefix, line)
+                    } else {
+                        format!("                {line}")
+                    }
+                })
+                .collect()
+        }
+        TimelineKind::Agent { provider, parsed } => output_agent_lines(row, *provider, parsed, repo),
+        TimelineKind::IterationFooter(outcome) => vec![match outcome {
+            IterationOutcomeSummary::Committed {
+                new_passes,
+                corpus_passing,
+                corpus_total,
+                grammar_rules,
+                duration_secs,
+            } => format!(
+                "iter · committed · +{new_passes} pass · status {corpus_passing}/{corpus_total} · {grammar_rules} rules · {duration_secs}s"
+            ),
+            IterationOutcomeSummary::SurfacedToHuman { reason } => {
+                format!("iter · STOPPED · {reason}")
+            }
+        }],
+    }
+}
+
+fn output_agent_lines(
+    row: &TimelineRow,
+    provider: AgentProvider,
+    parsed: &ParsedAgentEvent,
+    repo: &std::path::Path,
+) -> Vec<String> {
+    let label = provider.label();
+    match parsed {
+        ParsedAgentEvent::Init { model } => {
+            vec![format_timed_row(
+                row.delta,
+                &format!("{label} init"),
+                &format!("model={model}"),
+            )]
+        }
+        ParsedAgentEvent::AssistantText { text } => text
+            .lines()
+            .enumerate()
+            .map(|(i, line)| {
+                if i == 0 {
+                    format_timed_row(row.delta, label, line)
+                } else {
+                    format!("                {line}")
+                }
+            })
+            .collect(),
+        ParsedAgentEvent::ToolUse { name, target } => {
+            let target = format_tool_target(target, repo);
+            let detail = if target.is_empty() {
+                name.clone()
+            } else {
+                format!("{name} {target}")
+            };
+            vec![format_timed_row(row.delta, "tool_use", &detail)]
+        }
+        ParsedAgentEvent::ToolResult {
+            first_line,
+            is_error,
+        } => vec![format_timed_row(
+            row.delta,
+            if *is_error {
+                "tool_error"
+            } else {
+                "tool_result"
+            },
+            first_line,
+        )],
+        ParsedAgentEvent::Done {
+            subtype,
+            num_turns,
+            total_cost_usd,
+        } => vec![format_timed_row(
+            row.delta,
+            &format!("{label} done"),
+            &format!("subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"),
+        )],
+        ParsedAgentEvent::Other => Vec::new(),
+    }
+}
+
+fn format_timed_row(delta: u64, label: &str, text: &str) -> String {
+    format!("{delta:>4}s [{label:<11}] {text}")
+}
+
+fn output_session_end(reason: &SessionEndReason) -> String {
+    match reason {
+        SessionEndReason::AllPass => "session · all cards pass".to_string(),
+        SessionEndReason::DryRunStop => "session · dry-run complete".to_string(),
+        SessionEndReason::MaxIterationsReached(n) => {
+            format!(
+                "session · reached --max-iterations={}",
+                format_max_iterations(*n)
+            )
+        }
+        SessionEndReason::SurfacedToHuman(_) => "session · STOPPED, see notes above".to_string(),
+    }
+}
+
+fn format_max_iterations(n: u32) -> String {
+    if n == 0 {
+        "∞".to_string()
+    } else {
+        n.to_string()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

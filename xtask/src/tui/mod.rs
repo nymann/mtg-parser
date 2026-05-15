@@ -7,7 +7,8 @@
 //! steps or reordering them in `grammar_fix.rs` does not require any
 //! change here.
 
-use std::io::Stdout;
+use std::io::{Stdout, Write};
+use std::process::{Command, Stdio};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::thread;
 use std::time::Duration;
@@ -20,7 +21,7 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 
-use crate::flow::{FlowEvent, FlowSink};
+use crate::flow::{FlowEvent, FlowSink, NoteLevel};
 use crate::grammar_fix;
 
 mod input;
@@ -121,10 +122,79 @@ fn run_event_loop(
             if let Event::Key(key) = event::read()? {
                 match input::handle(key, &mut state) {
                     input::Action::Quit => break,
+                    input::Action::CopyOutput => {
+                        let output = state.output_text();
+                        match copy_to_clipboard(&output) {
+                            Ok(()) => state.push_ui_note(format!(
+                                "copied {} output line(s) to clipboard",
+                                output.lines().count()
+                            )),
+                            Err(err) => state.events.push(state::TimelineRow {
+                                iteration_index: state.iterations.len() as u32,
+                                delta: 0,
+                                kind: state::TimelineKind::Note {
+                                    level: NoteLevel::Warn,
+                                    text: format!("copy failed: {err}"),
+                                },
+                            }),
+                        }
+                    }
                     input::Action::None => {}
                 }
             }
         }
+    }
+    Ok(())
+}
+
+fn copy_to_clipboard(text: &str) -> Result<()> {
+    let candidates: &[(&str, &[&str])] = if cfg!(target_os = "macos") {
+        &[("pbcopy", &[])]
+    } else if cfg!(target_os = "linux") {
+        &[
+            ("wl-copy", &[]),
+            ("xclip", &["-selection", "clipboard"]),
+            ("xsel", &["--clipboard", "--input"]),
+        ]
+    } else {
+        &[]
+    };
+
+    let mut errors = Vec::new();
+    for (program, args) in candidates {
+        match run_clipboard_command(program, args, text) {
+            Ok(()) => return Ok(()),
+            Err(err) => errors.push(format!("{program}: {err}")),
+        }
+    }
+
+    if candidates.is_empty() {
+        anyhow::bail!("no clipboard command configured for this platform");
+    }
+    anyhow::bail!("{}", errors.join("; "))
+}
+
+fn run_clipboard_command(program: &str, args: &[&str], text: &str) -> Result<()> {
+    let mut child = Command::new(program)
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .with_context(|| format!("spawn {program}"))?;
+
+    child
+        .stdin
+        .as_mut()
+        .context("clipboard command did not open stdin")?
+        .write_all(text.as_bytes())
+        .with_context(|| format!("write to {program}"))?;
+
+    let status = child
+        .wait()
+        .with_context(|| format!("wait for {program}"))?;
+    if !status.success() {
+        anyhow::bail!("exited with {status}");
     }
     Ok(())
 }

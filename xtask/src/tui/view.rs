@@ -670,6 +670,8 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         Span::styled(" g/G ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
         Span::raw(" top/bottom"),
         Span::raw(" · "),
+        Span::styled(" c ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
+        Span::raw(" copy · "),
         Span::styled(" / ", Style::default().fg(C_DIM).bg(Color::DarkGray)),
         Span::raw(" search · "),
         Span::styled(" f ", Style::default().fg(C_DIM).bg(Color::DarkGray)),

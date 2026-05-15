@@ -10,6 +10,7 @@ use crate::tui::state::{AppState, FocusPane, HistoryEntry, TimelineKind, Timelin
 pub enum Action {
     None,
     Quit,
+    CopyOutput,
 }
 
 pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
@@ -68,6 +69,7 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
             state.autoscroll = !state.autoscroll;
             Action::None
         }
+        (KeyCode::Char('c'), m) if m.is_empty() => Action::CopyOutput,
         (KeyCode::Char('/'), _) => {
             state.search.editing = true;
             Action::None
