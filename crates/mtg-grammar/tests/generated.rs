@@ -84,3 +84,5 @@ mod copper_tablet;
 mod copy_artifact;
 #[path = "generated/counterspell.rs"]
 mod counterspell;
+#[path = "generated/creature_bond.rs"]
+mod creature_bond;

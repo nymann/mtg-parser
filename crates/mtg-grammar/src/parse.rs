@@ -302,7 +302,10 @@ fn as_this_permanent_enters_choose_opponent_from_pair(
     let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
         "as enters choose opponent missing source",
     ))?;
-    let SourceObject::This(permanent_type) = source_object_from_pair(source_pair)?;
+    let permanent_type = match source_object_from_pair(source_pair)? {
+        SourceObject::This(permanent_type) => permanent_type,
+        SourceObject::ThisAura => return Err(ParseError::Internal("as enters source is aura")),
+    };
     Ok(Statement::AsThisPermanentEntersChooseOpponent { permanent_type })
 }
 
@@ -512,6 +515,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::permanent_enters => {
                 event = Some(permanent_enters_from_pair(child)?);
             }
+            Rule::enchanted_permanent_dies => {
+                event = Some(enchanted_permanent_dies_from_pair(child)?);
+            }
             Rule::beginning_of_the_next_end_step => {
                 event = Some(TriggerEvent::BeginningOfTheNextEndStep);
             }
@@ -568,6 +574,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                     child,
                 )?);
             }
+            Rule::source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller => {
+                effects.push(source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller_from_pair(child)?);
+            }
             Rule::source_deals_damage_to_that_player => {
                 effects.push(source_deals_damage_to_that_player_from_pair(child)?);
             }
@@ -598,6 +607,15 @@ fn permanent_enters_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseErr
         "permanent_enters missing permanent_type",
     ))?;
     Ok(TriggerEvent::PermanentEnters {
+        permanent_type: permanent_type_from_pair(pt)?,
+    })
+}
+
+fn enchanted_permanent_dies_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let pt = pair.into_inner().next().ok_or(ParseError::Internal(
+        "enchanted_permanent_dies missing permanent_type",
+    ))?;
+    Ok(TriggerEvent::EnchantedPermanentDies {
         permanent_type: permanent_type_from_pair(pt)?,
     })
 }
@@ -714,6 +732,32 @@ fn source_deals_damage_to_that_permanents_controller_from_pair(
     })
 }
 
+fn source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "toughness damage effect missing source",
+    ))?;
+    let toughness_pair = inner.next().ok_or(ParseError::Internal(
+        "toughness damage effect missing toughness reference",
+    ))?;
+    let controller_pair = inner.next().ok_or(ParseError::Internal(
+        "toughness damage effect missing controller reference",
+    ))?;
+    let toughness_permanent_type = permanent_type_from_inner_pair(toughness_pair)?;
+    let controller_permanent_type = permanent_type_from_inner_pair(controller_pair)?;
+    if toughness_permanent_type != controller_permanent_type {
+        return Err(ParseError::Internal("toughness damage references mismatch"));
+    }
+    Ok(
+        TriggerEffect::SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {
+            source: source_object_from_pair(source_pair)?,
+            permanent_type: toughness_permanent_type,
+        },
+    )
+}
+
 fn source_deals_damage_to_that_player_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEffect, ParseError> {
@@ -778,11 +822,15 @@ fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError>
     if pair.as_rule() != Rule::source_object {
         return Err(ParseError::Internal("source_object"));
     }
-    let pt = pair
+    let kind = pair
         .into_inner()
         .next()
-        .ok_or(ParseError::Internal("source_object missing permanent_type"))?;
-    Ok(SourceObject::This(permanent_type_from_pair(pt)?))
+        .ok_or(ParseError::Internal("source_object missing kind"))?;
+    match kind.as_rule() {
+        Rule::permanent_type => Ok(SourceObject::This(permanent_type_from_pair(kind)?)),
+        Rule::aura_source_object => Ok(SourceObject::ThisAura),
+        _ => Err(ParseError::Internal("source_object kind")),
+    }
 }
 
 fn that_permanents_controller_from_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseError> {
@@ -792,6 +840,14 @@ fn that_permanents_controller_from_pair(pair: Pair<Rule>) -> Result<PermanentTyp
     let pt = pair.into_inner().next().ok_or(ParseError::Internal(
         "that_permanents_controller missing permanent_type",
     ))?;
+    permanent_type_from_pair(pt)
+}
+
+fn permanent_type_from_inner_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseError> {
+    let pt = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("wrapper missing permanent_type"))?;
     permanent_type_from_pair(pt)
 }
 

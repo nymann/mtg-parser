@@ -595,6 +595,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::BeginningOfYourUpkeep
         | TriggerEvent::EndOfCombat => "At ",
         TriggerEvent::ThisAuraEnters | TriggerEvent::ThisAuraLeavesTheBattlefield => "When ",
+        TriggerEvent::EnchantedPermanentDies { .. } => "When ",
     });
     write_trigger_event(out, ta.event);
     out.push_str(", ");
@@ -622,6 +623,11 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push(' ');
             out.push_str(permanent_type_name(permanent_type));
             out.push_str(" enters");
+        }
+        TriggerEvent::EnchantedPermanentDies { permanent_type } => {
+            out.push_str("enchanted ");
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str(" dies");
         }
         TriggerEvent::BeginningOfTheNextEndStep => {
             out.push_str("the beginning of the next end step");
@@ -698,6 +704,17 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
             write_variable_definitions(out, definitions);
             out.push('.');
         }
+        TriggerEffect::SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {
+            source,
+            permanent_type,
+        } => {
+            write_source_object(out, *source);
+            out.push_str(" deals damage equal to that ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str("'s toughness to the ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str("'s controller.");
+        }
         TriggerEffect::RemoveCounterFromIt { counter } => {
             out.push_str("remove a ");
             write_pt_modifier(out, *counter);
@@ -731,6 +748,7 @@ fn write_source_object(out: &mut String, source: SourceObject) {
             out.push_str("this ");
             out.push_str(permanent_type_name(pt));
         }
+        SourceObject::ThisAura => out.push_str("this Aura"),
     }
 }
 
@@ -740,6 +758,7 @@ fn write_source_object_capitalized(out: &mut String, source: SourceObject) {
             out.push_str("This ");
             out.push_str(permanent_type_name(pt));
         }
+        SourceObject::ThisAura => out.push_str("This Aura"),
     }
 }
 

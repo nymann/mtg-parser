@@ -165,6 +165,8 @@ pub enum TriggerEvent {
     ThisAuraLeavesTheBattlefield,
     /// "a/an <permanent_type> enters"
     PermanentEnters { permanent_type: PermanentType },
+    /// "enchanted <permanent_type> dies"
+    EnchantedPermanentDies { permanent_type: PermanentType },
     /// "the beginning of the next end step"
     BeginningOfTheNextEndStep,
     /// "the beginning of the chosen player's upkeep"
@@ -213,6 +215,12 @@ pub enum TriggerEffect {
         amount: Variable,
         definitions: Vec<VariableDefinition>,
     },
+    /// "this <source> deals damage equal to that <permanent_type>'s
+    /// toughness to the <permanent_type>'s controller"
+    SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {
+        source: SourceObject,
+        permanent_type: PermanentType,
+    },
     /// "remove a <pt_modifier> counter from it"
     RemoveCounterFromIt { counter: PtModifier },
     /// `it loses "<keyword>" and gains "<keyword>"` — the source object
@@ -235,6 +243,8 @@ pub enum TriggerEffect {
 pub enum SourceObject {
     /// "this <permanent_type>"
     This(PermanentType),
+    /// "this Aura"
+    ThisAura,
 }
 
 /// "<cost>: <effect>." — an activated ability with explicit printed

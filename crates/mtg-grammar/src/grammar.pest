@@ -529,6 +529,7 @@ trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
 trigger_event = _{
     aura_leaves_battlefield
   | aura_enters
+  | enchanted_permanent_dies
   | source_blocks_or_becomes_blocked_by_non_creature_type_creature
   | end_of_combat
   | beginning_of_each_players_upkeep
@@ -539,6 +540,7 @@ trigger_event = _{
 }
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
 aura_leaves_battlefield = { ^"this" ~ ^"aura" ~ ^"leaves" ~ ^"the" ~ ^"battlefield" }
+enchanted_permanent_dies = { ^"enchanted" ~ permanent_type ~ ^"dies" }
 permanent_enters        = { article ~ permanent_type ~ ^"enters" }
 source_blocks_or_becomes_blocked_by_non_creature_type_creature = {
     source_object ~ ^"blocks" ~ ^"or" ~ ^"becomes" ~ ^"blocked"
@@ -571,6 +573,7 @@ trigger_effect = _{
   | loses_and_gains_keyword
   | return_enchanted_card_and_attach
   | sacrifice_source_unless_you_pay
+  | source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller
   | source_deals_variable_damage_to_that_player
   | source_deals_damage_to_that_player
   | source_deals_damage_to_that_permanents_controller
@@ -627,6 +630,10 @@ source_deals_damage_to_that_permanents_controller = {
     source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to"
   ~ that_permanents_controller ~ "."
 }
+source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller = {
+    source_object ~ ^"deals" ~ ^"damage" ~ ^"equal" ~ ^"to"
+  ~ that_permanents_toughness ~ ^"to" ~ the_permanents_controller ~ "."
+}
 source_deals_damage_to_that_player = {
     source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"that" ~ ^"player" ~ "."
 }
@@ -634,8 +641,12 @@ source_deals_variable_damage_to_that_player = {
     source_object ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"
   ~ ^"that" ~ ^"player" ~ "," ~ where_clause ~ "."
 }
-source_object = { ^"this" ~ permanent_type }
+source_object = { ^"this" ~ source_object_kind }
+source_object_kind = _{ aura_source_object | permanent_type }
+aura_source_object = { ^"aura" }
 that_permanents_controller = { ^"that" ~ permanent_type ~ "'s" ~ ^"controller" }
+that_permanents_toughness = { ^"that" ~ permanent_type ~ "'s" ~ ^"toughness" }
+the_permanents_controller = { ^"the" ~ permanent_type ~ "'s" ~ ^"controller" }
 damage_amount = @{ ASCII_DIGIT+ }
 
 // `it loses "<keyword>" and gains "<keyword>."`. The quoted strings are
