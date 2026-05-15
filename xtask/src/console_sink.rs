@@ -124,7 +124,7 @@ impl FlowSink for ConsoleSink {
                 SessionEndReason::DryRunStop => {
                     println!();
                     println!(
-                        "--dry-run: not invoking an agent, not promoting tests, not committing."
+                        "--dry-run: not invoking an agent, not writing tests, not committing."
                     );
                 }
                 // The IterationFinished message already covered this case.

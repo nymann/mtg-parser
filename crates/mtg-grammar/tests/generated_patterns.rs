@@ -55,3 +55,5 @@ mod circle_of_protection_blue;
 mod clockwork_beast;
 #[path = "generated_patterns/clone.rs"]
 mod clone;
+#[path = "generated_patterns/cockatrice.rs"]
+mod cockatrice;

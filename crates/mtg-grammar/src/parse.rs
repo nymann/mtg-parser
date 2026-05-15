@@ -478,6 +478,13 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::end_of_combat => {
                 event = Some(TriggerEvent::EndOfCombat);
             }
+            Rule::source_blocks_or_becomes_blocked_by_non_creature_type_creature => {
+                event = Some(
+                    source_blocks_or_becomes_blocked_by_non_creature_type_creature_from_pair(
+                        child,
+                    )?,
+                );
+            }
             Rule::its_on_the_battlefield => {
                 intervening_if = Some(InterveningIf::ItsOnTheBattlefield);
             }
@@ -491,6 +498,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::destroy_that_creature_if_it_attacked_this_turn => {
                 effects.push(TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn);
+            }
+            Rule::destroy_that_creature_at_end_of_combat => {
+                effects.push(TriggerEffect::DestroyThatCreatureAtEndOfCombat);
             }
             Rule::that_creatures_controller_sacrifices_it => {
                 effects.push(TriggerEffect::ThatCreaturesControllerSacrificesIt);
@@ -535,6 +545,24 @@ fn permanent_enters_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseErr
     Ok(TriggerEvent::PermanentEnters {
         permanent_type: permanent_type_from_pair(pt)?,
     })
+}
+
+fn source_blocks_or_becomes_blocked_by_non_creature_type_creature_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEvent, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "blocks-or-blocked event missing source",
+    ))?;
+    let excluded_type_pair = inner.next().ok_or(ParseError::Internal(
+        "blocks-or-blocked event missing excluded creature type",
+    ))?;
+    Ok(
+        TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature {
+            source: source_object_from_pair(source_pair)?,
+            excluded_type: creature_type_from_pair(excluded_type_pair)?,
+        },
+    )
 }
 
 fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {

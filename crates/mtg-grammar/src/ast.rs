@@ -152,6 +152,12 @@ pub enum TriggerEvent {
     BeginningOfChosenPlayersUpkeep,
     /// "end of combat"
     EndOfCombat,
+    /// "this <source> blocks or becomes blocked by a non-<creature_type>
+    /// creature"
+    SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature {
+        source: SourceObject,
+        excluded_type: CreatureType,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -166,6 +172,8 @@ pub enum InterveningIf {
 pub enum TriggerEffect {
     /// "destroy that creature if it attacked this turn"
     DestroyThatCreatureIfItAttackedThisTurn,
+    /// "destroy that creature at end of combat"
+    DestroyThatCreatureAtEndOfCombat,
     /// "that creature's controller sacrifices it"
     ThatCreaturesControllerSacrificesIt,
     /// "this <source> deals N damage to that <recipient>'s controller"

@@ -1078,7 +1078,7 @@ pub(crate) fn build_prompt(
         card_block = render_card_block(card, normalized),
         error_block = render_error_block(error),
         test_block = render_test_block(&test_rel),
-        context_block = render_context_block(&patterns),
+        context_block = render_context_block(card, error, normalized, &patterns, &[]),
         workflow_block = WORKFLOW_BLOCK,
         constraints_block = CONSTRAINTS_BLOCK,
     ))
@@ -1094,6 +1094,14 @@ fn build_pattern_prompt(
     focused: &FocusedTestRun,
 ) -> Result<String> {
     let mut prompt = build_prompt(card, error, normalized, full_test_path)?;
+    prompt.push_str("\n\n");
+    prompt.push_str(&render_context_block(
+        card,
+        error,
+        normalized,
+        patterns,
+        &[pattern_test_path, full_test_path],
+    ));
     let pattern_rel = pattern_test_path
         .strip_prefix(repo_root())
         .unwrap_or(pattern_test_path)
@@ -1152,31 +1160,44 @@ fn focused_failure_requires_semantic(focused: &FocusedTestRun) -> bool {
         || summary.contains("lowering")
 }
 
-fn render_code_map(patterns: &[PatternCase]) -> String {
-    let mut hints = vec![
-        "StaticAbility",
-        "PtModifier",
-        "PermanentType",
-        "Rule::static",
-        "Rule::pt_modifier",
-        "unparse_static",
-        "parse_static",
-    ];
-    if patterns
-        .iter()
-        .any(|p| p.text.to_ascii_lowercase().contains(" get "))
-    {
-        hints.extend([" get ", "static_", "modifier"]);
-    }
-    if patterns.iter().any(|p| {
-        let lower = p.text.to_ascii_lowercase();
-        ["white", "blue", "black", "red", "green"]
-            .iter()
-            .any(|color| lower.contains(color))
-    }) {
-        hints.extend(["Color", "color", "colored"]);
-    }
+fn render_context_block(
+    card: &Card,
+    error: &str,
+    normalized: &str,
+    patterns: &[PatternCase],
+    test_paths: &[&Path],
+) -> String {
+    format!(
+        "## Retrieved Context\n\n\
+         The orchestrator selected these snippets from the generated tests and likely grammar \
+         edit sites. Use this context first; inspect whole files only if it is insufficient.\n\n\
+         {tests}{code_map}",
+        tests = render_generated_test_context(test_paths),
+        code_map = render_code_map(card, error, normalized, patterns)
+    )
+}
 
+fn render_generated_test_context(test_paths: &[&Path]) -> String {
+    let mut out = String::new();
+    for path in test_paths {
+        let Ok(text) = std::fs::read_to_string(path) else {
+            continue;
+        };
+        let rel = path.strip_prefix(repo_root()).unwrap_or(path);
+        out.push_str(&format!(
+            "### Generated Test: {}\n\n```rust\n",
+            rel.display()
+        ));
+        for (idx, line) in text.lines().take(120).enumerate() {
+            out.push_str(&format!("{:>4}: {}\n", idx + 1, line));
+        }
+        out.push_str("```\n\n");
+    }
+    out
+}
+
+fn render_code_map(card: &Card, error: &str, normalized: &str, patterns: &[PatternCase]) -> String {
+    let query_terms = context_query_terms(card, error, normalized, patterns);
     let files = [
         grammar_pest_path(),
         ast_rs_path(),
@@ -1189,35 +1210,165 @@ fn render_code_map(patterns: &[PatternCase]) -> String {
             continue;
         };
         let rel = file.strip_prefix(repo_root()).unwrap_or(&file);
-        out.push_str(&format!("### {}\n\n```text\n", rel.display()));
-        let mut matched = 0usize;
-        for (idx, line) in text.lines().enumerate() {
-            if hints.iter().any(|hint| line.contains(hint)) {
-                matched += 1;
-                out.push_str(&format!("{:>4}: {}\n", idx + 1, line));
-                if matched >= 40 {
-                    out.push_str("... truncated ...\n");
-                    break;
-                }
+        let snippets = ranked_context_snippets(&text, &query_terms, 4, 8);
+        out.push_str(&format!("### {}\n\n", rel.display()));
+        if snippets.is_empty() {
+            out.push_str("(no direct context matches)\n\n");
+            continue;
+        }
+        for snippet in snippets {
+            out.push_str("```text\n");
+            for (line_no, line) in snippet {
+                out.push_str(&format!("{line_no:>4}: {line}\n"));
             }
+            out.push_str("```\n\n");
         }
-        if matched == 0 {
-            out.push_str("(no direct hint matches)\n");
-        }
-        out.push_str("```\n\n");
     }
     out
 }
 
-fn render_context_block(patterns: &[PatternCase]) -> String {
-    format!(
-        "## Deterministic Context\n\n\
-         The orchestrator intentionally includes targeted snippets instead of full source files. \
-         Use this map first; inspect whole files only if the snippets are insufficient.\n\n\
-         {code_map}",
-        code_map = render_code_map(patterns)
-    )
+fn context_query_terms(
+    card: &Card,
+    error: &str,
+    normalized: &str,
+    patterns: &[PatternCase],
+) -> Vec<String> {
+    let mut terms = Vec::<String>::new();
+    for source in [card.name.as_str(), normalized, error] {
+        collect_query_terms(source, &mut terms);
+    }
+    for pattern in patterns {
+        collect_query_terms(&pattern.text, &mut terms);
+    }
+
+    let combined = patterns
+        .iter()
+        .map(|p| p.text.to_ascii_lowercase())
+        .chain(std::iter::once(normalized.to_ascii_lowercase()))
+        .collect::<Vec<_>>()
+        .join("\n");
+    add_term(&mut terms, "StaticAbility");
+    add_term(&mut terms, "Rule::static");
+    add_term(&mut terms, "parse_static");
+    add_term(&mut terms, "unparse_static");
+    if combined.contains("get") {
+        add_term(&mut terms, "PtModifier");
+        add_term(&mut terms, "pt_modifier");
+        add_term(&mut terms, "modifier");
+    }
+    if combined.contains("target") {
+        add_term(&mut terms, "Target");
+        add_term(&mut terms, "target");
+    }
+    if combined.contains("creature") {
+        add_term(&mut terms, "Creature");
+        add_term(&mut terms, "PermanentType");
+    }
+    if combined.contains("artifact") {
+        add_term(&mut terms, "Artifact");
+        add_term(&mut terms, "PermanentType");
+    }
+    if combined.contains("enchant") {
+        add_term(&mut terms, "Enchant");
+        add_term(&mut terms, "Aura");
+    }
+    if combined.contains("counter") {
+        add_term(&mut terms, "Counter");
+        add_term(&mut terms, "counter");
+    }
+    if combined.contains("destroy") {
+        add_term(&mut terms, "Destroy");
+        add_term(&mut terms, "destroy");
+    }
+    if combined.contains("tap") || combined.contains("untap") {
+        add_term(&mut terms, "tap");
+        add_term(&mut terms, "untap");
+        add_term(&mut terms, "Tapped");
+        add_term(&mut terms, "Untapped");
+    }
+    for color in ["white", "blue", "black", "red", "green"] {
+        if combined.contains(color) {
+            add_term(&mut terms, color);
+            add_term(&mut terms, "Color");
+            add_term(&mut terms, "colored");
+        }
+    }
+    terms
 }
+
+fn collect_query_terms(text: &str, out: &mut Vec<String>) {
+    for raw in
+        text.split(|c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '+' || c == '/'))
+    {
+        let token = raw.trim();
+        if token.len() < 3 {
+            continue;
+        }
+        let lower = token.to_ascii_lowercase();
+        if CONTEXT_STOP_WORDS.contains(&lower.as_str()) {
+            continue;
+        }
+        add_term(out, &lower);
+    }
+}
+
+fn add_term(out: &mut Vec<String>, term: &str) {
+    if !out.iter().any(|existing| existing == term) {
+        out.push(term.to_string());
+    }
+}
+
+fn ranked_context_snippets(
+    text: &str,
+    terms: &[String],
+    max_snippets: usize,
+    context_lines: usize,
+) -> Vec<Vec<(usize, String)>> {
+    let lines: Vec<&str> = text.lines().collect();
+    let mut scored = Vec::<(usize, usize)>::new();
+    for (idx, line) in lines.iter().enumerate() {
+        let lower = line.to_ascii_lowercase();
+        let score = terms
+            .iter()
+            .filter(|term| lower.contains(&term.to_ascii_lowercase()))
+            .count();
+        if score > 0 {
+            scored.push((score, idx));
+        }
+    }
+    scored.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+
+    let mut ranges = Vec::<(usize, usize)>::new();
+    for (_, idx) in scored {
+        if ranges.len() >= max_snippets {
+            break;
+        }
+        let start = idx.saturating_sub(context_lines);
+        let end = (idx + context_lines + 1).min(lines.len());
+        if ranges
+            .iter()
+            .any(|(existing_start, existing_end)| start < *existing_end && end > *existing_start)
+        {
+            continue;
+        }
+        ranges.push((start, end));
+    }
+    ranges.sort();
+
+    ranges
+        .into_iter()
+        .map(|(start, end)| {
+            (start..end)
+                .map(|idx| (idx + 1, lines[idx].to_string()))
+                .collect()
+        })
+        .collect()
+}
+
+const CONTEXT_STOP_WORDS: &[&str] = &[
+    "the", "and", "you", "your", "this", "that", "with", "from", "into", "onto", "until", "turn",
+    "card", "parse", "error", "expected",
+];
 
 fn render_semantic_context() -> String {
     let file = lower_rs_path();

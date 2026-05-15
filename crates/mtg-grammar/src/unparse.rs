@@ -518,7 +518,8 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
 
 fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
     out.push_str(match ta.event {
-        TriggerEvent::PermanentEnters { .. } => "Whenever ",
+        TriggerEvent::PermanentEnters { .. }
+        | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
         | TriggerEvent::EndOfCombat => "At ",
@@ -560,6 +561,15 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::EndOfCombat => {
             out.push_str("end of combat");
         }
+        TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature {
+            source,
+            excluded_type,
+        } => {
+            write_source_object(out, source);
+            out.push_str(" blocks or becomes blocked by a non-");
+            write_creature_type(out, excluded_type);
+            out.push_str(" creature");
+        }
     }
 }
 
@@ -577,6 +587,9 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
     match eff {
         TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn => {
             out.push_str("destroy that creature if it attacked this turn.");
+        }
+        TriggerEffect::DestroyThatCreatureAtEndOfCombat => {
+            out.push_str("destroy that creature at end of combat.");
         }
         TriggerEffect::ThatCreaturesControllerSacrificesIt => {
             out.push_str("that creature's controller sacrifices it.");
@@ -847,6 +860,10 @@ fn creature_type_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Wall => "Wall",
     }
+}
+
+fn write_creature_type(out: &mut String, ct: CreatureType) {
+    out.push_str(creature_type_name(ct));
 }
 
 fn step_name(step: Step) -> &'static str {
