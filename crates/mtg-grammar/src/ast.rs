@@ -307,6 +307,8 @@ pub enum TriggerEvent {
     BeginningOfYourUpkeep,
     /// "this <source> is put into a graveyard from the battlefield"
     SourcePutIntoGraveyardFromBattlefield { source: SourceObject },
+    /// "this <source> is dealt damage"
+    SourceIsDealtDamage { source: SourceObject },
     /// "a/an <permanent_type> is put into a graveyard from the battlefield"
     PermanentPutIntoGraveyardFromBattlefield { permanent_type: PermanentType },
     /// "the beginning of the upkeep of enchanted <permanent_type>'s
@@ -381,6 +383,8 @@ pub enum TriggerEffect {
     },
     /// "remove a <pt_modifier> counter from it"
     RemoveCounterFromIt { counter: PtModifier },
+    /// "put a <pt_modifier> counter on it"
+    PutCounterOnIt { counter: PtModifier },
     /// "this <source> gains \"<static ability>\"" — the source object
     /// gains quoted rules text as part of a triggered ability.
     SourceGainsStaticAbility {

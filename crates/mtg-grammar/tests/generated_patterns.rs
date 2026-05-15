@@ -141,3 +141,5 @@ mod force_of_nature;
 mod forcefield;
 #[path = "generated_patterns/fork.rs"]
 mod fork;
+#[path = "generated_patterns/fungusaur.rs"]
+mod fungusaur;

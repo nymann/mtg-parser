@@ -875,6 +875,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::source_put_into_graveyard_from_battlefield => {
                 event = Some(source_put_into_graveyard_from_battlefield_from_pair(child)?);
             }
+            Rule::source_is_dealt_damage => {
+                event = Some(source_is_dealt_damage_from_pair(child)?);
+            }
             Rule::permanent_put_into_graveyard_from_battlefield => {
                 event = Some(permanent_put_into_graveyard_from_battlefield_from_pair(
                     child,
@@ -992,6 +995,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::remove_pt_counter_from_it => {
                 effects.push(remove_pt_counter_from_it_from_pair(child)?);
             }
+            Rule::put_pt_counter_on_it => {
+                effects.push(put_pt_counter_on_it_from_pair(child)?);
+            }
             _ => return Err(ParseError::Internal("triggered_ability child")),
         }
     }
@@ -1069,6 +1075,16 @@ fn source_put_into_graveyard_from_battlefield_from_pair(
         return Err(ParseError::Internal("put-into-graveyard event zone"));
     }
     Ok(TriggerEvent::SourcePutIntoGraveyardFromBattlefield {
+        source: source_object_from_pair(source_pair)?,
+    })
+}
+
+fn source_is_dealt_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let source_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("source dealt damage missing source"))?;
+    Ok(TriggerEvent::SourceIsDealtDamage {
         source: source_object_from_pair(source_pair)?,
     })
 }
@@ -1393,6 +1409,16 @@ fn remove_pt_counter_from_it_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect
         .next()
         .ok_or(ParseError::Internal("remove counter missing counter"))?;
     Ok(TriggerEffect::RemoveCounterFromIt {
+        counter: pt_modifier_from_counter_pair(counter_pair)?,
+    })
+}
+
+fn put_pt_counter_on_it_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let counter_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("put counter missing counter"))?;
+    Ok(TriggerEffect::PutCounterOnIt {
         counter: pt_modifier_from_counter_pair(counter_pair)?,
     })
 }

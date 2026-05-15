@@ -152,3 +152,5 @@ mod force_of_nature;
 mod forcefield;
 #[path = "generated/fork.rs"]
 mod fork;
+#[path = "generated/fungusaur.rs"]
+mod fungusaur;

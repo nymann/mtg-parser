@@ -951,6 +951,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { .. }
         | TriggerEvent::YouPlayPermanent { .. }
         | TriggerEvent::PlayerCastsColoredSpell { .. }
+        | TriggerEvent::SourceIsDealtDamage { .. }
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
@@ -1025,6 +1026,10 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::SourcePutIntoGraveyardFromBattlefield { source } => {
             write_source_object(out, source);
             out.push_str(" is put into a graveyard from the battlefield");
+        }
+        TriggerEvent::SourceIsDealtDamage { source } => {
+            write_source_object(out, source);
+            out.push_str(" is dealt damage");
         }
         TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { permanent_type } => {
             out.push_str(indefinite_article(permanent_type));
@@ -1154,6 +1159,11 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str("remove a ");
             write_pt_modifier(out, *counter);
             out.push_str(" counter from it.");
+        }
+        TriggerEffect::PutCounterOnIt { counter } => {
+            out.push_str("put a ");
+            write_pt_modifier(out, *counter);
+            out.push_str(" counter on it.");
         }
         TriggerEffect::SourceGainsStaticAbility { source, ability } => {
             write_source_object(out, *source);

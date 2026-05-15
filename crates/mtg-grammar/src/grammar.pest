@@ -787,6 +787,7 @@ trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
 trigger_event = _{
     permanent_put_into_graveyard_from_battlefield
   | source_put_into_graveyard_from_battlefield
+  | source_is_dealt_damage
   | aura_leaves_battlefield
   | aura_enters
   | enchanted_permanent_dies
@@ -807,6 +808,7 @@ source_put_into_graveyard_from_battlefield = {
     source_object ~ ^"is" ~ ^"put" ~ ^"into" ~ article ~ zone
   ~ ^"from" ~ ^"the" ~ ^"battlefield"
 }
+source_is_dealt_damage = { source_object ~ ^"is" ~ ^"dealt" ~ ^"damage" }
 permanent_put_into_graveyard_from_battlefield = {
     article ~ permanent_type ~ ^"is" ~ ^"put" ~ ^"into" ~ article ~ zone
   ~ ^"from" ~ ^"the" ~ ^"battlefield"
@@ -852,6 +854,7 @@ trigger_effect = _{
     destroy_that_creature_if_it_attacked_this_turn
   | destroy_that_creature_at_end_of_combat
   | delayed_remove_all_named_counters_from_linked_land
+  | put_pt_counter_on_it
   | remove_pt_counter_from_it
   | loses_and_gains_keyword
   | return_enchanted_card_and_attach
@@ -933,6 +936,9 @@ unless_you_pay_mana_do_actions = {
 
 remove_pt_counter_from_it = {
     ^"remove" ~ article ~ pt_counter ~ ^"from" ~ ^"it" ~ "."
+}
+put_pt_counter_on_it = {
+    ^"put" ~ article ~ pt_counter ~ ^"on" ~ ^"it" ~ "."
 }
 delayed_remove_all_named_counters_from_linked_land = {
     ^"at" ~ ^"the" ~ ^"beginning" ~ ^"of" ~ ^"each" ~ ^"of" ~ ^"your"
