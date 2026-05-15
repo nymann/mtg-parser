@@ -8,13 +8,13 @@ use crate::ast::{
     BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
     DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
-    DamagePrevention, DamagePreventionAmount, DamagePreventionEffect, DamageRecipient,
-    DamageRecipients, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, KeywordAbilityName,
-    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    DamagePreventionAmount, DamagePreventionEffect, DamageRecipient, DamageRecipients,
+    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, KeywordAbilityName, LandCountController, ManaCost,
+    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedSourcePowerToughnessCount,
+    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -287,8 +287,8 @@ fn modal_mode_from_pair(pair: Pair<Rule>) -> Result<ModalMode, ParseError> {
             amount: target_player_gains_life_amount_from_pair(effect)?,
         }),
         Rule::prevent_damage_this_turn => {
-            let prevention = next_prevention_recipient_damage_from_pair(effect)?;
-            Ok(ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention })
+            let effect = damage_prevention_effect_from_timed_prevention_pair(effect)?;
+            Ok(ModalMode::PreventDamageThisTurn { effect })
         }
         _ => Err(ParseError::Internal("modal_effect")),
     }
@@ -995,21 +995,6 @@ fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
                 .map_err(|_| ParseError::Internal("face-down cast toughness"))?,
         },
     )
-}
-
-fn next_prevention_recipient_damage_from_pair(
-    pair: Pair<Rule>,
-) -> Result<DamagePrevention<PreventionRecipient>, ParseError> {
-    let effect = match pair.as_rule() {
-        Rule::damage_prevention_effect => damage_prevention_effect_from_pair(pair)?,
-        Rule::prevent_damage_this_turn => {
-            damage_prevention_effect_from_timed_prevention_pair(pair)?
-        }
-        _ => return Err(ParseError::Internal("prevent next damage rule")),
-    };
-    effect
-        .into_next_this_turn()
-        .ok_or(ParseError::Internal("prevent next damage shape"))
 }
 
 fn damage_prevention_effect_from_timed_prevention_pair(
@@ -2089,9 +2074,6 @@ fn activated_damage_effect_from_pair(
         Rule::next_damage_event_effect => next_damage_event_effect_from_pair(pair),
         Rule::activated_damage_prevention_effect => {
             let effect = activated_damage_prevention_effect_from_pair(pair)?;
-            let _prevention = effect
-                .into_next_this_turn()
-                .ok_or(ParseError::Internal("activated prevent next damage shape"))?;
             Ok(ActivatedDamageEffect::PreventDamageThisTurn { effect })
         }
         _ => Err(ParseError::Internal("activated damage effect")),

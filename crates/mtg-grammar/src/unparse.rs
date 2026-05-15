@@ -5,15 +5,14 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
-    DamageKind, DamageLifeGainCap, DamagePrevention, DamagePreventionAmount,
-    DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
-    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, KeywordAbilityName, LandCountController, ManaCost,
-    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedSourcePowerToughnessCount,
-    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    DamageKind, DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamageRecipient, DamageRecipients, DestroyTarget, EachPlayerAction,
+    EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
+    KeywordAbilityName, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    NamedDamageEvent, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -39,9 +38,6 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_named_damage_event(out, event);
         }
         Statement::PreventDamageThisTurn { effect } => write_damage_prevention_effect(out, *effect),
-        Statement::PreventAllCombatDamageThisTurn => {
-            write_damage_prevention_effect(out, DamagePreventionEffect::all_combat_this_turn());
-        }
         Statement::SpendOnlyColorManaOnVariable { color, variable } => {
             out.push_str("Spend only ");
             out.push_str(color_name(*color));
@@ -195,20 +191,6 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(", you may ");
             write_optional_cost(out, cost);
             out.push('.');
-        }
-        Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
-            write_damage_prevention_effect(
-                out,
-                DamagePreventionEffect::next_this_turn(*prevention),
-            );
-        }
-        Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
-            write_if_you_do_effect(
-                out,
-                IfYouDoEffect::PreventDamageThisTurn {
-                    effect: DamagePreventionEffect::next_this_turn(*prevention),
-                },
-            );
         }
         Statement::IfYouDoPreventDamageThisTurn { effect } => {
             write_if_you_do_effect(
@@ -417,8 +399,8 @@ fn write_modal_mode(out: &mut String, mode: ModalMode) {
         ModalMode::TargetPlayerGainsLife { amount } => {
             write_target_player_gains_life(out, amount);
         }
-        ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
-            write_prevent_next_damage_to_recipient(out, prevention);
+        ModalMode::PreventDamageThisTurn { effect } => {
+            write_damage_prevention_effect(out, effect);
         }
     }
 }
@@ -755,13 +737,6 @@ fn write_you_gain_life(out: &mut String, amount: u32, case: SentenceCase) {
 
 fn write_target_player_gains_life(out: &mut String, amount: u32) {
     write!(out, "Target player gains {amount} life.").expect("write to String never fails");
-}
-
-fn write_prevent_next_damage_to_recipient(
-    out: &mut String,
-    prevention: DamagePrevention<PreventionRecipient>,
-) {
-    write_damage_prevention_effect(out, DamagePreventionEffect::next_this_turn(prevention));
 }
 
 fn write_damage_prevention_effect(

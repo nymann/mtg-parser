@@ -23,8 +23,6 @@ pub enum Statement {
         #[serde(flatten)]
         effect: DamagePreventionEffect<PreventionRecipient>,
     },
-    /// "Prevent all combat damage that would be dealt this turn."
-    PreventAllCombatDamageThisTurn,
     /// "Spend only <color> mana on X."
     SpendOnlyColorManaOnVariable {
         color: Color,
@@ -143,16 +141,6 @@ pub enum Statement {
     UntilEndOfTurnYouMayPayCostAtTiming {
         timing: ActionTiming,
         cost: OptionalCost,
-    },
-    /// "Prevent the next N damage that would be dealt to <recipient> this turn."
-    PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-        #[serde(flatten)]
-        prevention: DamagePrevention<PreventionRecipient>,
-    },
-    /// "If you do, prevent the next N damage that would be dealt to <recipient> this turn."
-    IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-        #[serde(flatten)]
-        prevention: DamagePrevention<PreventionRecipient>,
     },
     /// "If you do, prevent <amount> [combat] damage that would be dealt [to <recipient>] this turn."
     IfYouDoPreventDamageThisTurn {
@@ -346,14 +334,9 @@ impl Statement {
 
     pub(crate) fn if_you_do(effect: IfYouDoEffect) -> Self {
         match effect {
-            IfYouDoEffect::PreventDamageThisTurn { effect } => effect.into_next_this_turn().map_or(
-                Statement::IfYouDoPreventDamageThisTurn { effect },
-                |prevention| {
-                    Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                        prevention,
-                    }
-                },
-            ),
+            IfYouDoEffect::PreventDamageThisTurn { effect } => {
+                Statement::IfYouDoPreventDamageThisTurn { effect }
+            }
             IfYouDoEffect::AddMana { mana } => Statement::IfYouDoAddMana { mana },
             IfYouDoEffect::Untap { source } => Statement::IfYouDoUntap { source },
             IfYouDoEffect::UntapReferencedPermanent { permanent_type } => {
@@ -366,16 +349,7 @@ impl Statement {
     pub(crate) fn damage_prevention_effect(
         effect: DamagePreventionEffect<PreventionRecipient>,
     ) -> Self {
-        if effect == DamagePreventionEffect::all_combat_this_turn() {
-            Statement::PreventAllCombatDamageThisTurn
-        } else {
-            effect.into_next_this_turn().map_or(
-                Statement::PreventDamageThisTurn { effect },
-                |prevention| Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                    prevention,
-                },
-            )
-        }
+        Statement::PreventDamageThisTurn { effect }
     }
 }
 
@@ -391,36 +365,6 @@ impl<R> DamagePreventionEffect<R> {
             recipient,
             duration: DamagePreventionDuration::ThisTurn,
         }
-    }
-
-    pub(crate) fn next_this_turn(prevention: DamagePrevention<R>) -> Self {
-        Self::this_turn(
-            DamagePreventionAmount::Next(prevention.amount),
-            None,
-            Some(prevention.recipient),
-        )
-    }
-
-    pub(crate) fn into_next_this_turn(self) -> Option<DamagePrevention<R>> {
-        match (self.amount, self.kind, self.recipient, self.duration) {
-            (
-                DamagePreventionAmount::Next(amount),
-                None,
-                Some(recipient),
-                DamagePreventionDuration::ThisTurn,
-            ) => Some(DamagePrevention { amount, recipient }),
-            _ => None,
-        }
-    }
-}
-
-impl DamagePreventionEffect<PreventionRecipient> {
-    pub(crate) fn all_combat_this_turn() -> Self {
-        Self::this_turn(
-            DamagePreventionAmount::All,
-            Some(DamageKind::CombatDamage),
-            None,
-        )
     }
 }
 
@@ -479,10 +423,10 @@ pub enum ModalMode {
     DestroyTargetColoredPermanent { color: Color },
     /// "Target player gains N life."
     TargetPlayerGainsLife { amount: u32 },
-    /// "Prevent the next N damage that would be dealt to <recipient> this turn."
-    PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+    /// "Prevent <amount> [combat] damage that would be dealt [to <recipient>] this turn."
+    PreventDamageThisTurn {
         #[serde(flatten)]
-        prevention: DamagePrevention<PreventionRecipient>,
+        effect: DamagePreventionEffect<PreventionRecipient>,
     },
 }
 
