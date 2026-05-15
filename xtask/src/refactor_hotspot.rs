@@ -14,7 +14,6 @@ use crate::agent_events;
 use crate::flow::AgentProvider;
 use crate::paths::{refactor_hotspot_log_root, repo_root};
 
-const DEFAULT_THEME: Theme = Theme::ParserBoilerplate;
 const DEFAULT_CHURN_WINDOW: usize = 200;
 
 const HOT_FILES: &[(&str, &str)] = &[
@@ -30,6 +29,13 @@ const HOT_FILES: &[(&str, &str)] = &[
         "crates/mtg-semantic/tests/prop.rs",
     ),
     ("corpus_status.json", "corpus_status.json"),
+];
+
+const AUTO_HOTSPOTS: &[(&str, Theme)] = &[
+    ("crates/mtg-grammar/src/parse.rs", Theme::ParserBoilerplate),
+    ("crates/mtg-grammar/src/unparse.rs", Theme::UnparseTemplates),
+    ("crates/mtg-grammar/src/grammar.pest", Theme::Damage),
+    ("crates/mtg-grammar/src/ast.rs", Theme::Damage),
 ];
 
 pub fn run(args: &[String]) -> ExitCode {
@@ -48,7 +54,7 @@ pub fn run(args: &[String]) -> ExitCode {
 
 #[derive(Debug, Clone)]
 struct Options {
-    theme: Theme,
+    theme: Option<Theme>,
     target: Option<String>,
     out: Option<PathBuf>,
     print: bool,
@@ -60,7 +66,7 @@ struct Options {
 
 impl Options {
     fn parse(args: &[String]) -> Result<Self> {
-        let mut theme = DEFAULT_THEME;
+        let mut theme = None::<Theme>;
         let mut target = None::<String>;
         let mut out = None::<PathBuf>;
         let mut print = false;
@@ -76,10 +82,10 @@ impl Options {
                     let value = iter
                         .next()
                         .ok_or_else(|| anyhow!("--theme requires a value"))?;
-                    theme = Theme::parse(value)?;
+                    theme = Some(Theme::parse(value)?);
                 }
                 s if s.starts_with("--theme=") => {
-                    theme = Theme::parse(&s["--theme=".len()..])?;
+                    theme = Some(Theme::parse(&s["--theme=".len()..])?);
                 }
                 "--target" => {
                     target = Some(
@@ -146,9 +152,11 @@ const HELP: &str = "\
 cargo xtask refactor-hotspot [--theme THEME] [--target PATH] [--agent codex|claude]
                              [--dry-run] [--allow-dirty] [--out PATH] [--print]
 
-Autonomous by default: builds a qmd-grounded prompt, invokes the agent, runs
-`cargo test`, `cargo xtask corpus`, `just audit-page`, and commits the result.
-Use --dry-run or --print to stop after writing/printing the prompt.
+Autonomous by default: ranks source hotspots by churn × LOC, builds a
+qmd-grounded prompt for the top candidate, invokes the agent, runs `cargo test`,
+`cargo xtask corpus`, `just audit-page`, and commits the result. Use --theme or
+--target to override auto-selection. Use --dry-run or --print to stop after
+writing/printing the prompt.
 
 Themes:
   parser-boilerplate   Parser helper/extraction cleanup without AST changes.
@@ -304,14 +312,21 @@ fn run_inner(opts: Options) -> Result<()> {
             .context("working tree must be clean (or pass --allow-dirty)")?;
     }
 
-    let prompt = build_prompt(&opts)?;
+    let selected = resolve_selection(&opts)?;
+    println!(
+        "selected: {} ({})",
+        selected.files.join(", "),
+        selected.reason
+    );
+
+    let prompt = build_prompt(&opts, &selected)?;
     if opts.print {
         print!("{prompt}");
     }
     let out = match opts.out.clone() {
         Some(path) => path,
         None => {
-            let dir = create_log_dir(opts.theme)?;
+            let dir = create_log_dir(selected.theme)?;
             dir.join("prompt.md")
         }
     };
@@ -354,11 +369,79 @@ fn run_inner(opts: Options) -> Result<()> {
     run_gate("cargo xtask corpus", "cargo", &["xtask", "corpus"])?;
     run_gate("just audit-page", "just", &["audit-page"])?;
 
-    match git_commit(&commit_message(&opts)?)? {
+    match git_commit(&commit_message(&selected)?)? {
         CommitOutcome::Committed => println!("committed refactor-hotspot result"),
         CommitOutcome::NoChanges => bail!("no changes to commit after successful refactor gates"),
     }
     Ok(())
+}
+
+#[derive(Debug, Clone)]
+struct SelectedRefactor {
+    theme: Theme,
+    files: Vec<String>,
+    reason: String,
+}
+
+fn resolve_selection(opts: &Options) -> Result<SelectedRefactor> {
+    if let Some(target) = &opts.target {
+        let theme = opts.theme.unwrap_or_else(|| infer_theme_for_target(target));
+        return Ok(SelectedRefactor {
+            theme,
+            files: vec![target.clone()],
+            reason: format!("explicit target; theme={}", theme.label()),
+        });
+    }
+
+    if let Some(theme) = opts.theme {
+        return Ok(SelectedRefactor {
+            theme,
+            files: theme
+                .default_files()
+                .iter()
+                .map(|s| (*s).to_string())
+                .collect(),
+            reason: "explicit theme".to_string(),
+        });
+    }
+
+    auto_select_hotspot(opts.churn_window)
+}
+
+fn infer_theme_for_target(target: &str) -> Theme {
+    if target.ends_with("unparse.rs") {
+        Theme::UnparseTemplates
+    } else if target.ends_with("parse.rs") {
+        Theme::ParserBoilerplate
+    } else {
+        Theme::Damage
+    }
+}
+
+fn auto_select_hotspot(churn_window: usize) -> Result<SelectedRefactor> {
+    let root = repo_root();
+    let mut best = None::<(String, Theme, usize, usize, usize)>;
+    for (path, theme) in AUTO_HOTSPOTS {
+        let churn = git_churn(path, churn_window)?;
+        let loc = line_count(&root.join(path)).unwrap_or(0);
+        let score = churn.saturating_mul(loc);
+        match &best {
+            Some((_, _, _, _, best_score)) if score <= *best_score => {}
+            _ => best = Some(((*path).to_string(), *theme, churn, loc, score)),
+        }
+    }
+
+    let Some((path, theme, churn, loc, score)) = best else {
+        bail!("no auto refactor hotspots configured");
+    };
+    Ok(SelectedRefactor {
+        theme,
+        files: vec![path],
+        reason: format!(
+            "auto-selected by churn × LOC: {churn} × {loc} = {score}; theme={}",
+            theme.label()
+        ),
+    })
 }
 
 fn create_log_dir(theme: Theme) -> Result<PathBuf> {
@@ -371,9 +454,9 @@ fn create_log_dir(theme: Theme) -> Result<PathBuf> {
     Ok(dir)
 }
 
-fn build_prompt(opts: &Options) -> Result<String> {
-    let target_files = target_files(opts);
-    let rules = crate::rules_context::render_rules_block(opts.theme.qmd_query());
+fn build_prompt(opts: &Options, selected: &SelectedRefactor) -> Result<String> {
+    let target_files = &selected.files;
+    let rules = crate::rules_context::render_rules_block(selected.theme.qmd_query());
     let stats = render_hotspot_stats(opts.churn_window)?;
     let snippets = render_code_snippets(&target_files)?;
 
@@ -386,6 +469,10 @@ You are working in `mtg-parser`. This is a refactoring task, not a card-coverage
 ## Goal
 
 Reduce future edit cost in the selected hotspot while preserving parser behavior.
+
+## Selection
+
+{selection_reason}
 
 ## Theme Guidance
 
@@ -427,8 +514,9 @@ Make one coherent refactor commit. In the commit message, include:
 - primary LOC delta
 - whether behavior changed
 ",
-        theme = opts.theme.label(),
-        theme_instructions = opts.theme.instructions(),
+        theme = selected.theme.label(),
+        theme_instructions = selected.theme.instructions(),
+        selection_reason = selected.reason,
         files = target_files
             .iter()
             .map(|p| format!("- `{p}`"))
@@ -439,17 +527,6 @@ Make one coherent refactor commit. In the commit message, include:
         stats = stats,
         snippets = snippets,
     ))
-}
-
-fn target_files(opts: &Options) -> Vec<String> {
-    if let Some(target) = &opts.target {
-        return vec![target.clone()];
-    }
-    opts.theme
-        .default_files()
-        .iter()
-        .map(|s| (*s).to_string())
-        .collect()
 }
 
 fn render_hotspot_stats(churn_window: usize) -> Result<String> {
@@ -783,11 +860,11 @@ fn git_commit(message: &str) -> Result<CommitOutcome> {
     Ok(CommitOutcome::Committed)
 }
 
-fn commit_message(opts: &Options) -> Result<String> {
+fn commit_message(selected: &SelectedRefactor) -> Result<String> {
     let stat = git_diff_stat()?;
     Ok(format!(
         "Refactor {} hotspot\n\nGates: cargo test; cargo xtask corpus; just audit-page.\nBehavior: intended unchanged.\nPrimary LOC delta:\n{}",
-        opts.theme.label(),
+        selected.theme.label(),
         stat.trim()
     ))
 }

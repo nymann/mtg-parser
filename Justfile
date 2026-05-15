@@ -66,6 +66,16 @@ rules-index-refresh:
 audit-page out="audit-churn-complexity.html" refs="d6cb122:Baseline,59bef24:Semantic collapse,b23fa54:Damage refactor,c8e346e:Parse refactor,HEAD:Current":
 	python3 scripts/generate_audit_page.py --out "{{out}}" --refs "{{refs}}"
 
+# Run the autonomous refactor workflow. With no args, xtask picks the top
+# source hotspot by churn × LOC. Pass extra flags directly, e.g.
+#   just refactor-hotspot --dry-run
+#   just refactor-hotspot --theme unparse-templates
+refactor-hotspot *args:
+	cargo xtask refactor-hotspot {{args}}
+
+refactor *args:
+	cargo xtask refactor-hotspot {{args}}
+
 corpus-summary:
 	@jq '{total, passing, failing: (.total - .passing), grammar_left: ([.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text") | not))] | length), empty_oracle: ([.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text")))] | length)}' corpus_status.json
 
