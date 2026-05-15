@@ -736,7 +736,11 @@ fn write_damage_prevention_effect_with_prefix(
         out.push_str(" to ");
         write_prevention_recipient(out, recipient);
     }
-    match effect.duration {
+    write_damage_prevention_duration(out, effect.duration);
+}
+
+fn write_damage_prevention_duration(out: &mut String, duration: DamagePreventionDuration) {
+    match duration {
         DamagePreventionDuration::ThisTurn => out.push_str(" this turn."),
     }
 }
@@ -1889,14 +1893,22 @@ fn write_activated_damage_effect(out: &mut String, effect: ActivatedDamageEffect
             write_activated_damage_event_effect(out, effect);
             out.push('.');
         }
-        ActivatedDamageEffect::PreventNextDamageThisTurn { prevention } => {
-            out.push_str("Prevent the next ");
-            write_damage_amount(out, prevention.amount);
-            out.push_str(" damage that would be dealt to ");
-            write_activated_damage_recipient(out, prevention.recipient);
-            out.push_str(" this turn.");
+        ActivatedDamageEffect::PreventDamageThisTurn { effect } => {
+            write_activated_damage_prevention_effect(out, effect);
         }
     }
+}
+
+fn write_activated_damage_prevention_effect(
+    out: &mut String,
+    effect: DamagePreventionEffect<ActivatedDamageRecipient>,
+) {
+    write_damage_prevention_replacement_event(out, "Prevent ", effect.amount, effect.kind);
+    if let Some(recipient) = effect.recipient {
+        out.push_str(" to ");
+        write_activated_damage_recipient(out, recipient);
+    }
+    write_damage_prevention_duration(out, effect.duration);
 }
 
 fn write_activated_damage_source(out: &mut String, source: ActivatedDamageSource) {

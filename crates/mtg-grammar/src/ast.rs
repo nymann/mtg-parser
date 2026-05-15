@@ -989,10 +989,10 @@ pub enum ActivatedDamageEffect {
         event: DamageEventPattern<ActivatedDamageSource, ActivatedDamageRecipient>,
         effect: ActivatedDamageEventEffect,
     },
-    /// "Prevent the next N damage that would be dealt to <recipient> this turn."
-    PreventNextDamageThisTurn {
+    /// "Prevent <amount> [combat] damage that would be dealt to <recipient> this turn."
+    PreventDamageThisTurn {
         #[serde(flatten)]
-        prevention: DamagePrevention<ActivatedDamageRecipient>,
+        effect: DamagePreventionEffect<ActivatedDamageRecipient>,
     },
 }
 

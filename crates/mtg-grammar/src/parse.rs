@@ -2057,46 +2057,53 @@ fn activated_damage_effect_from_pair(
 ) -> Result<ActivatedDamageEffect, ParseError> {
     match pair.as_rule() {
         Rule::next_damage_event_effect => next_damage_event_effect_from_pair(pair),
-        Rule::prevent_next_damage_this_turn => {
-            let mut amount = None;
-            let mut recipient = None;
-            for child in pair.into_inner() {
-                match child.as_rule() {
-                    Rule::damage_prevention_amount_axis => {
-                        amount = Some(next_damage_prevention_amount_axis_from_pair(child)?);
-                    }
-                    Rule::damage_prevention_next_amount => {
-                        amount = Some(damage_prevention_next_amount_from_pair(child)?);
-                    }
-                    Rule::you_damage_recipient | Rule::any_target_prevention_recipient => {
-                        recipient = Some(activated_damage_recipient_from_pair(child)?);
-                    }
-                    _ => return Err(ParseError::Internal("prevent next damage child")),
-                }
-            }
-            Ok(ActivatedDamageEffect::PreventNextDamageThisTurn {
-                prevention: DamagePrevention {
-                    amount: amount
-                        .ok_or(ParseError::Internal("prevent next damage missing amount"))?,
-                    recipient: recipient.ok_or(ParseError::Internal(
-                        "prevent next damage missing recipient",
-                    ))?,
-                },
-            })
+        Rule::activated_damage_prevention_effect => {
+            let effect = activated_damage_prevention_effect_from_pair(pair)?;
+            let _prevention = effect
+                .into_next_this_turn()
+                .ok_or(ParseError::Internal("activated prevent next damage shape"))?;
+            Ok(ActivatedDamageEffect::PreventDamageThisTurn { effect })
         }
         _ => Err(ParseError::Internal("activated damage effect")),
     }
 }
 
-fn next_damage_prevention_amount_axis_from_pair(
+fn activated_damage_prevention_effect_from_pair(
     pair: Pair<Rule>,
-) -> Result<DamageAmount, ParseError> {
-    match damage_prevention_amount_axis_from_pair(pair)? {
-        DamagePreventionAmount::Next(amount) => Ok(amount),
-        DamagePreventionAmount::All => Err(ParseError::Internal(
-            "activated prevent next damage amount must be next",
-        )),
+) -> Result<DamagePreventionEffect<ActivatedDamageRecipient>, ParseError> {
+    let mut amount = None;
+    let mut kind = None;
+    let mut recipient = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::damage_prevention_amount_axis => {
+                amount = Some(damage_prevention_amount_axis_from_pair(child)?);
+            }
+            Rule::damage_prevention_next_amount => {
+                amount = Some(DamagePreventionAmount::Next(
+                    damage_prevention_next_amount_from_pair(child)?,
+                ));
+            }
+            Rule::damage_kind => {
+                kind = Some(damage_kind_from_pair(child)?);
+            }
+            Rule::activated_damage_prevention_recipient_clause => {
+                recipient = Some(activated_damage_recipient_from_pair(only_inner(
+                    child,
+                    "activated damage prevention missing recipient",
+                )?)?);
+            }
+            _ => return Err(ParseError::Internal("activated damage prevention child")),
+        }
     }
+    Ok(DamagePreventionEffect {
+        amount: amount.ok_or(ParseError::Internal(
+            "activated damage prevention missing amount",
+        ))?,
+        kind,
+        recipient,
+        duration: DamagePreventionDuration::ThisTurn,
+    })
 }
 
 fn next_damage_event_effect_from_pair(
@@ -3116,7 +3123,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 permanent_types,
             })
         }
-        Rule::next_damage_event_effect | Rule::prevent_next_damage_this_turn => Ok(
+        Rule::next_damage_event_effect | Rule::activated_damage_prevention_effect => Ok(
             ActivatedEffect::DamageEffect(activated_damage_effect_from_pair(pair)?),
         ),
         Rule::put_up_to_variable_pt_counters_on_source => {
