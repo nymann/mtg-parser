@@ -476,6 +476,16 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_keyword_lowercase(out, *keyword);
             out.push('.');
         }
+        StaticAbility::YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield {
+            source,
+            permanent_type,
+        } => {
+            out.push_str("You may have ");
+            write_source_object(out, *source);
+            out.push_str(" enter as a copy of any ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" on the battlefield.");
+        }
         StaticAbility::EffectDoesntRemoveThisAura => {
             out.push_str("This effect doesn't remove this Aura.");
         }

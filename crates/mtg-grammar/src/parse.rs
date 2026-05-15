@@ -88,6 +88,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_gets
         | Rule::static_enchanted_has_keyword
         | Rule::static_enchanted_can_attack_as_though
+        | Rule::static_you_may_have_source_enter_as_copy
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::target_creature_defending_player_controls_can_block_any_number
         | Rule::it_blocks_each_attacking_creature_if_able
@@ -826,6 +827,21 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 object: enchanted_object_from_pair(object_pair)?,
                 keyword: keyword_from_inner_pair(keyword_pair)?,
             })
+        }
+        Rule::static_you_may_have_source_enter_as_copy => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner
+                .next()
+                .expect("copy replacement begins with source object");
+            let permanent_type_pair = inner
+                .next()
+                .expect("copy replacement names copied permanent type");
+            Ok(
+                StaticAbility::YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield {
+                    source: source_object_from_pair(source_pair)?,
+                    permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                },
+            )
         }
         Rule::static_effect_doesnt_remove_this_aura => {
             Ok(StaticAbility::EffectDoesntRemoveThisAura)

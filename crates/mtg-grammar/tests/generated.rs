@@ -64,3 +64,5 @@ mod chaoslace;
 mod circle_of_protection_blue;
 #[path = "generated/clockwork_beast.rs"]
 mod clockwork_beast;
+#[path = "generated/clone.rs"]
+mod clone;

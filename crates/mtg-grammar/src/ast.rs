@@ -397,6 +397,12 @@ pub enum StaticAbility {
         object: EnchantedObject,
         keyword: Keyword,
     },
+    /// "You may have this <source> enter as a copy of any
+    /// <permanent_type> on the battlefield."
+    YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield {
+        source: SourceObject,
+        permanent_type: PermanentType,
+    },
     /// "This effect doesn't remove this Aura." — effect-continuity text
     /// for Aura effects that otherwise might remove their own attachment.
     EffectDoesntRemoveThisAura,
