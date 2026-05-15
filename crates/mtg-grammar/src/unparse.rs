@@ -227,6 +227,30 @@ fn write_imperative_action(out: &mut String, action: ImperativeAction) {
             write_card_count(out, count);
             out.push_str(" cards");
         }
+        ImperativeAction::TapSource { source } => {
+            out.push_str("tap ");
+            write_source_object(out, source);
+        }
+        ImperativeAction::SacrificePermanentOfOpponentsChoice { permanent_type } => {
+            out.push_str("sacrifice ");
+            out.push_str(indefinite_article(permanent_type));
+            out.push(' ');
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str(" of an opponent's choice");
+        }
+    }
+}
+
+fn write_trigger_action_list(out: &mut String, actions: &[ImperativeAction]) {
+    for (i, action) in actions.iter().enumerate() {
+        if i > 0 {
+            if i + 1 == actions.len() {
+                out.push_str(" and ");
+            } else {
+                out.push_str(", ");
+            }
+        }
+        write_imperative_action(out, *action);
     }
 }
 
@@ -422,6 +446,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str("Counter target ");
             out.push_str(color_name(*color));
             out.push_str(" spell.");
+        }
+        ActivatedEffect::DestroyTargetPermanent { permanent_type } => {
+            out.push_str("Destroy target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push('.');
         }
         ActivatedEffect::EnchantedGetsUntilEndOfTurn {
             permanent_type,
@@ -821,6 +850,13 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
         TriggerEffect::YouMayPayMana { cost } => {
             out.push_str("you may pay ");
             write_mana_cost(out, cost);
+            out.push('.');
+        }
+        TriggerEffect::UnlessYouPayManaDoActions { cost, actions } => {
+            out.push_str("unless you pay ");
+            write_mana_cost(out, cost);
+            out.push_str(", ");
+            write_trigger_action_list(out, actions);
             out.push('.');
         }
         TriggerEffect::DelayedRemoveAllNamedCountersFromLinkedPermanent {

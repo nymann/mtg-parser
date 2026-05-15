@@ -91,3 +91,5 @@ mod death_ward;
 mod deathgrip;
 #[path = "generated_patterns/demonic_attorney.rs"]
 mod demonic_attorney;
+#[path = "generated_patterns/demonic_hordes.rs"]
+mod demonic_hordes;

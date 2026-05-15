@@ -144,12 +144,18 @@ imperative_action = _{
     discard_your_hand_action
   | ante_top_card_of_your_library_action
   | draw_cards_action
+  | tap_source_action
+  | sacrifice_permanent_of_opponents_choice_action
 }
 discard_your_hand_action = { ^"discard" ~ ^"your" ~ ^"hand" }
 ante_top_card_of_your_library_action = {
     ^"ante" ~ ^"the" ~ ^"top" ~ ^"card" ~ ^"of" ~ ^"your" ~ ^"library"
 }
 draw_cards_action = { ^"draw" ~ draw_count ~ ^"cards" }
+tap_source_action = { ^"tap" ~ source_object }
+sacrifice_permanent_of_opponents_choice_action = {
+    ^"sacrifice" ~ article ~ permanent_type ~ ^"of" ~ article ~ ^"opponent's" ~ ^"choice"
+}
 
 each_player_performs_action = {
     ^"each" ~ ^"player" ~ each_player_action ~ "."
@@ -432,6 +438,7 @@ activated_effect = _{
     add_mana_of_any_one_color
   | add_one_mana_of_any_color
   | add_mana
+  | destroy_target_permanent
   | counter_target_colored_spell
   | untap_source
   | activated_enchanted_gets_until_eot
@@ -446,6 +453,7 @@ add_mana_of_any_one_color = {
 }
 add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"color" ~ "." }
 add_mana = { ^"add" ~ mana_cost ~ "." }
+destroy_target_permanent = { ^"destroy" ~ ^"target" ~ permanent_type ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
 activated_enchanted_gets_until_eot = {
     ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier
@@ -636,6 +644,7 @@ trigger_effect = _{
   | remove_pt_counter_from_it
   | loses_and_gains_keyword
   | return_enchanted_card_and_attach
+  | unless_you_pay_mana_do_actions
   | you_may_pay_mana
   | sacrifice_source_unless_you_pay
   | source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller
@@ -688,6 +697,11 @@ sacrifice_source_unless_you_pay = {
 }
 
 you_may_pay_mana = { ^"you" ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
+
+unless_you_pay_mana_do_actions = {
+    ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ ","
+  ~ imperative_action ~ (^"and" ~ imperative_action)* ~ "."
+}
 
 remove_pt_counter_from_it = {
     ^"remove" ~ article ~ pt_counter ~ ^"from" ~ ^"it" ~ "."

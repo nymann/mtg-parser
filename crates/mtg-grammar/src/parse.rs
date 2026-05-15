@@ -245,6 +245,26 @@ fn imperative_action_from_pair(pair: Pair<Rule>) -> Result<ImperativeAction, Par
                 count: card_count_from_pair(count_pair)?,
             })
         }
+        Rule::tap_source_action => {
+            let source_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("tap action missing source"))?;
+            Ok(ImperativeAction::TapSource {
+                source: source_object_from_pair(source_pair)?,
+            })
+        }
+        Rule::sacrifice_permanent_of_opponents_choice_action => {
+            let permanent_type_pair = pair
+                .into_inner()
+                .find(|child| child.as_rule() == Rule::permanent_type)
+                .ok_or(ParseError::Internal(
+                    "sacrifice opponent choice action missing permanent_type",
+                ))?;
+            Ok(ImperativeAction::SacrificePermanentOfOpponentsChoice {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            })
+        }
         _ => Err(ParseError::Internal("imperative action")),
     }
 }
@@ -642,6 +662,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::you_may_pay_mana => {
                 effects.push(you_may_pay_mana_from_pair(child)?);
             }
+            Rule::unless_you_pay_mana_do_actions => {
+                effects.push(unless_you_pay_mana_do_actions_from_pair(child)?);
+            }
             Rule::delayed_remove_all_named_counters_from_linked_land => {
                 effects.push(delayed_remove_all_named_counters_from_linked_land_from_pair(
                     child,
@@ -833,6 +856,23 @@ fn you_may_pay_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseEr
         .ok_or(ParseError::Internal("you_may_pay_mana missing cost"))?;
     Ok(TriggerEffect::YouMayPayMana {
         cost: mana_cost_from_pair(cost_pair),
+    })
+}
+
+fn unless_you_pay_mana_do_actions_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let cost_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("unless pay missing mana cost"))?;
+    let actions = inner
+        .map(imperative_action_from_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    if actions.is_empty() {
+        return Err(ParseError::Internal("unless pay missing actions"));
+    }
+    Ok(TriggerEffect::UnlessYouPayManaDoActions {
+        cost: mana_cost_from_pair(cost_pair),
+        actions,
     })
 }
 
@@ -1383,6 +1423,14 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 .ok_or(ParseError::Internal("counter colored spell missing color"))?;
             Ok(ActivatedEffect::CounterTargetColoredSpell {
                 color: color_from_pair(color_pair)?,
+            })
+        }
+        Rule::destroy_target_permanent => {
+            let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "destroy target missing permanent_type",
+            ))?;
+            Ok(ActivatedEffect::DestroyTargetPermanent {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
             })
         }
         Rule::activated_enchanted_gets_until_eot => {

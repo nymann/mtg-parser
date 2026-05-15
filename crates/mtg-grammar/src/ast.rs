@@ -149,6 +149,10 @@ pub enum ImperativeAction {
     AnteTopCardOfYourLibrary,
     /// "draw N cards"
     DrawCards { count: CardCount },
+    /// "tap this <source>"
+    TapSource { source: SourceObject },
+    /// "sacrifice a/an <permanent_type> of an opponent's choice"
+    SacrificePermanentOfOpponentsChoice { permanent_type: PermanentType },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -272,6 +276,11 @@ pub enum TriggerEffect {
     },
     /// "you may pay <mana_cost>"
     YouMayPayMana { cost: ManaCost },
+    /// "unless you pay <mana_cost>, <action>[ and <action>]*"
+    UnlessYouPayManaDoActions {
+        cost: ManaCost,
+        actions: Vec<ImperativeAction>,
+    },
     /// "at the beginning of each of your upkeeps for the rest of the
     /// game, remove all <counter> counters from a <type> that ..."
     DelayedRemoveAllNamedCountersFromLinkedPermanent {
@@ -321,6 +330,10 @@ pub enum ActivatedEffect {
     /// "Counter target <color> spell."
     CounterTargetColoredSpell {
         color: Color,
+    },
+    /// "Destroy target <permanent_type>."
+    DestroyTargetPermanent {
+        permanent_type: PermanentType,
     },
     /// "Enchanted <type> gets <modifier> until end of turn."
     EnchantedGetsUntilEndOfTurn {
