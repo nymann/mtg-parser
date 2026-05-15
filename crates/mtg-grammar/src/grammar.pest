@@ -987,7 +987,13 @@ activation_permission = _{
 activated_ability = { activated_cost ~ ":" ~ activated_effect }
 // Multiple non-mana activated costs are printed comma-separated.
 activated_cost = { activated_cost_component ~ ("," ~ activated_cost_component)* }
-activated_cost_component = _{ sacrifice_source | variable_mana_symbol | mana_cost | tap_symbol }
+activated_cost_component = _{
+    remove_named_counter_from_source
+  | sacrifice_source
+  | variable_mana_symbol
+  | mana_cost
+  | tap_symbol
+}
 activated_effect = _{
     add_mana_of_any_one_color
   | add_one_mana_of_any_color
@@ -1181,6 +1187,9 @@ choose_creature_card_in_hand_payable_by_mana_spent_on_variable = {
 }
 variable_mana_symbol = ${ "{" ~ variable_name ~ "}" }
 sacrifice_source = { ^"sacrifice" ~ source_object }
+remove_named_counter_from_source = {
+    ^"remove" ~ article ~ named_counter ~ ^"from" ~ source_object
+}
 
 physical_action = _{
     if_source_on_battlefield_flip_onto_battlefield_from_height
@@ -1337,6 +1346,7 @@ trigger_event = _{
   | beginning_of_your_upkeep
   | beginning_of_upkeep_of_enchanted_permanent_controller
   | beginning_of_chosen_players_upkeep
+  | beginning_of_each_end_step
   | beginning_of_the_end_step
   | beginning_of_the_next_end_step
   | you_play_permanent
@@ -1395,6 +1405,9 @@ beginning_of_the_next_end_step = {
 beginning_of_the_end_step = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"end" ~ ^"step"
 }
+beginning_of_each_end_step = {
+    ^"the" ~ ^"beginning" ~ ^"of" ~ ^"each" ~ ^"end" ~ ^"step"
+}
 beginning_of_chosen_players_upkeep = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"chosen" ~ ^"player's" ~ ^"upkeep"
 }
@@ -1442,7 +1455,7 @@ trigger_effect = _{
   | destroy_that_creature_at_end_of_combat
   | sacrifice_permanent_other_than_source
   | delayed_remove_all_named_counters_from_linked_land
-  | put_that_many_named_counters_on_source
+  | put_named_counters_on_source
   | you_may_remove_named_counter_from_source
   | put_pt_counter_on_it
   | remove_pt_counter_from_it
@@ -1659,8 +1672,17 @@ remove_pt_counter_from_it = {
 put_pt_counter_on_it = {
     ^"put" ~ article ~ pt_counter ~ ^"on" ~ ^"it" ~ "."
 }
-put_that_many_named_counters_on_source = {
+put_named_counters_on_source = _{
+    that_many_named_counters
+  | one_named_counter_for_each_permanent_died_this_turn
+}
+that_many_named_counters = {
     ^"put" ~ ^"that" ~ ^"many" ~ named_counters ~ ^"on" ~ source_object ~ "."
+}
+one_named_counter_for_each_permanent_died_this_turn = {
+    ^"put" ~ article ~ named_counter ~ ^"on" ~ source_object
+  ~ ^"for" ~ ^"each" ~ permanent_type ~ ^"that" ~ ^"died"
+  ~ ^"this" ~ ^"turn" ~ "."
 }
 you_may_remove_named_counter_from_source = {
     ^"you" ~ ^"may" ~ ^"remove" ~ article ~ named_counter ~ ^"from" ~ source_object ~ "."

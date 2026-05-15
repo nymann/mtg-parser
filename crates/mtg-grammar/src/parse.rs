@@ -13,15 +13,16 @@ use crate::ast::{
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
     IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
-    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
-    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
-    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect,
-    TargetPermanentSelector, TriggerCondition, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
+    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
+    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, RegenerateRecipient, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TriggerCondition,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -1831,6 +1832,7 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
         }
         Rule::beginning_of_the_next_end_step => Ok(TriggerEvent::BeginningOfTheNextEndStep),
         Rule::beginning_of_the_end_step => Ok(TriggerEvent::BeginningOfTheEndStep),
+        Rule::beginning_of_each_end_step => Ok(TriggerEvent::BeginningOfEachEndStep),
         Rule::beginning_of_chosen_players_upkeep => {
             Ok(TriggerEvent::BeginningOfChosenPlayersUpkeep)
         }
@@ -1978,8 +1980,10 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         Rule::delayed_remove_all_named_counters_from_linked_land => {
             delayed_remove_all_named_counters_from_linked_land_from_pair(pair)
         }
-        Rule::put_that_many_named_counters_on_source => {
-            put_that_many_named_counters_on_source_from_pair(pair)
+        Rule::put_named_counters_on_source
+        | Rule::that_many_named_counters
+        | Rule::one_named_counter_for_each_permanent_died_this_turn => {
+            put_named_counters_on_source_from_pair(pair)
         }
         Rule::you_may_remove_named_counter_from_source => {
             you_may_remove_named_counter_from_source_from_pair(pair)
@@ -2889,20 +2893,60 @@ fn put_pt_counter_on_it_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Par
     })
 }
 
-fn put_that_many_named_counters_on_source_from_pair(
-    pair: Pair<Rule>,
-) -> Result<TriggerEffect, ParseError> {
-    let mut inner = pair.into_inner();
-    let counter_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("put named counters missing counter"))?;
-    let source_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("put named counters missing source"))?;
-    Ok(TriggerEffect::PutThatManyNamedCountersOnSource {
-        counter_name: counter_name_from_counter_pair(counter_pair)?,
-        source: source_object_from_pair(source_pair)?,
+fn put_named_counters_on_source_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let effect_pair = match pair.as_rule() {
+        Rule::put_named_counters_on_source => {
+            only_inner(pair, "put named counters missing amount")?
+        }
+        _ => pair,
+    };
+    let (amount, counter_name, source) = named_counter_placement_from_pair(effect_pair)?;
+    Ok(TriggerEffect::PutNamedCountersOnSource {
+        amount,
+        counter_name,
+        source,
     })
+}
+
+fn named_counter_placement_from_pair(
+    pair: Pair<Rule>,
+) -> Result<(NamedCounterAmount, String, SourceObject), ParseError> {
+    match pair.as_rule() {
+        Rule::that_many_named_counters => {
+            let mut inner = pair.into_inner();
+            let counter_pair = inner.next().ok_or(ParseError::Internal(
+                "that many named counters missing counter",
+            ))?;
+            let source_pair = inner.next().ok_or(ParseError::Internal(
+                "that many named counters missing source",
+            ))?;
+            Ok((
+                NamedCounterAmount::ThatMany,
+                counter_name_from_counter_pair(counter_pair)?,
+                source_object_from_pair(source_pair)?,
+            ))
+        }
+        Rule::one_named_counter_for_each_permanent_died_this_turn => {
+            let mut inner = pair.into_inner();
+            let counter_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("one named counter missing counter"))?;
+            let source_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("one named counter missing source"))?;
+            let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+                "one named counter missing permanent type",
+            ))?;
+            Ok((
+                NamedCounterAmount::OneForEachPermanentThatDiedThisTurn {
+                    permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                },
+                counter_name_from_counter_pair(counter_pair)?,
+                source_object_from_pair(source_pair)?,
+            ))
+        }
+        _ => Err(ParseError::Internal("named counter placement")),
+    }
 }
 
 fn you_may_remove_named_counter_from_source_from_pair(
@@ -3675,6 +3719,19 @@ fn activated_cost_from_pair(pair: Pair<Rule>) -> Result<Vec<ActivatedCost>, Pars
                 Ok(ActivatedCost::Sacrifice(source_object_from_pair(
                     source_pair,
                 )?))
+            }
+            Rule::remove_named_counter_from_source => {
+                let mut inner = child.into_inner();
+                let counter_pair = inner.next().ok_or(ParseError::Internal(
+                    "remove named counter cost missing counter",
+                ))?;
+                let source_pair = inner.next().ok_or(ParseError::Internal(
+                    "remove named counter cost missing source",
+                ))?;
+                Ok(ActivatedCost::RemoveNamedCounterFromSource {
+                    counter_name: counter_name_from_counter_pair(counter_pair)?,
+                    source: source_object_from_pair(source_pair)?,
+                })
             }
             _ => Err(ParseError::Internal("activated_cost component")),
         })

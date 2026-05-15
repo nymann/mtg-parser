@@ -11,15 +11,16 @@ use crate::ast::{
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
     IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
-    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
-    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
-    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect,
-    TargetPermanentSelector, TriggerCondition, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
+    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
+    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, RegenerateRecipient, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TriggerCondition,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -1248,6 +1249,15 @@ fn write_activated_cost(out: &mut String, cost: &ActivatedCost) {
             out.push_str("Sacrifice ");
             write_source_object(out, *source);
         }
+        ActivatedCost::RemoveNamedCounterFromSource {
+            counter_name,
+            source,
+        } => {
+            out.push_str("Remove a ");
+            out.push_str(counter_name);
+            out.push_str(" counter from ");
+            write_source_object(out, *source);
+        }
     }
 }
 
@@ -1847,6 +1857,7 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::BeginningOfEachPlayersUpkeep
         | TriggerEvent::BeginningOfYourUpkeep
         | TriggerEvent::BeginningOfTheEndStep
+        | TriggerEvent::BeginningOfEachEndStep
         | TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController { .. }
         | TriggerEvent::EndOfCombat => "At ",
         TriggerEvent::ThisAuraEnters
@@ -1956,6 +1967,9 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         }
         TriggerEvent::BeginningOfTheEndStep => {
             out.push_str("the beginning of the end step");
+        }
+        TriggerEvent::BeginningOfEachEndStep => {
+            out.push_str("the beginning of each end step");
         }
         TriggerEvent::BeginningOfChosenPlayersUpkeep => {
             out.push_str("the beginning of the chosen player's upkeep");
@@ -2126,14 +2140,28 @@ fn write_trigger_effect(
             write_pt_modifier(out, *counter);
             out.push_str(" counter on it.");
         }
-        TriggerEffect::PutThatManyNamedCountersOnSource {
+        TriggerEffect::PutNamedCountersOnSource {
+            amount,
             counter_name,
             source,
         } => {
-            out.push_str("put that many ");
-            out.push_str(counter_name);
-            out.push_str(" counters on ");
-            write_source_object(out, *source);
+            out.push_str("put ");
+            match amount {
+                NamedCounterAmount::ThatMany => {
+                    write_named_counter_amount(out, *amount, counter_name);
+                    out.push_str(" on ");
+                    write_source_object(out, *source);
+                }
+                NamedCounterAmount::OneForEachPermanentThatDiedThisTurn { permanent_type } => {
+                    out.push_str("a ");
+                    out.push_str(counter_name);
+                    out.push_str(" counter on ");
+                    write_source_object(out, *source);
+                    out.push_str(" for each ");
+                    out.push_str(permanent_type_name(*permanent_type));
+                    out.push_str(" that died this turn");
+                }
+            }
             out.push('.');
         }
         TriggerEffect::YouMayRemoveNamedCounterFromSource {
@@ -2266,6 +2294,23 @@ fn write_counter_amount(out: &mut String, amount: CounterAmount) {
     match amount {
         CounterAmount::Number(n) => out.push_str(u32_to_number_word(n)),
         CounterAmount::Variable(variable) => out.push_str(variable_name(variable)),
+    }
+}
+
+fn write_named_counter_amount(out: &mut String, amount: NamedCounterAmount, counter_name: &str) {
+    match amount {
+        NamedCounterAmount::ThatMany => {
+            out.push_str("that many ");
+            out.push_str(counter_name);
+            out.push_str(" counters");
+        }
+        NamedCounterAmount::OneForEachPermanentThatDiedThisTurn { permanent_type } => {
+            out.push_str("a ");
+            out.push_str(counter_name);
+            out.push_str(" counter for each ");
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str(" that died this turn");
+        }
     }
 }
 

@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 226,
+  "passing": 227,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -669,8 +669,7 @@
       "error": "empty oracle text (vanilla card)"
     },
     "lea/Scavenging Ghoul": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each end step, put a corpse counter on this creature for each creature that died this turn.\n  |    ^---\n  |\n  = expected trigger_event_clause"
+      "status": "pass"
     },
     "lea/Scrubland": {
       "status": "fail",

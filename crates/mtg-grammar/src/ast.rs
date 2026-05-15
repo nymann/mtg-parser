@@ -805,6 +805,8 @@ pub enum TriggerEvent {
     BeginningOfTheNextEndStep,
     /// "the beginning of the end step"
     BeginningOfTheEndStep,
+    /// "the beginning of each end step"
+    BeginningOfEachEndStep,
     /// "the beginning of the chosen player's upkeep"
     BeginningOfChosenPlayersUpkeep,
     /// "the beginning of each player's upkeep"
@@ -906,8 +908,9 @@ pub enum TriggerEffect {
     RemoveCounterFromIt { counter: PtModifier },
     /// "put a <pt_modifier> counter on it"
     PutCounterOnIt { counter: PtModifier },
-    /// "put that many <counter> counters on this <source>"
-    PutThatManyNamedCountersOnSource {
+    /// "put <amount> <counter> counter(s) on this <source>"
+    PutNamedCountersOnSource {
+        amount: NamedCounterAmount,
         counter_name: String,
         source: SourceObject,
     },
@@ -1079,6 +1082,14 @@ pub enum ActivationPermission {
     ActivateOnlyDuringYourUpkeep,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum NamedCounterAmount {
+    /// "that many <counter> counters"
+    ThatMany,
+    /// "a <counter> counter for each <permanent_type> that died this turn"
+    OneForEachPermanentThatDiedThisTurn { permanent_type: PermanentType },
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActivatedCost {
     Mana(ManaCost),
@@ -1086,6 +1097,11 @@ pub enum ActivatedCost {
     Tap,
     /// "Sacrifice this <permanent_type>"
     Sacrifice(SourceObject),
+    /// "Remove a <counter> counter from this <source>"
+    RemoveNamedCounterFromSource {
+        counter_name: String,
+        source: SourceObject,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

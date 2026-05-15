@@ -297,3 +297,5 @@ mod rock_hydra;
 mod royal_assassin;
 #[path = "generated_patterns/sacrifice.rs"]
 mod sacrifice;
+#[path = "generated_patterns/scavenging_ghoul.rs"]
+mod scavenging_ghoul;
