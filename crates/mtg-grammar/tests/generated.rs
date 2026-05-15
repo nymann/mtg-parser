@@ -34,3 +34,5 @@ mod birds_of_paradise;
 mod black_knight;
 #[path = "generated/black_lotus.rs"]
 mod black_lotus;
+#[path = "generated/black_vise.rs"]
+mod black_vise;

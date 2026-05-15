@@ -38,6 +38,7 @@ sentence_statement = _{
   | destroy
   | draw_cards
   | target_permanent_gains_keyword_and_gets_eot
+  | as_this_permanent_enters_choose_opponent
   | activated_ability
   | static_as_long_as
   | static_colored_permanents_get
@@ -86,6 +87,10 @@ players_do_actions_the_same_way = {
     ^"players" ~ balance_same_way_action
   ~ (^"and" ~ balance_same_way_action)*
   ~ ^"the" ~ ^"same" ~ ^"way" ~ "."
+}
+
+as_this_permanent_enters_choose_opponent = {
+    ^"as" ~ source_object ~ ^"enters" ~ "," ~ ^"choose" ~ article ~ ^"opponent" ~ "."
 }
 
 balance_same_way_action = _{ discard_cards_action | sacrifice_permanents_action }
@@ -240,14 +245,23 @@ variable_name        = @{ "X" | "Y" }
 mixed_pt_modifier = { signed_pt_component ~ "/" ~ signed_pt_component }
 signed_pt_component = _{ signed_variable | signed_number }
 
-where_clause        = { ^"where" ~ variable_definition ~ ("," ~ ^"and" ~ variable_definition)? }
-variable_definition = { variable_name ~ ^"is" ~ value_expression }
-value_expression    = _{ half_number_of_basic_lands_you_control | its_power }
+where_clause         = { ^"where" ~ variable_definition ~ ("," ~ ^"and" ~ variable_definition)? }
+variable_definition  = { variable_name ~ ^"is" ~ value_expression }
+value_expression     = _{
+    half_number_of_basic_lands_you_control
+  | number_of_cards_in_their_hand_minus
+  | its_power
+}
 half_number_of_basic_lands_you_control = {
     ^"half" ~ ^"the" ~ ^"number" ~ ^"of" ~ basic_land_type_plural
   ~ ^"you" ~ ^"control" ~ "," ~ rounding
 }
+number_of_cards_in_their_hand_minus = {
+    ^"the" ~ ^"number" ~ ^"of" ~ ^"cards" ~ ^"in" ~ ^"their"
+  ~ ^"hand" ~ ^"minus" ~ unsigned_number
+}
 its_power = { ^"its" ~ ^"power" }
+unsigned_number = @{ ASCII_DIGIT+ }
 rounding = { ^"rounded" ~ rounding_direction }
 rounding_direction = @{ ^"down" | ^"up" }
 basic_land_type_plural = @{ ^"forests" }
@@ -269,6 +283,7 @@ trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
 trigger_event = _{
     aura_leaves_battlefield
   | aura_enters
+  | beginning_of_chosen_players_upkeep
   | beginning_of_the_next_end_step
   | permanent_enters
 }
@@ -278,6 +293,9 @@ permanent_enters        = { article ~ permanent_type ~ ^"enters" }
 beginning_of_the_next_end_step = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"next" ~ ^"end" ~ ^"step"
 }
+beginning_of_chosen_players_upkeep = {
+    ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"chosen" ~ ^"player's" ~ ^"upkeep"
+}
 
 intervening_if         = _{ its_on_the_battlefield }
 its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
@@ -286,6 +304,7 @@ trigger_effect = _{
     destroy_that_creature_if_it_attacked_this_turn
   | loses_and_gains_keyword
   | return_enchanted_card_and_attach
+  | source_deals_variable_damage_to_that_player
   | source_deals_damage_to_that_permanents_controller
   | that_creatures_controller_sacrifices_it
 }
@@ -308,6 +327,10 @@ that_creatures_controller_sacrifices_it = {
 source_deals_damage_to_that_permanents_controller = {
     source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to"
   ~ that_permanents_controller ~ "."
+}
+source_deals_variable_damage_to_that_player = {
+    source_object ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"
+  ~ ^"that" ~ ^"player" ~ "," ~ where_clause ~ "."
 }
 source_object = { ^"this" ~ permanent_type }
 that_permanents_controller = { ^"that" ~ permanent_type ~ "'s" ~ ^"controller" }

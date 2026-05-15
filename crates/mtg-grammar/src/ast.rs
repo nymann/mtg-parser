@@ -32,6 +32,10 @@ pub enum Statement {
     PlayersDoActionsTheSameWay {
         actions: Vec<BalanceSameWayAction>,
     },
+    /// "As this <permanent_type> enters, choose an opponent."
+    AsThisPermanentEntersChooseOpponent {
+        permanent_type: PermanentType,
+    },
     StaticAbility(StaticAbility),
     ActivatedAbility(ActivatedAbility),
     TriggeredAbility(TriggeredAbility),
@@ -79,6 +83,8 @@ pub enum TriggerEvent {
     PermanentEnters { permanent_type: PermanentType },
     /// "the beginning of the next end step"
     BeginningOfTheNextEndStep,
+    /// "the beginning of the chosen player's upkeep"
+    BeginningOfChosenPlayersUpkeep,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -98,6 +104,12 @@ pub enum TriggerEffect {
         source: SourceObject,
         amount: u32,
         recipient: PermanentType,
+    },
+    /// "this <source> deals X damage to that player, where X is <expr>"
+    SourceDealsVariableDamageToThatPlayer {
+        source: SourceObject,
+        amount: Variable,
+        definitions: Vec<VariableDefinition>,
     },
     /// `it loses "<keyword>" and gains "<keyword>"` — the source object
     /// rewrites its own printed rules text. Reanimator Auras use this
@@ -335,6 +347,8 @@ pub enum ValueExpression {
     },
     /// "its power"
     ItsPower,
+    /// "the number of cards in their hand minus <N>"
+    NumberOfCardsInTheirHandMinus { amount: u32 },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

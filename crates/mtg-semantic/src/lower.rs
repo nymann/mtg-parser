@@ -41,6 +41,11 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
                 actions: actions.clone(),
             }
         }
+        Statement::AsThisPermanentEntersChooseOpponent { permanent_type } => {
+            CardEffect::AsThisPermanentEntersChooseOpponent {
+                permanent_type: *permanent_type,
+            }
+        }
         Statement::StaticAbility(sa) => CardEffect::StaticAbility(sa.clone()),
         Statement::ActivatedAbility(aa) => CardEffect::ActivatedAbility(aa.clone()),
         Statement::TriggeredAbility(ta) => CardEffect::TriggeredAbility(ta.clone()),

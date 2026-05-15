@@ -23,3 +23,5 @@ mod birds_of_paradise;
 mod black_knight;
 #[path = "generated_patterns/black_lotus.rs"]
 mod black_lotus;
+#[path = "generated_patterns/black_vise.rs"]
+mod black_vise;

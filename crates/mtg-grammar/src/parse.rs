@@ -60,6 +60,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             each_player_equalizes_controlled_permanents_from_pair(pair)
         }
         Rule::players_do_actions_the_same_way => players_do_actions_the_same_way_from_pair(pair),
+        Rule::as_this_permanent_enters_choose_opponent => {
+            as_this_permanent_enters_choose_opponent_from_pair(pair)
+        }
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::static_as_long_as
         | Rule::static_colored_permanents_get
@@ -163,6 +166,16 @@ fn players_do_actions_the_same_way_from_pair(pair: Pair<Rule>) -> Result<Stateme
     Ok(Statement::PlayersDoActionsTheSameWay { actions })
 }
 
+fn as_this_permanent_enters_choose_opponent_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "as enters choose opponent missing source",
+    ))?;
+    let SourceObject::This(permanent_type) = source_object_from_pair(source_pair)?;
+    Ok(Statement::AsThisPermanentEntersChooseOpponent { permanent_type })
+}
+
 fn balance_same_way_action_from_pair(pair: Pair<Rule>) -> Result<BalanceSameWayAction, ParseError> {
     match pair.as_rule() {
         Rule::discard_cards_action => Ok(BalanceSameWayAction::DiscardCards),
@@ -258,6 +271,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::beginning_of_the_next_end_step => {
                 event = Some(TriggerEvent::BeginningOfTheNextEndStep);
             }
+            Rule::beginning_of_chosen_players_upkeep => {
+                event = Some(TriggerEvent::BeginningOfChosenPlayersUpkeep);
+            }
             Rule::its_on_the_battlefield => {
                 intervening_if = Some(InterveningIf::ItsOnTheBattlefield);
             }
@@ -275,6 +291,11 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::source_deals_damage_to_that_permanents_controller => {
                 effects.push(source_deals_damage_to_that_permanents_controller_from_pair(
+                    child,
+                )?);
+            }
+            Rule::source_deals_variable_damage_to_that_player => {
+                effects.push(source_deals_variable_damage_to_that_player_from_pair(
                     child,
                 )?);
             }
@@ -373,6 +394,36 @@ fn source_deals_damage_to_that_permanents_controller_from_pair(
         source: source_object_from_pair(source_pair)?,
         amount,
         recipient: that_permanents_controller_from_pair(recipient_pair)?,
+    })
+}
+
+fn source_deals_variable_damage_to_that_player_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "variable damage effect missing source",
+    ))?;
+    let amount_pair = inner.next().ok_or(ParseError::Internal(
+        "variable damage effect missing amount",
+    ))?;
+    let where_pair = inner.next().ok_or(ParseError::Internal(
+        "variable damage effect missing where_clause",
+    ))?;
+    let amount = variable_from_str(amount_pair.as_str())?;
+    let definitions = where_clause_from_pair(where_pair)?;
+    if !definitions
+        .iter()
+        .any(|definition| definition.variable == amount)
+    {
+        return Err(ParseError::Internal(
+            "variable damage missing amount definition",
+        ));
+    }
+    Ok(TriggerEffect::SourceDealsVariableDamageToThatPlayer {
+        source: source_object_from_pair(source_pair)?,
+        amount,
+        definitions,
     })
 }
 
@@ -749,6 +800,16 @@ fn value_expression_from_pair(pair: Pair<Rule>) -> Result<ValueExpression, Parse
             })
         }
         Rule::its_power => Ok(ValueExpression::ItsPower),
+        Rule::number_of_cards_in_their_hand_minus => {
+            let amount_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "number-of-cards expression missing subtraction amount",
+            ))?;
+            let amount = amount_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("number-of-cards subtraction amount"))?;
+            Ok(ValueExpression::NumberOfCardsInTheirHandMinus { amount })
+        }
         _ => Err(ParseError::Internal("value_expression")),
     }
 }

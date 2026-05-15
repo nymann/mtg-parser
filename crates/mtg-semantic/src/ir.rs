@@ -36,6 +36,8 @@ pub enum CardEffect {
     /// Follow-up Balance-style actions that reuse the preceding
     /// equalization method.
     PlayersDoActionsTheSameWay { actions: Vec<BalanceSameWayAction> },
+    /// "As this <permanent_type> enters, choose an opponent."
+    AsThisPermanentEntersChooseOpponent { permanent_type: PermanentType },
     /// A static ability with a conditional continuous effect. The
     /// grammar-side AST is reused verbatim until the IR grows real
     /// reference-resolution work to do here.

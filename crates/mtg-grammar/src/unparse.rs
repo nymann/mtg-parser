@@ -64,6 +64,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_same_way_actions(out, actions);
             out.push_str(" the same way.");
         }
+        Statement::AsThisPermanentEntersChooseOpponent { permanent_type } => {
+            out.push_str("As this ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" enters, choose an opponent.");
+        }
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
         Statement::ActivatedAbility(aa) => write_activated_ability(out, aa),
         Statement::TriggeredAbility(ta) => write_triggered_ability(out, ta),
@@ -300,7 +305,9 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
 fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
     out.push_str(match ta.event {
         TriggerEvent::PermanentEnters { .. } => "Whenever ",
-        TriggerEvent::BeginningOfTheNextEndStep => "At ",
+        TriggerEvent::BeginningOfTheNextEndStep | TriggerEvent::BeginningOfChosenPlayersUpkeep => {
+            "At "
+        }
         TriggerEvent::ThisAuraEnters | TriggerEvent::ThisAuraLeavesTheBattlefield => "When ",
     });
     write_trigger_event(out, ta.event);
@@ -333,6 +340,9 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::BeginningOfTheNextEndStep => {
             out.push_str("the beginning of the next end step");
         }
+        TriggerEvent::BeginningOfChosenPlayersUpkeep => {
+            out.push_str("the beginning of the chosen player's upkeep");
+        }
     }
 }
 
@@ -359,6 +369,18 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
             write!(out, " deals {amount} damage to that ").expect("write to String never fails");
             out.push_str(permanent_type_name(*recipient));
             out.push_str("'s controller.");
+        }
+        TriggerEffect::SourceDealsVariableDamageToThatPlayer {
+            source,
+            amount,
+            definitions,
+        } => {
+            write_source_object(out, *source);
+            out.push_str(" deals ");
+            out.push_str(variable_name(*amount));
+            out.push_str(" damage to that player, where ");
+            write_variable_definitions(out, definitions);
+            out.push('.');
         }
         TriggerEffect::LosesAndGainsKeyword { loses, gains } => {
             out.push_str("it loses \"");
@@ -493,6 +515,10 @@ fn write_value_expression(out: &mut String, expression: &ValueExpression) {
             out.push_str(rounding_name(*rounding));
         }
         ValueExpression::ItsPower => out.push_str("its power"),
+        ValueExpression::NumberOfCardsInTheirHandMinus { amount } => {
+            write!(out, "the number of cards in their hand minus {amount}")
+                .expect("write to String never fails");
+        }
     }
 }
 
