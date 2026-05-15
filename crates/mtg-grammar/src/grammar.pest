@@ -628,6 +628,7 @@ activated_effect = _{
   | look_at_target_players_hand
   | target_player_discards_cards
   | target_creature_with_power_or_less_cant_be_blocked
+  | activated_source_gains_keyword_until_eot
   | activated_source_gets_until_eot
   | activated_enchanted_gets_until_eot
   | prevent_all_but_damage_from_unblocked_creature
@@ -664,6 +665,9 @@ target_creature_with_power_or_less_cant_be_blocked = {
 }
 activated_source_gets_until_eot = {
     source_object ~ ^"gets" ~ pt_modifier ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
+}
+activated_source_gains_keyword_until_eot = {
+    source_object ~ ^"gains" ~ keyword ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
 }
 activated_enchanted_gets_until_eot = {
     ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier

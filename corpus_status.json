@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 145,
+  "passing": 146,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -311,8 +311,7 @@
       "status": "pass"
     },
     "lea/Goblin Balloon Brigade": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {R}: This creature gains flying until end of turn.\n  |           ^---\n  |\n  = expected aura_source_object"
+      "status": "pass"
     },
     "lea/Goblin King": {
       "status": "fail",

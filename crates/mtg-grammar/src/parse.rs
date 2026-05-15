@@ -2070,6 +2070,19 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 modifier: pt_modifier_from_pair(modifier_pair)?,
             })
         }
+        Rule::activated_source_gains_keyword_until_eot => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner.next().ok_or(ParseError::Internal(
+                "activated source gains missing source",
+            ))?;
+            let keyword_pair = inner.next().ok_or(ParseError::Internal(
+                "activated source gains missing keyword",
+            ))?;
+            Ok(ActivatedEffect::SourceGainsKeywordUntilEndOfTurn {
+                source: source_object_from_pair(source_pair)?,
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
         Rule::prevent_next_damage_from_colored_source => {
             let color_pair = pair
                 .into_inner()

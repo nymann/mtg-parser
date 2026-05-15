@@ -503,6 +503,11 @@ pub enum ActivatedEffect {
         source: SourceObject,
         modifier: PtModifier,
     },
+    /// "This <source> gains <keyword> until end of turn."
+    SourceGainsKeywordUntilEndOfTurn {
+        source: SourceObject,
+        keyword: Keyword,
+    },
     /// "The next time a/an <color> source of your choice would deal
     /// damage to you this turn, prevent that damage."
     PreventNextDamageFromColoredSource {

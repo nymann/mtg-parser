@@ -166,3 +166,5 @@ mod giant_spider;
 mod glasses_of_urza;
 #[path = "generated/gloom.rs"]
 mod gloom;
+#[path = "generated/goblin_balloon_brigade.rs"]
+mod goblin_balloon_brigade;

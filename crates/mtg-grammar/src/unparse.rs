@@ -690,6 +690,12 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_pt_modifier(out, *modifier);
             out.push_str(" until end of turn.");
         }
+        ActivatedEffect::SourceGainsKeywordUntilEndOfTurn { source, keyword } => {
+            write_source_object_capitalized(out, *source);
+            out.push_str(" gains ");
+            write_keyword_lowercase(out, *keyword);
+            out.push_str(" until end of turn.");
+        }
         ActivatedEffect::PreventNextDamageFromColoredSource { color } => {
             out.push_str("The next time ");
             out.push_str(color_article(*color));
