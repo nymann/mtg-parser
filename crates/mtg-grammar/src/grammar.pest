@@ -50,6 +50,7 @@ sentence_statement = _{
   | if_you_do_gain_life
   | target_spell_or_permanent_becomes_color
   | target_permanent_gains_keyword_and_gets_eot
+  | each_player_performs_action
   | target_creature_defending_player_controls_can_block_any_number
   | it_blocks_each_attacking_creature_if_able
   | this_turn_defending_players_make_random_blocking_piles
@@ -149,6 +150,14 @@ ante_top_card_of_your_library_action = {
     ^"ante" ~ ^"the" ~ ^"top" ~ ^"card" ~ ^"of" ~ ^"your" ~ ^"library"
 }
 draw_cards_action = { ^"draw" ~ draw_count ~ ^"cards" }
+
+each_player_performs_action = {
+    ^"each" ~ ^"player" ~ each_player_action ~ "."
+}
+each_player_action = _{ each_player_antes_top_card_of_their_library_action }
+each_player_antes_top_card_of_their_library_action = {
+    ^"antes" ~ ^"the" ~ ^"top" ~ ^"card" ~ ^"of" ~ ^"their" ~ ^"library"
+}
 
 until_eot_you_may_pay_cost_at_timing = {
     ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "," ~ action_timing

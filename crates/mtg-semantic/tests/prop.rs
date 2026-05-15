@@ -10,8 +10,8 @@
 // xtask runner to enable that feature for tier 2.
 
 use mtg_grammar::{
-    CardCount, Color, ImperativeAction, ManaCost, ManaSymbol, Statement, TriggerEffect,
-    TriggerEvent, TriggeredAbility, Zone,
+    CardCount, Color, EachPlayerAction, ImperativeAction, ManaCost, ManaSymbol, Statement,
+    TriggerEffect, TriggerEvent, TriggeredAbility, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -72,6 +72,9 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         Just(Statement::DestroyTargetCreature),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::AntePlayRestriction),
+        Just(Statement::EachPlayerPerformsAction {
+            action: EachPlayerAction::AnteTopCardOfTheirLibrary
+        }),
         Just(Statement::YouOwnTargetCardInZone { zone: Zone::Ante }),
         Just(Statement::ExchangeThatCardWithTopCardOfYourLibrary),
         (1u32..=10).prop_map(|amount| Statement::IfYouDoGainLife { amount }),

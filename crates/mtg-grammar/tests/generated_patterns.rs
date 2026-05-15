@@ -89,3 +89,5 @@ mod darkpact;
 mod death_ward;
 #[path = "generated_patterns/deathgrip.rs"]
 mod deathgrip;
+#[path = "generated_patterns/demonic_attorney.rs"]
+mod demonic_attorney;

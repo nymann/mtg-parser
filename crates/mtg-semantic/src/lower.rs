@@ -33,6 +33,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::ImperativeActionSequence { actions } => CardEffect::ImperativeActionSequence {
             actions: actions.clone(),
         },
+        Statement::EachPlayerPerformsAction { action } => {
+            CardEffect::EachPlayerPerformsAction { action: *action }
+        }
         Statement::UntilEndOfTurnYouMayPayCostAtTiming { timing, cost } => {
             CardEffect::UntilEndOfTurnYouMayPayCostAtTiming {
                 timing: *timing,

@@ -100,3 +100,5 @@ mod darkpact;
 mod death_ward;
 #[path = "generated/deathgrip.rs"]
 mod deathgrip;
+#[path = "generated/demonic_attorney.rs"]
+mod demonic_attorney;

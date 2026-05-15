@@ -5,11 +5,12 @@ use pest_derive::Parser;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
-    CreatureStatus, CreatureType, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf,
-    Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType,
-    PhysicalAction, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    CreatureStatus, CreatureType, EachPlayerAction, EnchantObject, EnchantedObject,
+    ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility, Step, TriggerEffect,
+    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -78,6 +79,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::target_permanent_gains_keyword_and_gets_eot => {
             target_permanent_gains_keyword_and_gets_eot_from_pair(pair)
         }
+        Rule::each_player_performs_action => each_player_performs_action_from_pair(pair),
         Rule::each_player_equalizes_controlled_permanents => {
             each_player_equalizes_controlled_permanents_from_pair(pair)
         }
@@ -244,6 +246,24 @@ fn imperative_action_from_pair(pair: Pair<Rule>) -> Result<ImperativeAction, Par
             })
         }
         _ => Err(ParseError::Internal("imperative action")),
+    }
+}
+
+fn each_player_performs_action_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let action_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "each_player_performs_action missing action",
+    ))?;
+    Ok(Statement::EachPlayerPerformsAction {
+        action: each_player_action_from_pair(action_pair)?,
+    })
+}
+
+fn each_player_action_from_pair(pair: Pair<Rule>) -> Result<EachPlayerAction, ParseError> {
+    match pair.as_rule() {
+        Rule::each_player_antes_top_card_of_their_library_action => {
+            Ok(EachPlayerAction::AnteTopCardOfTheirLibrary)
+        }
+        _ => Err(ParseError::Internal("each player action")),
     }
 }
 

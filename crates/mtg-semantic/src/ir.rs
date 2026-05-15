@@ -1,8 +1,8 @@
 use mtg_grammar::{
     ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Color,
-    ImperativeAction, Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType,
-    PhysicalAction, PtModifier, SourceObject, StaticAbility, TriggeredAbility, VariableDefinition,
-    Zone,
+    EachPlayerAction, ImperativeAction, Keyword, ManaCost, MixedPtModifier, ModalMode,
+    OptionalCost, PermanentType, PhysicalAction, PtModifier, SourceObject, StaticAbility,
+    TriggeredAbility, VariableDefinition, Zone,
 };
 use serde::{Deserialize, Serialize};
 
@@ -40,6 +40,8 @@ pub enum CardEffect {
     /// Ordered imperative actions such as "discard your hand, ante the
     /// top card of your library, then draw seven cards."
     ImperativeActionSequence { actions: Vec<ImperativeAction> },
+    /// "Each player <action>."
+    EachPlayerPerformsAction { action: EachPlayerAction },
     /// "Until end of turn, <timing>, you may <cost>."
     UntilEndOfTurnYouMayPayCostAtTiming {
         timing: ActionTiming,

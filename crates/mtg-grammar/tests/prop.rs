@@ -6,8 +6,8 @@
 // budget thanks to the trivial parser/unparser.
 
 use mtg_grammar::{
-    parse, unparse, CardCount, Color, ImperativeAction, ManaCost, ManaSymbol, Statement,
-    TriggerEffect, TriggerEvent, TriggeredAbility,
+    parse, unparse, CardCount, Color, EachPlayerAction, ImperativeAction, ManaCost, ManaSymbol,
+    Statement, TriggerEffect, TriggerEvent, TriggeredAbility,
 };
 use proptest::prelude::*;
 
@@ -68,6 +68,9 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         Just(Statement::DestroyTargetCreature),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::AntePlayRestriction),
+        Just(Statement::EachPlayerPerformsAction {
+            action: EachPlayerAction::AnteTopCardOfTheirLibrary
+        }),
         (1u32..=10).prop_map(|amount| Statement::IfYouDoGainLife { amount }),
         (arb_player_casts_colored_spell_pay_mana_trigger(), 1u32..=10,).prop_map(
             |(trigger, amount)| {

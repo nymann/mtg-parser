@@ -3,11 +3,12 @@ use std::fmt::Write;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
-    CreatureStatus, CreatureType, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf,
-    Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType,
-    PhysicalAction, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    CreatureStatus, CreatureType, EachPlayerAction, EnchantObject, EnchantedObject,
+    ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility, Step, TriggerEffect,
+    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -54,6 +55,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::ImperativeActionSequence { actions } => {
             write_imperative_action_sequence(out, actions);
+        }
+        Statement::EachPlayerPerformsAction { action } => {
+            out.push_str("Each player ");
+            write_each_player_action(out, *action);
+            out.push('.');
         }
         Statement::UntilEndOfTurnYouMayPayCostAtTiming { timing, cost } => {
             out.push_str("Until end of turn, ");
@@ -220,6 +226,14 @@ fn write_imperative_action(out: &mut String, action: ImperativeAction) {
             out.push_str("draw ");
             write_card_count(out, count);
             out.push_str(" cards");
+        }
+    }
+}
+
+fn write_each_player_action(out: &mut String, action: EachPlayerAction) {
+    match action {
+        EachPlayerAction::AnteTopCardOfTheirLibrary => {
+            out.push_str("antes the top card of their library");
         }
     }
 }
