@@ -449,10 +449,12 @@ pub enum StaticAbility {
     /// effect from an Aura to the object it enchants.
     YouControlEnchanted { object: EnchantedObject },
     /// "You may have this <source> enter as a copy of any
-    /// <permanent_type> on the battlefield."
+    /// <permanent_type> on the battlefield[, except it's a/an
+    /// <permanent_type> in addition to its other types]."
     YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield {
         source: SourceObject,
         permanent_type: PermanentType,
+        exception: Option<CopyException>,
     },
     /// "This effect doesn't remove this Aura." — effect-continuity text
     /// for Aura effects that otherwise might remove their own attachment.
@@ -481,6 +483,12 @@ pub enum StaticAbility {
     /// "Each creature in a pile that can block the creature that pile is
     /// assigned to does so."
     CreaturesInAssignedPileBlockIfAble,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CopyException {
+    /// "except it's a/an <permanent_type> in addition to its other types"
+    PermanentTypeInAdditionToItsOtherTypes { permanent_type: PermanentType },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

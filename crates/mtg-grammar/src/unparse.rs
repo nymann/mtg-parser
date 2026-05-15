@@ -2,12 +2,12 @@ use std::fmt::Write;
 
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
-    BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus,
-    CreatureType, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
-    Variable, VariableDefinition, VariablePtModifier, Zone,
+    BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
+    CreatureStatus, CreatureType, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf,
+    Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType,
+    PhysicalAction, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -535,12 +535,17 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
         StaticAbility::YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield {
             source,
             permanent_type,
+            exception,
         } => {
             out.push_str("You may have ");
             write_source_object(out, *source);
             out.push_str(" enter as a copy of any ");
             out.push_str(permanent_type_name(*permanent_type));
-            out.push_str(" on the battlefield.");
+            out.push_str(" on the battlefield");
+            if let Some(exception) = exception {
+                write_copy_exception(out, *exception);
+            }
+            out.push('.');
         }
         StaticAbility::EffectDoesntRemoveThisAura => {
             out.push_str("This effect doesn't remove this Aura.");
@@ -733,6 +738,18 @@ fn write_source_object_capitalized(out: &mut String, source: SourceObject) {
         SourceObject::This(pt) => {
             out.push_str("This ");
             out.push_str(permanent_type_name(pt));
+        }
+    }
+}
+
+fn write_copy_exception(out: &mut String, exception: CopyException) {
+    match exception {
+        CopyException::PermanentTypeInAdditionToItsOtherTypes { permanent_type } => {
+            out.push_str(", except it's ");
+            out.push_str(indefinite_article(permanent_type));
+            out.push(' ');
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str(" in addition to its other types");
         }
     }
 }

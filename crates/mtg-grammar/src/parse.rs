@@ -4,12 +4,12 @@ use pest_derive::Parser;
 
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
-    BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus,
-    CreatureType, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
-    Variable, VariableDefinition, VariablePtModifier, Zone,
+    BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
+    CreatureStatus, CreatureType, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf,
+    Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType,
+    PhysicalAction, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -979,10 +979,15 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             let permanent_type_pair = inner
                 .next()
                 .expect("copy replacement names copied permanent type");
+            let exception = inner
+                .next()
+                .map(copy_exception_from_pair)
+                .transpose()?;
             Ok(
                 StaticAbility::YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield {
                     source: source_object_from_pair(source_pair)?,
                     permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                    exception,
                 },
             )
         }
@@ -1031,6 +1036,20 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
         }
         _ => Err(ParseError::Internal("static_ability variant")),
     }
+}
+
+fn copy_exception_from_pair(pair: Pair<Rule>) -> Result<CopyException, ParseError> {
+    if pair.as_rule() != Rule::copy_exception {
+        return Err(ParseError::Internal("copy_exception"));
+    }
+
+    let permanent_type_pair = pair
+        .into_inner()
+        .next()
+        .expect("copy exception names added permanent type");
+    Ok(CopyException::PermanentTypeInAdditionToItsOtherTypes {
+        permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+    })
 }
 
 fn activated_ability_from_pair(pair: Pair<Rule>) -> Result<ActivatedAbility, ParseError> {

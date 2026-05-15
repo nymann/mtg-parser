@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 83,
+  "passing": 84,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -145,8 +145,7 @@
       "status": "pass"
     },
     "lea/Copy Artifact": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | You may have this enchantment enter as a copy of any artifact on the battlefield, except it's an enchantment in addition to its other types.\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Counterspell": {
       "status": "fail",
@@ -979,7 +978,7 @@
     },
     "lea/Vesuvan Doppelganger": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | You may have this creature enter as a copy of any creature on the battlefield, except it doesn't copy that creature's color and it has \"At the beginning of your upkeep, you may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability.\"\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:78\n  |\n1 | You may have this creature enter as a copy of any creature on the battlefield, except it doesn't copy that creature's color and it has \"At the beginning of your upkeep, you may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability.\"\n  |                                                                              ^---\n  |\n  = expected copy_exception"
     },
     "lea/Veteran Bodyguard": {
       "status": "fail",

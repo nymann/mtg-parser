@@ -322,7 +322,12 @@ static_you_control_enchanted = {
 static_you_may_have_source_enter_as_copy = {
     ^"you" ~ ^"may" ~ ^"have" ~ source_object ~ ^"enter"
   ~ ^"as" ~ article ~ ^"copy" ~ ^"of" ~ ^"any" ~ permanent_type
-  ~ ^"on" ~ ^"the" ~ ^"battlefield" ~ "."
+  ~ ^"on" ~ ^"the" ~ ^"battlefield" ~ copy_exception? ~ "."
+}
+
+copy_exception = {
+    "," ~ ^"except" ~ ^"it's" ~ article ~ permanent_type
+  ~ ^"in" ~ ^"addition" ~ ^"to" ~ ^"its" ~ ^"other" ~ ^"types"
 }
 
 static_effect_doesnt_remove_this_aura = {

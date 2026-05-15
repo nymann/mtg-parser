@@ -80,3 +80,5 @@ mod control_magic;
 mod conversion;
 #[path = "generated/copper_tablet.rs"]
 mod copper_tablet;
+#[path = "generated/copy_artifact.rs"]
+mod copy_artifact;
