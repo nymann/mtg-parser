@@ -19,11 +19,12 @@ pub enum Statement {
         event: NamedDamageEvent,
     },
     /// Damage prevention effect whose replacement event is "prevent
-    /// <amount> [combat] damage that would be dealt" and whose duration
-    /// is "this turn".
+    /// <amount> [combat] damage that would be dealt" or "prevent
+    /// <amount> of that damage".
     PreventDamageThisTurn {
         #[serde(flatten)]
         effect: DamagePreventionEffect<PreventionRecipient>,
+        definitions: Vec<VariableDefinition>,
     },
     /// "Spend only <color> mana on X."
     SpendOnlyColorManaOnVariable {
@@ -348,7 +349,10 @@ impl Statement {
     pub(crate) fn damage_prevention_effect(
         effect: DamagePreventionEffect<PreventionRecipient>,
     ) -> Self {
-        Statement::PreventDamageThisTurn { effect }
+        Statement::PreventDamageThisTurn {
+            effect,
+            definitions: Vec::new(),
+        }
     }
 }
 
@@ -360,9 +364,10 @@ impl<R> DamagePreventionEffect<R> {
     ) -> Self {
         Self {
             amount,
+            event: DamagePreventionEvent::ThatWouldBeDealt,
             kind,
             recipient,
-            duration: DamagePreventionDuration::ThisTurn,
+            duration: Some(DamagePreventionDuration::ThisTurn),
         }
     }
 }
@@ -449,6 +454,8 @@ pub enum DamageRecipient {
     EachCreatureWithoutKeyword { keyword: Keyword },
     /// "each player"
     EachPlayer,
+    /// "that player"
+    ThatPlayer,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -481,14 +488,18 @@ pub struct DamagePrevention<R, A = DamageAmount> {
 /// created, plus the context-specific recipient and duration axes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DamagePreventionEffect<R = PreventionRecipient> {
-    /// The prevented replacement event's amount axis: "all" or "the next N".
+    /// The prevented replacement event's amount axis: "all", "the next N",
+    /// or "N of".
     pub amount: DamagePreventionAmount,
+    /// The prevented replacement event, such as "damage that would be dealt"
+    /// or "that damage".
+    pub event: DamagePreventionEvent,
     /// The prevented replacement event's optional damage kind, such as "combat".
     pub kind: Option<DamageKind>,
     /// The optional object or player the prevented damage would be dealt to.
     pub recipient: Option<R>,
-    /// The effect's printed duration.
-    pub duration: DamagePreventionDuration,
+    /// The effect's printed duration, when present.
+    pub duration: Option<DamagePreventionDuration>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -497,6 +508,16 @@ pub enum DamagePreventionAmount {
     All,
     /// "the next N"
     Next(DamageAmount),
+    /// "N of"
+    Amount(DamageAmount),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamagePreventionEvent {
+    /// "[combat] damage that would be dealt"
+    ThatWouldBeDealt,
+    /// "that damage"
+    OfThatDamage,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -511,6 +532,22 @@ pub enum PreventionRecipient {
     AnyTarget,
     /// "that permanent or player"
     ThatPermanentOrPlayer,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PayManaPlayer {
+    /// "you"
+    You,
+    /// "that player"
+    ThatPlayer,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PayManaAmount {
+    /// "<mana_cost>"
+    Cost(ManaCost),
+    /// "any amount of mana"
+    AnyAmountOfMana,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -803,8 +840,17 @@ pub enum TriggerEffect {
         player: LifeLossPlayer,
         amount: LifeLossAmount,
     },
-    /// "you may pay <mana_cost>"
-    YouMayPayMana { cost: ManaCost },
+    /// "<player> may pay <mana_cost/any amount of mana>"
+    YouMayPayMana {
+        player: PayManaPlayer,
+        amount: PayManaAmount,
+    },
+    /// "Prevent <amount> of that damage[, where ...]"
+    PreventDamage {
+        #[serde(flatten)]
+        effect: DamagePreventionEffect<PreventionRecipient>,
+        definitions: Vec<VariableDefinition>,
+    },
     /// "tap enchanted <object>"
     TapEnchanted(EnchantedObject),
     /// "you may put this card onto the battlefield"
@@ -1713,6 +1759,8 @@ pub enum ValueExpression {
     ItsPower,
     /// "the number of cards in their hand minus <N>"
     NumberOfCardsInTheirHandMinus { amount: u32 },
+    /// "the amount of mana that player paid this way"
+    AmountOfManaThatPlayerPaidThisWay,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

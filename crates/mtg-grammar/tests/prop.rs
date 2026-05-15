@@ -9,11 +9,12 @@ use mtg_grammar::{
     parse, unparse, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageRecipient, ActivatedEffect, BasicLandType, CardCount, Color, DamageAmount,
     DamageAssignment, DamageEvent, DamageKind, DamageLifeGainCap, DamagePreventionAmount,
-    DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
-    DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
-    ManaCost, ManaSymbol, ModalMode, PermanentType, PreventionRecipient, PtModifier, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
+    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
+    DamageRecipients, DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction,
+    InterveningIf, Keyword, ManaCost, ManaSymbol, ModalMode, PayManaAmount, PayManaPlayer,
+    PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent,
+    TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -153,9 +154,10 @@ fn arb_modal_mode() -> impl Strategy<Value = ModalMode> {
             ModalMode::PreventDamageThisTurn {
                 effect: DamagePreventionEffect {
                     amount: DamagePreventionAmount::Next(amount),
+                    event: DamagePreventionEvent::ThatWouldBeDealt,
                     kind: None,
                     recipient: Some(recipient),
-                    duration: DamagePreventionDuration::ThisTurn,
+                    duration: Some(DamagePreventionDuration::ThisTurn),
                 },
             }
         }),
@@ -188,7 +190,10 @@ fn arb_player_casts_colored_spell_pay_mana_trigger() -> impl Strategy<Value = St
         Statement::TriggeredAbility(TriggeredAbility {
             event: TriggerEvent::PlayerCastsColoredSpell { color },
             intervening_if: None,
-            effects: vec![TriggerEffect::YouMayPayMana { cost }],
+            effects: vec![TriggerEffect::YouMayPayMana {
+                player: PayManaPlayer::You,
+                amount: PayManaAmount::Cost(cost),
+            }],
         })
     })
 }
@@ -199,7 +204,10 @@ fn arb_player_casts_colored_spell_pay_mana_gain_life_trigger() -> impl Strategy<
             event: TriggerEvent::PlayerCastsColoredSpell { color },
             intervening_if: None,
             effects: vec![
-                TriggerEffect::YouMayPayMana { cost },
+                TriggerEffect::YouMayPayMana {
+                    player: PayManaPlayer::You,
+                    amount: PayManaAmount::Cost(cost),
+                },
                 TriggerEffect::IfYouDoGainLife { amount },
             ],
         })
@@ -214,7 +222,10 @@ fn arb_enchanted_land_has_upkeep_pay_mana_gain_life() -> impl Strategy<Value = S
                 event: TriggerEvent::BeginningOfYourUpkeep,
                 intervening_if: None,
                 effects: vec![
-                    TriggerEffect::YouMayPayMana { cost },
+                    TriggerEffect::YouMayPayMana {
+                        player: PayManaPlayer::You,
+                        amount: PayManaAmount::Cost(cost),
+                    },
                     TriggerEffect::IfYouDoGainLife { amount },
                 ],
             },
@@ -312,10 +323,12 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         Just(Statement::PreventDamageThisTurn {
             effect: DamagePreventionEffect {
                 amount: DamagePreventionAmount::All,
+                event: DamagePreventionEvent::ThatWouldBeDealt,
                 kind: Some(DamageKind::CombatDamage),
                 recipient: None,
-                duration: DamagePreventionDuration::ThisTurn,
+                duration: Some(DamagePreventionDuration::ThisTurn),
             },
+            definitions: Vec::new(),
         }),
         (arb_color(), arb_variable()).prop_map(|(color, variable)| {
             Statement::SpendOnlyColorManaOnVariable { color, variable }

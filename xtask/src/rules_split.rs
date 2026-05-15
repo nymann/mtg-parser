@@ -749,11 +749,11 @@ fn slugify(s: &str) -> String {
         if c.is_ascii_alphanumeric() {
             out.push(c.to_ascii_lowercase());
             last_was_dash = false;
-        } else if c.is_whitespace() || matches!(c, '-' | '_' | '/' | ',' | '.' | ':' | ';') {
-            if !last_was_dash {
-                out.push('-');
-                last_was_dash = true;
-            }
+        } else if (c.is_whitespace() || matches!(c, '-' | '_' | '/' | ',' | '.' | ':' | ';'))
+            && !last_was_dash
+        {
+            out.push('-');
+            last_was_dash = true;
         }
         // Other characters (apostrophes, quotes, parentheses) are dropped.
     }

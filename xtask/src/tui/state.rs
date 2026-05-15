@@ -928,6 +928,18 @@ pub struct HistoryEntry {
     pub path: std::path::PathBuf,
 }
 
+/// Helper used by the view to format a tool_use one-liner with file
+/// paths shortened to repo-relative form.
+pub fn format_tool_target(target: &ToolUseTarget, repo_root: &std::path::Path) -> String {
+    match target {
+        ToolUseTarget::File(p) => agent_events::relativize(p, repo_root),
+        ToolUseTarget::Command(c) => format!("$ {}", agent_events::trim_to(c, 160)),
+        ToolUseTarget::Pattern(p) => format!("/{p}/"),
+        ToolUseTarget::Description(d) => agent_events::trim_to(d, 160),
+        ToolUseTarget::None => String::new(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1009,17 +1021,5 @@ mod tests {
                 .count(),
             1
         );
-    }
-}
-
-/// Helper used by the view to format a tool_use one-liner with file
-/// paths shortened to repo-relative form.
-pub fn format_tool_target(target: &ToolUseTarget, repo_root: &std::path::Path) -> String {
-    match target {
-        ToolUseTarget::File(p) => agent_events::relativize(p, repo_root),
-        ToolUseTarget::Command(c) => format!("$ {}", agent_events::trim_to(c, 160)),
-        ToolUseTarget::Pattern(p) => format!("/{p}/"),
-        ToolUseTarget::Description(d) => agent_events::trim_to(d, 160),
-        ToolUseTarget::None => String::new(),
     }
 }

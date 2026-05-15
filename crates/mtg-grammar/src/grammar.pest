@@ -232,10 +232,14 @@ damage_event_divided_evenly_rounded_down_among_any_number_of_targets = {
   ~ ^"among" ~ ^"any" ~ ^"number" ~ ^"of" ~ ^"targets"
 }
 damage_event_recipient_list = {
-    ^"to" ~ damage_recipient ~ (^"and" ~ damage_recipient)+
+    ^"to" ~ damage_recipient ~ (^"and" ~ damage_recipient)*
 }
 damage_prevention_effect = {
-    damage_prevention_effect_this_turn
+    damage_prevention_effect_sentence
+}
+damage_prevention_effect_sentence = {
+    damage_prevention_replacement_effect ~ damage_prevention_duration_fragment?
+  ~ damage_prevention_variable_definition? ~ "."
 }
 damage_prevention_effect_this_turn = {
     damage_prevention_replacement_effect ~ damage_prevention_duration
@@ -248,18 +252,29 @@ damage_prevention_replacement_effect = _{
     damage_prevention_replacement_event ~ damage_prevention_recipient_clause?
 }
 damage_prevention_replacement_event = _{
-    ^"prevent" ~ damage_prevention_amount_axis ~ damage_kind? ~ ^"damage"
-  ~ damage_prevention_event
+    ^"prevent" ~ damage_prevention_amount_axis ~ damage_prevention_event
 }
-damage_prevention_amount_axis = { damage_prevention_all_amount | damage_prevention_next_amount }
+damage_prevention_amount_axis = {
+    damage_prevention_all_amount
+  | damage_prevention_next_amount
+  | damage_prevention_of_amount
+}
 damage_prevention_all_amount = { ^"all" }
 damage_prevention_next_amount = { ^"the" ~ ^"next" ~ damage_prevention_amount }
-damage_prevention_event = _{
-    ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"
+damage_prevention_of_amount = { damage_prevention_amount ~ ^"of" }
+damage_prevention_event = {
+    damage_prevention_that_would_be_dealt
+  | damage_prevention_of_that_damage
 }
+damage_prevention_that_would_be_dealt = {
+    damage_kind? ~ ^"damage" ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"
+}
+damage_prevention_of_that_damage = { ^"that" ~ ^"damage" }
 damage_prevention_recipient_clause = { ^"to" ~ prevention_recipient }
 damage_prevention_duration = _{ this_turn_period }
+damage_prevention_duration_fragment = { ^"this" ~ ^"turn" }
 this_turn_period = _{ ^"this" ~ ^"turn" ~ "." }
+damage_prevention_variable_definition = { "," ~ where_clause }
 damage_prevention_amount = _{ damage_amount_expression }
 prevention_recipient = _{ any_target_prevention_recipient | that_permanent_or_player_prevention_recipient }
 any_target_prevention_recipient = { ^"any" ~ ^"target" }
@@ -269,6 +284,7 @@ damage_recipient = {
   | each_creature_without_keyword
   | each_creature_damage_recipient
   | each_player_damage_recipient
+  | that_player_damage_recipient
 }
 each_creature_damage_recipient = { ^"each" ~ ^"creature" }
 each_creature_with_keyword = { ^"each" ~ ^"creature" ~ ^"with" ~ keyword }
@@ -1140,6 +1156,7 @@ variable_definition  = { variable_name ~ ^"is" ~ value_expression }
 value_expression     = _{
     half_number_of_basic_lands_you_control
   | number_of_cards_in_their_hand_minus
+  | amount_of_mana_that_player_paid_this_way
   | its_power
 }
 half_number_of_basic_lands_you_control = {
@@ -1149,6 +1166,10 @@ half_number_of_basic_lands_you_control = {
 number_of_cards_in_their_hand_minus = {
     ^"the" ~ ^"number" ~ ^"of" ~ ^"cards" ~ ^"in" ~ ^"their"
   ~ ^"hand" ~ ^"minus" ~ unsigned_number
+}
+amount_of_mana_that_player_paid_this_way = {
+    ^"the" ~ ^"amount" ~ ^"of" ~ ^"mana" ~ ^"that" ~ ^"player"
+  ~ ^"paid" ~ ^"this" ~ ^"way"
 }
 its_power = { ^"its" ~ ^"power" }
 unsigned_number = @{ ASCII_DIGIT+ }
@@ -1328,6 +1349,7 @@ trigger_effect = _{
   | unless_you_pay_mana_do_actions
   | you_may_put_this_card_onto_the_battlefield
   | player_may_pay_mana
+  | damage_prevention_effect_sentence
   | tap_enchanted_object
   | if_you_do_gain_life
   | sacrifice_source_effect
@@ -1467,7 +1489,14 @@ you_lose_the_game = { ^"you" ~ ^"lose" ~ ^"the" ~ ^"game" ~ "." }
 
 you_gain_life = { ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "." }
 
-player_may_pay_mana = { (^"you" | (^"that" ~ ^"player")) ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
+player_may_pay_mana = {
+    pay_mana_player ~ ^"may" ~ ^"pay" ~ pay_mana_amount ~ "."
+}
+pay_mana_player = _{ you_pay_mana_player | that_player_pay_mana_player }
+you_pay_mana_player = { ^"you" }
+that_player_pay_mana_player = { ^"that" ~ ^"player" }
+pay_mana_amount = _{ any_amount_of_mana | mana_cost }
+any_amount_of_mana = { ^"any" ~ ^"amount" ~ ^"of" ~ ^"mana" }
 you_may_pay_mana = _{ player_may_pay_mana }
 tap_enchanted_object = { ^"tap" ~ ^"enchanted" ~ enchanted_object ~ "." }
 you_may_put_this_card_onto_the_battlefield = {

@@ -194,16 +194,14 @@ fn render_diagnostics(search: &RulesSearch) -> String {
 
 fn truncate_lines(text: &str, max: usize) -> String {
     let mut out = String::with_capacity(text.len().min(max * 80));
-    let mut taken = 0;
     let mut had_more = false;
-    for line in text.lines() {
+    for (taken, line) in text.lines().enumerate() {
         if taken >= max {
             had_more = true;
             break;
         }
         out.push_str(line);
         out.push('\n');
-        taken += 1;
     }
     // Drop trailing newline.
     if out.ends_with('\n') {

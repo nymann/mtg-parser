@@ -112,7 +112,7 @@ fn parse_rust_string_literal(input: &str) -> Result<String> {
     }
     let mut out = String::new();
     let mut escaped = false;
-    while let Some(ch) = chars.next() {
+    for ch in chars {
         if escaped {
             match ch {
                 'n' => out.push('\n'),

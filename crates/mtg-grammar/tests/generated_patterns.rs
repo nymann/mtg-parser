@@ -269,3 +269,5 @@ mod phantasmal_terrain;
 mod pirate_ship;
 #[path = "generated_patterns/plague_rats.rs"]
 mod plague_rats;
+#[path = "generated_patterns/power_leak.rs"]
+mod power_leak;

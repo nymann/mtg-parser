@@ -258,11 +258,9 @@ fn handle_history_key(key: KeyEvent, state: &mut AppState) -> Action {
         KeyCode::Up | KeyCode::Char('k') => {
             state.history.selected = state.history.selected.saturating_sub(1);
         }
-        KeyCode::Down | KeyCode::Char('j') => {
-            if !state.history.entries.is_empty() {
-                state.history.selected =
-                    (state.history.selected + 1).min(state.history.entries.len() - 1);
-            }
+        KeyCode::Down | KeyCode::Char('j') if !state.history.entries.is_empty() => {
+            state.history.selected =
+                (state.history.selected + 1).min(state.history.entries.len() - 1);
         }
         KeyCode::Enter => {
             if let Some(entry) = state.history.entries.get(state.history.selected).cloned() {

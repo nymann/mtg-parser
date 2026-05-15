@@ -9,13 +9,14 @@ use crate::ast::{
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
     ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageAssignment,
     DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap, DamagePreventionAmount,
-    DamagePreventionEffect, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
+    DamageRecipients, DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject,
+    EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController,
+    LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
+    OptionalCost, PayManaAmount, PayManaPlayer, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -839,6 +840,7 @@ fn damage_recipient_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient, Parse
             })
         }
         Rule::each_player_damage_recipient => Ok(DamageRecipient::EachPlayer),
+        Rule::that_player_damage_recipient => Ok(DamageRecipient::ThatPlayer),
         _ => Err(ParseError::Internal("damage recipient")),
     }
 }
@@ -1008,8 +1010,57 @@ fn until_eot_you_may_pay_cost_at_timing_from_pair(
 }
 
 fn damage_prevention_effect_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let effect = damage_prevention_effect_from_pair(pair)?;
-    Ok(Statement::damage_prevention_effect(effect))
+    let inner = only_inner(pair, "damage prevention effect missing inner rule")?;
+    match inner.as_rule() {
+        Rule::damage_prevention_effect_sentence => {
+            let (effect, definitions) = damage_prevention_effect_sentence_from_pair(inner)?;
+            Ok(Statement::PreventDamageThisTurn {
+                effect,
+                definitions,
+            })
+        }
+        Rule::damage_prevention_effect_this_turn => {
+            let effect = damage_prevention_effect_from_this_turn_pair(inner)?;
+            Ok(Statement::damage_prevention_effect(effect))
+        }
+        _ => Err(ParseError::Internal("damage prevention effect")),
+    }
+}
+
+fn damage_prevention_effect_sentence_from_pair(
+    pair: Pair<Rule>,
+) -> Result<
+    (
+        DamagePreventionEffect<PreventionRecipient>,
+        Vec<VariableDefinition>,
+    ),
+    ParseError,
+> {
+    let mut effect = damage_prevention_effect_from_this_turn_pair_with_recipient(
+        pair.clone(),
+        Rule::damage_prevention_recipient_clause,
+        |recipient_pair| {
+            prevention_recipient_from_pair(only_inner(
+                recipient_pair,
+                "damage prevention missing recipient",
+            )?)
+        },
+        "damage prevention child",
+    )?;
+    let mut definitions = Vec::new();
+    let mut has_duration = false;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::damage_prevention_duration_fragment => has_duration = true,
+            Rule::damage_prevention_variable_definition => {
+                let where_pair = only_inner(child, "damage prevention missing where clause")?;
+                definitions = where_clause_from_pair(where_pair)?;
+            }
+            _ => {}
+        }
+    }
+    effect.duration = has_duration.then_some(DamagePreventionDuration::ThisTurn);
+    Ok((effect, definitions))
 }
 
 fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
@@ -1059,6 +1110,7 @@ fn damage_prevention_effect_from_this_turn_pair_with_recipient<R>(
     unexpected_child_context: &'static str,
 ) -> Result<DamagePreventionEffect<R>, ParseError> {
     let mut amount = None;
+    let mut event = None;
     let mut kind = None;
     let mut recipient = None;
     for child in pair.into_inner() {
@@ -1066,10 +1118,10 @@ fn damage_prevention_effect_from_this_turn_pair_with_recipient<R>(
             Rule::damage_prevention_amount_axis => {
                 amount = Some(damage_prevention_amount_axis_from_pair(child)?);
             }
-            Rule::damage_prevention_next_amount => {
-                amount = Some(DamagePreventionAmount::Next(
-                    damage_prevention_next_amount_from_pair(child)?,
-                ));
+            Rule::damage_prevention_event => {
+                let (parsed_event, parsed_kind) = damage_prevention_event_from_pair(child)?;
+                event = Some(parsed_event);
+                kind = parsed_kind;
             }
             Rule::damage_kind => {
                 kind = Some(damage_kind_from_pair(child)?);
@@ -1077,26 +1129,18 @@ fn damage_prevention_effect_from_this_turn_pair_with_recipient<R>(
             rule if rule == recipient_rule => {
                 recipient = Some(recipient_from_pair(child)?);
             }
+            Rule::damage_prevention_duration_fragment
+            | Rule::damage_prevention_variable_definition => {}
             _ => return Err(ParseError::Internal(unexpected_child_context)),
         }
     }
-    Ok(DamagePreventionEffect::this_turn(
+    let mut effect = DamagePreventionEffect::this_turn(
         amount.ok_or(ParseError::Internal("damage prevention missing amount"))?,
         kind,
         recipient,
-    ))
-}
-
-fn damage_prevention_effect_from_pair(
-    pair: Pair<Rule>,
-) -> Result<DamagePreventionEffect<PreventionRecipient>, ParseError> {
-    let inner = only_inner(pair, "damage prevention effect missing inner rule")?;
-    match inner.as_rule() {
-        Rule::damage_prevention_effect_this_turn => {
-            damage_prevention_effect_from_this_turn_pair(inner)
-        }
-        _ => Err(ParseError::Internal("damage prevention effect")),
-    }
+    );
+    effect.event = event.ok_or(ParseError::Internal("damage prevention missing event"))?;
+    Ok(effect)
 }
 
 fn damage_prevention_amount_axis_from_pair(
@@ -1108,6 +1152,9 @@ fn damage_prevention_amount_axis_from_pair(
         Rule::damage_prevention_next_amount => Ok(DamagePreventionAmount::Next(
             damage_prevention_next_amount_from_pair(inner)?,
         )),
+        Rule::damage_prevention_of_amount => Ok(DamagePreventionAmount::Amount(
+            damage_prevention_next_amount_from_pair(inner)?,
+        )),
         _ => Err(ParseError::Internal("damage prevention amount")),
     }
 }
@@ -1115,6 +1162,24 @@ fn damage_prevention_amount_axis_from_pair(
 fn damage_prevention_next_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
     let amount_pair = only_inner(pair, "damage prevention next amount missing amount")?;
     damage_amount_from_pair(amount_pair)
+}
+
+fn damage_prevention_event_from_pair(
+    pair: Pair<Rule>,
+) -> Result<(DamagePreventionEvent, Option<DamageKind>), ParseError> {
+    let inner = only_inner(pair, "damage prevention event missing inner rule")?;
+    match inner.as_rule() {
+        Rule::damage_prevention_that_would_be_dealt => {
+            let kind = inner
+                .into_inner()
+                .next()
+                .map(damage_kind_from_pair)
+                .transpose()?;
+            Ok((DamagePreventionEvent::ThatWouldBeDealt, kind))
+        }
+        Rule::damage_prevention_of_that_damage => Ok((DamagePreventionEvent::OfThatDamage, None)),
+        _ => Err(ParseError::Internal("damage prevention event")),
+    }
 }
 
 fn damage_kind_from_pair(pair: Pair<Rule>) -> Result<DamageKind, ParseError> {
@@ -1570,6 +1635,13 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         Rule::you_lose_the_game => Ok(TriggerEffect::YouLoseTheGame),
         Rule::you_gain_life => you_gain_life_from_pair(pair),
         Rule::you_may_pay_mana | Rule::player_may_pay_mana => you_may_pay_mana_from_pair(pair),
+        Rule::damage_prevention_effect_sentence => {
+            let (effect, definitions) = damage_prevention_effect_sentence_from_pair(pair)?;
+            Ok(TriggerEffect::PreventDamage {
+                effect,
+                definitions,
+            })
+        }
         Rule::tap_enchanted_object => tap_enchanted_object_from_pair(pair),
         Rule::you_may_put_this_card_onto_the_battlefield => {
             Ok(TriggerEffect::YouMayPutThisCardOntoTheBattlefield)
@@ -1956,13 +2028,33 @@ fn sacrifice_permanent_other_than_source_from_pair(
 }
 
 fn you_may_pay_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
-    let cost_pair = pair
-        .into_inner()
+    let mut inner = pair.into_inner();
+    let player_pair = inner
         .next()
-        .ok_or(ParseError::Internal("you_may_pay_mana missing cost"))?;
+        .ok_or(ParseError::Internal("you_may_pay_mana missing player"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("you_may_pay_mana missing amount"))?;
     Ok(TriggerEffect::YouMayPayMana {
-        cost: mana_cost_from_pair(cost_pair),
+        player: pay_mana_player_from_pair(player_pair)?,
+        amount: pay_mana_amount_from_pair(amount_pair)?,
     })
+}
+
+fn pay_mana_player_from_pair(pair: Pair<Rule>) -> Result<PayManaPlayer, ParseError> {
+    match pair.as_rule() {
+        Rule::you_pay_mana_player => Ok(PayManaPlayer::You),
+        Rule::that_player_pay_mana_player => Ok(PayManaPlayer::ThatPlayer),
+        _ => Err(ParseError::Internal("pay mana player")),
+    }
+}
+
+fn pay_mana_amount_from_pair(pair: Pair<Rule>) -> Result<PayManaAmount, ParseError> {
+    match pair.as_rule() {
+        Rule::mana_cost => Ok(PayManaAmount::Cost(mana_cost_from_pair(pair))),
+        Rule::any_amount_of_mana => Ok(PayManaAmount::AnyAmountOfMana),
+        _ => Err(ParseError::Internal("pay mana amount")),
+    }
 }
 
 fn tap_enchanted_object_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
@@ -2233,7 +2325,7 @@ fn activated_damage_assignments_from_pair(
         .into_inner()
         .map(|recipient_pair| {
             Ok(DamageAssignment {
-                amount: amount.clone(),
+                amount,
                 recipient: activated_damage_recipient_from_pair(recipient_pair)?,
             })
         })
@@ -3731,6 +3823,9 @@ fn value_expression_from_pair(pair: Pair<Rule>) -> Result<ValueExpression, Parse
                 .parse::<u32>()
                 .map_err(|_| ParseError::Internal("number-of-cards subtraction amount"))?;
             Ok(ValueExpression::NumberOfCardsInTheirHandMinus { amount })
+        }
+        Rule::amount_of_mana_that_player_paid_this_way => {
+            Ok(ValueExpression::AmountOfManaThatPlayerPaidThisWay)
         }
         _ => Err(ParseError::Internal("value_expression")),
     }

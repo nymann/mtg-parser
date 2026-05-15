@@ -833,7 +833,7 @@ fn create_log_dir(theme: Theme, iteration: u32) -> Result<PathBuf> {
 fn build_inventory(opts: &Options, selected: &SelectedRefactor) -> Result<String> {
     let target_files = &selected.files;
     let stats = render_hotspot_stats(opts.churn_window)?;
-    let snippets = render_code_snippets(&target_files)?;
+    let snippets = render_code_snippets(target_files)?;
     let grammar_rules = render_grammar_rule_inventory()?;
 
     Ok(format!(

@@ -7,14 +7,14 @@ use crate::ast::{
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
     ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageKind,
     DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
-    DamageRecipient, DamageRecipients, DamageRedirectionDestination, DestroyTarget,
-    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
-    InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer, ManaCost,
-    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
+    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -39,7 +39,10 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::NamedSourceDealsDamage { event } => {
             write_named_damage_event(out, event);
         }
-        Statement::PreventDamageThisTurn { effect } => write_damage_prevention_effect(out, *effect),
+        Statement::PreventDamageThisTurn {
+            effect,
+            definitions,
+        } => write_damage_prevention_effect_statement(out, *effect, definitions),
         Statement::SpendOnlyColorManaOnVariable { color, variable } => {
             out.push_str("Spend only ");
             out.push_str(color_name(*color));
@@ -499,6 +502,7 @@ fn write_damage_recipient(out: &mut String, recipient: DamageRecipient) {
             write_keyword(out, keyword);
         }
         DamageRecipient::EachPlayer => out.push_str("each player"),
+        DamageRecipient::ThatPlayer => out.push_str("that player"),
     }
 }
 
@@ -790,6 +794,24 @@ fn write_damage_prevention_effect(
     write_damage_prevention_effect_with_prefix(out, effect, "Prevent ", write_prevention_recipient);
 }
 
+fn write_damage_prevention_effect_statement(
+    out: &mut String,
+    effect: DamagePreventionEffect<PreventionRecipient>,
+    definitions: &[VariableDefinition],
+) {
+    write_damage_prevention_effect_without_period(
+        out,
+        effect,
+        "Prevent ",
+        write_prevention_recipient,
+    );
+    if !definitions.is_empty() {
+        out.push_str(", where ");
+        write_variable_definitions(out, definitions);
+    }
+    out.push('.');
+}
+
 fn write_damage_prevention_effect_lowercase(
     out: &mut String,
     effect: DamagePreventionEffect<PreventionRecipient>,
@@ -801,9 +823,25 @@ fn write_damage_prevention_effect_with_prefix<R: Copy>(
     out: &mut String,
     effect: DamagePreventionEffect<R>,
     prevention_verb: &str,
+    write_recipient: impl FnMut(&mut String, R),
+) {
+    write_damage_prevention_effect_without_period(out, effect, prevention_verb, write_recipient);
+    out.push('.');
+}
+
+fn write_damage_prevention_effect_without_period<R: Copy>(
+    out: &mut String,
+    effect: DamagePreventionEffect<R>,
+    prevention_verb: &str,
     mut write_recipient: impl FnMut(&mut String, R),
 ) {
-    write_damage_prevention_replacement_event(out, prevention_verb, effect.amount, effect.kind);
+    write_damage_prevention_replacement_event(
+        out,
+        prevention_verb,
+        effect.amount,
+        effect.event,
+        effect.kind,
+    );
     if let Some(recipient) = effect.recipient {
         out.push_str(" to ");
         write_recipient(out, recipient);
@@ -811,9 +849,10 @@ fn write_damage_prevention_effect_with_prefix<R: Copy>(
     write_damage_prevention_duration(out, effect.duration);
 }
 
-fn write_damage_prevention_duration(out: &mut String, duration: DamagePreventionDuration) {
+fn write_damage_prevention_duration(out: &mut String, duration: Option<DamagePreventionDuration>) {
     match duration {
-        DamagePreventionDuration::ThisTurn => out.push_str(" this turn."),
+        Some(DamagePreventionDuration::ThisTurn) => out.push_str(" this turn"),
+        None => {}
     }
 }
 
@@ -821,6 +860,7 @@ fn write_damage_prevention_replacement_event(
     out: &mut String,
     prevention_verb: &str,
     amount: DamagePreventionAmount,
+    event: DamagePreventionEvent,
     kind: Option<DamageKind>,
 ) {
     out.push_str(prevention_verb);
@@ -831,11 +871,20 @@ fn write_damage_prevention_replacement_event(
             write_damage_amount(out, amount);
             out.push(' ');
         }
+        DamagePreventionAmount::Amount(amount) => {
+            write_damage_amount(out, amount);
+            out.push_str(" of ");
+        }
     }
-    if let Some(kind) = kind {
-        write_damage_kind_prefix(out, kind);
+    match event {
+        DamagePreventionEvent::ThatWouldBeDealt => {
+            if let Some(kind) = kind {
+                write_damage_kind_prefix(out, kind);
+            }
+            out.push_str("damage that would be dealt");
+        }
+        DamagePreventionEvent::OfThatDamage => out.push_str("that damage"),
     }
-    out.push_str("damage that would be dealt");
 }
 
 fn write_damage_kind_prefix(out: &mut String, kind: DamageKind) {
@@ -866,6 +915,20 @@ fn write_prevention_recipient(out: &mut String, recipient: PreventionRecipient) 
     match recipient {
         PreventionRecipient::AnyTarget => out.push_str("any target"),
         PreventionRecipient::ThatPermanentOrPlayer => out.push_str("that permanent or player"),
+    }
+}
+
+fn write_pay_mana_player(out: &mut String, player: PayManaPlayer) {
+    match player {
+        PayManaPlayer::You => out.push_str("you"),
+        PayManaPlayer::ThatPlayer => out.push_str("that player"),
+    }
+}
+
+fn write_pay_mana_amount(out: &mut String, amount: &PayManaAmount) {
+    match amount {
+        PayManaAmount::Cost(cost) => write_mana_cost(out, cost),
+        PayManaAmount::AnyAmountOfMana => out.push_str("any amount of mana"),
     }
 }
 
@@ -1604,7 +1667,15 @@ fn write_trigger_effect_sequence(out: &mut String, effects: &[TriggerEffect]) {
                 out.push(' ');
             }
         }
-        write_trigger_effect(out, eff, i + 1 == effects.len());
+        let next_starts_sentence = effects
+            .get(i + 1)
+            .is_some_and(|next| matches!(next, TriggerEffect::PreventDamage { .. }));
+        write_trigger_effect(
+            out,
+            eff,
+            i + 1 == effects.len() || next_starts_sentence,
+            i > 0,
+        );
     }
 }
 
@@ -1780,7 +1851,12 @@ fn write_intervening_if(out: &mut String, iif: InterveningIf) {
     }
 }
 
-fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
+fn write_trigger_effect(
+    out: &mut String,
+    eff: &TriggerEffect,
+    terminal: bool,
+    starts_sentence: bool,
+) {
     match eff {
         TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn => {
             out.push_str("destroy that creature if it attacked this turn.");
@@ -1795,7 +1871,7 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str("that creature's controller sacrifices it.");
         }
         TriggerEffect::SourceDealsDamage(damage) => {
-            write_triggered_damage(out, damage, terminal);
+            write_triggered_damage(out, damage, terminal, starts_sentence);
         }
         TriggerEffect::ThatPlayerDrawsAnAdditionalCard => {
             out.push_str("that player draws an additional card.");
@@ -1910,10 +1986,17 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             }
             out.push('.');
         }
-        TriggerEffect::YouMayPayMana { cost } => {
-            out.push_str("you may pay ");
-            write_mana_cost(out, cost);
+        TriggerEffect::YouMayPayMana { player, amount } => {
+            write_pay_mana_player(out, *player);
+            out.push_str(" may pay ");
+            write_pay_mana_amount(out, amount);
             out.push('.');
+        }
+        TriggerEffect::PreventDamage {
+            effect,
+            definitions,
+        } => {
+            write_damage_prevention_effect_statement(out, *effect, definitions);
         }
         TriggerEffect::TapEnchanted(object) => {
             out.push_str("tap enchanted ");
@@ -1957,9 +2040,20 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
     }
 }
 
-fn write_triggered_damage(out: &mut String, damage: &TriggeredDamage, terminal: bool) {
+fn write_triggered_damage(
+    out: &mut String,
+    damage: &TriggeredDamage,
+    terminal: bool,
+    starts_sentence: bool,
+) {
     match damage.event.source {
-        TriggerDamageSource::Source(source) => write_source_object(out, source),
+        TriggerDamageSource::Source(source) => {
+            if starts_sentence {
+                write_source_object_capitalized(out, source);
+            } else {
+                write_source_object(out, source);
+            }
+        }
         TriggerDamageSource::It => out.push_str("it"),
     }
     out.push_str(" deals ");
@@ -2363,6 +2457,9 @@ fn write_value_expression(out: &mut String, expression: &ValueExpression) {
         ValueExpression::NumberOfCardsInTheirHandMinus { amount } => {
             write!(out, "the number of cards in their hand minus {amount}")
                 .expect("write to String never fails");
+        }
+        ValueExpression::AmountOfManaThatPlayerPaidThisWay => {
+            out.push_str("the amount of mana that player paid this way");
         }
     }
 }
