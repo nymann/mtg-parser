@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 152,
+  "passing": 153,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -360,8 +360,7 @@
       "error": "empty oracle text (vanilla card)"
     },
     "lea/Hurricane": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:29\n  |\n1 | Hurricane deals X damage to each creature with flying and each player.\n  |                             ^---\n  |\n  = expected damage_recipient"
+      "status": "pass"
     },
     "lea/Hypnotic Specter": {
       "status": "fail",

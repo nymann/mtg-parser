@@ -169,3 +169,5 @@ mod helm_of_chatzuk;
 mod howl_from_beyond;
 #[path = "generated_patterns/howling_mine.rs"]
 mod howling_mine;
+#[path = "generated_patterns/hurricane.rs"]
+mod hurricane;

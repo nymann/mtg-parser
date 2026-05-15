@@ -230,6 +230,8 @@ pub enum DamageLifeGainCap {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DamageRecipient {
+    /// "each creature with <keyword>"
+    EachCreatureWithKeyword { keyword: Keyword },
     /// "each creature without <keyword>"
     EachCreatureWithoutKeyword { keyword: Keyword },
     /// "each player"

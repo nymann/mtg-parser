@@ -372,6 +372,10 @@ fn write_damage_recipients(out: &mut String, recipients: &[DamageRecipient]) {
 
 fn write_damage_recipient(out: &mut String, recipient: DamageRecipient) {
     match recipient {
+        DamageRecipient::EachCreatureWithKeyword { keyword } => {
+            out.push_str("each creature with ");
+            write_keyword(out, keyword);
+        }
         DamageRecipient::EachCreatureWithoutKeyword { keyword } => {
             out.push_str("each creature without ");
             write_keyword(out, keyword);

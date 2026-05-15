@@ -681,6 +681,14 @@ fn damage_recipient_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient, Parse
         .next()
         .ok_or(ParseError::Internal("damage recipient missing inner rule"))?;
     match inner.as_rule() {
+        Rule::each_creature_with_keyword => {
+            let keyword_pair = inner.into_inner().next().ok_or(ParseError::Internal(
+                "creature damage recipient missing keyword",
+            ))?;
+            Ok(DamageRecipient::EachCreatureWithKeyword {
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
         Rule::each_creature_without_keyword => {
             let keyword_pair = inner.into_inner().next().ok_or(ParseError::Internal(
                 "creature damage recipient missing keyword",
