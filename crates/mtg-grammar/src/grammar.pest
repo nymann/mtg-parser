@@ -44,8 +44,10 @@ sentence_statement = _{
   | static_colored_permanents_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
+  | static_enchanted_has_keyword
   | static_enchanted_can_attack_as_though
   | static_source_doesnt_untap_during_your_untap_step
+  | static_effect_doesnt_remove_this_aura
   | triggered_ability
   | each_player_equalizes_controlled_permanents
   | players_do_actions_the_same_way
@@ -165,14 +167,20 @@ creature_type = @{ ^"wall" }
 //     modifier on the enchanted permanent (e.g. Animate Dead).
 //   - "Enchanted <type> gets <variable_pt_modifier>, where ..." — a
 //     variable P/T modifier with printed definitions for those variables.
+//   - "Enchanted <object> has <keyword>." — keyword-granting effect on
+//     the enchanted object.
 //   - "Enchanted <object> can attack as though it didn't have
 //     <keyword>." — permission effect that ignores an attack restriction.
+//   - "This effect doesn't remove this Aura." — effect-continuity text
+//     that preserves the Aura while applying the preceding static effect.
 static_ability = _{
     static_as_long_as
   | static_colored_permanents_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
+  | static_enchanted_has_keyword
   | static_enchanted_can_attack_as_though
+  | static_effect_doesnt_remove_this_aura
 }
 
 static_as_long_as = {
@@ -192,9 +200,17 @@ static_enchanted_gets_with_definitions = {
   ~ "," ~ where_clause ~ "."
 }
 
+static_enchanted_has_keyword = {
+    ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword ~ "."
+}
+
 static_enchanted_can_attack_as_though = {
     ^"enchanted" ~ enchanted_object ~ ^"can" ~ ^"attack"
   ~ ^"as" ~ ^"though" ~ ^"it" ~ ^"didn't" ~ ^"have" ~ keyword ~ "."
+}
+
+static_effect_doesnt_remove_this_aura = {
+    ^"this" ~ ^"effect" ~ ^"doesn't" ~ ^"remove" ~ ^"this" ~ ^"aura" ~ "."
 }
 
 static_source_doesnt_untap_during_your_untap_step = {

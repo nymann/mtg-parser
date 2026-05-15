@@ -165,7 +165,11 @@ fn copy_target_to_clipboard(state: &mut AppState, target: input::CopyTarget) {
         input::CopyTarget::All => ("all", state.all_json_text()),
         input::CopyTarget::Visual => ("visual", state.visual_text()),
     };
-    match copy_to_clipboard(&text) {
+    let result = copy_to_clipboard(&text);
+    if matches!(target, input::CopyTarget::Visual) {
+        state.visual.cancel();
+    }
+    match result {
         Ok(()) => state.push_ui_note(format!(
             "copied {label} ({} line(s)) to clipboard",
             text.lines().count()

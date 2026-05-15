@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 42,
+  "passing": 49,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -64,8 +64,7 @@
       "status": "pass"
     },
     "lea/Black Ward": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from black. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "status": "pass"
     },
     "lea/Blaze of Glory": {
       "status": "fail",
@@ -80,8 +79,7 @@
       "error": "parse: parse error:  --> 1:1\n  |\n1 | Choose one —\n  | ^---\n  |\n  = expected card_text"
     },
     "lea/Blue Ward": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from blue. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "status": "pass"
     },
     "lea/Bog Wraith": {
       "status": "fail",
@@ -93,7 +91,7 @@
     },
     "lea/Burrowing": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has mountainwalk.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "error": "parse: parse error:  --> 2:24\n  |\n2 | Enchanted creature has mountainwalk.\n  |                        ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, or enchant"
     },
     "lea/Camouflage": {
       "status": "fail",
@@ -148,7 +146,7 @@
     },
     "lea/Consecrate Land": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted land has indestructible and can't be enchanted by other Auras.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "error": "parse: parse error:  --> 2:20\n  |\n2 | Enchanted land has indestructible and can't be enchanted by other Auras.\n  |                    ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, or enchant"
     },
     "lea/Conservator": {
       "status": "fail",
@@ -160,7 +158,7 @@
     },
     "lea/Control Magic": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted creature.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted creature.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_has_keyword, static_enchanted_can_attack_as_though, static_effect_doesnt_remove_this_aura, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
     },
     "lea/Conversion": {
       "status": "fail",
@@ -298,7 +296,7 @@
     },
     "lea/Farmstead": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted land has \"At the beginning of your upkeep, you may pay {W}{W}. If you do, you gain 1 life.\"\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "error": "parse: parse error:  --> 2:20\n  |\n2 | Enchanted land has \"At the beginning of your upkeep, you may pay {W}{W}. If you do, you gain 1 life.\"\n  |                    ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, or enchant"
     },
     "lea/Fastbond": {
       "status": "fail",
@@ -306,7 +304,7 @@
     },
     "lea/Fear": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has fear.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "error": "parse: parse error:  --> 2:24\n  |\n2 | Enchanted creature has fear.\n  |                        ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, or enchant"
     },
     "lea/Feedback": {
       "status": "fail",
@@ -329,8 +327,7 @@
       "error": "parse: parse error:  --> 1:13\n  |\n1 | Destroy all Plains.\n  |             ^---\n  |\n  = expected permanent_type_plural"
     },
     "lea/Flight": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has flying.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "status": "pass"
     },
     "lea/Fog": {
       "status": "fail",
@@ -401,8 +398,7 @@
       "error": "empty oracle text (vanilla card)"
     },
     "lea/Green Ward": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from green. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "status": "pass"
     },
     "lea/Grizzly Bears": {
       "status": "fail",
@@ -532,8 +528,7 @@
       "error": "parse: parse error:  --> 2:6\n  |\n2 | When enchanted land becomes tapped, destroy it. That land's controller may attach this Aura to a land of their choice.\n  |      ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, beginning_of_the_next_end_step, or beginning_of_chosen_players_upkeep"
     },
     "lea/Lance": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has first strike.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "status": "pass"
     },
     "lea/Ley Druid": {
       "status": "fail",
@@ -588,7 +583,7 @@
     },
     "lea/Lure": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | All creatures able to block enchanted creature do so.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | All creatures able to block enchanted creature do so.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_has_keyword, static_enchanted_can_attack_as_though, static_effect_doesnt_remove_this_aura, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
     },
     "lea/Magical Hack": {
       "status": "fail",
@@ -670,7 +665,7 @@
     },
     "lea/Nightmare": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | Nightmare's power and toughness are each equal to the number of Swamps you control.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | Nightmare's power and toughness are each equal to the number of Swamps you control.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_has_keyword, static_enchanted_can_attack_as_though, static_effect_doesnt_remove_this_aura, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
     },
     "lea/Northern Paladin": {
       "status": "fail",
@@ -772,8 +767,7 @@
       "error": "parse: parse error:  --> 1:1\n  |\n1 | Choose one —\n  | ^---\n  |\n  = expected card_text"
     },
     "lea/Red Ward": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from red. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "status": "pass"
     },
     "lea/Regeneration": {
       "status": "fail",
@@ -855,7 +849,7 @@
     },
     "lea/Serra Angel": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | Vigilance\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | Vigilance\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_has_keyword, static_enchanted_can_attack_as_though, static_effect_doesnt_remove_this_aura, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
     },
     "lea/Shanodin Dryads": {
       "status": "fail",
@@ -906,7 +900,7 @@
     },
     "lea/Steal Artifact": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted artifact.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted artifact.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_has_keyword, static_enchanted_can_attack_as_though, static_effect_doesnt_remove_this_aura, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
     },
     "lea/Stone Giant": {
       "status": "fail",
@@ -996,7 +990,7 @@
     },
     "lea/Two-Headed Giant of Foriys": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | This creature can block an additional creature each combat.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, static_source_doesnt_untap_during_your_untap_step, activated_cost, triggered_ability, or target_permanent_gains_keyword_and_gets_eot"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | This creature can block an additional creature each combat.\n  | ^---\n  |\n  = expected mana_symbol, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, keyword_ability, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_has_keyword, static_enchanted_can_attack_as_though, static_effect_doesnt_remove_this_aura, static_source_doesnt_untap_during_your_untap_step, activated_cost, triggered_ability, or target_permanent_gains_keyword_and_gets_eot"
     },
     "lea/Underground Sea": {
       "status": "fail",
@@ -1091,8 +1085,7 @@
       "status": "pass"
     },
     "lea/White Ward": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from white. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
+      "status": "pass"
     },
     "lea/Wild Growth": {
       "status": "fail",
@@ -1116,7 +1109,7 @@
     },
     "lea/Wrath of God": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:24\n  |\n1 | Destroy all creatures. They can't be regenerated.\n  |                        ^---\n  |\n  = expected EOI, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_can_attack_as_though, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
+      "error": "parse: parse error:  --> 1:24\n  |\n1 | Destroy all creatures. They can't be regenerated.\n  |                        ^---\n  |\n  = expected EOI, destroy, destroy_all, draw_cards, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_this_permanent_enters_choose_opponent, cast_restriction, color_word, static_as_long_as, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_has_keyword, static_enchanted_can_attack_as_though, static_effect_doesnt_remove_this_aura, activated_cost, triggered_ability, target_permanent_gains_keyword_and_gets_eot, or source_object"
     },
     "lea/Zombie Master": {
       "status": "fail",

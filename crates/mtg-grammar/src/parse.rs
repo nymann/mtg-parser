@@ -68,8 +68,10 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_colored_permanents_get
         | Rule::static_enchanted_gets_with_definitions
         | Rule::static_enchanted_gets
+        | Rule::static_enchanted_has_keyword
         | Rule::static_enchanted_can_attack_as_though
-        | Rule::static_source_doesnt_untap_during_your_untap_step => {
+        | Rule::static_source_doesnt_untap_during_your_untap_step
+        | Rule::static_effect_doesnt_remove_this_aura => {
             Ok(Statement::StaticAbility(static_ability_from_pair(pair)?))
         }
         Rule::activated_ability => Ok(Statement::ActivatedAbility(activated_ability_from_pair(
@@ -562,6 +564,19 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 definitions: where_clause_from_pair(where_pair)?,
             })
         }
+        Rule::static_enchanted_has_keyword => {
+            let mut inner = pair.into_inner();
+            let object_pair = inner
+                .next()
+                .expect("static_enchanted_has_keyword begins with enchanted object");
+            let keyword_pair = inner
+                .next()
+                .expect("static_enchanted_has_keyword names granted keyword");
+            Ok(StaticAbility::EnchantedHasKeyword {
+                object: enchanted_object_from_pair(object_pair)?,
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
         Rule::static_enchanted_can_attack_as_though => {
             let mut inner = pair.into_inner();
             let object_pair = inner
@@ -574,6 +589,9 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 object: enchanted_object_from_pair(object_pair)?,
                 keyword: keyword_from_inner_pair(keyword_pair)?,
             })
+        }
+        Rule::static_effect_doesnt_remove_this_aura => {
+            Ok(StaticAbility::EffectDoesntRemoveThisAura)
         }
         Rule::static_source_doesnt_untap_during_your_untap_step => {
             let source_pair = pair

@@ -36,3 +36,5 @@ mod black_knight;
 mod black_lotus;
 #[path = "generated/black_vise.rs"]
 mod black_vise;
+#[path = "generated/black_ward.rs"]
+mod black_ward;

@@ -141,10 +141,7 @@ fn handle_visual_key(key: KeyEvent, state: &mut AppState) -> Action {
             state.visual.cancel();
             Action::None
         }
-        KeyCode::Char('y') => {
-            state.visual.cancel();
-            Action::Copy(CopyTarget::Visual)
-        }
+        KeyCode::Char('y') => Action::Copy(CopyTarget::Visual),
         KeyCode::Up | KeyCode::Char('k') => {
             state.autoscroll = false;
             state.scroll = state.scroll.saturating_sub(1);
@@ -244,8 +241,12 @@ fn load_history_transcript(state: &mut AppState, entry: &HistoryEntry) {
     let Ok(text) = std::fs::read_to_string(&entry.path) else {
         return;
     };
+    state.events.clear();
+    state.iterations.clear();
+    state.session_end = None;
+    state.autoscroll = true;
     state.events.push(TimelineRow {
-        iteration_index: 0,
+        iteration_index: entry.iteration_index,
         delta: 0,
         kind: TimelineKind::Note {
             level: crate::flow::NoteLevel::Info,
@@ -258,7 +259,7 @@ fn load_history_transcript(state: &mut AppState, entry: &HistoryEntry) {
         };
         for parsed in agent_events::parse(AgentProvider::Claude, &raw) {
             state.events.push(TimelineRow {
-                iteration_index: 0,
+                iteration_index: entry.iteration_index,
                 delta: 0,
                 kind: TimelineKind::Agent {
                     provider: AgentProvider::Claude,
@@ -267,7 +268,7 @@ fn load_history_transcript(state: &mut AppState, entry: &HistoryEntry) {
             });
         }
     }
-    state.scroll = state.events.len().saturating_sub(1) as u16;
+    state.scroll = 0;
 }
 
 fn scroll_focused(state: &mut AppState, down: bool, amount: u16) {
@@ -295,9 +296,9 @@ fn jump_to_step(state: &mut AppState, step: u8) {
 }
 
 fn load_history_entries() -> Vec<HistoryEntry> {
-    let mut entries = Vec::new();
+    let mut dirs = Vec::new();
     let Ok(read_dir) = std::fs::read_dir(grammar_fix_log_root()) else {
-        return entries;
+        return Vec::new();
     };
     for entry in read_dir.flatten() {
         let path = entry.path();
@@ -306,15 +307,36 @@ fn load_history_entries() -> Vec<HistoryEntry> {
         }
         let transcript = path.join("transcript.ndjson");
         if transcript.exists() {
-            entries.push(HistoryEntry {
-                name: path
-                    .file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_else(|| path.display().to_string()),
-                path: transcript,
-            });
+            dirs.push((path, transcript));
         }
     }
-    entries.sort_by(|a, b| b.name.cmp(&a.name));
+    dirs.sort_by(|a, b| a.0.cmp(&b.0));
+    let mut entries = dirs
+        .into_iter()
+        .enumerate()
+        .map(|(i, (path, transcript))| {
+            let iteration_index = (i + 1) as u32;
+            let card_name = history_card_name(&path).unwrap_or_else(|| {
+                path.file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| path.display().to_string())
+            });
+            HistoryEntry {
+                name: format!("iteration {iteration_index} - {card_name}"),
+                iteration_index,
+                path: transcript,
+            }
+        })
+        .collect::<Vec<_>>();
+    entries.reverse();
     entries
+}
+
+fn history_card_name(path: &std::path::Path) -> Option<String> {
+    let text = std::fs::read_to_string(path.join("card.json")).ok()?;
+    let value: serde_json::Value = serde_json::from_str(&text).ok()?;
+    value
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(str::to_string)
 }

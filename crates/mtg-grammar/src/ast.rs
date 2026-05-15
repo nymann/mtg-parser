@@ -262,6 +262,12 @@ pub enum StaticAbility {
         modifier: VariablePtModifier,
         definitions: Vec<VariableDefinition>,
     },
+    /// "Enchanted <object> has <keyword>." — keyword-granting effect on
+    /// the enchanted object.
+    EnchantedHasKeyword {
+        object: EnchantedObject,
+        keyword: Keyword,
+    },
     /// "Enchanted <object> can attack as though it didn't have
     /// <keyword>." — permission effect that ignores an attacking
     /// restriction such as defender.
@@ -269,6 +275,9 @@ pub enum StaticAbility {
         object: EnchantedObject,
         keyword: Keyword,
     },
+    /// "This effect doesn't remove this Aura." — effect-continuity text
+    /// for Aura effects that otherwise might remove their own attachment.
+    EffectDoesntRemoveThisAura,
     /// "This <permanent_type> doesn't untap during your untap step."
     SourceDoesntUntapDuringYourUntapStep { source: SourceObject },
 }

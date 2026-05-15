@@ -25,3 +25,5 @@ mod black_knight;
 mod black_lotus;
 #[path = "generated_patterns/black_vise.rs"]
 mod black_vise;
+#[path = "generated_patterns/black_ward.rs"]
+mod black_ward;

@@ -25,6 +25,8 @@ pub struct AppState {
     // view state
     pub scroll: u16, // first row visible in the output pane
     pub card_scroll: u16,
+    pub output_line_count: u16,
+    pub output_viewport_height: u16,
     pub autoscroll: bool,
     pub focus: FocusPane,
     pub search: SearchState,
@@ -69,10 +71,17 @@ impl AppState {
 
     /// Plain-text content for the output pane, used by the copy shortcut.
     pub fn output_text(&self) -> String {
+        self.visible_output_text()
+    }
+
+    fn visible_output_text(&self) -> String {
         let repo = crate::paths::repo_root();
         let mut lines = Vec::new();
         let mut current_iter = None;
         for row in &self.events {
+            if !self.row_is_visible_iteration(row) {
+                continue;
+            }
             if Some(row.iteration_index) != current_iter {
                 lines.push(output_iteration_separator(self, row.iteration_index));
                 current_iter = Some(row.iteration_index);
@@ -86,11 +95,32 @@ impl AppState {
         lines.join("\n")
     }
 
+    fn row_is_visible_iteration(&self, row: &TimelineRow) -> bool {
+        self.active_iteration()
+            .map(|iter| row.iteration_index == iter.index)
+            .unwrap_or(true)
+    }
+
+    pub fn remember_output_view(&mut self, line_count: usize, viewport_height: u16) {
+        self.output_line_count = line_count.min(u16::MAX as usize) as u16;
+        self.output_viewport_height = viewport_height;
+    }
+
+    pub fn output_bottom_scroll(&self) -> u16 {
+        self.output_line_count
+            .saturating_sub(self.output_viewport_height)
+    }
+
+    pub fn pause_output(&mut self) {
+        self.scroll = self.output_bottom_scroll();
+        self.autoscroll = false;
+    }
+
     pub fn visual_text(&self) -> String {
         let Some((start, end)) = self.visual.range() else {
             return String::new();
         };
-        self.output_text()
+        self.visible_output_text()
             .lines()
             .skip(start)
             .take(end.saturating_sub(start) + 1)
@@ -820,6 +850,7 @@ pub struct HistoryState {
 #[derive(Debug, Clone)]
 pub struct HistoryEntry {
     pub name: String,
+    pub iteration_index: u32,
     pub path: std::path::PathBuf,
 }
 

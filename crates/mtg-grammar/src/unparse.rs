@@ -288,12 +288,22 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_variable_definitions(out, definitions);
             out.push('.');
         }
+        StaticAbility::EnchantedHasKeyword { object, keyword } => {
+            out.push_str("Enchanted ");
+            write_enchanted_object(out, *object);
+            out.push_str(" has ");
+            write_keyword_lowercase(out, *keyword);
+            out.push('.');
+        }
         StaticAbility::EnchantedCanAttackAsThoughItDidntHave { object, keyword } => {
             out.push_str("Enchanted ");
             write_enchanted_object(out, *object);
             out.push_str(" can attack as though it didn't have ");
             write_keyword_lowercase(out, *keyword);
             out.push('.');
+        }
+        StaticAbility::EffectDoesntRemoveThisAura => {
+            out.push_str("This effect doesn't remove this Aura.");
         }
         StaticAbility::SourceDoesntUntapDuringYourUntapStep { source } => {
             write_source_object_capitalized(out, *source);

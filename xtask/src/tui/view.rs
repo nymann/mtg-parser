@@ -2,7 +2,7 @@
 
 use ratatui::{
     layout::Alignment,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Direction, Layout, Position, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
@@ -485,8 +485,11 @@ fn render_output(f: &mut Frame<'_>, area: Rect, state: &AppState) {
             .min(total_lines.saturating_sub(viewport_height))
     };
 
-    let paragraph = Paragraph::new(lines).scroll((scroll, 0));
+    let paragraph = Paragraph::new(lines)
+        .wrap(Wrap { trim: false })
+        .scroll((scroll, 0));
     f.render_widget(paragraph, inner);
+    set_output_cursor(f, inner, state, total_lines, scroll);
 }
 
 fn render_event_lines(state: &AppState, _width: u16) -> Vec<Line<'static>> {
@@ -494,6 +497,9 @@ fn render_event_lines(state: &AppState, _width: u16) -> Vec<Line<'static>> {
     let mut current_iter: Option<u32> = None;
     let root = repo_root();
     for row in &state.events {
+        if !should_render_row_for_current_iteration(state, row) {
+            continue;
+        }
         if state.search.filter_mode
             && !state.search.query.is_empty()
             && !row_search_text(row, &root).contains(&state.search.query.to_ascii_lowercase())
@@ -517,6 +523,41 @@ fn render_event_lines(state: &AppState, _width: u16) -> Vec<Line<'static>> {
         push_output_line(&mut out, state, session_end_line(end));
     }
     out
+}
+
+fn should_render_row_for_current_iteration(state: &AppState, row: &TimelineRow) -> bool {
+    state
+        .active_iteration()
+        .map(|iter| row.iteration_index == iter.index)
+        .unwrap_or(true)
+}
+
+fn set_output_cursor(
+    f: &mut Frame<'_>,
+    area: Rect,
+    state: &AppState,
+    total_lines: u16,
+    scroll: u16,
+) {
+    if area.width == 0
+        || area.height == 0
+        || total_lines == 0
+        || state.focus != crate::tui::state::FocusPane::Output
+    {
+        return;
+    }
+    let line = if state.visual.active {
+        state.visual.cursor
+    } else if state.autoscroll {
+        total_lines.saturating_sub(1)
+    } else {
+        scroll
+    }
+    .min(total_lines.saturating_sub(1));
+    if line < scroll || line >= scroll.saturating_add(area.height) {
+        return;
+    }
+    f.set_cursor_position(Position::new(area.x, area.y + line.saturating_sub(scroll)));
 }
 
 fn push_output_line(out: &mut Vec<Line<'static>>, state: &AppState, line: Line<'static>) {
@@ -677,23 +718,24 @@ fn render_agent_row(
             out
         }
         ParsedAgentEvent::ToolUse { name, target } => {
-            let target_str = format_tool_target(target, repo);
-            let mut spans = vec![
-                delta_cell(row.delta),
-                kind_cell("tool_use", C_TOOL),
-                Span::styled(
-                    name.clone(),
-                    Style::default().fg(C_TOOL).add_modifier(Modifier::BOLD),
-                ),
-            ];
-            if !target_str.is_empty() {
-                spans.push(Span::raw(" "));
-                let color = match target {
-                    crate::agent_events::ToolUseTarget::Command(_) => C_CMD,
-                    crate::agent_events::ToolUseTarget::File(_) => C_FILE,
-                    _ => Color::Reset,
-                };
-                spans.push(Span::styled(target_str, Style::default().fg(color)));
+            let mut spans = vec![delta_cell(row.delta)];
+            match target {
+                crate::agent_events::ToolUseTarget::Command(command) => {
+                    spans.extend(render_command_spans(command));
+                }
+                _ => {
+                    let target_str = format_tool_target(target, repo);
+                    spans.push(kind_cell(name, C_TOOL));
+                    if !target_str.is_empty() {
+                        spans.push(Span::styled(
+                            target_str,
+                            Style::default().fg(match target {
+                                crate::agent_events::ToolUseTarget::File(_) => C_FILE,
+                                _ => C_TOOL,
+                            }),
+                        ));
+                    }
+                }
             }
             vec![Line::from(spans)]
         }
@@ -747,6 +789,97 @@ fn delta_cell(delta: u64) -> Span<'static> {
 fn kind_cell(name: &str, color: Color) -> Span<'static> {
     let padded = format!("[{name:<11}] ");
     Span::styled(padded, Style::default().fg(color))
+}
+
+fn render_command_spans(command: &str) -> Vec<Span<'static>> {
+    let command = display_shell_command(command);
+    let mut spans = vec![Span::styled(
+        "$ ",
+        Style::default().fg(C_BAD).add_modifier(Modifier::BOLD),
+    )];
+    for (i, token) in shell_tokens(&command).into_iter().enumerate() {
+        if i > 0 {
+            spans.push(Span::raw(" "));
+        }
+        let style = shell_token_style(&token, i == 0);
+        spans.push(Span::styled(token, style));
+    }
+    spans
+}
+
+fn display_shell_command(command: &str) -> String {
+    let trimmed = command.trim();
+    for prefix in ["zsh -lc ", "zsh -c ", "bash -lc ", "bash -c ", "sh -c "] {
+        if let Some(rest) = trimmed.strip_prefix(prefix) {
+            return unquote_shell_arg(rest.trim()).to_string();
+        }
+    }
+    trimmed.to_string()
+}
+
+fn unquote_shell_arg(s: &str) -> &str {
+    let bytes = s.as_bytes();
+    if bytes.len() >= 2
+        && ((bytes[0] == b'\'' && bytes[bytes.len() - 1] == b'\'')
+            || (bytes[0] == b'"' && bytes[bytes.len() - 1] == b'"'))
+    {
+        &s[1..s.len() - 1]
+    } else {
+        s
+    }
+}
+
+fn shell_tokens(command: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut current = String::new();
+    let mut quote: Option<char> = None;
+    for ch in command.chars() {
+        if let Some(q) = quote {
+            current.push(ch);
+            if ch == q {
+                quote = None;
+            }
+            continue;
+        }
+        match ch {
+            '\'' | '"' => {
+                quote = Some(ch);
+                current.push(ch);
+            }
+            ' ' | '\t' if !current.is_empty() => {
+                out.push(std::mem::take(&mut current));
+            }
+            ' ' | '\t' => {}
+            '|' | '&' | ';' | '<' | '>' => {
+                if !current.is_empty() {
+                    out.push(std::mem::take(&mut current));
+                }
+                out.push(ch.to_string());
+            }
+            _ => current.push(ch),
+        }
+    }
+    if !current.is_empty() {
+        out.push(current);
+    }
+    out
+}
+
+fn shell_token_style(token: &str, first: bool) -> Style {
+    let color = if first || token.contains('/') {
+        C_CMD
+    } else if token.starts_with('-') {
+        C_INFO
+    } else if token.starts_with('$') || token.contains('=') {
+        C_WARN
+    } else if token.starts_with('"') || token.starts_with('\'') {
+        C_TEXT
+    } else if matches!(token, "|" | "&" | ";" | "<" | ">") {
+        C_BAD
+    } else {
+        C_TITLE
+    };
+    Style::default().fg(color)
 }
 
 fn copy_title(name: &'static str, hotkey: char, active: bool) -> Line<'static> {
