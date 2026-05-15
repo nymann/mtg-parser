@@ -115,7 +115,10 @@ fn parse_codex(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
         return vec![ParsedAgentEvent::Init { model }];
     }
 
-    if matches!(lower.as_str(), "turn.started" | "turn.failed" | "turn.aborted") {
+    if matches!(
+        lower.as_str(),
+        "turn.started" | "turn.failed" | "turn.aborted"
+    ) {
         return vec![ParsedAgentEvent::Other];
     }
 
@@ -500,7 +503,9 @@ mod tests {
         )
         .unwrap();
         let out = parse(AgentProvider::Codex, &v);
-        assert!(matches!(&out[0], ParsedAgentEvent::AssistantText { text } if text == "done editing"));
+        assert!(
+            matches!(&out[0], ParsedAgentEvent::AssistantText { text } if text == "done editing")
+        );
     }
 
     #[test]
