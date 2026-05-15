@@ -121,6 +121,10 @@ impl FlowSink for ConsoleSink {
                     println!();
                     println!("All cards pass; nothing to do.");
                 }
+                SessionEndReason::CorpusComplete => {
+                    println!();
+                    println!("All tracked sets fully covered. No more paper sets to advance to.");
+                }
                 SessionEndReason::DryRunStop => {
                     println!();
                     println!(

@@ -161,21 +161,70 @@ fn advance_inner(options: AdvanceOptions) -> Result<()> {
         );
         return Ok(());
     }
+    match advance_one_set()? {
+        AdvanceOutcome::Advanced { from, to } => {
+            println!("Advanced corpus from {from} to {}.", to.summary());
+        }
+        AdvanceOutcome::NoMoreSets { current } => {
+            bail!("{current} is already the latest paper core/expansion set");
+        }
+    }
+    Ok(())
+}
 
+/// Step the corpus forward by one paper expansion set, refreshing
+/// it via Scryfall and recomputing the corpus status. Used by both
+/// `cargo xtask corpus-advance` and the `add-card` auto-advance loop.
+pub fn advance_one_set() -> Result<AdvanceOutcome> {
+    let sets = tracked_sets()?;
+    let current = sets
+        .last()
+        .ok_or_else(|| anyhow!("{} is empty", corpus_sets_path().display()))?
+        .clone();
     let client = ScryfallClient::new()?;
     let all_sets = client.paper_expansion_sets()?;
     let current_index = all_sets
         .iter()
-        .position(|s| s.code == *current)
+        .position(|s| s.code == current)
         .ok_or_else(|| anyhow!("{current} is not in Scryfall's paper core/expansion set list"))?;
-    let next = all_sets
-        .get(current_index + 1)
-        .ok_or_else(|| anyhow!("{current} is already the latest paper core/expansion set"))?;
-    println!(
-        "Advancing corpus from {current} to {} ({}, {}).",
-        next.code, next.name, next.released_at
-    );
-    add_set_inner(&next.code)
+    let Some(next) = all_sets.get(current_index + 1) else {
+        return Ok(AdvanceOutcome::NoMoreSets { current });
+    };
+    let next_summary = AdvancedSet {
+        code: next.code.clone(),
+        name: next.name.clone(),
+        released_at: next.released_at.clone(),
+    };
+    add_set_inner(&next.code)?;
+    Ok(AdvanceOutcome::Advanced {
+        from: current,
+        to: next_summary,
+    })
+}
+
+#[derive(Debug)]
+pub enum AdvanceOutcome {
+    Advanced {
+        from: String,
+        to: AdvancedSet,
+    },
+    /// Current set is already the latest paper expansion; nothing to do.
+    NoMoreSets {
+        current: String,
+    },
+}
+
+#[derive(Debug)]
+pub struct AdvancedSet {
+    pub code: String,
+    pub name: String,
+    pub released_at: String,
+}
+
+impl AdvancedSet {
+    fn summary(&self) -> String {
+        format!("{} ({}, {})", self.code, self.name, self.released_at)
+    }
 }
 
 fn refresh_inner(sets: &[String]) -> Result<()> {

@@ -805,6 +805,9 @@ fn format_timed_row(delta: u64, label: &str, text: &str) -> String {
 fn output_session_end(reason: &SessionEndReason) -> String {
     match reason {
         SessionEndReason::AllPass => "session · all cards pass".to_string(),
+        SessionEndReason::CorpusComplete => {
+            "session · corpus complete (no more paper sets)".to_string()
+        }
         SessionEndReason::DryRunStop => "session · dry-run complete".to_string(),
         SessionEndReason::MaxIterationsReached(n) => {
             format!(

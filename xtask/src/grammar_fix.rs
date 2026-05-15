@@ -34,7 +34,6 @@ use crate::paths::{
     lower_rs_path, repo_root,
 };
 
-const DEFAULT_SET: &str = "lea";
 /// 0 means unbounded; positive values cap the loop.
 const DEFAULT_MAX_ITERATIONS: u32 = 0;
 const DEFAULT_SUPERVISOR_ATTEMPTS: u8 = 1;
@@ -67,10 +66,17 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
     }
     let client = ScryfallClient::new()?;
 
+    let auto_advance = opts.set.is_none();
+    let mut current_set = match &opts.set {
+        Some(s) => s.clone(),
+        None => pick_starting_set()
+            .context("pick newest tracked set with actionable failures")?,
+    };
+
     let baseline_grammar_rules = count_grammar_rules();
     let (baseline_corpus_passing, baseline_corpus_total) = read_corpus_pp_total();
     sink.emit(FlowEvent::SessionStarted {
-        set: opts.set.clone(),
+        set: current_set.clone(),
         max_iterations: opts.max_iterations,
         baseline_corpus_passing,
         baseline_corpus_total,
@@ -81,7 +87,7 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
     let mut end_reason = None::<SessionEndReason>;
     let mut supervisor_attempts = 0u8;
     while opts.max_iterations == 0 || iter < opts.max_iterations {
-        match run_one_iteration(&client, &opts, sink, iter + 1) {
+        match run_one_iteration(&client, &opts, &current_set, sink, iter + 1) {
             Err(error) if supervisor_attempts < opts.supervisor_attempts => {
                 supervisor_attempts += 1;
                 match invoke_supervisor(&opts, sink, iter + 1, supervisor_attempts, &error) {
@@ -120,8 +126,31 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
             }
             Ok(outcome) => match outcome {
                 IterationOutcome::AllPass => {
-                    end_reason = Some(SessionEndReason::AllPass);
-                    break;
+                    if auto_advance {
+                        match try_advance_set(&current_set, sink) {
+                            Ok(Some(new_set)) => {
+                                current_set = new_set;
+                                supervisor_attempts = 0;
+                                continue;
+                            }
+                            Ok(None) => {
+                                end_reason = Some(SessionEndReason::CorpusComplete);
+                                break;
+                            }
+                            Err(e) => {
+                                let reason = format!("auto-advance failed: {e:#}");
+                                sink.emit(FlowEvent::Note {
+                                    level: NoteLevel::Error,
+                                    text: reason.clone(),
+                                });
+                                end_reason = Some(SessionEndReason::SurfacedToHuman(reason));
+                                break;
+                            }
+                        }
+                    } else {
+                        end_reason = Some(SessionEndReason::AllPass);
+                        break;
+                    }
                 }
                 IterationOutcome::DryRunStop => {
                     end_reason = Some(SessionEndReason::DryRunStop);
@@ -149,7 +178,11 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
 
 #[derive(Debug, Clone)]
 pub struct Options {
-    pub set: String,
+    /// If `Some`, the user explicitly pinned a set and we never
+    /// auto-advance past it. If `None`, the loop walks the tracked
+    /// sets newest-first and advances to the next paper expansion
+    /// when the current one is fully covered.
+    pub set: Option<String>,
     pub max_iterations: u32,
     pub supervisor_attempts: u8,
     pub dry_run: bool,
@@ -220,7 +253,7 @@ impl Options {
             }
         }
         Ok(Self {
-            set: set.unwrap_or_else(|| DEFAULT_SET.to_string()),
+            set,
             max_iterations,
             supervisor_attempts,
             dry_run,
@@ -248,6 +281,7 @@ enum IterationOutcome {
 fn run_one_iteration(
     client: &ScryfallClient,
     opts: &Options,
+    current_set: &str,
     sink: &mut dyn FlowSink,
     iter_index: u32,
 ) -> Result<IterationOutcome> {
@@ -259,12 +293,12 @@ fn run_one_iteration(
         total: TOTAL_STEPS,
         label: "find next failing card".into(),
     });
-    let (card, error, normalized) = match find_next_failing_card_from_status(client, &opts.set)? {
+    let (card, error, normalized) = match find_next_failing_card_from_status(client, current_set)? {
         NextCard::AllPass => {
             sink.emit(FlowEvent::StepFinished {
                 index: 1,
                 ok: true,
-                summary: Some(format!("set '{}' fully covered", opts.set)),
+                summary: Some(format!("set '{current_set}' fully covered")),
             });
             return Ok(IterationOutcome::AllPass);
         }
@@ -866,7 +900,7 @@ fn write_pattern_tests(path: &Path, card: &Card, patterns: &[PatternCase]) -> Re
 
 fn render_pattern_tests(card: &Card, patterns: &[PatternCase]) -> String {
     let mut body = format!(
-        "// Generated by `cargo xtask grammar-fix`.\n\
+        "// Generated by `cargo xtask add-card`.\n\
          // Parse-only pattern tests for incrementally growing grammar support.\n\
          //\n\
          // Card           : {name}\n\
@@ -917,7 +951,7 @@ fn register_generated_pattern_test(test_path: &Path) -> Result<()> {
 
 fn render_generated_test(card: &Card, normalized: &str) -> String {
     format!(
-        "// Generated by `cargo xtask grammar-fix`.\n\
+        "// Generated by `cargo xtask add-card`.\n\
          // Round-trip regression test for the generated test suite.\n\
          //\n\
          // Card           : {name}\n\
@@ -1073,6 +1107,74 @@ fn read_corpus_pp_total() -> (usize, usize) {
         read_corpus_passing(&path).unwrap_or(0),
         read_corpus_total(&path).unwrap_or(0),
     )
+}
+
+/// Choose the set to start the auto-advance loop on. Walks the tracked
+/// sets newest-first and returns the first one with an actionable
+/// failure. If every tracked set is fully covered, returns the newest
+/// (so the immediate next iteration will trigger auto-advance).
+fn pick_starting_set() -> Result<String> {
+    let sets = load_tracked_sets()?;
+    let report = load_corpus_report(&corpus_status_path()).context("load corpus status")?;
+    for set in sets.iter().rev() {
+        if set_has_actionable_failures(&report, set) {
+            return Ok(set.clone());
+        }
+    }
+    sets.last()
+        .cloned()
+        .ok_or_else(|| anyhow!("no tracked sets in corpus_sets.json"))
+}
+
+fn load_tracked_sets() -> Result<Vec<String>> {
+    use crate::paths::corpus_sets_path;
+    let path = corpus_sets_path();
+    let text =
+        std::fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+    let sets: Vec<String> =
+        serde_json::from_str(&text).with_context(|| format!("parse {}", path.display()))?;
+    if sets.is_empty() {
+        bail!("{} must contain at least one set code", path.display());
+    }
+    Ok(sets.into_iter().map(|s| s.to_lowercase()).collect())
+}
+
+fn set_has_actionable_failures(report: &mtg_corpus::CorpusReport, set: &str) -> bool {
+    let prefix = format!("{set}/");
+    report.cards.iter().any(|(key, outcome)| {
+        key.starts_with(&prefix)
+            && matches!(
+                outcome,
+                CardOutcome::Fail { error } if !error.starts_with("empty oracle text")
+            )
+    })
+}
+
+/// Advance the corpus to the next paper expansion set. Returns the new
+/// set code on success, `None` if there are no more paper sets, or an
+/// error on infrastructure failure. Surfaces the advance as a sink
+/// note so console + TUI users see the rollover.
+fn try_advance_set(current: &str, sink: &mut dyn FlowSink) -> Result<Option<String>> {
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: format!("set '{current}' fully covered; advancing corpus"),
+    });
+    match crate::corpus_cmd::advance_one_set()? {
+        crate::corpus_cmd::AdvanceOutcome::Advanced { from, to } => {
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Info,
+                text: format!("advanced from {from} to {} ({}, {})", to.code, to.name, to.released_at),
+            });
+            Ok(Some(to.code))
+        }
+        crate::corpus_cmd::AdvanceOutcome::NoMoreSets { current } => {
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Info,
+                text: format!("{current} is already the latest paper expansion"),
+            });
+            Ok(None)
+        }
+    }
 }
 
 /// Hand-rolled pest rule counter. Counts top-level rule declarations
@@ -2184,9 +2286,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn options_default_to_lea_one_iteration() {
+    fn options_default_to_auto_advance() {
         let o = Options::parse(&[]).unwrap();
-        assert_eq!(o.set, "lea");
+        assert!(o.set.is_none(), "no --set means auto-advance");
         assert_eq!(o.max_iterations, 0);
         assert!(!o.dry_run);
         assert!(!o.allow_dirty);
@@ -2201,7 +2303,7 @@ mod tests {
             .map(|s| s.to_string())
             .collect();
         let o = Options::parse(&args).unwrap();
-        assert_eq!(o.set, "neo");
+        assert_eq!(o.set.as_deref(), Some("neo"));
         assert_eq!(o.max_iterations, 5);
         assert!(o.dry_run);
     }

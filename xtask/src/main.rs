@@ -44,14 +44,18 @@ Commands:
               [--theme THEME] Defaults to parser-boilerplate. Other themes include
               [--target PATH] damage, destroy, prevention, keyword-abilities,
               [--out PATH]    triggered-abilities, and unparse-templates.
-  grammar-fix [--set CODE]    Orchestrated loop: next-card → agent → tier-1/2 →
-              [--max-iterations N]  corpus diff → commit. Defaults: --set lea,
-              [--dry-run] [--allow-dirty]  --max-iterations 0 (unbounded). --dry-run builds the
-              [--ui console|tui]          prompt and stops; --allow-dirty skips the
-              [--agent codex|claude]      clean-tree precondition; --agent defaults
-              [--supervisor-attempts N]    to codex; unknown infrastructure errors get
-              [--no-supervisor]            one supervisor repair attempt by default.
-                                          --ui tui opens a full-screen interactive view.
+  add-card    [--set CODE]    Orchestrated loop: pick the next failing card in
+              [--max-iterations N]  the corpus, hand it to a coding agent, gate the
+              [--dry-run] [--allow-dirty]  result through tier-1/2 + corpus + commit. When
+              [--ui console|tui]          --set is not given, walks the tracked sets
+              [--agent codex|claude]      newest-first and auto-advances to the next
+              [--supervisor-attempts N]    paper expansion once the current one is fully
+              [--no-supervisor]            covered. Defaults: --max-iterations 0 (unbounded);
+                                          --agent codex; one supervisor repair attempt on
+                                          unknown infrastructure errors; --dry-run builds
+                                          the prompt and stops; --allow-dirty skips the
+                                          clean-tree precondition; --ui tui opens a
+                                          full-screen interactive view.
 
 Flags:
   -h, --help        Show this message.
@@ -101,7 +105,7 @@ fn main() -> ExitCode {
         Some("rules-split") => rules_split::run(&args[1..]),
         Some("rules-context") => rules_context::run_cli(&args[1..]),
         Some("refactor-hotspot") => refactor_hotspot::run(&args[1..]),
-        Some("grammar-fix") => match parse_ui(&args[1..]) {
+        Some("add-card") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => grammar_fix::run(&args[1..]),
             Ok(Ui::Tui) => match grammar_fix::Options::parse(&args[1..]) {
                 Ok(opts) => match tui::run(opts) {

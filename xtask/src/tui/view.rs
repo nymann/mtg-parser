@@ -597,6 +597,7 @@ fn iter_separator_line(state: &AppState, iter_idx: u32) -> Line<'static> {
 fn session_end_line(reason: &SessionEndReason) -> Line<'static> {
     let (label, color) = match reason {
         SessionEndReason::AllPass => ("session · all cards pass", C_GOOD),
+        SessionEndReason::CorpusComplete => ("session · corpus complete (no more paper sets)", C_GOOD),
         SessionEndReason::DryRunStop => ("session · dry-run complete", C_DIM),
         SessionEndReason::MaxIterationsReached(n) => {
             return Line::from(Span::styled(

@@ -110,18 +110,27 @@ resolved (rather than papered over by tweaking the unparser).
 
 Tier 1 staying under 1s is a hard rule. Slow tests move to a higher tier.
 
-## The grammar-fix orchestrator
+## The add-card orchestrator
 
-`cargo xtask grammar-fix [--set CODE] [--max-iterations N] [--dry-run]
+`cargo xtask add-card [--set CODE] [--max-iterations N] [--dry-run]
 [--allow-dirty]` is the find-next-card workflow with every deterministic
 step automated. Only the creative step — extending the grammar to cover
 a new pattern — is delegated to a fresh `claude -p` subagent.
+
+If `--set` is omitted, the loop walks the tracked sets newest-first
+and auto-advances to the next paper expansion (via the same logic as
+`corpus-advance`) once the current set is fully covered. The loop
+terminates with `SessionEndReason::CorpusComplete` when no more paper
+expansion sets exist in Scryfall.
 
 ### Loop
 
 For each iteration up to `--max-iterations`:
 
-1. `find_next_failing_card` over the configured set. If none, stop.
+1. `find_next_failing_card` over the current set. If `--set` was
+   explicit and the set is exhausted, stop with `AllPass`. If
+   auto-advance is active, register the next paper expansion and
+   continue with that as the new current set.
 2. Snapshot the card and the current corpus pass count into
    `.grammar-fix/<unix-ts>-<slug>/`.
 3. Build the prompt (current `grammar.pest`, `ast.rs`, `lower.rs` inline

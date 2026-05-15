@@ -27,7 +27,7 @@ rules-refresh url=rules_url:
 	rm -f resources/comprehensive_rules.txt
 	just rules url="{{url}}"
 
-# Index resources/rules/ with qmd BM25 search so the grammar-fix
+# Index resources/rules/ with qmd BM25 search so the add-card
 # orchestrator can retrieve relevant rules sections into its prompts.
 # Requires qmd on PATH:  npm install -g @tobilu/qmd
 # Idempotent — re-running picks up new/changed rules files.
@@ -44,7 +44,7 @@ rules-index:
 	fi
 	{{qmd}} update
 
-# Optional vector embeddings for qmd query/vsearch. The grammar-fix and
+# Optional vector embeddings for qmd query/vsearch. The add-card and
 # refactor-hotspot flows use BM25 search, so this is not required for them.
 rules-embed:
 	@command -v qmd >/dev/null 2>&1 || { echo "qmd not installed. Install with: npm install -g @tobilu/qmd" >&2; exit 1; }

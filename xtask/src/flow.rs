@@ -81,6 +81,9 @@ pub enum SessionEndReason {
     AllPass,
     DryRunStop,
     MaxIterationsReached(u32),
+    /// Auto-advance walked off the end of Scryfall's paper expansion
+    /// list — every tracked set is fully covered, no more sets to add.
+    CorpusComplete,
     // The reason string is consumed only by sinks that surface to the
     // user (TUI today, console keeps it brief).
     SurfacedToHuman(#[allow(dead_code)] String),
