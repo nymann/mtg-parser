@@ -30,6 +30,10 @@ const HOT_FILES: &[(&str, &str)] = &[
 ];
 
 pub fn run(args: &[String]) -> ExitCode {
+    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
+        print!("{HELP}");
+        return ExitCode::SUCCESS;
+    }
     match Options::parse(args).and_then(run_inner) {
         Ok(path) => {
             println!("{}", path.display());
@@ -104,7 +108,6 @@ impl Options {
                         .parse()
                         .with_context(|| format!("--churn-window value: {s:?}"))?;
                 }
-                "-h" | "--help" => bail!("{}", HELP),
                 other => bail!("unknown argument: {other}\n\n{HELP}"),
             }
         }
