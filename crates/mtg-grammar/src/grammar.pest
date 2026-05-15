@@ -481,8 +481,9 @@ sacrifice_permanents_action = { ^"sacrifice" ~ permanent_type_plural }
 keyword_ability = { keyword }
 keyword_ability_list = { keyword ~ ("," ~ keyword)+ }
 semicolon_keyword_ability_list = { keyword ~ (";" ~ keyword)+ }
-keyword         = _{ enchant | protection | simple_keyword }
-simple_keyword  = @{ ^"first" ~ " " ~ ^"strike" | ^"flying" | ^"reach" | ^"haste" | ^"defender" | ^"banding" | ^"trample" | ^"islandwalk" | ^"mountainwalk" | ^"swampwalk" | ^"indestructible" | ^"fear" }
+keyword         = _{ enchant | protection | landwalk | simple_keyword }
+simple_keyword  = @{ ^"first" ~ " " ~ ^"strike" | ^"flying" | ^"reach" | ^"haste" | ^"defender" | ^"banding" | ^"trample" | ^"indestructible" | ^"fear" }
+landwalk        = @{ basic_land_type ~ ^"walk" }
 protection      = { ^"protection" ~ ^"from" ~ color_word }
 
 cast_restriction = {

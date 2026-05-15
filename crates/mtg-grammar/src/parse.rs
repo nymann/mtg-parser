@@ -1752,6 +1752,7 @@ fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, 
 fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match pair.as_rule() {
         Rule::simple_keyword => Ok(Keyword::Simple(simple_keyword_from_str(pair.as_str())?)),
+        Rule::landwalk => Ok(Keyword::Landwalk(landwalk_from_str(pair.as_str())?)),
         Rule::protection => {
             let color = pair
                 .into_inner()
@@ -1779,12 +1780,20 @@ fn simple_keyword_from_str(text: &str) -> Result<SimpleKeyword, ParseError> {
         "defender" => Ok(SimpleKeyword::Defender),
         "banding" => Ok(SimpleKeyword::Banding),
         "trample" => Ok(SimpleKeyword::Trample),
-        "islandwalk" => Ok(SimpleKeyword::Islandwalk),
-        "mountainwalk" => Ok(SimpleKeyword::Mountainwalk),
-        "swampwalk" => Ok(SimpleKeyword::Swampwalk),
         "indestructible" => Ok(SimpleKeyword::Indestructible),
         "fear" => Ok(SimpleKeyword::Fear),
         _ => Err(ParseError::Internal("simple keyword")),
+    }
+}
+
+fn landwalk_from_str(text: &str) -> Result<BasicLandType, ParseError> {
+    match text.to_ascii_lowercase().as_str() {
+        "plainswalk" => Ok(BasicLandType::Plains),
+        "islandwalk" => Ok(BasicLandType::Island),
+        "swampwalk" => Ok(BasicLandType::Swamp),
+        "mountainwalk" => Ok(BasicLandType::Mountain),
+        "forestwalk" => Ok(BasicLandType::Forest),
+        _ => Err(ParseError::Internal("landwalk keyword")),
     }
 }
 

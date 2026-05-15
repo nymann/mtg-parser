@@ -799,6 +799,10 @@ fn write_prevention_recipient(out: &mut String, recipient: PreventionRecipient) 
 fn write_keyword(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::Simple(simple) => out.push_str(simple_keyword_title_name(simple)),
+        Keyword::Landwalk(land_type) => {
+            out.push_str(basic_land_type_name(land_type));
+            out.push_str("walk");
+        }
         Keyword::Protection(color) => {
             out.push_str("Protection from ");
             out.push_str(color_name(color));
@@ -1978,6 +1982,10 @@ fn write_copy_exception(out: &mut String, exception: CopyException) {
 fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::Simple(simple) => out.push_str(simple_keyword_name(simple)),
+        Keyword::Landwalk(land_type) => {
+            out.push_str(basic_land_type_lowercase_name(land_type));
+            out.push_str("walk");
+        }
         Keyword::Protection(color) => {
             out.push_str("protection from ");
             out.push_str(color_name(color));
@@ -1998,9 +2006,6 @@ fn simple_keyword_title_name(keyword: SimpleKeyword) -> &'static str {
         SimpleKeyword::Defender => "Defender",
         SimpleKeyword::Banding => "Banding",
         SimpleKeyword::Trample => "Trample",
-        SimpleKeyword::Islandwalk => "Islandwalk",
-        SimpleKeyword::Mountainwalk => "Mountainwalk",
-        SimpleKeyword::Swampwalk => "Swampwalk",
         SimpleKeyword::Indestructible => "Indestructible",
         SimpleKeyword::Fear => "Fear",
     }
@@ -2015,9 +2020,6 @@ fn simple_keyword_name(keyword: SimpleKeyword) -> &'static str {
         SimpleKeyword::Defender => "defender",
         SimpleKeyword::Banding => "banding",
         SimpleKeyword::Trample => "trample",
-        SimpleKeyword::Islandwalk => "islandwalk",
-        SimpleKeyword::Mountainwalk => "mountainwalk",
-        SimpleKeyword::Swampwalk => "swampwalk",
         SimpleKeyword::Indestructible => "indestructible",
         SimpleKeyword::Fear => "fear",
     }
@@ -2383,6 +2385,16 @@ fn basic_land_type_name(land_type: BasicLandType) -> &'static str {
         BasicLandType::Swamp => "Swamp",
         BasicLandType::Mountain => "Mountain",
         BasicLandType::Forest => "Forest",
+    }
+}
+
+fn basic_land_type_lowercase_name(land_type: BasicLandType) -> &'static str {
+    match land_type {
+        BasicLandType::Plains => "plains",
+        BasicLandType::Island => "island",
+        BasicLandType::Swamp => "swamp",
+        BasicLandType::Mountain => "mountain",
+        BasicLandType::Forest => "forest",
     }
 }
 

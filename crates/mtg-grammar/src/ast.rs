@@ -1106,6 +1106,7 @@ pub enum PhysicalAction {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
     Simple(SimpleKeyword),
+    Landwalk(BasicLandType),
     Protection(Color),
     Enchant(EnchantObject),
 }
@@ -1118,9 +1119,11 @@ impl Keyword {
     pub const DEFENDER: Self = Self::Simple(SimpleKeyword::Defender);
     pub const BANDING: Self = Self::Simple(SimpleKeyword::Banding);
     pub const TRAMPLE: Self = Self::Simple(SimpleKeyword::Trample);
-    pub const ISLANDWALK: Self = Self::Simple(SimpleKeyword::Islandwalk);
-    pub const MOUNTAINWALK: Self = Self::Simple(SimpleKeyword::Mountainwalk);
-    pub const SWAMPWALK: Self = Self::Simple(SimpleKeyword::Swampwalk);
+    pub const PLAINSWALK: Self = Self::Landwalk(BasicLandType::Plains);
+    pub const ISLANDWALK: Self = Self::Landwalk(BasicLandType::Island);
+    pub const SWAMPWALK: Self = Self::Landwalk(BasicLandType::Swamp);
+    pub const MOUNTAINWALK: Self = Self::Landwalk(BasicLandType::Mountain);
+    pub const FORESTWALK: Self = Self::Landwalk(BasicLandType::Forest);
     pub const INDESTRUCTIBLE: Self = Self::Simple(SimpleKeyword::Indestructible);
     pub const FEAR: Self = Self::Simple(SimpleKeyword::Fear);
 
@@ -1139,11 +1142,15 @@ impl Keyword {
     #[allow(non_upper_case_globals)]
     pub const Trample: Self = Self::TRAMPLE;
     #[allow(non_upper_case_globals)]
+    pub const Plainswalk: Self = Self::PLAINSWALK;
+    #[allow(non_upper_case_globals)]
     pub const Islandwalk: Self = Self::ISLANDWALK;
+    #[allow(non_upper_case_globals)]
+    pub const Swampwalk: Self = Self::SWAMPWALK;
     #[allow(non_upper_case_globals)]
     pub const Mountainwalk: Self = Self::MOUNTAINWALK;
     #[allow(non_upper_case_globals)]
-    pub const Swampwalk: Self = Self::SWAMPWALK;
+    pub const Forestwalk: Self = Self::FORESTWALK;
     #[allow(non_upper_case_globals)]
     pub const Indestructible: Self = Self::INDESTRUCTIBLE;
     #[allow(non_upper_case_globals)]
@@ -1159,9 +1166,12 @@ enum KeywordSerde {
     Defender,
     Banding,
     Trample,
+    Plainswalk,
     Islandwalk,
-    Mountainwalk,
     Swampwalk,
+    Mountainwalk,
+    Forestwalk,
+    Landwalk(BasicLandType),
     Indestructible,
     Fear,
     Protection(Color),
@@ -1178,9 +1188,11 @@ impl From<Keyword> for KeywordSerde {
             Keyword::Simple(SimpleKeyword::Defender) => Self::Defender,
             Keyword::Simple(SimpleKeyword::Banding) => Self::Banding,
             Keyword::Simple(SimpleKeyword::Trample) => Self::Trample,
-            Keyword::Simple(SimpleKeyword::Islandwalk) => Self::Islandwalk,
-            Keyword::Simple(SimpleKeyword::Mountainwalk) => Self::Mountainwalk,
-            Keyword::Simple(SimpleKeyword::Swampwalk) => Self::Swampwalk,
+            Keyword::Landwalk(BasicLandType::Plains) => Self::Plainswalk,
+            Keyword::Landwalk(BasicLandType::Island) => Self::Islandwalk,
+            Keyword::Landwalk(BasicLandType::Swamp) => Self::Swampwalk,
+            Keyword::Landwalk(BasicLandType::Mountain) => Self::Mountainwalk,
+            Keyword::Landwalk(BasicLandType::Forest) => Self::Forestwalk,
             Keyword::Simple(SimpleKeyword::Indestructible) => Self::Indestructible,
             Keyword::Simple(SimpleKeyword::Fear) => Self::Fear,
             Keyword::Protection(color) => Self::Protection(color),
@@ -1199,9 +1211,12 @@ impl From<KeywordSerde> for Keyword {
             KeywordSerde::Defender => Self::Simple(SimpleKeyword::Defender),
             KeywordSerde::Banding => Self::Simple(SimpleKeyword::Banding),
             KeywordSerde::Trample => Self::Simple(SimpleKeyword::Trample),
-            KeywordSerde::Islandwalk => Self::Simple(SimpleKeyword::Islandwalk),
-            KeywordSerde::Mountainwalk => Self::Simple(SimpleKeyword::Mountainwalk),
-            KeywordSerde::Swampwalk => Self::Simple(SimpleKeyword::Swampwalk),
+            KeywordSerde::Plainswalk => Self::Landwalk(BasicLandType::Plains),
+            KeywordSerde::Islandwalk => Self::Landwalk(BasicLandType::Island),
+            KeywordSerde::Swampwalk => Self::Landwalk(BasicLandType::Swamp),
+            KeywordSerde::Mountainwalk => Self::Landwalk(BasicLandType::Mountain),
+            KeywordSerde::Forestwalk => Self::Landwalk(BasicLandType::Forest),
+            KeywordSerde::Landwalk(land_type) => Self::Landwalk(land_type),
             KeywordSerde::Indestructible => Self::Simple(SimpleKeyword::Indestructible),
             KeywordSerde::Fear => Self::Simple(SimpleKeyword::Fear),
             KeywordSerde::Protection(color) => Self::Protection(color),
@@ -1237,9 +1252,6 @@ pub enum SimpleKeyword {
     Defender,
     Banding,
     Trample,
-    Islandwalk,
-    Mountainwalk,
-    Swampwalk,
     Indestructible,
     Fear,
 }
