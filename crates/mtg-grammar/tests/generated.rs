@@ -76,3 +76,5 @@ mod conservator;
 mod contract_from_below;
 #[path = "generated/control_magic.rs"]
 mod control_magic;
+#[path = "generated/conversion.rs"]
+mod conversion;

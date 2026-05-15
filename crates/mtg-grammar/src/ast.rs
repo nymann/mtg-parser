@@ -167,6 +167,8 @@ pub enum TriggerEvent {
     BeginningOfTheNextEndStep,
     /// "the beginning of the chosen player's upkeep"
     BeginningOfChosenPlayersUpkeep,
+    /// "the beginning of your upkeep"
+    BeginningOfYourUpkeep,
     /// "end of combat"
     EndOfCombat,
     /// "this <source> blocks or becomes blocked by a non-<creature_type>
@@ -216,6 +218,11 @@ pub enum TriggerEffect {
     /// control and attach this Aura to it" — pulls the enchanted card
     /// out of its zone and re-attaches the Aura on the battlefield.
     ReturnEnchantedCardAndAttach { card_type: PermanentType },
+    /// "sacrifice this <source> unless you pay <mana_cost>"
+    SacrificeSourceUnlessYouPay {
+        source: SourceObject,
+        cost: ManaCost,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -448,6 +455,11 @@ pub enum StaticAbility {
     EffectDoesntRemoveThisAura,
     /// "This <permanent_type> doesn't untap during your untap step."
     SourceDoesntUntapDuringYourUntapStep { source: SourceObject },
+    /// "All <basic_land_type>s are <basic_land_type>s."
+    BasicLandsAreBasicLands {
+        from: BasicLandType,
+        to: BasicLandType,
+    },
     /// "Target creature defending player controls can block any number
     /// of creatures this turn."
     TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn,
@@ -547,6 +559,10 @@ pub enum ValueExpression {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BasicLandType {
+    Plains,
+    Island,
+    Swamp,
+    Mountain,
     Forest,
 }
 

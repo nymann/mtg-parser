@@ -549,6 +549,13 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_source_object_capitalized(out, *source);
             out.push_str(" doesn't untap during your untap step.");
         }
+        StaticAbility::BasicLandsAreBasicLands { from, to } => {
+            out.push_str("All ");
+            out.push_str(basic_land_type_plural_name(*from));
+            out.push_str(" are ");
+            out.push_str(basic_land_type_plural_name(*to));
+            out.push('.');
+        }
         StaticAbility::TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn => {
             out.push_str(
                 "Target creature defending player controls can block any number of creatures this turn.",
@@ -578,6 +585,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
+        | TriggerEvent::BeginningOfYourUpkeep
         | TriggerEvent::EndOfCombat => "At ",
         TriggerEvent::ThisAuraEnters | TriggerEvent::ThisAuraLeavesTheBattlefield => "When ",
     });
@@ -613,6 +621,9 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         }
         TriggerEvent::BeginningOfChosenPlayersUpkeep => {
             out.push_str("the beginning of the chosen player's upkeep");
+        }
+        TriggerEvent::BeginningOfYourUpkeep => {
+            out.push_str("the beginning of your upkeep");
         }
         TriggerEvent::EndOfCombat => {
             out.push_str("end of combat");
@@ -688,6 +699,13 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
             out.push_str("Return enchanted ");
             out.push_str(permanent_type_name(*card_type));
             out.push_str(" card to the battlefield under your control and attach this Aura to it.");
+        }
+        TriggerEffect::SacrificeSourceUnlessYouPay { source, cost } => {
+            out.push_str("sacrifice ");
+            write_source_object(out, *source);
+            out.push_str(" unless you pay ");
+            write_mana_cost(out, cost);
+            out.push('.');
         }
     }
 }
@@ -932,6 +950,10 @@ fn step_name(step: Step) -> &'static str {
 
 fn basic_land_type_plural_name(land_type: BasicLandType) -> &'static str {
     match land_type {
+        BasicLandType::Plains => "Plains",
+        BasicLandType::Island => "Islands",
+        BasicLandType::Swamp => "Swamps",
+        BasicLandType::Mountain => "Mountains",
         BasicLandType::Forest => "Forests",
     }
 }

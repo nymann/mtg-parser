@@ -94,6 +94,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_you_control_enchanted
         | Rule::static_you_may_have_source_enter_as_copy
         | Rule::static_source_doesnt_untap_during_your_untap_step
+        | Rule::static_basic_lands_are_basic_lands
         | Rule::target_creature_defending_player_controls_can_block_any_number
         | Rule::it_blocks_each_attacking_creature_if_able
         | Rule::this_turn_defending_players_make_random_blocking_piles
@@ -516,6 +517,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::beginning_of_chosen_players_upkeep => {
                 event = Some(TriggerEvent::BeginningOfChosenPlayersUpkeep);
             }
+            Rule::beginning_of_your_upkeep => {
+                event = Some(TriggerEvent::BeginningOfYourUpkeep);
+            }
             Rule::end_of_combat => {
                 event = Some(TriggerEvent::EndOfCombat);
             }
@@ -551,6 +555,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::return_enchanted_card_and_attach => {
                 effects.push(return_enchanted_card_and_attach_from_pair(child)?);
+            }
+            Rule::sacrifice_source_unless_you_pay => {
+                effects.push(sacrifice_source_unless_you_pay_from_pair(child)?);
             }
             Rule::source_deals_damage_to_that_permanents_controller => {
                 effects.push(source_deals_damage_to_that_permanents_controller_from_pair(
@@ -657,6 +664,22 @@ fn return_enchanted_card_and_attach_from_pair(
         .ok_or(ParseError::Internal("return_enchanted missing card_type"))?;
     Ok(TriggerEffect::ReturnEnchantedCardAndAttach {
         card_type: permanent_type_from_pair(pt)?,
+    })
+}
+
+fn sacrifice_source_unless_you_pay_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("sacrifice unless missing source"))?;
+    let cost_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("sacrifice unless missing cost"))?;
+    Ok(TriggerEffect::SacrificeSourceUnlessYouPay {
+        source: source_object_from_pair(source_pair)?,
+        cost: mana_cost_from_pair(cost_pair),
     })
 }
 
@@ -947,6 +970,19 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 .expect("static untap restriction begins with a source object");
             Ok(StaticAbility::SourceDoesntUntapDuringYourUntapStep {
                 source: source_object_from_pair(source_pair)?,
+            })
+        }
+        Rule::static_basic_lands_are_basic_lands => {
+            let mut inner = pair.into_inner();
+            let from_pair = inner
+                .next()
+                .expect("basic land type-changing effect names source land type");
+            let to_pair = inner
+                .next()
+                .expect("basic land type-changing effect names destination land type");
+            Ok(StaticAbility::BasicLandsAreBasicLands {
+                from: basic_land_type_from_plural_pair(from_pair)?,
+                to: basic_land_type_from_plural_pair(to_pair)?,
             })
         }
         Rule::target_creature_defending_player_controls_can_block_any_number => Ok(
@@ -1320,6 +1356,10 @@ fn basic_land_type_from_plural_pair(pair: Pair<Rule>) -> Result<BasicLandType, P
         return Err(ParseError::Internal("basic_land_type_plural"));
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
+        "plains" => Ok(BasicLandType::Plains),
+        "islands" => Ok(BasicLandType::Island),
+        "swamps" => Ok(BasicLandType::Swamp),
+        "mountains" => Ok(BasicLandType::Mountain),
         "forests" => Ok(BasicLandType::Forest),
         _ => Err(ParseError::Internal("basic_land_type_plural variant")),
     }

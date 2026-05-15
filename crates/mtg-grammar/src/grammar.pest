@@ -64,6 +64,7 @@ sentence_statement = _{
   | static_you_may_have_source_enter_as_copy
   | static_source_doesnt_untap_during_your_untap_step
   | static_effect_doesnt_remove_this_aura
+  | static_basic_lands_are_basic_lands
   | triggered_ability
   | physical_action
   | each_player_equalizes_controlled_permanents
@@ -274,6 +275,7 @@ static_ability = _{
   | static_you_control_enchanted
   | static_you_may_have_source_enter_as_copy
   | static_effect_doesnt_remove_this_aura
+  | static_basic_lands_are_basic_lands
 }
 
 static_as_long_as = {
@@ -325,6 +327,10 @@ static_you_may_have_source_enter_as_copy = {
 
 static_effect_doesnt_remove_this_aura = {
     ^"this" ~ ^"effect" ~ ^"doesn't" ~ ^"remove" ~ ^"this" ~ ^"aura" ~ "."
+}
+
+static_basic_lands_are_basic_lands = {
+    ^"all" ~ basic_land_type_plural ~ ^"are" ~ basic_land_type_plural ~ "."
 }
 
 static_source_doesnt_untap_during_your_untap_step = {
@@ -491,7 +497,13 @@ its_power = { ^"its" ~ ^"power" }
 unsigned_number = @{ ASCII_DIGIT+ }
 rounding = { ^"rounded" ~ rounding_direction }
 rounding_direction = @{ ^"down" | ^"up" }
-basic_land_type_plural = @{ ^"forests" }
+basic_land_type_plural = @{
+    ^"plains"
+  | ^"islands"
+  | ^"swamps"
+  | ^"mountains"
+  | ^"forests"
+}
 
 // "When <event>, [if <cond>,] <effect>+"
 // Each trigger_effect rule below carries its own terminator (a closing
@@ -512,6 +524,7 @@ trigger_event = _{
   | aura_enters
   | source_blocks_or_becomes_blocked_by_non_creature_type_creature
   | end_of_combat
+  | beginning_of_your_upkeep
   | beginning_of_chosen_players_upkeep
   | beginning_of_the_next_end_step
   | permanent_enters
@@ -530,6 +543,9 @@ beginning_of_the_next_end_step = {
 beginning_of_chosen_players_upkeep = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"chosen" ~ ^"player's" ~ ^"upkeep"
 }
+beginning_of_your_upkeep = {
+    ^"the" ~ ^"beginning" ~ ^"of" ~ ^"your" ~ ^"upkeep"
+}
 
 intervening_if         = _{ its_on_the_battlefield | source_attacked_or_blocked_this_combat }
 its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
@@ -543,6 +559,7 @@ trigger_effect = _{
   | remove_pt_counter_from_it
   | loses_and_gains_keyword
   | return_enchanted_card_and_attach
+  | sacrifice_source_unless_you_pay
   | source_deals_variable_damage_to_that_player
   | source_deals_damage_to_that_permanents_controller
   | that_creatures_controller_sacrifices_it
@@ -584,6 +601,10 @@ destroy_that_creature_at_end_of_combat = {
 
 that_creatures_controller_sacrifices_it = {
     ^"that" ~ ^"creature's" ~ ^"controller" ~ ^"sacrifices" ~ ^"it" ~ "."
+}
+
+sacrifice_source_unless_you_pay = {
+    ^"sacrifice" ~ source_object ~ ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ "."
 }
 
 remove_pt_counter_from_it = {
