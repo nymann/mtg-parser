@@ -163,6 +163,7 @@ fn copy_target_to_clipboard(state: &mut AppState, target: input::CopyTarget) {
         input::CopyTarget::Card => ("card", state.card_text()),
         input::CopyTarget::Steps => ("steps", state.steps_text()),
         input::CopyTarget::All => ("all", state.all_json_text()),
+        input::CopyTarget::Visual => ("visual", state.visual_text()),
     };
     match copy_to_clipboard(&text) {
         Ok(()) => state.push_ui_note(format!(

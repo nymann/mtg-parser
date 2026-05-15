@@ -3,7 +3,7 @@
 use ratatui::{
     layout::Alignment,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Frame,
@@ -501,18 +501,36 @@ fn render_event_lines(state: &AppState, _width: u16) -> Vec<Line<'static>> {
             continue;
         }
         if Some(row.iteration_index) != current_iter {
-            out.push(iter_separator_line(state, row.iteration_index));
+            push_output_line(
+                &mut out,
+                state,
+                iter_separator_line(state, row.iteration_index),
+            );
             current_iter = Some(row.iteration_index);
         }
         for line in render_row(row, &root) {
-            out.push(line);
+            push_output_line(&mut out, state, line);
         }
     }
     if let Some(end) = &state.session_end {
-        out.push(Line::from(""));
-        out.push(session_end_line(end));
+        push_output_line(&mut out, state, Line::from(""));
+        push_output_line(&mut out, state, session_end_line(end));
     }
     out
+}
+
+fn push_output_line(out: &mut Vec<Line<'static>>, state: &AppState, line: Line<'static>) {
+    let idx = out.len();
+    let line = if state
+        .visual
+        .range()
+        .is_some_and(|(start, end)| (start..=end).contains(&idx))
+    {
+        line.bg(Color::DarkGray)
+    } else {
+        line
+    };
+    out.push(line);
 }
 
 fn iter_separator_line(state: &AppState, iter_idx: u32) -> Line<'static> {
@@ -776,7 +794,20 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         key_span("g/G"),
         Span::raw(" top/bottom"),
     ];
-    let copy = if state.copy_mode {
+    let copy = if state.visual.active {
+        vec![
+            Span::styled(
+                "visual ",
+                Style::default().fg(C_WARN).add_modifier(Modifier::BOLD),
+            ),
+            key_span("j/k"),
+            Span::raw(" extend  "),
+            hotkey_span("y"),
+            Span::raw(" yank  "),
+            key_span("Esc"),
+            Span::raw(" cancel"),
+        ]
+    } else if state.copy_mode {
         vec![
             Span::styled(
                 "copy ",
@@ -802,7 +833,9 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
             key_span("f"),
             Span::raw(" filter  "),
             key_span("H"),
-            Span::raw(" history"),
+            Span::raw(" history  "),
+            key_span("v"),
+            Span::raw(" visual"),
         ]
     };
     let right = format!(

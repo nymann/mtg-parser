@@ -111,7 +111,7 @@ fn parse_codex(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
     if lower == "thread.started" {
         let model = string_at(ev, &["model", "model_slug"])
             .or_else(|| string_at_path(ev, &["payload", "model"]))
-            .unwrap_or_else(|| "unknown".to_string());
+            .unwrap_or_else(|| "default".to_string());
         return vec![ParsedAgentEvent::Init { model }];
     }
 
@@ -141,7 +141,7 @@ fn parse_codex(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
     if lower.contains("session") || lower.contains("init") || lower == "started" {
         let model = string_at(ev, &["model", "model_slug"])
             .or_else(|| string_at_path(ev, &["payload", "model"]))
-            .unwrap_or_else(|| "unknown".to_string());
+            .unwrap_or_else(|| "default".to_string());
         return vec![ParsedAgentEvent::Init { model }];
     }
 

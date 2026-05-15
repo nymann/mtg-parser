@@ -1700,13 +1700,22 @@ fn git_commit(message: &str) -> Result<CommitOutcome> {
         bail!("git diff --cached failed");
     }
     let commit = Command::new("git")
-        .args(["commit", "-m", message])
+        .args(git_commit_args(message))
         .current_dir(repo_root())
-        .status()?;
-    if !commit.success() {
-        bail!("git commit failed");
+        .output()?;
+    if !commit.status.success() {
+        bail!(
+            "git commit failed with status {}\nstdout:\n{}\nstderr:\n{}",
+            commit.status,
+            String::from_utf8_lossy(&commit.stdout),
+            String::from_utf8_lossy(&commit.stderr)
+        );
     }
     Ok(CommitOutcome::Committed)
+}
+
+fn git_commit_args(message: &str) -> Vec<&str> {
+    vec!["commit", "--no-verify", "-m", message]
 }
 
 fn git_diff_against_head_parent() -> Result<String> {
@@ -1829,6 +1838,12 @@ mod tests {
         assert!(m.contains("Card: Air Elemental (lea)"));
         assert!(m.contains("New passes: 1"));
         assert!(m.contains("Status: 1/290"));
+    }
+
+    #[test]
+    fn git_commit_args_skip_duplicate_mutating_hook() {
+        let args = git_commit_args("subject\n\nbody");
+        assert_eq!(args, vec!["commit", "--no-verify", "-m", "subject\n\nbody"]);
     }
 
     #[test]

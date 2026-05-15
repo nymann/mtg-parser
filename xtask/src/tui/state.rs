@@ -30,6 +30,7 @@ pub struct AppState {
     pub search: SearchState,
     pub history: HistoryState,
     pub copy_mode: bool,
+    pub visual: VisualState,
 }
 
 impl AppState {
@@ -83,6 +84,18 @@ impl AppState {
             lines.push(output_session_end(end));
         }
         lines.join("\n")
+    }
+
+    pub fn visual_text(&self) -> String {
+        let Some((start, end)) = self.visual.range() else {
+            return String::new();
+        };
+        self.output_text()
+            .lines()
+            .skip(start)
+            .take(end.saturating_sub(start) + 1)
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     pub fn card_text(&self) -> String {
@@ -432,6 +445,34 @@ impl AppState {
                 && last_num_turns == num_turns
                 && (*last_total_cost_usd - *total_cost_usd).abs() < f64::EPSILON
         )
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct VisualState {
+    pub active: bool,
+    pub anchor: u16,
+    pub cursor: u16,
+}
+
+impl VisualState {
+    pub fn start(&mut self, line: u16) {
+        self.active = true;
+        self.anchor = line;
+        self.cursor = line;
+    }
+
+    pub fn cancel(&mut self) {
+        self.active = false;
+    }
+
+    pub fn range(&self) -> Option<(usize, usize)> {
+        if !self.active {
+            return None;
+        }
+        let start = self.anchor.min(self.cursor) as usize;
+        let end = self.anchor.max(self.cursor) as usize;
+        Some((start, end))
     }
 }
 

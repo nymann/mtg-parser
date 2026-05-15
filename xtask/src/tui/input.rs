@@ -19,6 +19,7 @@ pub enum CopyTarget {
     Card,
     Steps,
     All,
+    Visual,
 }
 
 pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
@@ -32,6 +33,9 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
     }
     if state.history.open {
         return handle_history_key(key, state);
+    }
+    if state.visual.active {
+        return handle_visual_key(key, state);
     }
     if state.copy_mode {
         return handle_copy_key(key, state);
@@ -87,6 +91,11 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
             state.copy_mode = true;
             Action::None
         }
+        (KeyCode::Char('v'), _) | (KeyCode::Char('V'), _) => {
+            state.autoscroll = false;
+            state.visual.start(state.scroll);
+            Action::None
+        }
         (KeyCode::Char('/'), _) => {
             state.search.editing = true;
             Action::None
@@ -122,6 +131,44 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
             Action::None
         }
 
+        _ => Action::None,
+    }
+}
+
+fn handle_visual_key(key: KeyEvent, state: &mut AppState) -> Action {
+    match key.code {
+        KeyCode::Esc => {
+            state.visual.cancel();
+            Action::None
+        }
+        KeyCode::Char('y') => {
+            state.visual.cancel();
+            Action::Copy(CopyTarget::Visual)
+        }
+        KeyCode::Up | KeyCode::Char('k') => {
+            state.autoscroll = false;
+            state.scroll = state.scroll.saturating_sub(1);
+            state.visual.cursor = state.scroll;
+            Action::None
+        }
+        KeyCode::Down | KeyCode::Char('j') => {
+            state.autoscroll = false;
+            state.scroll = state.scroll.saturating_add(1);
+            state.visual.cursor = state.scroll;
+            Action::None
+        }
+        KeyCode::PageUp => {
+            state.autoscroll = false;
+            state.scroll = state.scroll.saturating_sub(10);
+            state.visual.cursor = state.scroll;
+            Action::None
+        }
+        KeyCode::PageDown => {
+            state.autoscroll = false;
+            state.scroll = state.scroll.saturating_add(10);
+            state.visual.cursor = state.scroll;
+            Action::None
+        }
         _ => Action::None,
     }
 }
