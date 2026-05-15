@@ -696,22 +696,57 @@ enum SentenceCase {
     Lower,
 }
 
-fn write_add_mana_sentence(out: &mut String, mana: &ManaCost, case: SentenceCase) {
-    out.push_str(match case {
-        SentenceCase::Upper => "Add ",
-        SentenceCase::Lower => "add ",
-    });
-    write_mana_cost(out, mana);
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct SentenceTemplate {
+    upper_prefix: &'static str,
+    lower_prefix: &'static str,
+}
+
+impl SentenceTemplate {
+    const fn new(upper_prefix: &'static str, lower_prefix: &'static str) -> Self {
+        Self {
+            upper_prefix,
+            lower_prefix,
+        }
+    }
+
+    fn prefix(self, case: SentenceCase) -> &'static str {
+        match case {
+            SentenceCase::Upper => self.upper_prefix,
+            SentenceCase::Lower => self.lower_prefix,
+        }
+    }
+}
+
+const ADD_MANA_SENTENCE: SentenceTemplate = SentenceTemplate::new("Add ", "add ");
+const UNTAP_SENTENCE: SentenceTemplate = SentenceTemplate::new("Untap ", "untap ");
+const UNTAP_REFERENCED_PERMANENT_SENTENCE: SentenceTemplate =
+    SentenceTemplate::new("Untap the ", "untap the ");
+const YOU_GAIN_LIFE_SENTENCE: SentenceTemplate = SentenceTemplate::new("You gain ", "you gain ");
+const TARGET_PLAYER_GAINS_LIFE_SENTENCE: SentenceTemplate =
+    SentenceTemplate::new("Target player gains ", "target player gains ");
+
+fn write_template_sentence(
+    out: &mut String,
+    template: SentenceTemplate,
+    case: SentenceCase,
+    write_body: impl FnOnce(&mut String),
+) {
+    out.push_str(template.prefix(case));
+    write_body(out);
     out.push('.');
 }
 
-fn write_untap_sentence(out: &mut String, source: SourceObject, case: SentenceCase) {
-    out.push_str(match case {
-        SentenceCase::Upper => "Untap ",
-        SentenceCase::Lower => "untap ",
+fn write_add_mana_sentence(out: &mut String, mana: &ManaCost, case: SentenceCase) {
+    write_template_sentence(out, ADD_MANA_SENTENCE, case, |out| {
+        write_mana_cost(out, mana)
     });
-    write_source_object(out, source);
-    out.push('.');
+}
+
+fn write_untap_sentence(out: &mut String, source: SourceObject, case: SentenceCase) {
+    write_template_sentence(out, UNTAP_SENTENCE, case, |out| {
+        write_source_object(out, source);
+    });
 }
 
 fn write_untap_referenced_permanent_sentence(
@@ -719,24 +754,26 @@ fn write_untap_referenced_permanent_sentence(
     permanent_type: PermanentType,
     case: SentenceCase,
 ) {
-    out.push_str(match case {
-        SentenceCase::Upper => "Untap the ",
-        SentenceCase::Lower => "untap the ",
+    write_template_sentence(out, UNTAP_REFERENCED_PERMANENT_SENTENCE, case, |out| {
+        out.push_str(permanent_type_name(permanent_type));
     });
-    out.push_str(permanent_type_name(permanent_type));
-    out.push('.');
 }
 
 fn write_you_gain_life(out: &mut String, amount: u32, case: SentenceCase) {
-    out.push_str(match case {
-        SentenceCase::Upper => "You gain ",
-        SentenceCase::Lower => "you gain ",
+    write_template_sentence(out, YOU_GAIN_LIFE_SENTENCE, case, |out| {
+        write!(out, "{amount} life").expect("write to String never fails");
     });
-    write!(out, "{amount} life.").expect("write to String never fails");
 }
 
 fn write_target_player_gains_life(out: &mut String, amount: u32) {
-    write!(out, "Target player gains {amount} life.").expect("write to String never fails");
+    write_template_sentence(
+        out,
+        TARGET_PLAYER_GAINS_LIFE_SENTENCE,
+        SentenceCase::Upper,
+        |out| {
+            write!(out, "{amount} life").expect("write to String never fails");
+        },
+    );
 }
 
 fn write_damage_prevention_effect(
