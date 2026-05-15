@@ -1,7 +1,6 @@
 //! Refactor-oriented workflow. Unlike `add-card`, this flow is not
-//! trying to make the next card pass. It runs a bounded, qmd-grounded
-//! agent refactor whose success criteria are unchanged behavior and
-//! lower future edit cost.
+//! trying to make the next card pass. It runs a staged, qmd-grounded
+//! grammar refactor: inventory, cluster, plan, implement, gate, commit.
 
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
@@ -173,12 +172,13 @@ cargo xtask refactor-hotspot [--theme THEME] [--target PATH] [--agent codex|clau
                              [--max-iterations N] [--dry-run] [--allow-dirty]
                              [--out PATH] [--print]
 
-Autonomous by default: runs N coupled grammar-core refactor passes over
-grammar.pest, ast.rs, parse.rs, and unparse.rs. Each pass builds a qmd-grounded
-prompt, invokes the agent, runs `cargo test`, `cargo xtask corpus`,
-`just audit-page`, and commits the result. Use --theme or --target to override
-the default selection. Use --dry-run or --print to stop after writing/printing
-the first prompt.
+Autonomous by default: runs N staged grammar-core refactor passes over
+grammar.pest, ast.rs, parse.rs, and unparse.rs. Each pass inventories the
+current grammar surface, asks the agent to cluster similar grammar shapes, asks
+for a generalization plan, invokes a fresh implementation agent with only that
+plan, runs `cargo test`, `cargo xtask corpus`, `just audit-page`, and commits
+the result. Use --theme or --target to override the default selection. Use
+--dry-run or --print to stop after writing/printing the first stage prompt.
 
 Themes:
   grammar-core         Coupled grammar/AST/parser/unparser cleanup.
@@ -364,7 +364,7 @@ fn run_inner(opts: Options) -> Result<()> {
 }
 
 fn run_iteration(opts: &Options, iteration: u32) -> Result<()> {
-    let selected = resolve_selection(&opts)?;
+    let selected = resolve_selection(opts)?;
     println!(
         "iteration {iteration}/{}: selected: {} ({})",
         opts.max_iterations,
@@ -372,48 +372,115 @@ fn run_iteration(opts: &Options, iteration: u32) -> Result<()> {
         selected.reason
     );
 
-    let prompt = build_prompt(opts, &selected, iteration)?;
-    if opts.print {
-        print!("{prompt}");
-    }
-    let out = match opts.out.clone() {
-        Some(path) => path,
-        None => {
-            let dir = create_log_dir(selected.theme)?;
-            dir.join("prompt.md")
-        }
+    let log_dir = match opts.out.clone() {
+        Some(path) => path
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_else(refactor_hotspot_log_root),
+        None => create_log_dir(selected.theme, iteration)?,
     };
-    if let Some(parent) = out.parent() {
-        std::fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
+    std::fs::create_dir_all(&log_dir).with_context(|| format!("create {}", log_dir.display()))?;
+
+    let inventory = build_inventory(opts, &selected)?;
+    std::fs::write(log_dir.join("inventory.md"), &inventory)
+        .with_context(|| format!("write {}", log_dir.join("inventory.md").display()))?;
+
+    let cluster_prompt = build_cluster_prompt(opts, &selected, &inventory, iteration)?;
+    std::fs::write(log_dir.join("cluster_prompt.md"), &cluster_prompt)
+        .with_context(|| format!("write {}", log_dir.join("cluster_prompt.md").display()))?;
+    if opts.print {
+        print!("{cluster_prompt}");
     }
-    std::fs::write(&out, &prompt).with_context(|| format!("write {}", out.display()))?;
-    println!("prompt: {}", out.display());
+    println!("inventory: {}", log_dir.join("inventory.md").display());
+    println!(
+        "cluster prompt: {}",
+        log_dir.join("cluster_prompt.md").display()
+    );
 
     if opts.dry_run || opts.print {
         println!(
-            "dry-run: not invoking {}, not running gates, not committing",
+            "dry-run: not invoking {}, not planning, not implementing, not running gates",
             opts.agent.label()
         );
         return Ok(());
     }
 
-    let log_dir = out
-        .parent()
-        .map(Path::to_path_buf)
-        .unwrap_or_else(refactor_hotspot_log_root);
-    let transcript = log_dir.join("transcript.ndjson");
-    let response = log_dir.join("response.md");
-
-    println!("agent: {}", opts.agent.label());
-    let outcome = invoke_agent(opts.agent, &prompt, &transcript)?;
-    std::fs::write(&response, &outcome.assistant_text)
-        .with_context(|| format!("write {}", response.display()))?;
-    if !outcome.success {
+    println!("stage: cluster ({})", opts.agent.label());
+    let cluster_outcome = invoke_agent(
+        opts.agent,
+        &cluster_prompt,
+        &log_dir.join("cluster_transcript.ndjson"),
+    )?;
+    std::fs::write(log_dir.join("clusters.md"), &cluster_outcome.assistant_text)
+        .with_context(|| format!("write {}", log_dir.join("clusters.md").display()))?;
+    if !cluster_outcome.success {
         bail!(
-            "{} exited with status {}; transcript: {}",
+            "{} cluster stage exited with status {}; transcript: {}",
             opts.agent.label(),
-            outcome.exit_code,
-            transcript.display()
+            cluster_outcome.exit_code,
+            log_dir.join("cluster_transcript.ndjson").display()
+        );
+    }
+
+    let plan_prompt = build_plan_prompt(
+        opts,
+        &selected,
+        &inventory,
+        &cluster_outcome.assistant_text,
+        iteration,
+    )?;
+    std::fs::write(log_dir.join("plan_prompt.md"), &plan_prompt)
+        .with_context(|| format!("write {}", log_dir.join("plan_prompt.md").display()))?;
+
+    println!("stage: plan ({})", opts.agent.label());
+    let plan_outcome = invoke_agent(
+        opts.agent,
+        &plan_prompt,
+        &log_dir.join("plan_transcript.ndjson"),
+    )?;
+    std::fs::write(log_dir.join("plan.md"), &plan_outcome.assistant_text)
+        .with_context(|| format!("write {}", log_dir.join("plan.md").display()))?;
+    if !plan_outcome.success {
+        bail!(
+            "{} plan stage exited with status {}; transcript: {}",
+            opts.agent.label(),
+            plan_outcome.exit_code,
+            log_dir.join("plan_transcript.ndjson").display()
+        );
+    }
+
+    let implementation_prompt = build_implementation_prompt(
+        opts,
+        &selected,
+        &inventory,
+        &plan_outcome.assistant_text,
+        iteration,
+    )?;
+    let prompt_path = opts
+        .out
+        .clone()
+        .unwrap_or_else(|| log_dir.join("prompt.md"));
+    std::fs::write(&prompt_path, &implementation_prompt)
+        .with_context(|| format!("write {}", prompt_path.display()))?;
+    println!("implementation prompt: {}", prompt_path.display());
+
+    println!("stage: implement ({})", opts.agent.label());
+    let implement_outcome = invoke_agent(
+        opts.agent,
+        &implementation_prompt,
+        &log_dir.join("transcript.ndjson"),
+    )?;
+    std::fs::write(
+        log_dir.join("response.md"),
+        &implement_outcome.assistant_text,
+    )
+    .with_context(|| format!("write {}", log_dir.join("response.md").display()))?;
+    if !implement_outcome.success {
+        bail!(
+            "{} implementation stage exited with status {}; transcript: {}",
+            opts.agent.label(),
+            implement_outcome.exit_code,
+            log_dir.join("transcript.ndjson").display()
         );
     }
 
@@ -476,63 +543,37 @@ fn infer_theme_for_target(target: &str) -> Theme {
     }
 }
 
-fn create_log_dir(theme: Theme) -> Result<PathBuf> {
+fn create_log_dir(theme: Theme, iteration: u32) -> Result<PathBuf> {
     let since_epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .context("system clock before unix epoch")?
         .as_secs();
-    let dir = refactor_hotspot_log_root().join(format!("{since_epoch}-{}", theme.label()));
+    let dir =
+        refactor_hotspot_log_root().join(format!("{since_epoch}-{}-{iteration}", theme.label()));
     std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
     Ok(dir)
 }
 
-fn build_prompt(opts: &Options, selected: &SelectedRefactor, iteration: u32) -> Result<String> {
+fn build_inventory(opts: &Options, selected: &SelectedRefactor) -> Result<String> {
     let target_files = &selected.files;
-    let rules = crate::rules_context::render_rules_block(selected.theme.qmd_query());
     let stats = render_hotspot_stats(opts.churn_window)?;
     let snippets = render_code_snippets(&target_files)?;
+    let grammar_rules = render_grammar_rule_inventory()?;
 
     Ok(format!(
         "\
-# Refactor Hotspot: {theme}
+# Grammar Refactor Inventory: {theme}
 
 You are working in `mtg-parser`. This is a refactoring task, not a card-coverage task.
-
-This is autonomous refactor iteration {iteration} of {max_iterations}. Make one
-bounded, coherent improvement; the orchestrator will run gates and commit before
-starting the next iteration.
-
-## Goal
-
-Reduce future edit cost in the selected hotspot while preserving parser behavior.
 
 ## Selection
 
 {selection_reason}
 
-## Theme Guidance
-
-{theme_instructions}
-
-## Required Constraints
-
-1. Preserve corpus behavior unless the refactor naturally fixes existing failures.
-2. Do not add one-card special cases.
-3. Prefer phenomenon-shaped rules and AST nodes over sentence-shaped variants.
-4. Use the Comprehensive Rules context for vocabulary and abstraction names.
-5. Keep the patch narrow. Touch only files justified by this theme.
-6. For default grammar-core passes, treat grammar, AST, parse, and unparse as
-   one coupled surface. If the grammar shape is causing parser complexity,
-   simplify the grammar shape first and update parser/unparser together.
-7. Stop after one coherent refactor. Do not start a second unrelated cleanup.
-8. The orchestrator owns `cargo test`, `cargo xtask corpus`, `just audit-page`,
-   and commit.
-
 ## Selected Files
 
 {files}
 
-{rules}
 ## Hotspot Stats
 
 Churn is touches in the last {churn_window} commits. LOC is current working tree line count.
@@ -540,33 +581,178 @@ Churn is touches in the last {churn_window} commits. LOC is current working tree
 ```text
 {stats}```
 
+## Grammar Rule Inventory
+
+```text
+{grammar_rules}```
+
 ## Code Context
 
 {snippets}
-
-## Deliverable
-
-Make one coherent refactor commit. In the commit message, include:
-
-- intent
-- corpus result
-- primary LOC delta
-- whether behavior changed
 ",
         theme = selected.theme.label(),
-        iteration = iteration,
-        max_iterations = opts.max_iterations,
-        theme_instructions = selected.theme.instructions(),
         selection_reason = selected.reason,
         files = target_files
             .iter()
             .map(|p| format!("- `{p}`"))
             .collect::<Vec<_>>()
             .join("\n"),
-        rules = rules,
         churn_window = opts.churn_window,
         stats = stats,
+        grammar_rules = grammar_rules,
         snippets = snippets,
+    ))
+}
+
+fn build_cluster_prompt(
+    opts: &Options,
+    selected: &SelectedRefactor,
+    inventory: &str,
+    iteration: u32,
+) -> Result<String> {
+    let rules = crate::rules_context::render_rules_block(selected.theme.qmd_query());
+    Ok(format!(
+        "\
+# Refactor Cluster Stage: {theme}
+
+You are working in `mtg-parser`. This is autonomous refactor iteration {iteration} of {max_iterations}.
+
+Your only task in this stage is to cluster the current grammar surface. Do not edit files.
+
+Use the Comprehensive Rules context top-down: identify game concepts first, then map existing
+sentence-shaped grammar/AST/parser/unparser pieces onto those concepts.
+
+## Output Contract
+
+Write a concise markdown report with:
+
+1. `## Clusters` - concept clusters, each with related grammar rules/AST variants/parser/unparser pieces.
+2. `## Recommended Cluster` - the single cluster that should be generalized next.
+3. `## Why` - why that cluster has the best leverage now.
+4. `## Risks` - behavior/corpus risks to preserve.
+
+Prefer clusters that reduce grammar shape and parser shape together.
+
+## Theme Guidance
+
+{theme_instructions}
+
+{rules}
+
+{inventory}
+",
+        theme = selected.theme.label(),
+        iteration = iteration,
+        max_iterations = opts.max_iterations,
+        theme_instructions = selected.theme.instructions(),
+        rules = rules,
+        inventory = inventory,
+    ))
+}
+
+fn build_plan_prompt(
+    opts: &Options,
+    selected: &SelectedRefactor,
+    inventory: &str,
+    clusters: &str,
+    iteration: u32,
+) -> Result<String> {
+    let rules = crate::rules_context::render_rules_block(selected.theme.qmd_query());
+    Ok(format!(
+        "\
+# Refactor Plan Stage: {theme}
+
+You are working in `mtg-parser`. This is autonomous refactor iteration {iteration} of {max_iterations}.
+
+Your only task in this stage is to turn the recommended cluster into a bounded implementation plan.
+Do not edit files.
+
+## Output Contract
+
+Write a concise markdown plan with:
+
+1. `## Target Abstraction` - the phenomenon-shaped grammar/AST shape to move toward.
+2. `## Code Changes` - exact files and high-level edits.
+3. `## Preservation Checks` - representative examples/tests/corpus risks.
+4. `## Stop Line` - what must not be included in this iteration.
+
+The plan must be small enough for one implementation pass.
+
+## Theme Guidance
+
+{theme_instructions}
+
+{rules}
+
+## Cluster Report
+
+{clusters}
+
+{inventory}
+",
+        theme = selected.theme.label(),
+        iteration = iteration,
+        max_iterations = opts.max_iterations,
+        theme_instructions = selected.theme.instructions(),
+        rules = rules,
+        clusters = clusters,
+        inventory = inventory,
+    ))
+}
+
+fn build_implementation_prompt(
+    opts: &Options,
+    selected: &SelectedRefactor,
+    inventory: &str,
+    plan: &str,
+    iteration: u32,
+) -> Result<String> {
+    Ok(format!(
+        "\
+# Refactor Implementation Stage: {theme}
+
+You are working in `mtg-parser`. This is autonomous refactor iteration {iteration} of {max_iterations}.
+
+Implement exactly the plan below. Do not re-cluster. Do not expand the scope. Do not edit unrelated
+tooling, audit pages, or workflow files.
+
+## Required Constraints
+
+1. Preserve corpus behavior unless the refactor naturally fixes existing failures.
+2. Do not add one-card special cases.
+3. Prefer phenomenon-shaped rules and AST nodes over sentence-shaped variants.
+4. Treat grammar, AST, parse, and unparse as one coupled surface.
+5. Stop after one coherent refactor. Do not start a second unrelated cleanup.
+6. The orchestrator owns `cargo test`, `cargo xtask corpus`, `just audit-page`, and commit.
+
+## Theme Guidance
+
+{theme_instructions}
+
+## Selected Files
+
+{files}
+
+## Approved Plan
+
+{plan}
+
+## Inventory
+
+{inventory}
+",
+        theme = selected.theme.label(),
+        iteration = iteration,
+        max_iterations = opts.max_iterations,
+        theme_instructions = selected.theme.instructions(),
+        files = selected
+            .files
+            .iter()
+            .map(|p| format!("- `{p}`"))
+            .collect::<Vec<_>>()
+            .join("\n"),
+        plan = plan,
+        inventory = inventory,
     ))
 }
 
@@ -598,6 +784,37 @@ fn render_code_snippets(files: &[String]) -> Result<String> {
         out.push_str(&format!("### `{rel}`\n\n```rust\n"));
         out.push_str(&first_lines(&text, 220));
         out.push_str("\n```\n\n");
+    }
+    Ok(out)
+}
+
+fn render_grammar_rule_inventory() -> Result<String> {
+    let rel = "crates/mtg-grammar/src/grammar.pest";
+    let path = repo_root().join(rel);
+    let text = std::fs::read_to_string(&path).with_context(|| format!("read {rel}"))?;
+    let mut out = String::new();
+
+    for (idx, line) in text.lines().enumerate() {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("//") {
+            continue;
+        }
+        let Some((name, _)) = trimmed.split_once('=') else {
+            continue;
+        };
+        let name = name.trim();
+        if name.is_empty()
+            || !name
+                .chars()
+                .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        {
+            continue;
+        }
+        out.push_str(&format!("{:>4}: {name}\n", idx + 1));
+    }
+
+    if out.is_empty() {
+        bail!("no grammar rules found in {rel}");
     }
     Ok(out)
 }
