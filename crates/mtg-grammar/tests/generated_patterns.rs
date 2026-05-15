@@ -263,3 +263,5 @@ mod paralyze;
 mod personal_incarnation;
 #[path = "generated_patterns/pestilence.rs"]
 mod pestilence;
+#[path = "generated_patterns/phantasmal_terrain.rs"]
+mod phantasmal_terrain;

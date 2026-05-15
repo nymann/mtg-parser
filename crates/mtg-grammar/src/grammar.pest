@@ -89,7 +89,7 @@ sentence_statement = _{
   | additional_blockers_may_be_put_into_additional_piles
   | assign_each_pile_to_attacking_creature_at_random
   | creatures_in_assigned_pile_block_if_able
-  | as_this_permanent_enters_choose_opponent
+  | as_source_enters_choose
   | activated_ability_with_activation_permission
   | activated_ability
   | static_as_long_as
@@ -484,9 +484,12 @@ players_do_actions_the_same_way = {
   ~ ^"the" ~ ^"same" ~ ^"way" ~ "."
 }
 
-as_this_permanent_enters_choose_opponent = {
-    ^"as" ~ source_object ~ ^"enters" ~ "," ~ ^"choose" ~ article ~ ^"opponent" ~ "."
+as_source_enters_choose = {
+    ^"as" ~ source_object ~ ^"enters" ~ "," ~ ^"choose" ~ as_enters_choice ~ "."
 }
+as_enters_choice = _{ opponent_choice | basic_land_type_choice }
+opponent_choice = { article ~ ^"opponent" }
+basic_land_type_choice = { article ~ ^"basic" ~ ^"land" ~ ^"type" }
 
 balance_same_way_action = _{ discard_cards_action | sacrifice_permanents_action }
 discard_cards_action = { ^"discard" ~ ^"cards" }
@@ -678,8 +681,11 @@ static_enchanted_loses_keyword_fragment = {
 }
 
 static_enchanted_is_basic_land_type = {
-    ^"enchanted" ~ enchanted_object ~ ^"is" ~ article ~ basic_land_type ~ "."
+    ^"enchanted" ~ enchanted_object ~ ^"is" ~ basic_land_type_reference ~ "."
 }
+basic_land_type_reference = _{ specific_basic_land_type | chosen_basic_land_type }
+specific_basic_land_type = { article ~ basic_land_type }
+chosen_basic_land_type = { ^"the" ~ ^"chosen" ~ ^"type" }
 
 static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras = {
     ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword ~ ^"and" ~ ^"can't"

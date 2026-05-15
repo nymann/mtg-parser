@@ -5,17 +5,18 @@ use pest_derive::Parser;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
-    ActivationPermission, BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color,
-    ColoredTargetEffect, Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType,
-    DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
-    DamagePreventionAmount, DamagePreventionEffect, DamageRecipient, DamageRecipients,
-    DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
-    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
-    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost,
-    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
+    BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
+    ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageAssignment,
+    DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap, DamagePreventionAmount,
+    DamagePreventionEffect, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
+    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -171,9 +172,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             each_player_equalizes_controlled_permanents_from_pair(pair)
         }
         Rule::players_do_actions_the_same_way => players_do_actions_the_same_way_from_pair(pair),
-        Rule::as_this_permanent_enters_choose_opponent => {
-            as_this_permanent_enters_choose_opponent_from_pair(pair)
-        }
+        Rule::as_source_enters_choose => as_source_enters_choose_from_pair(pair),
         Rule::activated_ability_with_activation_permission => {
             activated_ability_with_activation_permission_from_pair(pair)
         }
@@ -587,15 +586,22 @@ fn players_do_actions_the_same_way_from_pair(pair: Pair<Rule>) -> Result<Stateme
     Ok(Statement::PlayersDoActionsTheSameWay { actions })
 }
 
-fn as_this_permanent_enters_choose_opponent_from_pair(
-    pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
-    let source_pair = only_inner(pair, "as enters choose opponent missing source")?;
-    let permanent_type = match source_object_from_pair(source_pair)? {
-        SourceObject::This(permanent_type) => permanent_type,
-        SourceObject::ThisAura => return Err(ParseError::Internal("as enters source is aura")),
-    };
-    Ok(Statement::AsThisPermanentEntersChooseOpponent { permanent_type })
+fn as_source_enters_choose_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = next_inner(&mut inner, "as enters choose missing source")?;
+    let choice_pair = next_inner(&mut inner, "as enters choose missing choice")?;
+    Ok(Statement::AsSourceEntersChoose {
+        source: source_object_from_pair(source_pair)?,
+        choice: as_enters_choice_from_pair(choice_pair)?,
+    })
+}
+
+fn as_enters_choice_from_pair(pair: Pair<Rule>) -> Result<AsEntersChoice, ParseError> {
+    match pair.as_rule() {
+        Rule::opponent_choice => Ok(AsEntersChoice::Opponent),
+        Rule::basic_land_type_choice => Ok(AsEntersChoice::BasicLandType),
+        _ => Err(ParseError::Internal("as_enters_choice")),
+    }
 }
 
 fn source_enters_with_pt_counters_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
@@ -2788,7 +2794,7 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 .expect("static_enchanted_is_basic_land_type names basic land type");
             Ok(StaticAbility::EnchantedIsBasicLandType {
                 object: enchanted_object_from_pair(object_pair)?,
-                land_type: basic_land_type_from_pair(land_type_pair)?,
+                land_type: basic_land_type_reference_from_pair(land_type_pair)?,
             })
         }
         Rule::static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras => {
@@ -3716,6 +3722,22 @@ fn basic_land_type_from_plural_pair(pair: Pair<Rule>) -> Result<BasicLandType, P
         "mountains" => Ok(BasicLandType::Mountain),
         "forests" => Ok(BasicLandType::Forest),
         _ => Err(ParseError::Internal("basic_land_type_plural variant")),
+    }
+}
+
+fn basic_land_type_reference_from_pair(
+    pair: Pair<Rule>,
+) -> Result<BasicLandTypeReference, ParseError> {
+    match pair.as_rule() {
+        Rule::specific_basic_land_type => {
+            let land_type_pair =
+                only_inner(pair, "specific_basic_land_type missing basic_land_type")?;
+            Ok(BasicLandTypeReference::Specific(basic_land_type_from_pair(
+                land_type_pair,
+            )?))
+        }
+        Rule::chosen_basic_land_type => Ok(BasicLandTypeReference::ChosenType),
+        _ => Err(ParseError::Internal("basic_land_type_reference")),
     }
 }
 

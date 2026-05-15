@@ -3,13 +3,14 @@ use std::fmt::Write;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
-    ActivationPermission, BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color,
-    ColoredTargetEffect, Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType,
-    DamageAmount, DamageKind, DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration,
-    DamagePreventionEffect, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
+    ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
+    BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
+    ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageKind,
+    DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
+    DamageRecipient, DamageRecipients, DamageRedirectionDestination, DestroyTarget,
+    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
+    InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer, ManaCost,
+    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
     NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PermanentController, PermanentType,
     PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
@@ -291,10 +292,12 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_same_way_actions(out, actions);
             out.push_str(" the same way.");
         }
-        Statement::AsThisPermanentEntersChooseOpponent { permanent_type } => {
-            out.push_str("As this ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str(" enters, choose an opponent.");
+        Statement::AsSourceEntersChoose { source, choice } => {
+            out.push_str("As ");
+            write_source_object(out, *source);
+            out.push_str(" enters, choose ");
+            write_as_enters_choice(out, *choice);
+            out.push('.');
         }
         Statement::ThisPermanentEntersWithCounters {
             source,
@@ -1317,8 +1320,8 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
         StaticAbility::EnchantedIsBasicLandType { object, land_type } => {
             out.push_str("Enchanted ");
             write_enchanted_object(out, *object);
-            out.push_str(" is a ");
-            out.push_str(basic_land_type_name(*land_type));
+            out.push_str(" is ");
+            write_basic_land_type_reference(out, *land_type);
             out.push('.');
         }
         StaticAbility::EnchantedHasKeywordAndCantBeEnchantedByOtherAuras { object, keyword } => {
@@ -2166,6 +2169,13 @@ fn write_source_object_capitalized(out: &mut String, source: SourceObject) {
     }
 }
 
+fn write_as_enters_choice(out: &mut String, choice: AsEntersChoice) {
+    match choice {
+        AsEntersChoice::Opponent => out.push_str("an opponent"),
+        AsEntersChoice::BasicLandType => out.push_str("a basic land type"),
+    }
+}
+
 fn write_copy_exception(out: &mut String, exception: CopyException) {
     match exception {
         CopyException::PermanentTypeInAdditionToItsOtherTypes { permanent_type } => {
@@ -2671,6 +2681,16 @@ fn basic_land_type_name(land_type: BasicLandType) -> &'static str {
         BasicLandType::Swamp => "Swamp",
         BasicLandType::Mountain => "Mountain",
         BasicLandType::Forest => "Forest",
+    }
+}
+
+fn write_basic_land_type_reference(out: &mut String, land_type: BasicLandTypeReference) {
+    match land_type {
+        BasicLandTypeReference::Specific(basic_land_type) => {
+            out.push_str("a ");
+            out.push_str(basic_land_type_name(basic_land_type));
+        }
+        BasicLandTypeReference::ChosenType => out.push_str("the chosen type"),
     }
 }
 

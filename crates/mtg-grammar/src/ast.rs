@@ -210,9 +210,11 @@ pub enum Statement {
     PlayersDoActionsTheSameWay {
         actions: Vec<BalanceSameWayAction>,
     },
-    /// "As this <permanent_type> enters, choose an opponent."
-    AsThisPermanentEntersChooseOpponent {
-        permanent_type: PermanentType,
+    /// "As this <source> enters, choose <choice>." — replacement effect
+    /// choice made as the object enters.
+    AsSourceEntersChoose {
+        source: SourceObject,
+        choice: AsEntersChoice,
     },
     /// "This <permanent_type> enters with N <pt_modifier> counters on it."
     ThisPermanentEntersWithCounters {
@@ -886,6 +888,14 @@ pub enum SourceObject {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AsEntersChoice {
+    /// "an opponent"
+    Opponent,
+    /// "a basic land type"
+    BasicLandType,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ObjectStatus {
     Tapped,
     Untapped,
@@ -1448,11 +1458,13 @@ pub enum StaticAbility {
         object: EnchantedObject,
         keyword: Keyword,
     },
-    /// "Enchanted <object> is a/an <basic_land_type>." — type-changing
-    /// effect that makes the enchanted object a basic land subtype.
+    /// "Enchanted <object> is a/an <basic_land_type>/the chosen type."
+    /// — type-changing effect that makes the enchanted object a basic
+    /// land subtype, either named directly or supplied by a linked
+    /// as-enters choice.
     EnchantedIsBasicLandType {
         object: EnchantedObject,
-        land_type: BasicLandType,
+        land_type: BasicLandTypeReference,
     },
     /// "Enchanted <object> has <keyword> and can't be enchanted by other
     /// Auras." — keyword-granting effect plus an Aura attachment
@@ -1700,6 +1712,12 @@ pub enum BasicLandType {
     Swamp,
     Mountain,
     Forest,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BasicLandTypeReference {
+    Specific(BasicLandType),
+    ChosenType,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
