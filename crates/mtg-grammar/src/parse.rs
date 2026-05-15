@@ -943,6 +943,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::source_deals_damage_to_that_player => {
                 effects.push(source_deals_damage_to_that_player_from_pair(child)?);
             }
+            Rule::source_deals_damage_to_you_unless_you_pay => {
+                effects.push(source_deals_damage_to_you_unless_you_pay_from_pair(child)?);
+            }
             Rule::source_deals_damage_to_you => {
                 effects.push(source_deals_damage_to_you_from_pair(child)?);
             }
@@ -1260,6 +1263,30 @@ fn source_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggerEffec
     Ok(TriggerEffect::SourceDealsDamageToYou {
         source: source_object_from_pair(source_pair)?,
         amount,
+    })
+}
+
+fn source_deals_damage_to_you_unless_you_pay_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "damage-to-you-unless-pay effect missing source",
+    ))?;
+    let amount_pair = inner.next().ok_or(ParseError::Internal(
+        "damage-to-you-unless-pay effect missing amount",
+    ))?;
+    let cost_pair = inner.next().ok_or(ParseError::Internal(
+        "damage-to-you-unless-pay effect missing cost",
+    ))?;
+    let amount = amount_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("damage-to-you-unless-pay amount"))?;
+    Ok(TriggerEffect::SourceDealsDamageToYouUnlessYouPay {
+        source: source_object_from_pair(source_pair)?,
+        amount,
+        cost: mana_cost_from_pair(cost_pair),
     })
 }
 

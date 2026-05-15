@@ -347,6 +347,12 @@ pub enum TriggerEffect {
     SourceDealsDamageToThatPlayer { source: SourceObject, amount: u32 },
     /// "this <source> deals N damage to you"
     SourceDealsDamageToYou { source: SourceObject, amount: u32 },
+    /// "this <source> deals N damage to you unless you pay <mana_cost>"
+    SourceDealsDamageToYouUnlessYouPay {
+        source: SourceObject,
+        amount: u32,
+        cost: ManaCost,
+    },
     /// "this <source> deals N damage to that <permanent_type>"
     SourceDealsDamageToThatPermanent {
         source: SourceObject,

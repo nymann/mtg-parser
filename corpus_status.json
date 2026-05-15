@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 136,
+  "passing": 137,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -274,8 +274,7 @@
       "status": "pass"
     },
     "lea/Force of Nature": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:66\n  |\n2 | At the beginning of your upkeep, this creature deals 8 damage to you unless you pay {G}{G}{G}{G}.\n  |                                                                  ^---\n  |\n  = expected that_permanents_controller"
+      "status": "pass"
     },
     "lea/Forcefield": {
       "status": "pass"

@@ -1077,6 +1077,17 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             write_source_object(out, *source);
             write!(out, " deals {amount} damage to you.").expect("write to String never fails");
         }
+        TriggerEffect::SourceDealsDamageToYouUnlessYouPay {
+            source,
+            amount,
+            cost,
+        } => {
+            write_source_object(out, *source);
+            write!(out, " deals {amount} damage to you unless you pay ")
+                .expect("write to String never fails");
+            write_mana_cost(out, cost);
+            out.push('.');
+        }
         TriggerEffect::SourceDealsDamageToThatPermanent {
             source,
             amount,

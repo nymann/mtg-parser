@@ -848,6 +848,7 @@ trigger_effect = _{
   | sacrifice_source_unless_you_pay
   | source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller
   | source_deals_variable_damage_to_that_player
+  | source_deals_damage_to_you_unless_you_pay
   | source_deals_damage_to_you
   | source_deals_damage_to_that_player
   | source_deals_damage_to_that_permanents_controller
@@ -943,6 +944,10 @@ source_deals_damage_to_that_player = {
 }
 source_deals_damage_to_you = {
     source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"you" ~ "."
+}
+source_deals_damage_to_you_unless_you_pay = {
+    source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"you"
+  ~ ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ "."
 }
 source_deals_damage_to_that_permanent = {
     source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"that" ~ permanent_type

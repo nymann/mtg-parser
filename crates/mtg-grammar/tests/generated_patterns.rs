@@ -135,5 +135,7 @@ mod fireball;
 mod flashfires;
 #[path = "generated_patterns/fog.rs"]
 mod fog;
+#[path = "generated_patterns/force_of_nature.rs"]
+mod force_of_nature;
 #[path = "generated_patterns/forcefield.rs"]
 mod forcefield;
