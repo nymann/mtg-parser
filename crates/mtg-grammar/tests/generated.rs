@@ -38,3 +38,5 @@ mod black_lotus;
 mod black_vise;
 #[path = "generated/black_ward.rs"]
 mod black_ward;
+#[path = "generated/blaze_of_glory.rs"]
+mod blaze_of_glory;

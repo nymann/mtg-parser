@@ -91,6 +91,9 @@ fn write_cast_restriction(out: &mut String, restriction: CastRestriction) {
             out.push_str(step_name(step));
             out.push_str(" step.");
         }
+        CastRestriction::DuringCombatBeforeBlockersAreDeclared => {
+            out.push_str("during combat before blockers are declared.");
+        }
     }
 }
 
@@ -308,6 +311,14 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
         StaticAbility::SourceDoesntUntapDuringYourUntapStep { source } => {
             write_source_object_capitalized(out, *source);
             out.push_str(" doesn't untap during your untap step.");
+        }
+        StaticAbility::TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn => {
+            out.push_str(
+                "Target creature defending player controls can block any number of creatures this turn.",
+            );
+        }
+        StaticAbility::ItBlocksEachAttackingCreatureThisTurnIfAble => {
+            out.push_str("It blocks each attacking creature this turn if able.");
         }
     }
 }

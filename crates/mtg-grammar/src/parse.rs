@@ -71,6 +71,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_has_keyword
         | Rule::static_enchanted_can_attack_as_though
         | Rule::static_source_doesnt_untap_during_your_untap_step
+        | Rule::target_creature_defending_player_controls_can_block_any_number
+        | Rule::it_blocks_each_attacking_creature_if_able
         | Rule::static_effect_doesnt_remove_this_aura => {
             Ok(Statement::StaticAbility(static_ability_from_pair(pair)?))
         }
@@ -98,6 +100,9 @@ fn cast_restriction_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError>
             CastRestriction::BeforeStep {
                 step: step_from_pair(step_pair)?,
             }
+        }
+        Rule::during_combat_before_blockers_declared => {
+            CastRestriction::DuringCombatBeforeBlockersAreDeclared
         }
         _ => return Err(ParseError::Internal("cast_timing")),
     };
@@ -601,6 +606,12 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::SourceDoesntUntapDuringYourUntapStep {
                 source: source_object_from_pair(source_pair)?,
             })
+        }
+        Rule::target_creature_defending_player_controls_can_block_any_number => Ok(
+            StaticAbility::TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn,
+        ),
+        Rule::it_blocks_each_attacking_creature_if_able => {
+            Ok(StaticAbility::ItBlocksEachAttackingCreatureThisTurnIfAble)
         }
         _ => Err(ParseError::Internal("static_ability variant")),
     }

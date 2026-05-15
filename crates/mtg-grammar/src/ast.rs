@@ -50,6 +50,8 @@ pub enum Statement {
 pub enum CastRestriction {
     /// "before the <step> step"
     BeforeStep { step: Step },
+    /// "during combat before blockers are declared"
+    DuringCombatBeforeBlockersAreDeclared,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -280,6 +282,11 @@ pub enum StaticAbility {
     EffectDoesntRemoveThisAura,
     /// "This <permanent_type> doesn't untap during your untap step."
     SourceDoesntUntapDuringYourUntapStep { source: SourceObject },
+    /// "Target creature defending player controls can block any number
+    /// of creatures this turn."
+    TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn,
+    /// "It blocks each attacking creature this turn if able."
+    ItBlocksEachAttackingCreatureThisTurnIfAble,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -38,6 +38,8 @@ sentence_statement = _{
   | destroy
   | draw_cards
   | target_permanent_gains_keyword_and_gets_eot
+  | target_creature_defending_player_controls_can_block_any_number
+  | it_blocks_each_attacking_creature_if_able
   | as_this_permanent_enters_choose_opponent
   | activated_ability
   | static_as_long_as
@@ -111,9 +113,12 @@ trample         = @{ ^"trample" }
 cast_restriction = {
     ^"cast" ~ ^"this" ~ ^"spell" ~ ^"only" ~ cast_timing ~ "."
 }
-cast_timing = _{ before_step }
 before_step = { ^"before" ~ ^"the" ~ step ~ ^"step" }
 step = { ^"combat" ~ ^"damage" }
+cast_timing = _{ during_combat_before_blockers_declared | before_step }
+during_combat_before_blockers_declared = {
+    ^"during" ~ ^"combat" ~ ^"before" ~ ^"blockers" ~ ^"are" ~ ^"declared"
+}
 
 // `Enchant <object>`. Order the longer alternatives first so PEG's
 // first-match doesn't stop at the bare permanent type.
@@ -216,6 +221,17 @@ static_effect_doesnt_remove_this_aura = {
 static_source_doesnt_untap_during_your_untap_step = {
     source_object ~ ^"doesn't" ~ ^"untap" ~ ^"during" ~ ^"your"
   ~ ^"untap" ~ ^"step" ~ "."
+}
+
+target_creature_defending_player_controls_can_block_any_number = {
+    ^"target" ~ ^"creature" ~ ^"defending" ~ ^"player" ~ ^"controls"
+  ~ ^"can" ~ ^"block" ~ ^"any" ~ ^"number" ~ ^"of" ~ ^"creatures"
+  ~ ^"this" ~ ^"turn" ~ "."
+}
+
+it_blocks_each_attacking_creature_if_able = {
+    ^"it" ~ ^"blocks" ~ ^"each" ~ ^"attacking" ~ ^"creature"
+  ~ ^"this" ~ ^"turn" ~ ^"if" ~ ^"able" ~ "."
 }
 
 enchanted_object = _{ permanent_type | creature_type }
