@@ -4,6 +4,10 @@ use serde::{Deserialize, Serialize};
 pub enum Statement {
     ManaCost(ManaCost),
     DestroyTargetCreature,
+    /// "Destroy all <permanent_type>s."
+    DestroyAll {
+        permanent_type: PermanentType,
+    },
     Keyword(Keyword),
     TargetPlayerDrawsCards {
         count: u32,

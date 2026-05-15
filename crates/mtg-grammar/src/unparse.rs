@@ -16,6 +16,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
     match statement {
         Statement::ManaCost(mc) => write_mana_cost(out, mc),
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
+        Statement::DestroyAll { permanent_type } => {
+            out.push_str("Destroy all ");
+            out.push_str(permanent_type_plural_name(*permanent_type));
+            out.push('.');
+        }
         Statement::Keyword(kw) => write_keyword(out, *kw),
         Statement::TargetPlayerDrawsCards { count } => {
             write!(
@@ -297,6 +302,16 @@ fn permanent_type_name(pt: PermanentType) -> &'static str {
         PermanentType::Enchantment => "enchantment",
         PermanentType::Land => "land",
         PermanentType::Planeswalker => "planeswalker",
+    }
+}
+
+fn permanent_type_plural_name(pt: PermanentType) -> &'static str {
+    match pt {
+        PermanentType::Artifact => "artifacts",
+        PermanentType::Creature => "creatures",
+        PermanentType::Enchantment => "enchantments",
+        PermanentType::Land => "lands",
+        PermanentType::Planeswalker => "planeswalkers",
     }
 }
 

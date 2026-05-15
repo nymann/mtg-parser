@@ -1,6 +1,6 @@
 // Walking-skeleton grammar. Covers:
 //   - Scryfall-style mana costs, e.g. `{2}{R}{R}`
-//   - "Destroy target creature."
+//   - "Destroy target creature." / "Destroy all <permanent type>s."
 //   - "Target player draws N cards." (N as an English word)
 //   - Keyword abilities (`Flying`, parameterized `Enchant <type>`, ...)
 //   - Cards with multiple abilities separated by newlines
@@ -33,7 +33,8 @@ line      = _{ sentence_chain | phrase_statement }
 // `parse("{2} {R}")` from silently accepting two mana costs.
 sentence_chain     = _{ sentence_statement+ }
 sentence_statement = _{
-    destroy
+    destroy_all
+  | destroy
   | draw_cards
   | static_as_long_as
   | static_enchanted_gets
@@ -53,6 +54,7 @@ generic     = @{ ASCII_DIGIT+ }
 color       = @{ "W" | "U" | "B" | "R" | "G" | "C" }
 
 destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }
+destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural ~ "." }
 
 draw_cards  = { ^"target" ~ ^"player" ~ ^"draws" ~ number_word ~ ^"cards" ~ "." }
 number_word = @{
@@ -88,6 +90,14 @@ permanent_type = @{
   | ^"enchantment"
   | ^"land"
   | ^"planeswalker"
+}
+
+permanent_type_plural = @{
+    ^"artifacts"
+  | ^"creatures"
+  | ^"enchantments"
+  | ^"lands"
+  | ^"planeswalkers"
 }
 
 // Creature subtypes that appear as Aura targets or enchanted objects.

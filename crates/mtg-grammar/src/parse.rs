@@ -47,6 +47,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     match pair.as_rule() {
         Rule::mana_cost => Ok(Statement::ManaCost(mana_cost_from_pair(pair))),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
+        Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::static_as_long_as
@@ -59,6 +60,16 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         )?)),
         _ => Err(ParseError::Internal("statement")),
     }
+}
+
+fn destroy_all_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let pt = pair
+        .into_inner()
+        .next()
+        .expect("destroy_all always contains a permanent_type_plural");
+    Ok(Statement::DestroyAll {
+        permanent_type: permanent_type_from_plural_pair(pt)?,
+    })
 }
 
 fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
@@ -424,6 +435,20 @@ fn permanent_type_from_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseErro
         "land" => Ok(PermanentType::Land),
         "planeswalker" => Ok(PermanentType::Planeswalker),
         _ => Err(ParseError::Internal("permanent_type variant")),
+    }
+}
+
+fn permanent_type_from_plural_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseError> {
+    if pair.as_rule() != Rule::permanent_type_plural {
+        return Err(ParseError::Internal("permanent_type_plural"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "artifacts" => Ok(PermanentType::Artifact),
+        "creatures" => Ok(PermanentType::Creature),
+        "enchantments" => Ok(PermanentType::Enchantment),
+        "lands" => Ok(PermanentType::Land),
+        "planeswalkers" => Ok(PermanentType::Planeswalker),
+        _ => Err(ParseError::Internal("permanent_type_plural variant")),
     }
 }
 

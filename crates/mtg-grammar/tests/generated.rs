@@ -14,3 +14,5 @@ mod animate_dead;
 mod animate_wall;
 #[path = "generated/ankh_of_mishra.rs"]
 mod ankh_of_mishra;
+#[path = "generated/armageddon.rs"]
+mod armageddon;

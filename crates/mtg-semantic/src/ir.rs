@@ -1,4 +1,4 @@
-use mtg_grammar::{Keyword, StaticAbility, TriggeredAbility};
+use mtg_grammar::{Keyword, PermanentType, StaticAbility, TriggeredAbility};
 use serde::{Deserialize, Serialize};
 
 /// Semantic IR for one Oracle-text effect. The grammar's syntactic
@@ -11,6 +11,8 @@ pub enum CardEffect {
     ManaCost(ManaValue),
     /// "Destroy target creature."
     DestroyTargetCreature,
+    /// "Destroy all <permanent_type>s."
+    DestroyAll { permanent_type: PermanentType },
     /// A single keyword ability such as `Flying` or `Enchant artifact`.
     Keyword(Keyword),
     /// "Target player draws N cards."
