@@ -1464,8 +1464,10 @@ change_text_of_target_spell_or_permanent_replacing_basic_land_type = {
 }
 
 target_permanent_until_eot = {
-    ^"target" ~ permanent_type ~ target_permanent_eot_effect ~ "."
+    ^"target" ~ target_permanent_selector ~ target_permanent_eot_effect ~ "."
 }
+target_permanent_selector = { combat_role ~ ^"creature" | permanent_type }
+combat_role = @{ ^"attacking" | ^"blocking" }
 target_permanent_eot_effect = _{
     target_permanent_gains_keyword_and_gets_eot_effect
   | target_permanent_gets_eot_effect

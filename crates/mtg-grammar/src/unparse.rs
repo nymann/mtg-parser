@@ -4,9 +4,9 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
-    BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
-    ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
-    DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
+    BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, CombatRole,
+    Condition, ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType,
+    DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
     DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
     DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
     DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
@@ -16,9 +16,10 @@ use crate::ast::{
     PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
     PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber, SignedPtComponent,
     SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TriggerCondition,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -283,45 +284,36 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(color_name(*color));
             out.push('.');
         }
-        Statement::TargetPermanentGetsUntilEndOfTurn {
-            permanent_type,
-            modifier,
-        } => {
+        Statement::TargetPermanentGetsUntilEndOfTurn { target, modifier } => {
             write_target_permanent_until_end_of_turn(
                 out,
-                *permanent_type,
+                *target,
                 &TargetPermanentEndOfTurnEffect::gets_numbered(*modifier),
             );
         }
-        Statement::TargetPermanentGetsMixedUntilEndOfTurn {
-            permanent_type,
-            modifier,
-        } => {
+        Statement::TargetPermanentGetsMixedUntilEndOfTurn { target, modifier } => {
             write_target_permanent_until_end_of_turn(
                 out,
-                *permanent_type,
+                *target,
                 &TargetPermanentEndOfTurnEffect::Gets(*modifier),
             );
         }
-        Statement::TargetPermanentGainsKeywordUntilEndOfTurn {
-            permanent_type,
-            keyword,
-        } => {
+        Statement::TargetPermanentGainsKeywordUntilEndOfTurn { target, keyword } => {
             write_target_permanent_until_end_of_turn(
                 out,
-                *permanent_type,
+                *target,
                 &TargetPermanentEndOfTurnEffect::GainsKeyword(*keyword),
             );
         }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
-            permanent_type,
+            target,
             keyword,
             modifier,
             definitions,
         } => {
             write_target_permanent_until_end_of_turn(
                 out,
-                *permanent_type,
+                *target,
                 &TargetPermanentEndOfTurnEffect::GainsKeywordAndGets {
                     keyword: *keyword,
                     modifier: *modifier,
@@ -1280,7 +1272,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
         } => {
             write_target_permanent_until_end_of_turn(
                 out,
-                *permanent_type,
+                TargetPermanentSelector::Permanent(*permanent_type),
                 &TargetPermanentEndOfTurnEffect::GainsKeyword(*keyword),
             );
         }
@@ -2778,21 +2770,21 @@ fn write_destroy_target(out: &mut String, target: &DestroyTarget) {
 
 fn write_target_permanent_until_end_of_turn(
     out: &mut String,
-    permanent_type: PermanentType,
+    target: TargetPermanentSelector,
     effect: &TargetPermanentEndOfTurnEffect,
 ) {
     match effect {
         TargetPermanentEndOfTurnEffect::Gets(modifier) => {
             write_until_end_of_turn_sentence(
                 out,
-                |out| write_target_permanent_subject(out, permanent_type),
+                |out| write_target_permanent_subject(out, target),
                 |out| write_gets_mixed_pt_modifier_clause(out, *modifier),
             );
         }
         TargetPermanentEndOfTurnEffect::GainsKeyword(keyword) => {
             write_until_end_of_turn_sentence(
                 out,
-                |out| write_target_permanent_subject(out, permanent_type),
+                |out| write_target_permanent_subject(out, target),
                 |out| write_gains_keyword_clause(out, *keyword),
             );
         }
@@ -2803,7 +2795,7 @@ fn write_target_permanent_until_end_of_turn(
         } => {
             write_until_end_of_turn_sentence_with_tail(
                 out,
-                |out| write_target_permanent_subject(out, permanent_type),
+                |out| write_target_permanent_subject(out, target),
                 |out| {
                     write_gains_keyword_clause(out, *keyword);
                     out.push_str(" and gets ");
@@ -2815,9 +2807,28 @@ fn write_target_permanent_until_end_of_turn(
     }
 }
 
-fn write_target_permanent_subject(out: &mut String, permanent_type: PermanentType) {
+fn write_target_permanent_subject(out: &mut String, target: TargetPermanentSelector) {
     out.push_str("Target ");
-    out.push_str(permanent_type_name(permanent_type));
+    write_target_permanent_selector(out, target);
+}
+
+fn write_target_permanent_selector(out: &mut String, target: TargetPermanentSelector) {
+    match target {
+        TargetPermanentSelector::Permanent(permanent_type) => {
+            out.push_str(permanent_type_name(permanent_type));
+        }
+        TargetPermanentSelector::CombatRoleCreature { role } => {
+            out.push_str(combat_role_name(role));
+            out.push_str(" creature");
+        }
+    }
+}
+
+fn combat_role_name(role: CombatRole) -> &'static str {
+    match role {
+        CombatRole::Attacking => "attacking",
+        CombatRole::Blocking => "blocking",
+    }
 }
 
 fn write_until_end_of_turn_sentence(

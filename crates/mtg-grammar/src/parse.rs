@@ -6,9 +6,9 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
-    BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
-    ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
-    DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
+    BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, CombatRole,
+    Condition, ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType,
+    DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
     DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
@@ -18,10 +18,10 @@ use crate::ast::{
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TriggerCondition,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TriggerCondition, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -517,16 +517,48 @@ fn each_player_action_from_pair(pair: Pair<Rule>) -> Result<EachPlayerAction, Pa
 
 fn target_permanent_until_eot_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let mut inner = pair.into_inner();
-    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
-        "target permanent until end of turn missing permanent_type",
+    let target_pair = inner.next().ok_or(ParseError::Internal(
+        "target permanent until end of turn missing target selector",
     ))?;
     let effect_pair = inner.next().ok_or(ParseError::Internal(
         "target permanent until end of turn missing effect",
     ))?;
     Ok(Statement::target_permanent_until_end_of_turn(
-        permanent_type_from_pair(permanent_type_pair)?,
+        target_permanent_selector_from_pair(target_pair)?,
         target_permanent_eot_effect_from_pair(effect_pair)?,
     ))
+}
+
+fn target_permanent_selector_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TargetPermanentSelector, ParseError> {
+    if pair.as_rule() != Rule::target_permanent_selector {
+        return Err(ParseError::Internal("target_permanent_selector"));
+    }
+    let mut inner = pair.into_inner();
+    let first = inner.next().ok_or(ParseError::Internal(
+        "target_permanent_selector missing inner",
+    ))?;
+    match first.as_rule() {
+        Rule::permanent_type => Ok(TargetPermanentSelector::Permanent(
+            permanent_type_from_pair(first)?,
+        )),
+        Rule::combat_role => Ok(TargetPermanentSelector::CombatRoleCreature {
+            role: combat_role_from_pair(first)?,
+        }),
+        _ => Err(ParseError::Internal("target_permanent_selector variant")),
+    }
+}
+
+fn combat_role_from_pair(pair: Pair<Rule>) -> Result<CombatRole, ParseError> {
+    if pair.as_rule() != Rule::combat_role {
+        return Err(ParseError::Internal("combat_role"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "attacking" => Ok(CombatRole::Attacking),
+        "blocking" => Ok(CombatRole::Blocking),
+        _ => Err(ParseError::Internal("combat_role variant")),
+    }
 }
 
 fn target_permanent_eot_effect_from_pair(

@@ -48,7 +48,7 @@ pub fn render(f: &mut Frame<'_>, state: &mut AppState) {
                 Constraint::Length(0)
             },
             Constraint::Min(0), // main (left + output)
-            if state.search.editing || !state.search.query.is_empty() {
+            if state.command.editing || state.search.editing || !state.search.query.is_empty() {
                 Constraint::Length(1)
             } else {
                 Constraint::Length(0)
@@ -486,7 +486,7 @@ fn render_card_panel(f: &mut Frame<'_>, area: Rect, state: &AppState) {
                 "target"
             },
             'c',
-            state.copy_mode,
+            false,
         ))
         .title_style(Style::default().fg(C_DIM).add_modifier(Modifier::BOLD));
 
@@ -648,7 +648,7 @@ fn render_steps(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(C_FAINT))
-        .title(copy_title("steps", 's', state.copy_mode))
+        .title(copy_title("steps", 's', false))
         .title_style(Style::default().fg(C_DIM).add_modifier(Modifier::BOLD));
 
     let mut lines = Vec::new();
@@ -720,7 +720,7 @@ fn render_output(f: &mut Frame<'_>, area: Rect, state: &mut AppState) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(C_FAINT))
-        .title(copy_title("output", 'o', state.copy_mode))
+        .title(copy_title("output", 'o', false))
         .title_style(Style::default().fg(C_DIM).add_modifier(Modifier::BOLD));
 
     let inner = block.inner(area);
@@ -1204,70 +1204,37 @@ fn copy_title(name: &'static str, hotkey: char, active: bool) -> Line<'static> {
 fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let cols = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(38),
-            Constraint::Percentage(38),
-            Constraint::Percentage(24),
-        ])
+        .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
         .split(area);
-    let nav = vec![
-        key_span("q"),
-        Span::raw(" quit  "),
-        key_span("↑↓"),
-        Span::raw(" scroll  "),
-        key_span("p"),
-        Span::raw(" pause  "),
-        key_span("gg/G"),
-        Span::raw(" line/bottom  "),
-        key_span("45gg"),
-        Span::raw(" goto"),
-    ];
-    let copy = if state.visual.active {
-        vec![
-            Span::styled(
-                "visual ",
-                Style::default().fg(C_WARN).add_modifier(Modifier::BOLD),
-            ),
-            key_span("j/k"),
-            Span::raw(" extend  "),
-            hotkey_span("y"),
-            Span::raw(" yank  "),
-            key_span("Esc"),
-            Span::raw(" cancel"),
-        ]
-    } else if state.copy_mode {
-        vec![
-            Span::styled(
-                "copy ",
-                Style::default().fg(C_WARN).add_modifier(Modifier::BOLD),
-            ),
-            hotkey_span("c"),
-            Span::raw(" card  "),
-            hotkey_span("s"),
-            Span::raw(" steps  "),
-            hotkey_span("o"),
-            Span::raw(" output  "),
-            hotkey_span("a"),
-            Span::raw(" all  "),
-            key_span("Esc"),
-            Span::raw(" cancel"),
-        ]
+    let mode = if state.visual.active {
+        "VISUAL"
+    } else if state.command.editing {
+        "COMMAND"
+    } else if state.search.editing {
+        "SEARCH"
+    } else if state.normal.leader {
+        "LEADER"
     } else {
-        vec![
-            key_span("c"),
-            Span::raw(" copy  "),
-            key_span("o"),
-            Span::raw(" open  "),
-            key_span("/"),
-            Span::raw(" search  "),
-            key_span("f"),
-            Span::raw(" filter  "),
-            key_span("H"),
-            Span::raw(" history  "),
-            key_span("v"),
-            Span::raw(" visual"),
-        ]
+        "NORMAL"
     };
+    let left = vec![
+        Span::styled(
+            format!(" {mode} "),
+            Style::default()
+                .fg(Color::Black)
+                .bg(if state.visual.active { C_WARN } else { C_DIM })
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" "),
+        Span::styled(
+            match state.focus {
+                crate::tui::state::FocusPane::Output => "output",
+                crate::tui::state::FocusPane::Card => "card",
+                crate::tui::state::FocusPane::Modal => "modal",
+            },
+            Style::default().fg(C_DIM),
+        ),
+    ];
     let right = format!(
         "{} · {} events",
         if state.autoscroll {
@@ -1277,37 +1244,27 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         },
         state.events.len()
     );
-    f.render_widget(Paragraph::new(Line::from(nav)), cols[0]);
-    f.render_widget(
-        Paragraph::new(Line::from(copy)).alignment(Alignment::Center),
-        cols[1],
-    );
+    f.render_widget(Paragraph::new(Line::from(left)), cols[0]);
     f.render_widget(
         Paragraph::new(Line::from(Span::styled(right, Style::default().fg(C_DIM))))
             .alignment(Alignment::Right),
-        cols[2],
+        cols[1],
     );
-}
-
-fn key_span(key: &'static str) -> Span<'static> {
-    Span::styled(
-        format!(" {key} "),
-        Style::default().fg(C_DIM).bg(Color::DarkGray),
-    )
-}
-
-fn hotkey_span(key: &'static str) -> Span<'static> {
-    Span::styled(
-        format!(" {key} "),
-        Style::default()
-            .fg(Color::Black)
-            .bg(C_WARN)
-            .add_modifier(Modifier::BOLD),
-    )
 }
 
 fn render_search_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     if area.height == 0 {
+        return;
+    }
+    if state.command.editing {
+        let line = Line::from(vec![
+            Span::styled(
+                ":",
+                Style::default().fg(C_WARN).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(state.command.input.clone(), Style::default().fg(C_TITLE)),
+        ]);
+        f.render_widget(Paragraph::new(line), area);
         return;
     }
     let mode = if state.search.filter_mode {

@@ -296,7 +296,7 @@ fn run_event_loop(
             match event::read()? {
                 Event::Key(key) => match input::handle(key, &mut state) {
                     input::Action::Quit => break,
-                    input::Action::Copy(target) => copy_target_to_clipboard(&mut state, target),
+                    input::Action::YankVisual => yank_visual_to_clipboard(&mut state),
                     input::Action::OpenCard => open_active_card(&mut state),
                     input::Action::None => {}
                 },
@@ -306,7 +306,7 @@ fn run_event_loop(
                 }
                 Event::Mouse(mouse) => match input::handle_mouse(mouse, &mut state) {
                     input::Action::Quit => break,
-                    input::Action::Copy(target) => copy_target_to_clipboard(&mut state, target),
+                    input::Action::YankVisual => yank_visual_to_clipboard(&mut state),
                     input::Action::OpenCard => open_active_card(&mut state),
                     input::Action::None => {}
                 },
@@ -355,7 +355,7 @@ fn run_event_loop_from_log(
             match event::read()? {
                 Event::Key(key) => match input::handle(key, &mut state) {
                     input::Action::Quit => return Ok(ViewerExit::Quit),
-                    input::Action::Copy(target) => copy_target_to_clipboard(&mut state, target),
+                    input::Action::YankVisual => yank_visual_to_clipboard(&mut state),
                     input::Action::OpenCard => open_active_card(&mut state),
                     input::Action::None => {}
                 },
@@ -365,7 +365,7 @@ fn run_event_loop_from_log(
                 }
                 Event::Mouse(mouse) => match input::handle_mouse(mouse, &mut state) {
                     input::Action::Quit => return Ok(ViewerExit::Quit),
-                    input::Action::Copy(target) => copy_target_to_clipboard(&mut state, target),
+                    input::Action::YankVisual => yank_visual_to_clipboard(&mut state),
                     input::Action::OpenCard => open_active_card(&mut state),
                     input::Action::None => {}
                 },
@@ -462,21 +462,13 @@ fn open_url(url: &str) -> Result<()> {
     anyhow::bail!("no browser opener configured for this platform")
 }
 
-fn copy_target_to_clipboard(state: &mut AppState, target: input::CopyTarget) {
-    let (label, text) = match target {
-        input::CopyTarget::Output => ("output", state.output_text()),
-        input::CopyTarget::Card => ("card", state.card_text()),
-        input::CopyTarget::Steps => ("steps", state.steps_text()),
-        input::CopyTarget::All => ("all", state.all_json_text()),
-        input::CopyTarget::Visual => ("visual", state.visual_text()),
-    };
+fn yank_visual_to_clipboard(state: &mut AppState) {
+    let text = state.visual_text();
     let result = copy_to_clipboard(&text);
-    if matches!(target, input::CopyTarget::Visual) {
-        state.visual.cancel();
-    }
+    state.visual.cancel();
     match result {
         Ok(()) => state.push_ui_note(format!(
-            "copied {label} ({} line(s)) to clipboard",
+            "yanked {} line(s) to clipboard",
             text.lines().count()
         )),
         Err(err) => state.events.push(state::TimelineRow {

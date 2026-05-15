@@ -10,17 +10,8 @@ use crate::tui::state::{AppState, FocusPane, HistoryEntry, Iteration, TimelineKi
 pub enum Action {
     None,
     Quit,
-    Copy(CopyTarget),
+    YankVisual,
     OpenCard,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CopyTarget {
-    Output,
-    Card,
-    Steps,
-    All,
-    Visual,
 }
 
 pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
@@ -28,6 +19,9 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
     let page_step = 10u16;
     if matches!(key.code, KeyCode::Char('c')) && key.modifiers == KeyModifiers::CONTROL {
         return Action::Quit;
+    }
+    if state.command.editing {
+        return handle_command_key(key, state);
     }
     if state.search.editing {
         return handle_search_key(key, state);
@@ -38,16 +32,71 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
     if state.visual.active {
         return handle_visual_key(key, state);
     }
-    if state.copy_mode {
-        return handle_copy_key(key, state);
-    }
     match (key.code, key.modifiers) {
-        (KeyCode::Char('q'), _) | (KeyCode::Char('c'), KeyModifiers::CONTROL) => Action::Quit,
-        (KeyCode::Tab, _) => {
+        (KeyCode::Char('c'), KeyModifiers::CONTROL) => Action::Quit,
+        (KeyCode::Char(':'), m) if m.is_empty() => {
+            state.normal.clear();
+            state.command.editing = true;
+            state.command.input.clear();
+            Action::None
+        }
+        (KeyCode::Char(' '), m) if m.is_empty() => {
+            state.normal.clear();
+            state.normal.leader = true;
+            Action::None
+        }
+
+        (KeyCode::Tab, _) if state.normal.leader => {
+            state.normal.clear();
             state.focus = match state.focus {
                 FocusPane::Output => FocusPane::Card,
                 FocusPane::Card | FocusPane::Modal => FocusPane::Output,
             };
+            Action::None
+        }
+        (KeyCode::Char('h'), _) if state.normal.leader => {
+            state.normal.clear();
+            state.focus = FocusPane::Card;
+            Action::None
+        }
+        (KeyCode::Char('l'), _) if state.normal.leader => {
+            state.normal.clear();
+            state.focus = FocusPane::Output;
+            Action::None
+        }
+        (KeyCode::Char('H'), _) if state.normal.leader => {
+            state.normal.clear();
+            state.history.entries = load_history_entries();
+            state.history.open = true;
+            state.focus = FocusPane::Modal;
+            Action::None
+        }
+        (KeyCode::Char('/'), _) if state.normal.leader => {
+            state.normal.clear();
+            state.search.editing = true;
+            Action::None
+        }
+        (KeyCode::Char('f'), _) if state.normal.leader => {
+            state.normal.clear();
+            state.search.filter_mode = !state.search.filter_mode;
+            if state.search.query.is_empty() {
+                state.search.editing = true;
+            }
+            Action::None
+        }
+        (KeyCode::Char('c' | 'o'), m) if m.is_empty() && state.normal.leader => {
+            state.normal.clear();
+            Action::OpenCard
+        }
+        (KeyCode::Char('p'), _) if state.normal.leader => {
+            state.normal.clear();
+            if state.autoscroll {
+                state.pause_output();
+            } else {
+                state.scroll = state.output_bottom_scroll();
+                state.output_cursor = state.output_line_count.saturating_sub(1);
+                state.autoscroll = true;
+            }
             Action::None
         }
 
@@ -55,19 +104,20 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
             if c != '0' || !state.normal.count.is_empty() {
                 state.normal.count.push(c);
             }
+            state.normal.leader = false;
             state.normal.pending_g = false;
             Action::None
         }
 
         (KeyCode::Up, _) | (KeyCode::Char('k'), _) => {
             let amount = state.normal.take_count().unwrap_or(scroll_step);
-            state.normal.pending_g = false;
+            state.normal.clear();
             scroll_focused(state, false, amount);
             Action::None
         }
         (KeyCode::Down, _) | (KeyCode::Char('j'), _) => {
             let amount = state.normal.take_count().unwrap_or(scroll_step);
-            state.normal.pending_g = false;
+            state.normal.clear();
             scroll_focused(state, true, amount);
             Action::None
         }
@@ -84,11 +134,12 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
 
         (KeyCode::Char('g'), _) if state.normal.pending_g => {
             let line = state.normal.take_count().unwrap_or(1).saturating_sub(1);
-            state.normal.pending_g = false;
+            state.normal.clear();
             goto_output_line(state, line);
             Action::None
         }
         (KeyCode::Char('g'), _) => {
+            state.normal.leader = false;
             state.normal.pending_g = true;
             Action::None
         }
@@ -101,44 +152,11 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
             Action::None
         }
 
-        (KeyCode::Char('p'), _) => {
-            state.normal.clear();
-            if state.autoscroll {
-                state.pause_output();
-            } else {
-                state.scroll = state.output_bottom_scroll();
-                state.output_cursor = state.output_line_count.saturating_sub(1);
-                state.autoscroll = true;
-            }
-            Action::None
-        }
-        (KeyCode::Char('o'), m) if m.is_empty() => {
-            state.normal.clear();
-            Action::OpenCard
-        }
-        (KeyCode::Char('c'), m) if m.is_empty() => {
-            state.normal.clear();
-            state.copy_mode = true;
-            Action::None
-        }
         (KeyCode::Char('v'), _) | (KeyCode::Char('V'), _) => {
             state.normal.clear();
             state.materialize_output_scroll();
             state.autoscroll = false;
             state.visual.start(state.output_cursor);
-            Action::None
-        }
-        (KeyCode::Char('/'), _) => {
-            state.normal.clear();
-            state.search.editing = true;
-            Action::None
-        }
-        (KeyCode::Char('f'), _) => {
-            state.normal.clear();
-            state.search.filter_mode = !state.search.filter_mode;
-            if state.search.query.is_empty() {
-                state.search.editing = true;
-            }
             Action::None
         }
         (KeyCode::Char('n'), _) => {
@@ -147,13 +165,6 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
         }
         (KeyCode::Char('N'), _) => {
             state.search.current_match = state.search.current_match.saturating_sub(1);
-            Action::None
-        }
-        (KeyCode::Char('H'), _) => {
-            state.normal.clear();
-            state.history.entries = load_history_entries();
-            state.history.open = true;
-            state.focus = FocusPane::Modal;
             Action::None
         }
         (KeyCode::Char('i'), _) => {
@@ -182,7 +193,7 @@ pub fn handle_mouse(mouse: MouseEvent, state: &mut AppState) -> Action {
                 state.autoscroll = false;
                 scroll_focused(state, false, scroll_step);
                 if state.visual.active {
-                    state.visual.cursor = state.scroll;
+                    state.visual.cursor = state.output_cursor;
                 }
             }
         }
@@ -197,7 +208,7 @@ pub fn handle_mouse(mouse: MouseEvent, state: &mut AppState) -> Action {
                 state.autoscroll = false;
                 scroll_focused(state, true, scroll_step);
                 if state.visual.active {
-                    state.visual.cursor = state.scroll;
+                    state.visual.cursor = state.output_cursor;
                 }
             }
         }
@@ -212,59 +223,84 @@ fn handle_visual_key(key: KeyEvent, state: &mut AppState) -> Action {
             state.visual.cancel();
             Action::None
         }
-        KeyCode::Char('y') => Action::Copy(CopyTarget::Visual),
+        KeyCode::Char('y') => Action::YankVisual,
+        KeyCode::Char('G') => {
+            state.materialize_output_scroll();
+            state.autoscroll = false;
+            state.output_cursor = state.output_line_count.saturating_sub(1);
+            state.visual.cursor = state.output_cursor;
+            keep_output_cursor_visible(state);
+            Action::None
+        }
         KeyCode::Up | KeyCode::Char('k') => {
             state.materialize_output_scroll();
             state.autoscroll = false;
-            state.scroll = state.scroll.saturating_sub(1);
-            state.visual.cursor = state.scroll;
+            state.output_cursor = state.output_cursor.saturating_sub(1);
+            state.visual.cursor = state.output_cursor;
+            keep_output_cursor_visible(state);
             Action::None
         }
         KeyCode::Down | KeyCode::Char('j') => {
             state.materialize_output_scroll();
             state.autoscroll = false;
-            state.scroll = state
-                .scroll
+            state.output_cursor = state
+                .output_cursor
                 .saturating_add(1)
-                .min(state.output_bottom_scroll());
-            state.visual.cursor = state.scroll;
+                .min(state.output_line_count.saturating_sub(1));
+            state.visual.cursor = state.output_cursor;
+            keep_output_cursor_visible(state);
             Action::None
         }
         KeyCode::PageUp => {
             state.materialize_output_scroll();
             state.autoscroll = false;
-            state.scroll = state.scroll.saturating_sub(10);
-            state.visual.cursor = state.scroll;
+            state.output_cursor = state.output_cursor.saturating_sub(10);
+            state.visual.cursor = state.output_cursor;
+            keep_output_cursor_visible(state);
             Action::None
         }
         KeyCode::PageDown => {
             state.materialize_output_scroll();
             state.autoscroll = false;
-            state.scroll = state
-                .scroll
+            state.output_cursor = state
+                .output_cursor
                 .saturating_add(10)
-                .min(state.output_bottom_scroll());
-            state.visual.cursor = state.scroll;
+                .min(state.output_line_count.saturating_sub(1));
+            state.visual.cursor = state.output_cursor;
+            keep_output_cursor_visible(state);
             Action::None
         }
         _ => Action::None,
     }
 }
 
-fn handle_copy_key(key: KeyEvent, state: &mut AppState) -> Action {
-    let target = match key.code {
+fn handle_command_key(key: KeyEvent, state: &mut AppState) -> Action {
+    match key.code {
         KeyCode::Esc => {
-            state.copy_mode = false;
-            return Action::None;
+            state.command.editing = false;
+            state.command.input.clear();
+            Action::None
         }
-        KeyCode::Char('o') => CopyTarget::Output,
-        KeyCode::Char('c') => CopyTarget::Card,
-        KeyCode::Char('s') => CopyTarget::Steps,
-        KeyCode::Char('a') => CopyTarget::All,
-        _ => return Action::None,
-    };
-    state.copy_mode = false;
-    Action::Copy(target)
+        KeyCode::Enter => {
+            let command = state.command.input.trim().to_string();
+            state.command.editing = false;
+            state.command.input.clear();
+            match command.as_str() {
+                "q" | "quit" => Action::Quit,
+                "open-card-on-scryfall" | "open-card" => Action::OpenCard,
+                _ => Action::None,
+            }
+        }
+        KeyCode::Backspace => {
+            state.command.input.pop();
+            Action::None
+        }
+        KeyCode::Char(c) => {
+            state.command.input.push(c);
+            Action::None
+        }
+        _ => Action::None,
+    }
 }
 
 fn handle_search_key(key: KeyEvent, state: &mut AppState) -> Action {
@@ -558,6 +594,76 @@ mod tests {
     }
 
     #[test]
+    fn normal_q_does_not_quit_without_command_mode() {
+        let mut state = AppState::new();
+
+        let action = handle(key(KeyCode::Char('q')), &mut state);
+
+        assert!(matches!(action, Action::None));
+    }
+
+    #[test]
+    fn command_q_quits() {
+        let mut state = AppState::new();
+
+        handle(key(KeyCode::Char(':')), &mut state);
+        handle(key(KeyCode::Char('q')), &mut state);
+        let action = handle(key(KeyCode::Enter), &mut state);
+
+        assert!(matches!(action, Action::Quit));
+    }
+
+    #[test]
+    fn leader_h_opens_history() {
+        let mut state = AppState::new();
+
+        handle(key(KeyCode::Char(' ')), &mut state);
+        let action = handle(key(KeyCode::Char('H')), &mut state);
+
+        assert!(matches!(action, Action::None));
+        assert!(state.history.open);
+        assert_eq!(state.focus, FocusPane::Modal);
+    }
+
+    #[test]
+    fn leader_c_opens_active_card() {
+        let mut state = AppState::new();
+
+        handle(key(KeyCode::Char(' ')), &mut state);
+        let action = handle(key(KeyCode::Char('c')), &mut state);
+
+        assert!(matches!(action, Action::OpenCard));
+    }
+
+    #[test]
+    fn command_open_card_on_scryfall_opens_active_card() {
+        let mut state = AppState::new();
+
+        handle(key(KeyCode::Char(':')), &mut state);
+        for ch in "open-card-on-scryfall".chars() {
+            handle(key(KeyCode::Char(ch)), &mut state);
+        }
+        let action = handle(key(KeyCode::Enter), &mut state);
+
+        assert!(matches!(action, Action::OpenCard));
+    }
+
+    #[test]
+    fn visual_g_yank_sequence_selects_to_bottom() {
+        let mut state = AppState::new();
+        state.remember_output_view(100, 20);
+        state.autoscroll = false;
+        state.output_cursor = 0;
+
+        handle(key(KeyCode::Char('v')), &mut state);
+        handle(key(KeyCode::Char('G')), &mut state);
+        let action = handle(key(KeyCode::Char('y')), &mut state);
+
+        assert!(matches!(action, Action::YankVisual));
+        assert_eq!(state.visual.range(), Some((0, 99)));
+    }
+
+    #[test]
     fn visual_mode_starts_at_visible_bottom_when_autoscrolling() {
         let mut state = AppState::new();
         state.remember_output_view(100, 20);
@@ -578,13 +684,14 @@ mod tests {
         let mut state = AppState::new();
         state.remember_output_view(100, 20);
         state.scroll = 40;
+        state.output_cursor = 40;
         state.autoscroll = false;
         state.visual.start(40);
 
         let action = handle(key(KeyCode::Char('j')), &mut state);
 
         assert!(matches!(action, Action::None));
-        assert_eq!(state.scroll, 41);
+        assert_eq!(state.scroll, 40);
         assert_eq!(state.visual.range(), Some((40, 41)));
     }
 }

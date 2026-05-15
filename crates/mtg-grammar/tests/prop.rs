@@ -14,8 +14,8 @@ use mtg_grammar::{
     EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol, ModalMode,
     PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentType, PreventionRecipient,
     PtModifier, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType,
-    Statement, StaticAbility, TapAllPermanentsActor, TriggerEffect, TriggerEvent, TriggeredAbility,
-    Variable,
+    Statement, StaticAbility, TapAllPermanentsActor, TargetPermanentSelector, TriggerEffect,
+    TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -65,6 +65,17 @@ fn arb_permanent_type() -> impl Strategy<Value = PermanentType> {
         Just(PermanentType::Enchantment),
         Just(PermanentType::Land),
         Just(PermanentType::Planeswalker),
+    ]
+}
+
+fn arb_target_permanent_selector() -> impl Strategy<Value = TargetPermanentSelector> {
+    prop_oneof![
+        arb_permanent_type().prop_map(TargetPermanentSelector::Permanent),
+        prop_oneof![
+            Just(mtg_grammar::CombatRole::Attacking),
+            Just(mtg_grammar::CombatRole::Blocking),
+        ]
+        .prop_map(|role| TargetPermanentSelector::CombatRoleCreature { role }),
     ]
 }
 
@@ -384,23 +395,16 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_basic_land_type().prop_map(|basic_land_type| Statement::Destroy {
             target: DestroyTarget::AllBasicLands(basic_land_type),
         }),
-        (arb_permanent_type(), arb_pt_modifier()).prop_map(|(permanent_type, modifier)| {
-            Statement::TargetPermanentGetsUntilEndOfTurn {
-                permanent_type,
-                modifier,
-            }
+        (arb_target_permanent_selector(), arb_pt_modifier()).prop_map(|(target, modifier)| {
+            Statement::TargetPermanentGetsUntilEndOfTurn { target, modifier }
         }),
-        (arb_permanent_type(), arb_mixed_pt_modifier()).prop_map(|(permanent_type, modifier)| {
-            Statement::TargetPermanentGetsMixedUntilEndOfTurn {
-                permanent_type,
-                modifier,
+        (arb_target_permanent_selector(), arb_mixed_pt_modifier()).prop_map(
+            |(target, modifier)| {
+                Statement::TargetPermanentGetsMixedUntilEndOfTurn { target, modifier }
             }
-        }),
-        (arb_permanent_type(), arb_evasion_keyword()).prop_map(|(permanent_type, keyword)| {
-            Statement::TargetPermanentGainsKeywordUntilEndOfTurn {
-                permanent_type,
-                keyword,
-            }
+        ),
+        (arb_target_permanent_selector(), arb_evasion_keyword()).prop_map(|(target, keyword)| {
+            Statement::TargetPermanentGainsKeywordUntilEndOfTurn { target, keyword }
         }),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::TapAllPermanentsAndPlayerLosesUnspentMana {

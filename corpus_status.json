@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 222,
+  "passing": 223,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -636,8 +636,7 @@
       "status": "pass"
     },
     "lea/Righteousness": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:8\n  |\n1 | Target blocking creature gets +7/+7 until end of turn.\n  |        ^---\n  |\n  = expected permanent_type"
+      "status": "pass"
     },
     "lea/Roc of Kher Ridges": {
       "status": "pass"

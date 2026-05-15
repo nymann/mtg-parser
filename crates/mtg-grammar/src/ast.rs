@@ -199,26 +199,26 @@ pub enum Statement {
     TargetSpellOrPermanentBecomesColor {
         color: Color,
     },
-    /// "Target <type> gets <modifier> until end of turn."
+    /// "Target <selector> gets <modifier> until end of turn."
     TargetPermanentGetsUntilEndOfTurn {
-        permanent_type: PermanentType,
+        target: TargetPermanentSelector,
         modifier: PtModifier,
     },
-    /// "Target <type> gets <modifier> until end of turn.", where the
+    /// "Target <selector> gets <modifier> until end of turn.", where the
     /// modifier may contain a printed variable.
     TargetPermanentGetsMixedUntilEndOfTurn {
-        permanent_type: PermanentType,
+        target: TargetPermanentSelector,
         modifier: MixedPtModifier,
     },
-    /// "Target <type> gains <keyword> until end of turn."
+    /// "Target <selector> gains <keyword> until end of turn."
     TargetPermanentGainsKeywordUntilEndOfTurn {
-        permanent_type: PermanentType,
+        target: TargetPermanentSelector,
         keyword: Keyword,
     },
-    /// "Target <type> gains <keyword> and gets <modifier> until end of
+    /// "Target <selector> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
     TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
-        permanent_type: PermanentType,
+        target: TargetPermanentSelector,
         keyword: Keyword,
         modifier: MixedPtModifier,
         definitions: Vec<VariableDefinition>,
@@ -344,7 +344,7 @@ impl Statement {
     }
 
     pub(crate) fn target_permanent_until_end_of_turn(
-        permanent_type: PermanentType,
+        target: TargetPermanentSelector,
         effect: TargetPermanentEndOfTurnEffect,
     ) -> Self {
         match effect {
@@ -352,28 +352,22 @@ impl Statement {
                 match (modifier.power, modifier.toughness) {
                     (SignedPtComponent::Number(power), SignedPtComponent::Number(toughness)) => {
                         Statement::TargetPermanentGetsUntilEndOfTurn {
-                            permanent_type,
+                            target,
                             modifier: PtModifier { power, toughness },
                         }
                     }
-                    _ => Statement::TargetPermanentGetsMixedUntilEndOfTurn {
-                        permanent_type,
-                        modifier,
-                    },
+                    _ => Statement::TargetPermanentGetsMixedUntilEndOfTurn { target, modifier },
                 }
             }
             TargetPermanentEndOfTurnEffect::GainsKeyword(keyword) => {
-                Statement::TargetPermanentGainsKeywordUntilEndOfTurn {
-                    permanent_type,
-                    keyword,
-                }
+                Statement::TargetPermanentGainsKeywordUntilEndOfTurn { target, keyword }
             }
             TargetPermanentEndOfTurnEffect::GainsKeywordAndGets {
                 keyword,
                 modifier,
                 definitions,
             } => Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
-                permanent_type,
+                target,
                 keyword,
                 modifier,
                 definitions,
@@ -449,6 +443,18 @@ pub(crate) enum TargetPermanentEndOfTurnEffect {
         modifier: MixedPtModifier,
         definitions: Vec<VariableDefinition>,
     },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TargetPermanentSelector {
+    Permanent(PermanentType),
+    CombatRoleCreature { role: CombatRole },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CombatRole {
+    Attacking,
+    Blocking,
 }
 
 impl TargetPermanentEndOfTurnEffect {

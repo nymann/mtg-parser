@@ -9,7 +9,6 @@
 use std::time::{Duration, Instant};
 
 use mtg_scryfall::Card;
-use serde_json::json;
 
 use crate::agent_events::{self, ParsedAgentEvent, ToolUseTarget};
 use crate::flow::{AgentProvider, FlowEvent, IterationOutcomeSummary, NoteLevel, SessionEndReason};
@@ -35,9 +34,9 @@ pub struct AppState {
     pub autoscroll: bool,
     pub focus: FocusPane,
     pub normal: NormalInputState,
+    pub command: CommandState,
     pub search: SearchState,
     pub history: HistoryState,
-    pub copy_mode: bool,
     pub visual: VisualState,
 }
 
@@ -73,11 +72,6 @@ impl AppState {
         } else {
             Some(durations.iter().sum::<u64>() / durations.len() as u64)
         }
-    }
-
-    /// Plain-text content for the output pane, used by the copy shortcut.
-    pub fn output_text(&self) -> String {
-        self.visible_output_text()
     }
 
     fn visible_output_text(&self) -> String {
@@ -154,122 +148,6 @@ impl AppState {
             .take(end.saturating_sub(start) + 1)
             .collect::<Vec<_>>()
             .join("\n")
-    }
-
-    pub fn card_text(&self) -> String {
-        let Some(iter) = self.active_iteration() else {
-            return match &self.session_end {
-                Some(SessionEndReason::SurfacedToHuman(reason)) => {
-                    format!("startup failed\n\n{reason}")
-                }
-                _ => "starting workflow".to_string(),
-            };
-        };
-        if let Some(title) = &iter.title {
-            let mut lines = vec![title.clone()];
-            if let Some(detail) = &iter.detail {
-                lines.push(String::new());
-                lines.extend(detail.lines().map(|line| format!("  {line}")));
-            }
-            return lines.join("\n");
-        }
-        let Some(card) = &iter.card else {
-            return "finding next failing card".to_string();
-        };
-        let mut lines = vec![
-            format!("Name: {}", card.name),
-            format!("Set: {}", card.set_code),
-            format!("Collector #: {}", card.collector_number),
-            format!("Layout: {:?}", card.layout),
-            format!(
-                "Mana cost: {}",
-                if card.mana_cost.is_empty() {
-                    "-"
-                } else {
-                    card.mana_cost.as_str()
-                }
-            ),
-            String::new(),
-            "Oracle text:".to_string(),
-        ];
-        for line in iter
-            .normalized
-            .as_deref()
-            .unwrap_or(&card.oracle_text)
-            .lines()
-        {
-            lines.push(format!("  {line}"));
-        }
-        if let Some(err) = &iter.round_trip_error {
-            lines.push(String::new());
-            lines.push("Round-trip:".to_string());
-            lines.extend(err.lines().map(|line| format!("  {line}")));
-        }
-        lines.join("\n")
-    }
-
-    pub fn steps_text(&self) -> String {
-        let Some(iter) = self.active_iteration() else {
-            return String::new();
-        };
-        iter.steps
-            .iter()
-            .enumerate()
-            .map(|(i, step)| {
-                let idx = i + 1;
-                let label = if step.label.is_empty() {
-                    "(pending)"
-                } else {
-                    step.label.as_str()
-                };
-                let status = match step.status {
-                    StepStatus::Pending => "pending",
-                    StepStatus::Running => "running",
-                    StepStatus::Done => "done",
-                    StepStatus::Failed => "failed",
-                };
-                match &step.summary {
-                    Some(summary) => format!("{idx}. {label} [{status}] -> {summary}"),
-                    None => format!("{idx}. {label} [{status}]"),
-                }
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
-    }
-
-    pub fn all_json_text(&self) -> String {
-        let iter = self.active_iteration();
-        let steps = iter
-            .map(|iter| {
-                iter.steps
-                    .iter()
-                    .enumerate()
-                    .map(|(i, step)| {
-                        json!({
-                            "index": i + 1,
-                            "label": step.label,
-                            "status": match step.status {
-                                StepStatus::Pending => "pending",
-                                StepStatus::Running => "running",
-                                StepStatus::Done => "done",
-                                StepStatus::Failed => "failed",
-                            },
-                            "summary": step.summary,
-                            "duration_secs": step.duration_secs(),
-                        })
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
-        let value = json!({
-            "card": iter.and_then(|iter| iter.card.as_ref()),
-            "title": iter.and_then(|iter| iter.title.as_ref()),
-            "detail": iter.and_then(|iter| iter.detail.as_ref()),
-            "steps": steps,
-            "output": self.output_text(),
-            "session_end": self.session_end.as_ref().map(output_session_end),
-        });
-        serde_json::to_string_pretty(&value).expect("TUI copy JSON should serialize")
     }
 
     pub fn push_ui_note(&mut self, text: impl Into<String>) {
@@ -599,6 +477,7 @@ impl VisualState {
 pub struct NormalInputState {
     pub count: String,
     pub pending_g: bool,
+    pub leader: bool,
 }
 
 impl NormalInputState {
@@ -613,7 +492,14 @@ impl NormalInputState {
     pub fn clear(&mut self) {
         self.count.clear();
         self.pending_g = false;
+        self.leader = false;
     }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct CommandState {
+    pub editing: bool,
+    pub input: String,
 }
 
 #[derive(Debug, Clone)]
