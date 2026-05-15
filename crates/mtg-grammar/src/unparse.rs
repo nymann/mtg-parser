@@ -160,6 +160,14 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw => {
             out.push_str("If you would draw a card during your draw step, instead you may skip that draw.");
         }
+        Statement::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder { count } => {
+            out.push_str("Look at the top ");
+            write_card_count(out, *count);
+            out.push_str(" cards of target player's library, then put them back in any order.");
+        }
+        Statement::YouMayHaveThatPlayerShuffle => {
+            out.push_str("You may have that player shuffle.");
+        }
         Statement::TargetPlayerGainsLife { amount } => {
             write!(out, "Target player gains {amount} life.").expect("write to String never fails");
         }

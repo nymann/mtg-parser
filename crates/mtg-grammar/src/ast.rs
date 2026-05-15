@@ -100,6 +100,13 @@ pub enum Statement {
     /// "If you would draw a card during your draw step, instead you may
     /// skip that draw."
     IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw,
+    /// "Look at the top N cards of target player's library, then put them
+    /// back in any order."
+    LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder {
+        count: CardCount,
+    },
+    /// "You may have that player shuffle."
+    YouMayHaveThatPlayerShuffle,
     /// "Target player gains N life."
     TargetPlayerGainsLife {
         amount: u32,

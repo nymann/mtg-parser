@@ -68,6 +68,8 @@ sentence_statement = _{
   | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
   | target_player_gains_life
   | if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw
+  | look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order
+  | you_may_have_that_player_shuffle
   | draw_cards
   | target_player_discards_cards_at_random
   | add_mana
@@ -316,6 +318,16 @@ if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw = {
 }
 target_player_gains_life = {
     ^"target" ~ ^"player" ~ ^"gains" ~ unsigned_number ~ ^"life" ~ "."
+}
+
+look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order = {
+    ^"look" ~ ^"at" ~ ^"the" ~ ^"top" ~ draw_count ~ ^"cards"
+  ~ ^"of" ~ ^"target" ~ ^"player's" ~ ^"library" ~ ","
+  ~ ^"then" ~ ^"put" ~ ^"them" ~ ^"back" ~ ^"in" ~ ^"any" ~ ^"order" ~ "."
+}
+
+you_may_have_that_player_shuffle = {
+    ^"you" ~ ^"may" ~ ^"have" ~ ^"that" ~ ^"player" ~ ^"shuffle" ~ "."
 }
 
 tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana = {

@@ -334,6 +334,10 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         }),
         arb_card_count()
             .prop_map(|count| Statement::TargetPlayerDiscardsCardsAtRandom { count }),
+        arb_card_count().prop_map(|count| {
+            Statement::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder { count }
+        }),
+        Just(Statement::YouMayHaveThatPlayerShuffle),
         (1u32..=10).prop_map(|amount| Statement::TargetPlayerGainsLife { amount }),
         Just(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw),
         Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),

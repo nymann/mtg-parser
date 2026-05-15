@@ -252,3 +252,5 @@ mod meekstone;
 mod mesa_pegasus;
 #[path = "generated/mind_twist.rs"]
 mod mind_twist;
+#[path = "generated/natural_selection.rs"]
+mod natural_selection;

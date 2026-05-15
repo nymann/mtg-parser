@@ -128,6 +128,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw => {
             Ok(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw)
         }
+        Rule::look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order => {
+            look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order_from_pair(
+                pair,
+            )
+        }
+        Rule::you_may_have_that_player_shuffle => Ok(Statement::YouMayHaveThatPlayerShuffle),
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::target_player_discards_cards_at_random => {
             target_player_discards_cards_at_random_from_pair(pair)
@@ -970,6 +976,20 @@ fn card_count_from_pair(count_pair: Pair<Rule>) -> Result<CardCount, ParseError>
         _ => return Err(ParseError::Internal("draw_count")),
     };
     Ok(count)
+}
+
+fn look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let count_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("look at top cards missing card count"))?;
+    Ok(
+        Statement::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder {
+            count: card_count_from_pair(count_pair)?,
+        },
+    )
 }
 
 fn until_eot_you_may_pay_cost_at_timing_from_pair(

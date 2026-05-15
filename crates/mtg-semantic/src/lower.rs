@@ -114,6 +114,12 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw => {
             CardEffect::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw
         }
+        Statement::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder { count } => {
+            CardEffect::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder {
+                count: *count,
+            }
+        }
+        Statement::YouMayHaveThatPlayerShuffle => CardEffect::YouMayHaveThatPlayerShuffle,
         Statement::TargetPlayerGainsLife { amount } => {
             CardEffect::TargetPlayerGainsLife { amount: *amount }
         }
