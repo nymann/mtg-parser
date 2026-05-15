@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 57,
+  "passing": 58,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -85,8 +85,7 @@
       "status": "pass"
     },
     "lea/Burrowing": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:24\n  |\n2 | Enchanted creature has mountainwalk.\n  |                        ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, swampwalk, or enchant"
+      "status": "pass"
     },
     "lea/Camouflage": {
       "status": "fail",
@@ -141,7 +140,7 @@
     },
     "lea/Consecrate Land": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:20\n  |\n2 | Enchanted land has indestructible and can't be enchanted by other Auras.\n  |                    ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, swampwalk, or enchant"
+      "error": "parse: parse error:  --> 2:20\n  |\n2 | Enchanted land has indestructible and can't be enchanted by other Auras.\n  |                    ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, mountainwalk, swampwalk, or enchant"
     },
     "lea/Conservator": {
       "status": "fail",
@@ -291,7 +290,7 @@
     },
     "lea/Farmstead": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:20\n  |\n2 | Enchanted land has \"At the beginning of your upkeep, you may pay {W}{W}. If you do, you gain 1 life.\"\n  |                    ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, swampwalk, or enchant"
+      "error": "parse: parse error:  --> 2:20\n  |\n2 | Enchanted land has \"At the beginning of your upkeep, you may pay {W}{W}. If you do, you gain 1 life.\"\n  |                    ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, mountainwalk, swampwalk, or enchant"
     },
     "lea/Fastbond": {
       "status": "fail",
@@ -299,7 +298,7 @@
     },
     "lea/Fear": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:24\n  |\n2 | Enchanted creature has fear.\n  |                        ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, swampwalk, or enchant"
+      "error": "parse: parse error:  --> 2:24\n  |\n2 | Enchanted creature has fear.\n  |                        ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, mountainwalk, swampwalk, or enchant"
     },
     "lea/Feedback": {
       "status": "fail",

@@ -37,3 +37,5 @@ mod blue_elemental_blast;
 mod bog_wraith;
 #[path = "generated_patterns/braingeyser.rs"]
 mod braingeyser;
+#[path = "generated_patterns/burrowing.rs"]
+mod burrowing;
