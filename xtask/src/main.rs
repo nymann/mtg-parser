@@ -37,6 +37,9 @@ Commands:
   rules-split                 Parse resources/comprehensive_rules.txt and emit a
                               browsable tree under resources/rules/. Run `just rules`
                               first to fetch the source document.
+  rules-context \"<query>\"     Render the Comprehensive Rules prompt block for a
+                              given oracle phrase. Lets you inspect retrieval
+                              quality without invoking the full grammar-fix loop.
   refactor-hotspot            Build a qmd-grounded refactor prompt for a hotspot.
               [--theme THEME] Defaults to parser-boilerplate. Other themes include
               [--target PATH] damage, destroy, prevention, keyword-abilities,
@@ -96,6 +99,7 @@ fn main() -> ExitCode {
         Some("corpus-advance") => corpus_cmd::advance(&args[1..]),
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),
         Some("rules-split") => rules_split::run(&args[1..]),
+        Some("rules-context") => rules_context::run_cli(&args[1..]),
         Some("refactor-hotspot") => refactor_hotspot::run(&args[1..]),
         Some("grammar-fix") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => grammar_fix::run(&args[1..]),

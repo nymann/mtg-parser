@@ -5,15 +5,19 @@
 //!    keyword indexes, damage, replacement, prevention). Provides a
 //!    floor of canonical context even when retrieval scores stay low.
 //! 2. **Dynamic top-K** — `qmd search` over the `mtg-rules` collection
-//!    using the card's normalized oracle text. BM25 only (no LLM
-//!    reranking) so the prompt is deterministic.
+//!    using the card's normalized oracle text, querying each line
+//!    independently because BM25 doesn't handle long mixed-vocabulary
+//!    phrases well. Pure BM25 (no LLM reranking) so the prompt is
+//!    deterministic.
 //!
-//! Both layers fail soft: if `qmd` is missing, the rules tree hasn't
-//! been built, or anything else goes wrong, the block degrades to a
-//! single note and the orchestrator keeps running.
+//! Failure is per-line, not global: one bad query produces a note in
+//! the block but does not drop the other lines' hits. Notes also
+//! surface missing always-load files and unparseable hit URIs, so the
+//! `## Comprehensive Rules` block carries enough diagnostics for a
+//! human to audit retrieval health from the saved prompt alone.
 
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, ExitCode};
 
 use serde::Deserialize;
 
@@ -37,9 +41,99 @@ const DYNAMIC_TOTAL_CAP: usize = 5;
 const DYNAMIC_MIN_SCORE: f32 = 0.3;
 const QMD_COLLECTION: &str = "mtg-rules";
 
+/// Outcome of one retrieval pass — the file lists for rendering plus
+/// the notes that explain any non-fatal degradations.
+pub struct RulesSearch {
+    pub always_loaded: Vec<PathBuf>,
+    pub dynamic_hits: Vec<PathBuf>,
+    pub notes: Vec<String>,
+    pub queries_attempted: u32,
+}
+
+impl RulesSearch {
+    fn all_paths(&self) -> impl Iterator<Item = &PathBuf> {
+        self.always_loaded.iter().chain(self.dynamic_hits.iter())
+    }
+}
+
+#[derive(Deserialize, Clone, Debug)]
+struct QmdHit {
+    file: String,
+}
+
 /// Renders the `## Comprehensive Rules` block to inline in the prompt.
 /// `query` is normally the card's normalized oracle text.
 pub fn render_rules_block(query: &str) -> String {
+    render_from_search(&build_rules_context(query))
+}
+
+fn build_rules_context(query: &str) -> RulesSearch {
+    build_rules_context_with(query, qmd_search_one)
+}
+
+/// Pure-logic core. `qmd` is injected so unit tests can exercise the
+/// merge/dedupe/notes plumbing without shelling out.
+fn build_rules_context_with<F>(query: &str, mut qmd: F) -> RulesSearch
+where
+    F: FnMut(&str) -> Result<Vec<QmdHit>, String>,
+{
+    let root = repo_root();
+    let mut always_loaded: Vec<PathBuf> = Vec::new();
+    let mut dynamic_hits: Vec<PathBuf> = Vec::new();
+    let mut notes: Vec<String> = Vec::new();
+    let mut queries_attempted: u32 = 0;
+
+    for rel in ALWAYS_LOAD {
+        let p = root.join(rel);
+        if p.exists() {
+            always_loaded.push(p);
+        } else {
+            notes.push(format!("always-load missing: {rel}"));
+        }
+    }
+
+    'outer: for line in query.lines() {
+        let normalized = normalize_line_for_query(line);
+        if normalized.is_empty() {
+            continue;
+        }
+        queries_attempted += 1;
+        match qmd(&normalized) {
+            Ok(hits) => {
+                for hit in hits {
+                    let Some(rel) = qmd_uri_to_relative(&hit.file) else {
+                        notes.push(format!("ignored hit with unresolvable uri: {}", hit.file));
+                        continue;
+                    };
+                    let p = root.join("resources/rules").join(rel);
+                    let already_present = always_loaded
+                        .iter()
+                        .chain(dynamic_hits.iter())
+                        .any(|existing| existing == &p);
+                    if already_present {
+                        continue;
+                    }
+                    dynamic_hits.push(p);
+                    if dynamic_hits.len() >= DYNAMIC_TOTAL_CAP {
+                        break 'outer;
+                    }
+                }
+            }
+            Err(e) => {
+                notes.push(format!("qmd failed for {normalized:?}: {e}"));
+            }
+        }
+    }
+
+    RulesSearch {
+        always_loaded,
+        dynamic_hits,
+        notes,
+        queries_attempted,
+    }
+}
+
+fn render_from_search(search: &RulesSearch) -> String {
     let mut out = String::new();
     out.push_str("## Comprehensive Rules\n\n");
     out.push_str(
@@ -49,33 +143,10 @@ pub fn render_rules_block(query: &str) -> String {
          (Keyword Abilities), use it.\n\n",
     );
 
-    let root = repo_root();
-    let mut included: Vec<PathBuf> = Vec::new();
-    let mut notes: Vec<String> = Vec::new();
+    out.push_str(&render_diagnostics(search));
+    out.push('\n');
 
-    for rel in ALWAYS_LOAD {
-        let p = root.join(rel);
-        if p.exists() {
-            included.push(p);
-        }
-    }
-
-    match qmd_search_files(query) {
-        Ok(paths) => {
-            for p in paths {
-                if !included.iter().any(|existing| existing == &p) {
-                    included.push(p);
-                }
-            }
-        }
-        Err(e) => {
-            notes.push(format!(
-                "_qmd retrieval unavailable: {e}. Using baseline excerpts only._"
-            ));
-        }
-    }
-
-    if included.is_empty() {
+    if search.always_loaded.is_empty() && search.dynamic_hits.is_empty() {
         out.push_str(
             "_`resources/rules/` not built. Run `just rules` and `just rules-index` \
              to populate, then re-run grammar-fix._\n\n",
@@ -83,12 +154,8 @@ pub fn render_rules_block(query: &str) -> String {
         return out;
     }
 
-    for note in &notes {
-        out.push_str(note);
-        out.push_str("\n\n");
-    }
-
-    for path in &included {
+    let root = repo_root();
+    for path in search.all_paths() {
         let Ok(text) = std::fs::read_to_string(path) else {
             continue;
         };
@@ -98,7 +165,30 @@ pub fn render_rules_block(query: &str) -> String {
         out.push_str(&truncate_lines(&text, MAX_LINES_PER_FILE));
         out.push_str("\n```\n\n");
     }
+    out
+}
 
+fn render_diagnostics(search: &RulesSearch) -> String {
+    let mut out = String::new();
+    let dyn_word = if search.dynamic_hits.len() == 1 {
+        "hit"
+    } else {
+        "hits"
+    };
+    let q_word = if search.queries_attempted == 1 {
+        "query"
+    } else {
+        "queries"
+    };
+    out.push_str(&format!(
+        "_Retrieval: {} always-loaded · {} dynamic {dyn_word} · {} {q_word}_\n",
+        search.always_loaded.len(),
+        search.dynamic_hits.len(),
+        search.queries_attempted,
+    ));
+    for note in &search.notes {
+        out.push_str(&format!("_- {note}_\n"));
+    }
     out
 }
 
@@ -125,38 +215,6 @@ fn truncate_lines(text: &str, max: usize) -> String {
         ));
     }
     out
-}
-
-#[derive(Deserialize)]
-struct QmdHit {
-    file: String,
-}
-
-fn qmd_search_files(query: &str) -> Result<Vec<PathBuf>, String> {
-    let root = repo_root();
-    let mut seen: Vec<String> = Vec::new();
-    let mut paths: Vec<PathBuf> = Vec::new();
-
-    for line in query.lines() {
-        let normalized = normalize_line_for_query(line);
-        if normalized.is_empty() {
-            continue;
-        }
-        let hits = qmd_search_one(&normalized)?;
-        for hit in hits {
-            if seen.iter().any(|f| f == &hit.file) {
-                continue;
-            }
-            seen.push(hit.file.clone());
-            if let Some(rel) = qmd_uri_to_relative(&hit.file) {
-                paths.push(root.join("resources/rules").join(rel));
-            }
-            if paths.len() >= DYNAMIC_TOTAL_CAP {
-                return Ok(paths);
-            }
-        }
-    }
-    Ok(paths)
 }
 
 fn qmd_search_one(query: &str) -> Result<Vec<QmdHit>, String> {
@@ -216,29 +274,51 @@ fn qmd_uri_to_relative(uri: &str) -> Option<&str> {
     uri.strip_prefix(&prefix)
 }
 
-/// Public entry point for testing — render with a stub of the qmd
-/// invocation rather than actually shelling out. Not used in the prompt
-/// build path; kept here so a unit test can exercise [`truncate_lines`]
-/// and [`qmd_uri_to_relative`] without a live qmd.
-#[cfg(test)]
-fn render_with_hits(query: &str, hits: &[&std::path::Path]) -> String {
-    let _ = query;
-    let mut out = String::from("## Comprehensive Rules\n\n");
-    for path in hits {
-        let Ok(text) = std::fs::read_to_string(path) else {
-            continue;
-        };
-        out.push_str(&format!("### {}\n\n", path.display()));
-        out.push_str("```markdown\n");
-        out.push_str(&truncate_lines(&text, MAX_LINES_PER_FILE));
-        out.push_str("\n```\n\n");
+// ---------------------------------------------------------------------------
+// `cargo xtask rules-context "<query>"` — diagnostic command
+// ---------------------------------------------------------------------------
+
+pub fn run_cli(args: &[String]) -> ExitCode {
+    if args.iter().any(|a| a == "-h" || a == "--help") {
+        print_help();
+        return ExitCode::SUCCESS;
     }
-    out
+    if args.is_empty() {
+        eprintln!("rules-context: missing query argument");
+        print_help();
+        return ExitCode::from(2);
+    }
+    // Allow either a single quoted argument or several positional words.
+    let query = args.join(" ");
+    print!("{}", render_rules_block(&query));
+    ExitCode::SUCCESS
 }
+
+fn print_help() {
+    print!(
+        "cargo xtask rules-context \"<query text>\"\n\n\
+         Renders the Comprehensive Rules prompt block for the given query.\n\
+         Use it to inspect what the agent would see for an oracle phrase\n\
+         without invoking the full grammar-fix loop.\n\n\
+         The query can be a single quoted string or a series of positional\n\
+         words; they're joined with spaces before being split per-line for\n\
+         qmd retrieval.\n"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn hit(file: &str) -> QmdHit {
+        QmdHit {
+            file: file.to_string(),
+        }
+    }
 
     #[test]
     fn truncate_keeps_short_files_intact() {
@@ -268,11 +348,96 @@ mod tests {
         assert_eq!(qmd_uri_to_relative(""), None);
     }
 
+    /// The whole point of the per-line iteration: one query failing
+    /// (qmd error, unparseable line, whatever) must NOT discard the
+    /// successful lines' hits.
     #[test]
-    fn render_with_hits_handles_missing_paths() {
-        let nope = PathBuf::from("/definitely/not/here.md");
-        let block = render_with_hits("anything", &[&nope]);
-        // Should still produce the header without panicking.
-        assert!(block.starts_with("## Comprehensive Rules"));
+    fn one_failed_line_still_returns_successful_hits() {
+        let query = "line a\nline b";
+        let search = build_rules_context_with(query, |q| {
+            if q.contains("a") {
+                Err("simulated qmd failure".to_string())
+            } else {
+                Ok(vec![hit("qmd://mtg-rules/glossary/flying.md")])
+            }
+        });
+        assert_eq!(search.dynamic_hits.len(), 1);
+        assert!(search.dynamic_hits[0]
+            .to_string_lossy()
+            .ends_with("glossary/flying.md"));
+        assert!(search
+            .notes
+            .iter()
+            .any(|n| n.contains("simulated qmd failure")));
+        assert_eq!(search.queries_attempted, 2);
+    }
+
+    /// Dynamic hits that overlap the always-load set must not appear
+    /// twice in the rendered block.
+    #[test]
+    fn dynamic_dedupes_against_always_load() {
+        let query = "anything";
+        let search = build_rules_context_with(query, |_q| {
+            // First entry in ALWAYS_LOAD — guaranteed to clash if it exists.
+            Ok(vec![hit(
+                "qmd://mtg-rules/700-additional-rules/702-keyword-abilities/_index.md",
+            )])
+        });
+        // The dynamic hit collides with always-load #1, so dynamic stays empty.
+        assert!(
+            search.dynamic_hits.is_empty(),
+            "expected zero dynamic hits after dedupe, got {:?}",
+            search.dynamic_hits
+        );
+    }
+
+    /// An unparseable URI (wrong collection prefix, malformed string)
+    /// becomes a note rather than crashing or being silently dropped.
+    #[test]
+    fn unresolvable_uri_becomes_a_note() {
+        let query = "anything";
+        let search = build_rules_context_with(query, |_q| Ok(vec![hit("not-a-qmd-uri.md")]));
+        assert!(search.dynamic_hits.is_empty());
+        assert!(search
+            .notes
+            .iter()
+            .any(|n| n.contains("unresolvable uri") && n.contains("not-a-qmd-uri.md")));
+    }
+
+    #[test]
+    fn diagnostics_header_formats_singular_and_plural() {
+        let one = RulesSearch {
+            always_loaded: vec![PathBuf::from("a")],
+            dynamic_hits: vec![PathBuf::from("b")],
+            notes: vec![],
+            queries_attempted: 1,
+        };
+        let line = render_diagnostics(&one);
+        assert!(line.contains("1 always-loaded"));
+        assert!(line.contains("1 dynamic hit · 1 query_"));
+
+        let many = RulesSearch {
+            always_loaded: vec![PathBuf::from("a"), PathBuf::from("b")],
+            dynamic_hits: vec![PathBuf::from("c"), PathBuf::from("d")],
+            notes: vec![],
+            queries_attempted: 3,
+        };
+        let line = render_diagnostics(&many);
+        assert!(line.contains("2 dynamic hits · 3 queries_"));
+    }
+
+    #[test]
+    fn diagnostics_emits_notes_below_header() {
+        let s = RulesSearch {
+            always_loaded: vec![],
+            dynamic_hits: vec![],
+            notes: vec!["first thing".into(), "second thing".into()],
+            queries_attempted: 0,
+        };
+        let text = render_diagnostics(&s);
+        let lines: Vec<&str> = text.lines().collect();
+        assert!(lines[0].starts_with("_Retrieval:"));
+        assert!(lines[1].contains("first thing"));
+        assert!(lines[2].contains("second thing"));
     }
 }
