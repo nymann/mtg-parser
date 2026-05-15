@@ -99,6 +99,21 @@ fn lowers_counter_target_spell() {
 }
 
 #[test]
+fn lowers_named_source_deals_damage_to_any_target() {
+    assert_eq!(
+        lower(&Statement::NamedSourceDealsDamageToAnyTarget {
+            source_name: "Lightning Bolt".to_string(),
+            amount: 3,
+        })
+        .unwrap(),
+        CardEffect::NamedSourceDealsDamageToAnyTarget {
+            source_name: "Lightning Bolt".to_string(),
+            amount: 3,
+        },
+    );
+}
+
+#[test]
 fn lowers_prevent_next_damage_to_recipient_this_turn() {
     assert_eq!(
         lower(

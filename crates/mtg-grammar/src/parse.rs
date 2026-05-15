@@ -81,6 +81,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::named_source_deals_variable_damage_to_any_target => {
             named_source_deals_variable_damage_to_any_target_from_pair(pair)
         }
+        Rule::named_source_deals_damage_to_any_target => {
+            named_source_deals_damage_to_any_target_from_pair(pair)
+        }
         Rule::named_source_deals_variable_damage_to_damage_recipients => {
             named_source_deals_variable_damage_to_damage_recipients_from_pair(pair)
         }
@@ -741,6 +744,26 @@ fn named_source_deals_variable_damage_to_any_target_from_pair(
     Ok(Statement::NamedSourceDealsVariableDamageToAnyTarget {
         source_name: source_pair.as_str().to_string(),
         amount: variable_from_str(amount_pair.as_str())?,
+    })
+}
+
+fn named_source_deals_damage_to_any_target_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("named damage missing source name"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("named damage missing amount"))?;
+    let amount = amount_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("named damage amount"))?;
+    Ok(Statement::NamedSourceDealsDamageToAnyTarget {
+        source_name: source_pair.as_str().to_string(),
+        amount,
     })
 }
 

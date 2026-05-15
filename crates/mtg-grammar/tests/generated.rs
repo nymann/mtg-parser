@@ -224,3 +224,5 @@ mod library_of_leng;
 mod lich;
 #[path = "generated/lifetap.rs"]
 mod lifetap;
+#[path = "generated/lightning_bolt.rs"]
+mod lightning_bolt;

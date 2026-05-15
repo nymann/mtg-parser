@@ -50,6 +50,15 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(variable_name(*amount));
             out.push_str(" damage to any target.");
         }
+        Statement::NamedSourceDealsDamageToAnyTarget {
+            source_name,
+            amount,
+        } => {
+            out.push_str(source_name);
+            out.push_str(" deals ");
+            write!(out, "{amount}").expect("write to String never fails");
+            out.push_str(" damage to any target.");
+        }
         Statement::NamedSourceDealsVariableDamageToDamageRecipients {
             source_name,
             amount,

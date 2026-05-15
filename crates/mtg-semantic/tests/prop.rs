@@ -228,6 +228,10 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             source_name: "Disintegrate".to_string(),
             amount: Variable::X,
         }),
+        Just(Statement::NamedSourceDealsDamageToAnyTarget {
+            source_name: "Lightning Bolt".to_string(),
+            amount: 3,
+        }),
         Just(
             Statement::NamedSourceDealsVariableDamageToDamageRecipients {
                 source_name: "Earthquake".to_string(),

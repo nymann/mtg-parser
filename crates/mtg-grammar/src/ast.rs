@@ -25,6 +25,11 @@ pub enum Statement {
         source_name: String,
         amount: Variable,
     },
+    /// "<source name> deals N damage to any target."
+    NamedSourceDealsDamageToAnyTarget {
+        source_name: String,
+        amount: u32,
+    },
     /// "<source name> deals X damage to <recipient> and <recipient>."
     NamedSourceDealsVariableDamageToDamageRecipients {
         source_name: String,

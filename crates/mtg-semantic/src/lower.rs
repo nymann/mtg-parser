@@ -36,6 +36,13 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             source_name: source_name.clone(),
             amount: *amount,
         },
+        Statement::NamedSourceDealsDamageToAnyTarget {
+            source_name,
+            amount,
+        } => CardEffect::NamedSourceDealsDamageToAnyTarget {
+            source_name: source_name.clone(),
+            amount: *amount,
+        },
         Statement::NamedSourceDealsVariableDamageToDamageRecipients {
             source_name,
             amount,

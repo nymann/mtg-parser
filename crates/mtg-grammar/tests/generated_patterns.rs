@@ -213,3 +213,5 @@ mod library_of_leng;
 mod lich;
 #[path = "generated_patterns/lifetap.rs"]
 mod lifetap;
+#[path = "generated_patterns/lightning_bolt.rs"]
+mod lightning_bolt;
