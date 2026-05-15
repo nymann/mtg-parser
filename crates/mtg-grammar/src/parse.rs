@@ -13,9 +13,9 @@ use crate::ast::{
     ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
     SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TargetPermanentEndOfTurnEffect, TriggerDamageAmount, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    TargetPermanentEndOfTurnEffect, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -761,17 +761,7 @@ fn named_source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<Statement, Pa
 
 fn named_source_damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
     let inner = only_inner(pair, "named damage amount missing inner rule")?;
-    match inner.as_rule() {
-        Rule::unsigned_number => {
-            let amount = inner
-                .as_str()
-                .parse::<u32>()
-                .map_err(|_| ParseError::Internal("named damage amount"))?;
-            Ok(DamageAmount::Number(amount))
-        }
-        Rule::variable_name => Ok(DamageAmount::Variable(variable_from_str(inner.as_str())?)),
-        _ => Err(ParseError::Internal("named damage amount")),
-    }
+    damage_amount_from_pair(inner)
 }
 
 fn named_source_damage_recipients_from_pair(
@@ -1898,14 +1888,14 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
     let recipient = recipient.ok_or(ParseError::Internal(
         "source deals damage missing recipient",
     ))?;
-    let amount = match (amount, definitions) {
-        (TriggerDamageAmount::Number(_), Some(_)) => {
+    let definitions = match (amount, definitions) {
+        (DamageAmount::Number(_), Some(_)) => {
             return Err(ParseError::Internal(
                 "number damage cannot have variable definition",
             ));
         }
-        (TriggerDamageAmount::Number(amount), None) => TriggerDamageAmount::Number(amount),
-        (TriggerDamageAmount::Variable { amount, .. }, Some(definitions)) => {
+        (DamageAmount::Number(_), None) => Vec::new(),
+        (DamageAmount::Variable(amount), Some(definitions)) => {
             if !definitions
                 .iter()
                 .any(|definition| definition.variable == amount)
@@ -1914,12 +1904,9 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
                     "variable damage missing amount definition",
                 ));
             }
-            TriggerDamageAmount::Variable {
-                amount,
-                definitions,
-            }
+            definitions
         }
-        (TriggerDamageAmount::Variable { .. }, None) => {
+        (DamageAmount::Variable(_), None) => {
             return Err(ParseError::Internal(
                 "variable damage missing amount definition",
             ));
@@ -1931,6 +1918,7 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
         amount,
         recipient,
         condition,
+        definitions,
     }))
 }
 
@@ -1940,19 +1928,9 @@ fn damage_number_from_pair(pair: Pair<Rule>, context: &'static str) -> Result<u3
         .map_err(|_| ParseError::Internal(context))
 }
 
-fn trigger_damage_amount_from_pair(pair: Pair<Rule>) -> Result<TriggerDamageAmount, ParseError> {
+fn trigger_damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
     let inner = only_inner(pair, "trigger damage amount missing inner rule")?;
-    match inner.as_rule() {
-        Rule::damage_amount => Ok(TriggerDamageAmount::Number(damage_number_from_pair(
-            inner,
-            "trigger damage amount",
-        )?)),
-        Rule::variable_name => Ok(TriggerDamageAmount::Variable {
-            amount: variable_from_str(inner.as_str())?,
-            definitions: Vec::new(),
-        }),
-        _ => Err(ParseError::Internal("trigger damage amount")),
-    }
+    damage_amount_from_pair(inner)
 }
 
 fn trigger_damage_recipient_from_pair(

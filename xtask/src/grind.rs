@@ -338,7 +338,9 @@ fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
                     text: format!("grind: refactor gate failed: {error:#}"),
                 });
                 let repaired = try_repair(opts, sink, "refactor", iteration, &error)?;
-                if !repaired {
+                if repaired {
+                    target_no_op_streak = 0;
+                } else {
                     // Repair couldn't fix it. Restore the tree so the next
                     // iteration starts clean, count this as a no-op so the
                     // loop still terminates.
@@ -678,29 +680,59 @@ fn try_repair(
         return Ok(false);
     }
 
-    // Lightweight validation: anything the repair agent touched should at
-    // least format and compile. Deeper gates (tier-2, corpus) are run by
-    // the next refactor iteration or by add-card itself.
-    if !command_success("cargo", &["fmt", "--all"])? {
-        sink.emit(FlowEvent::Note {
-            level: NoteLevel::Error,
-            text: "grind: cargo fmt failed after repair".to_string(),
-        });
+    if !finalize_repair(sink, phase, iteration)? {
         return Ok(false);
     }
-    if !command_success("cargo", &["check", "--workspace"])? {
-        sink.emit(FlowEvent::Note {
-            level: NoteLevel::Error,
-            text: "grind: cargo check failed after repair".to_string(),
-        });
-        return Ok(false);
-    }
-
     sink.emit(FlowEvent::Note {
         level: NoteLevel::Info,
-        text: "grind: repair validated (fmt + check)".to_string(),
+        text: "grind: repair promoted through gates".to_string(),
     });
     Ok(true)
+}
+
+fn finalize_repair(sink: &mut dyn FlowSink, phase: &str, iteration: u32) -> Result<bool> {
+    for (label, program, args) in [
+        ("cargo fmt --all", "cargo", &["fmt", "--all"][..]),
+        ("cargo test", "cargo", &["test"][..]),
+        ("cargo xtask corpus", "cargo", &["xtask", "corpus"][..]),
+        ("just audit-page", "just", &["audit-page"][..]),
+    ] {
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Info,
+            text: format!("grind: repair gate `{label}`"),
+        });
+        if let Err(e) = run_command_gate(label, program, args) {
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Error,
+                text: format!("grind: repair gate failed: {e:#}"),
+            });
+            return Ok(false);
+        }
+    }
+
+    match git_commit_repair(&repair_commit_message(phase, iteration)?)? {
+        CommitOutcome::Committed => {
+            let (passing, total) = refactor_hotspot::read_corpus_pp_total();
+            let grammar_rules = refactor_hotspot::count_grammar_rules();
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Info,
+                text: format!(
+                    "grind: committed repair ({passing}/{total}, {grammar_rules} grammar rules)"
+                ),
+            });
+            Ok(true)
+        }
+        CommitOutcome::NoChanges => {
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Info,
+                text: "grind: repair left no changes to commit".to_string(),
+            });
+            // A successful no-diff repair means the agent intentionally
+            // restored the failed iteration or found no repository change was
+            // needed. Either way the worktree is clean enough to continue.
+            Ok(true)
+        }
+    }
 }
 
 fn build_repair_prompt(phase: &str, iteration: u32, error: &anyhow::Error) -> Result<String> {
@@ -714,14 +746,20 @@ error so the outer loop can continue without human input.\n\n\
 ## Current git status\n\n```text\n{git_status}```\n\n\
 ## Mission\n\n\
 Diagnose and fix the failure so the grind loop can keep going. Prefer the \
-smallest patch that makes the gate green. If you cannot repair it safely, \
-exit non-zero and the orchestrator will discard the working tree and treat \
-this iteration as a no-op.\n\n\
+smallest patch that makes the gate green. You are free to edit, replace, or \
+discard the currently modified files from the failed iteration. In most cases \
+you should repair the patch in place; if the patch is unsalvageable, restore \
+the affected files to the last committed state and exit successfully. If you \
+cannot make either choice safely, exit non-zero and the orchestrator will \
+discard the working tree and treat this iteration as a no-op.\n\n\
 ## Rules\n\n\
 1. Do not weaken or disable existing tests.\n\
 2. Do not bypass deterministic gates (tier-2, corpus, audit).\n\
-3. Run `cargo fmt --all` before exiting successfully.\n\
-4. Keep edits tightly scoped to the failure.\n"
+3. You may run focused tests while debugging, but the orchestrator owns the \
+final full gates and commit after you exit successfully.\n\
+4. Do not leave uncertainty about ownership of modified files: either make \
+them part of the repair or restore them.\n\
+5. Keep edits tightly scoped to the failure.\n"
     ))
 }
 
@@ -777,13 +815,105 @@ fn discard_working_changes(sink: &mut dyn FlowSink) -> Result<()> {
     Ok(())
 }
 
-fn command_success(program: &str, args: &[&str]) -> Result<bool> {
+enum CommitOutcome {
+    Committed,
+    NoChanges,
+}
+
+fn run_command_gate(label: &str, program: &str, args: &[&str]) -> Result<()> {
     let out = Command::new(program)
         .args(args)
         .current_dir(repo_root())
         .output()
-        .with_context(|| format!("run {program} {}", args.join(" ")))?;
-    Ok(out.status.success())
+        .with_context(|| format!("run {label}"))?;
+    if !out.status.success() {
+        bail!(
+            "{label} failed with {}\n{}",
+            out.status,
+            command_output_tail(&out, 40)
+        );
+    }
+    Ok(())
+}
+
+fn git_commit_repair(message: &str) -> Result<CommitOutcome> {
+    let add = Command::new("git")
+        .args(["add", "-A"])
+        .current_dir(repo_root())
+        .status()
+        .context("git add -A")?;
+    if !add.success() {
+        bail!("git add failed");
+    }
+
+    let diff = Command::new("git")
+        .args(["diff", "--cached", "--quiet", "--exit-code"])
+        .current_dir(repo_root())
+        .status()
+        .context("git diff --cached")?;
+    if diff.success() {
+        return Ok(CommitOutcome::NoChanges);
+    }
+    if diff.code() != Some(1) {
+        bail!("git diff --cached failed");
+    }
+
+    let commit = Command::new("git")
+        .args(["commit", "--no-verify", "-m", message])
+        .current_dir(repo_root())
+        .output()
+        .context("git commit")?;
+    if !commit.status.success() {
+        bail!(
+            "git commit failed with status {}\nstdout:\n{}\nstderr:\n{}",
+            commit.status,
+            String::from_utf8_lossy(&commit.stdout),
+            String::from_utf8_lossy(&commit.stderr)
+        );
+    }
+    Ok(CommitOutcome::Committed)
+}
+
+fn repair_commit_message(phase: &str, iteration: u32) -> Result<String> {
+    let stat = git_diff_stat()?;
+    Ok(format!(
+        "Repair grind {phase} iteration {iteration}\n\nGates: cargo test; cargo xtask corpus; just audit-page.\nPrimary LOC delta:\n{}",
+        stat.trim()
+    ))
+}
+
+fn git_diff_stat() -> Result<String> {
+    let out = Command::new("git")
+        .args(["diff", "--stat"])
+        .current_dir(repo_root())
+        .output()
+        .context("git diff --stat")?;
+    if !out.status.success() {
+        bail!("git diff --stat failed");
+    }
+    let text = String::from_utf8_lossy(&out.stdout).into_owned();
+    if text.trim().is_empty() {
+        Ok("(no diff)".to_string())
+    } else {
+        Ok(text)
+    }
+}
+
+fn command_output_tail(out: &std::process::Output, max_lines: usize) -> String {
+    let mut text = String::new();
+    text.push_str(&String::from_utf8_lossy(&out.stdout));
+    if !out.stderr.is_empty() {
+        if !text.ends_with('\n') && !text.is_empty() {
+            text.push('\n');
+        }
+        text.push_str(&String::from_utf8_lossy(&out.stderr));
+    }
+    let lines = text.lines().collect::<Vec<_>>();
+    if lines.is_empty() {
+        return "(no output)".to_string();
+    }
+    let start = lines.len().saturating_sub(max_lines);
+    lines[start..].join("\n")
 }
 
 fn command_stdout(program: &str, args: &[&str]) -> Result<String> {

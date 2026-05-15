@@ -10,7 +10,7 @@ use crate::ast::{
     LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus,
     OptionalCost, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
     PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    SpellType, Statement, StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerDamageAmount,
+    SpellType, Statement, StaticAbility, Step, TargetPermanentEndOfTurnEffect,
     TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
     TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
     VariablePtModifier, Zone,
@@ -1779,7 +1779,7 @@ fn write_triggered_damage(out: &mut String, damage: &TriggeredDamage, terminal: 
         TriggerDamageSource::It => out.push_str("it"),
     }
     out.push_str(" deals ");
-    write_trigger_damage_amount(out, &damage.amount);
+    write_damage_amount(out, damage.amount);
     out.push_str(" damage to ");
     match damage.recipient {
         TriggerDamageRecipient::You => out.push_str("you"),
@@ -1802,26 +1802,17 @@ fn write_triggered_damage(out: &mut String, damage: &TriggeredDamage, terminal: 
             }
         }
     }
-    match &damage.amount {
-        TriggerDamageAmount::Variable { definitions, .. } => {
+    match damage.amount {
+        DamageAmount::Variable(_) => {
             out.push_str(", where ");
-            write_variable_definitions(out, definitions);
+            write_variable_definitions(out, &damage.definitions);
             out.push('.');
         }
-        TriggerDamageAmount::Number(_) => {
+        DamageAmount::Number(_) => {
             if terminal {
                 out.push('.');
             }
         }
-    }
-}
-
-fn write_trigger_damage_amount(out: &mut String, amount: &TriggerDamageAmount) {
-    match amount {
-        TriggerDamageAmount::Number(amount) => {
-            write!(out, "{amount}").expect("write to String never fails");
-        }
-        TriggerDamageAmount::Variable { amount, .. } => out.push_str(variable_name(*amount)),
     }
 }
 

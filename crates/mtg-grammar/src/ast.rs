@@ -723,24 +723,16 @@ pub enum TriggerEffect {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TriggeredDamage {
     pub source: TriggerDamageSource,
-    pub amount: TriggerDamageAmount,
+    pub amount: DamageAmount,
     pub recipient: TriggerDamageRecipient,
     pub condition: Option<TriggerDamageCondition>,
+    pub definitions: Vec<VariableDefinition>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TriggerDamageSource {
     Source(SourceObject),
     It,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum TriggerDamageAmount {
-    Number(u32),
-    Variable {
-        amount: Variable,
-        definitions: Vec<VariableDefinition>,
-    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

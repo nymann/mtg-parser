@@ -214,7 +214,7 @@ named_source_deals_damage = {
     proper_name ~ ^"deals" ~ named_source_damage_amount ~ ^"damage"
   ~ named_source_damage_recipients ~ "."
 }
-named_source_damage_amount = { unsigned_number | variable_name }
+named_source_damage_amount = { damage_amount_expression }
 named_source_damage_recipients = {
     named_source_damage_any_target
   | named_source_damage_divided_evenly_rounded_down_among_any_number_of_targets
@@ -237,7 +237,7 @@ prevent_next_damage_that_would_be_dealt_to_recipient_this_turn = {
   ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"to" ~ prevention_recipient
   ~ ^"this" ~ ^"turn" ~ "."
 }
-damage_prevention_amount = _{ unsigned_number | variable_name }
+damage_prevention_amount = _{ damage_amount_expression }
 prevention_recipient = _{ any_target_prevention_recipient | that_permanent_or_player_prevention_recipient }
 any_target_prevention_recipient = { ^"any" ~ ^"target" }
 that_permanent_or_player_prevention_recipient = { ^"that" ~ ^"permanent" ~ ^"or" ~ ^"player" }
@@ -1424,7 +1424,7 @@ source_deals_damage = {
 trigger_damage_terminator = _{ "." | &(^"and") }
 trigger_damage_source = _{ it_damage_source | source_object }
 it_damage_source = { ^"it" }
-trigger_damage_amount = { variable_name | damage_amount }
+trigger_damage_amount = { damage_amount_expression }
 trigger_damage_recipient = _{
     that_permanents_controller
   | that_player_damage_recipient
@@ -1463,6 +1463,7 @@ that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice = {
 }
 that_permanents_toughness = { ^"that" ~ permanent_type ~ "'s" ~ ^"toughness" }
 the_permanents_controller = { ^"the" ~ permanent_type ~ "'s" ~ ^"controller" }
+damage_amount_expression = _{ unsigned_number | variable_name }
 damage_amount = @{ ASCII_DIGIT+ }
 
 // `it loses "<keyword>" and gains "<keyword>."`. The quoted strings are
