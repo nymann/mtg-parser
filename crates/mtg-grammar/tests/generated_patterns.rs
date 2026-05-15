@@ -97,3 +97,5 @@ mod demonic_hordes;
 mod demonic_tutor;
 #[path = "generated_patterns/dingus_egg.rs"]
 mod dingus_egg;
+#[path = "generated_patterns/disenchant.rs"]
+mod disenchant;

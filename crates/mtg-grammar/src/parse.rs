@@ -65,6 +65,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::counter_target_spell => Ok(Statement::CounterTargetSpell),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
+        Rule::destroy_target_permanent_choice => destroy_target_permanent_choice_from_pair(pair),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::add_mana => add_mana_from_pair(pair),
@@ -436,6 +437,14 @@ fn destroy_all_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     Ok(Statement::DestroyAll {
         permanent_type: permanent_type_from_plural_pair(pt)?,
     })
+}
+
+fn destroy_target_permanent_choice_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let permanent_types = pair
+        .into_inner()
+        .map(permanent_type_from_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(Statement::DestroyTargetPermanentChoice { permanent_types })
 }
 
 fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {

@@ -15,6 +15,11 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::CounterTargetSpell => CardEffect::CounterTargetSpell,
         Statement::DestroyTargetCreature => CardEffect::DestroyTargetCreature,
         Statement::RegenerateTargetCreature => CardEffect::RegenerateTargetCreature,
+        Statement::DestroyTargetPermanentChoice { permanent_types } => {
+            CardEffect::DestroyTargetPermanentChoice {
+                permanent_types: permanent_types.clone(),
+            }
+        }
         Statement::DestroyAll { permanent_type } => CardEffect::DestroyAll {
             permanent_type: *permanent_type,
         },

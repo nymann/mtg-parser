@@ -10,6 +10,10 @@ pub enum Statement {
     DestroyTargetCreature,
     /// "Regenerate target creature."
     RegenerateTargetCreature,
+    /// "Destroy target <permanent_type> or <permanent_type>."
+    DestroyTargetPermanentChoice {
+        permanent_types: Vec<PermanentType>,
+    },
     /// "Destroy all <permanent_type>s."
     DestroyAll {
         permanent_type: PermanentType,

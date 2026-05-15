@@ -7,7 +7,7 @@
 
 use mtg_grammar::{
     parse, unparse, CardCount, Color, EachPlayerAction, ImperativeAction, ManaCost, ManaSymbol,
-    Statement, TriggerEffect, TriggerEvent, TriggeredAbility,
+    PermanentType, Statement, TriggerEffect, TriggerEvent, TriggeredAbility,
 };
 use proptest::prelude::*;
 
@@ -42,6 +42,16 @@ fn arb_color() -> impl Strategy<Value = Color> {
     ]
 }
 
+fn arb_permanent_type() -> impl Strategy<Value = PermanentType> {
+    prop_oneof![
+        Just(PermanentType::Artifact),
+        Just(PermanentType::Creature),
+        Just(PermanentType::Enchantment),
+        Just(PermanentType::Land),
+        Just(PermanentType::Planeswalker),
+    ]
+}
+
 fn arb_imperative_action() -> impl Strategy<Value = ImperativeAction> {
     prop_oneof![
         Just(ImperativeAction::DiscardYourHand),
@@ -66,6 +76,11 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_mana_cost().prop_map(|mana| Statement::AddMana { mana }),
         Just(Statement::CounterTargetSpell),
         Just(Statement::DestroyTargetCreature),
+        (arb_permanent_type(), arb_permanent_type()).prop_map(|(a, b)| {
+            Statement::DestroyTargetPermanentChoice {
+                permanent_types: vec![a, b],
+            }
+        }),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::AntePlayRestriction),
         Just(Statement::EachPlayerPerformsAction {

@@ -41,6 +41,7 @@ sentence_statement = _{
   | imperative_action_sequence
   | counter_target_spell
   | destroy_all
+  | destroy_target_permanent_choice
   | destroy
   | regenerate_target_creature
   | draw_cards
@@ -111,6 +112,7 @@ tap_symbol  = ${ "{" ~ "T" ~ "}" }
 
 destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }
 destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural ~ "." }
+destroy_target_permanent_choice = { ^"destroy" ~ ^"target" ~ permanent_type ~ (^"or" ~ permanent_type)+ ~ "." }
 counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
 

@@ -1,6 +1,6 @@
 // Tier 1 lowering unit tests. Hand-written AST → expected IR.
 
-use mtg_grammar::{ManaCost, ManaSymbol, Statement};
+use mtg_grammar::{ManaCost, ManaSymbol, PermanentType, Statement};
 use mtg_semantic::{lower, CardEffect, ManaValue};
 
 fn mc(symbols: Vec<ManaSymbol>) -> Statement {
@@ -16,6 +16,18 @@ fn lowers_destroy_target_creature() {
     assert_eq!(
         lower(&Statement::DestroyTargetCreature).unwrap(),
         CardEffect::DestroyTargetCreature,
+    );
+}
+
+#[test]
+fn lowers_destroy_target_permanent_choice() {
+    let permanent_types = vec![PermanentType::Artifact, PermanentType::Enchantment];
+    assert_eq!(
+        lower(&Statement::DestroyTargetPermanentChoice {
+            permanent_types: permanent_types.clone(),
+        })
+        .unwrap(),
+        CardEffect::DestroyTargetPermanentChoice { permanent_types },
     );
 }
 

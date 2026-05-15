@@ -24,6 +24,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::CounterTargetSpell => out.push_str("Counter target spell."),
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
         Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
+        Statement::DestroyTargetPermanentChoice { permanent_types } => {
+            out.push_str("Destroy target ");
+            write_permanent_type_choice(out, permanent_types);
+            out.push('.');
+        }
         Statement::DestroyAll { permanent_type } => {
             out.push_str("Destroy all ");
             out.push_str(permanent_type_plural_name(*permanent_type));
@@ -1084,6 +1089,19 @@ fn permanent_type_name(pt: PermanentType) -> &'static str {
         PermanentType::Enchantment => "enchantment",
         PermanentType::Land => "land",
         PermanentType::Planeswalker => "planeswalker",
+    }
+}
+
+fn write_permanent_type_choice(out: &mut String, permanent_types: &[PermanentType]) {
+    for (index, permanent_type) in permanent_types.iter().enumerate() {
+        if index > 0 {
+            if index == permanent_types.len() - 1 {
+                out.push_str(" or ");
+            } else {
+                out.push_str(", ");
+            }
+        }
+        out.push_str(permanent_type_name(*permanent_type));
     }
 }
 
