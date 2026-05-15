@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 180,
+  "passing": 181,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -455,8 +455,7 @@
       "status": "pass"
     },
     "lea/Living Lands": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:21\n  |\n1 | All Forests are 1/1 creatures that are still lands.\n  |                     ^---\n  |\n  = expected color_word"
+      "status": "pass"
     },
     "lea/Living Wall": {
       "status": "pass"

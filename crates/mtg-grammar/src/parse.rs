@@ -2438,9 +2438,6 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             let toughness_pair = inner
                 .next()
                 .expect("basic land creature effect names toughness");
-            let color_pair = inner
-                .next()
-                .expect("basic land creature effect names color");
             let power = power_pair
                 .as_str()
                 .parse::<u32>()
@@ -2449,11 +2446,12 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 .as_str()
                 .parse::<u32>()
                 .map_err(|_| ParseError::Internal("basic land creature effect toughness"))?;
+            let color = inner.next().map(color_from_pair).transpose()?;
             Ok(StaticAbility::BasicLandsAreColoredCreaturesStillLands {
                 land_type: basic_land_type_from_plural_pair(land_type_pair)?,
                 power,
                 toughness,
-                color: color_from_pair(color_pair)?,
+                color,
             })
         }
         Rule::static_that_permanent_is_basic_land_type_while_has_named_counter => {

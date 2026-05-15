@@ -1249,7 +1249,10 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str("All ");
             out.push_str(basic_land_type_plural_name(*land_type));
             write!(out, " are {power}/{toughness} ").expect("writing to String cannot fail");
-            out.push_str(color_name(*color));
+            if let Some(color) = color {
+                out.push_str(color_name(*color));
+                out.push(' ');
+            }
             out.push_str(" creatures that are still lands.");
         }
         StaticAbility::ThatPermanentIsBasicLandTypeWhileHasNamedCounter {

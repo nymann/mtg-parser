@@ -693,7 +693,7 @@ static_basic_lands_are_basic_lands = {
 
 static_basic_lands_are_pt_colored_creatures_still_lands = {
     ^"all" ~ basic_land_type_plural ~ ^"are" ~ unsigned_number ~ "/" ~ unsigned_number
-  ~ color_word ~ ^"creatures" ~ ^"that" ~ ^"are" ~ ^"still" ~ ^"lands" ~ "."
+  ~ color_word? ~ ^"creatures" ~ ^"that" ~ ^"are" ~ ^"still" ~ ^"lands" ~ "."
 }
 
 static_that_permanent_is_basic_land_type_while_has_named_counter = {
