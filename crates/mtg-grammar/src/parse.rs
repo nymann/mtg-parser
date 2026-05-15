@@ -91,6 +91,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
         | Rule::static_enchanted_has_keyword
         | Rule::static_enchanted_can_attack_as_though
+        | Rule::static_you_control_enchanted
         | Rule::static_you_may_have_source_enter_as_copy
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::target_creature_defending_player_controls_can_block_any_number
@@ -910,6 +911,15 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::EnchantedCanAttackAsThoughItDidntHave {
                 object: enchanted_object_from_pair(object_pair)?,
                 keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
+        Rule::static_you_control_enchanted => {
+            let object_pair = pair
+                .into_inner()
+                .next()
+                .expect("static_you_control_enchanted names enchanted object");
+            Ok(StaticAbility::YouControlEnchanted {
+                object: enchanted_object_from_pair(object_pair)?,
             })
         }
         Rule::static_you_may_have_source_enter_as_copy => {

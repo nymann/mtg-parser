@@ -60,6 +60,7 @@ sentence_statement = _{
   | static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
   | static_enchanted_has_keyword
   | static_enchanted_can_attack_as_though
+  | static_you_control_enchanted
   | static_you_may_have_source_enter_as_copy
   | static_source_doesnt_untap_during_your_untap_step
   | static_effect_doesnt_remove_this_aura
@@ -255,6 +256,8 @@ creature_type = @{ ^"wall" }
 //     restriction on the enchanted object.
 //   - "Enchanted <object> can attack as though it didn't have
 //     <keyword>." — permission effect that ignores an attack restriction.
+//   - "You control enchanted <object>." — continuous control-changing
+//     effect from an Aura to its enchanted object.
 //   - "You may have this <type> enter as a copy of any <type> on the
 //     battlefield." — optional as-enters copy replacement effect.
 //   - "This effect doesn't remove this Aura." — effect-continuity text
@@ -268,6 +271,7 @@ static_ability = _{
   | static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
   | static_enchanted_has_keyword
   | static_enchanted_can_attack_as_though
+  | static_you_control_enchanted
   | static_you_may_have_source_enter_as_copy
   | static_effect_doesnt_remove_this_aura
 }
@@ -307,6 +311,10 @@ static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras = {
 static_enchanted_can_attack_as_though = {
     ^"enchanted" ~ enchanted_object ~ ^"can" ~ ^"attack"
   ~ ^"as" ~ ^"though" ~ ^"it" ~ ^"didn't" ~ ^"have" ~ keyword ~ "."
+}
+
+static_you_control_enchanted = {
+    ^"you" ~ ^"control" ~ ^"enchanted" ~ enchanted_object ~ "."
 }
 
 static_you_may_have_source_enter_as_copy = {

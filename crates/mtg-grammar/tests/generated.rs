@@ -74,3 +74,5 @@ mod consecrate_land;
 mod conservator;
 #[path = "generated/contract_from_below.rs"]
 mod contract_from_below;
+#[path = "generated/control_magic.rs"]
+mod control_magic;

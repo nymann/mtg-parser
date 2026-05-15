@@ -434,6 +434,9 @@ pub enum StaticAbility {
         object: EnchantedObject,
         keyword: Keyword,
     },
+    /// "You control enchanted <object>." — continuous control-changing
+    /// effect from an Aura to the object it enchants.
+    YouControlEnchanted { object: EnchantedObject },
     /// "You may have this <source> enter as a copy of any
     /// <permanent_type> on the battlefield."
     YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield {

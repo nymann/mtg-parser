@@ -527,6 +527,11 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_keyword_lowercase(out, *keyword);
             out.push('.');
         }
+        StaticAbility::YouControlEnchanted { object } => {
+            out.push_str("You control enchanted ");
+            write_enchanted_object(out, *object);
+            out.push('.');
+        }
         StaticAbility::YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield {
             source,
             permanent_type,
