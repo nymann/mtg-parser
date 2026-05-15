@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 205,
+  "passing": 206,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -555,8 +555,7 @@
       "status": "pass"
     },
     "lea/Paralyze": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:24\n  |\n2 | When this Aura enters, tap enchanted creature.\n  |                        ^---\n  |\n  = expected trigger_intervening_if_clause, trigger_effect_sequence, or you_may_pay_mana"
+      "status": "pass"
     },
     "lea/Pearled Unicorn": {
       "status": "fail",
@@ -598,7 +597,7 @@
     },
     "lea/Power Leak": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:71\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  |                                                                       ^---\n  |\n  = expected trigger_intervening_if_clause, trigger_effect_sequence, or you_may_pay_mana"
+      "error": "parse: parse error:  --> 2:91\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  |                                                                                           ^---\n  |\n  = expected mana_symbol"
     },
     "lea/Power Sink": {
       "status": "fail",

@@ -437,10 +437,12 @@ optional_cost = _{ pay_life_cost | pay_mana_cost }
 pay_life_cost = { ^"pay" ~ unsigned_number ~ ^"life" }
 pay_mana_cost = { ^"pay" ~ mana_cost }
 
-if_you_do_effect = { ^"if" ~ ^"you" ~ ^"do" ~ "," ~ if_you_do_effect_body }
+if_you_do_effect = { if_do_actor ~ if_you_do_effect_body }
+if_do_actor = _{ (^"if" ~ ^"you" ~ ^"do" ~ ",") | (^"if" ~ ^"the" ~ ^"player" ~ ^"does" ~ ",") }
 if_you_do_effect_body = _{
     add_mana
   | untap_source
+  | untap_referenced_permanent
   | gain_life_effect
   | prevent_damage_this_turn
 }
@@ -756,8 +758,10 @@ static_that_permanent_is_basic_land_type_while_has_named_counter = {
 }
 
 static_source_doesnt_untap_during_your_untap_step = {
-    source_object ~ ^"doesn't" ~ ^"untap" ~ ^"during" ~ ^"your"
-  ~ ^"untap" ~ ^"step" ~ "."
+    (source_object ~ ^"doesn't" ~ ^"untap" ~ ^"during" ~ ^"your"
+      ~ ^"untap" ~ ^"step" ~ ".")
+  | (^"enchanted" ~ enchanted_object ~ ^"doesn't" ~ ^"untap" ~ ^"during"
+      ~ ^"its" ~ ^"controller's" ~ ^"untap" ~ ^"step" ~ ".")
 }
 
 static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps = {
@@ -914,6 +918,7 @@ destroy_target_creature_type = { ^"destroy" ~ ^"target" ~ creature_type ~ "." }
 untap_target_permanent = { ^"untap" ~ ^"target" ~ permanent_type ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
 untap_enchanted_object = { ^"untap" ~ ^"enchanted" ~ enchanted_object ~ "." }
+untap_referenced_permanent = { ^"untap" ~ ^"the" ~ permanent_type ~ "." }
 look_at_target_players_hand = { ^"look" ~ ^"at" ~ ^"target" ~ ^"player's" ~ ^"hand" ~ "." }
 target_player_discards_cards = {
     ^"target" ~ ^"player" ~ ^"discards"
@@ -1260,7 +1265,8 @@ trigger_effect = _{
   | return_enchanted_card_and_attach
   | unless_you_pay_mana_do_actions
   | you_may_put_this_card_onto_the_battlefield
-  | you_may_pay_mana
+  | player_may_pay_mana
+  | tap_enchanted_object
   | if_you_do_gain_life
   | sacrifice_source_unless_you_pay
   | source_deals_damage
@@ -1393,7 +1399,9 @@ you_lose_the_game = { ^"you" ~ ^"lose" ~ ^"the" ~ ^"game" ~ "." }
 
 you_gain_life = { ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "." }
 
-you_may_pay_mana = { ^"you" ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
+player_may_pay_mana = { (^"you" | (^"that" ~ ^"player")) ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
+you_may_pay_mana = _{ player_may_pay_mana }
+tap_enchanted_object = { ^"tap" ~ ^"enchanted" ~ enchanted_object ~ "." }
 you_may_put_this_card_onto_the_battlefield = {
     ^"you" ~ ^"may" ~ ^"put" ~ ^"this" ~ ^"card" ~ ^"onto"
   ~ ^"the" ~ ^"battlefield" ~ "."

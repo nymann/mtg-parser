@@ -268,3 +268,5 @@ mod northern_paladin;
 mod orcish_artillery;
 #[path = "generated/orcish_oriflamme.rs"]
 mod orcish_oriflamme;
+#[path = "generated/paralyze.rs"]
+mod paralyze;

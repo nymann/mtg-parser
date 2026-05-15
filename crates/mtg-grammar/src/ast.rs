@@ -162,6 +162,10 @@ pub enum Statement {
     IfYouDoUntap {
         source: SourceObject,
     },
+    /// "If you do, untap the <permanent_type>."
+    IfYouDoUntapReferencedPermanent {
+        permanent_type: PermanentType,
+    },
     /// "If you do, you gain N life."
     IfYouDoGainLife {
         amount: u32,
@@ -344,6 +348,9 @@ impl Statement {
             }
             IfYouDoEffect::AddMana { mana } => Statement::IfYouDoAddMana { mana },
             IfYouDoEffect::Untap { source } => Statement::IfYouDoUntap { source },
+            IfYouDoEffect::UntapReferencedPermanent { permanent_type } => {
+                Statement::IfYouDoUntapReferencedPermanent { permanent_type }
+            }
             IfYouDoEffect::GainLife { amount } => Statement::IfYouDoGainLife { amount },
         }
     }
@@ -408,6 +415,9 @@ pub(crate) enum IfYouDoEffect {
     },
     Untap {
         source: SourceObject,
+    },
+    UntapReferencedPermanent {
+        permanent_type: PermanentType,
     },
     GainLife {
         amount: u32,
@@ -814,6 +824,8 @@ pub enum TriggerEffect {
     YouGainLife { amount: u32 },
     /// "you may pay <mana_cost>"
     YouMayPayMana { cost: ManaCost },
+    /// "tap enchanted <object>"
+    TapEnchanted(EnchantedObject),
     /// "you may put this card onto the battlefield"
     YouMayPutThisCardOntoTheBattlefield,
     /// "If you do, you gain N life."
@@ -1507,6 +1519,8 @@ pub enum StaticAbility {
     },
     /// "This <permanent_type> doesn't untap during your untap step."
     SourceDoesntUntapDuringYourUntapStep { source: SourceObject },
+    /// "Enchanted <object> doesn't untap during its controller's untap step."
+    EnchantedDoesntUntapDuringItsControllersUntapStep { object: EnchantedObject },
     /// "Creatures with power N or greater don't untap during their
     /// controllers' untap steps."
     CreaturesWithPowerOrGreaterDontUntapDuringTheirControllersUntapSteps { power: u32 },

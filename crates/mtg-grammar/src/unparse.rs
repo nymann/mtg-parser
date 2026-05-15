@@ -216,6 +216,14 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::IfYouDoUntap { source } => {
             write_if_you_do_effect(out, IfYouDoEffect::Untap { source: *source });
         }
+        Statement::IfYouDoUntapReferencedPermanent { permanent_type } => {
+            write_if_you_do_effect(
+                out,
+                IfYouDoEffect::UntapReferencedPermanent {
+                    permanent_type: *permanent_type,
+                },
+            );
+        }
         Statement::IfYouDoGainLife { amount } => {
             write_if_you_do_effect(out, IfYouDoEffect::GainLife { amount: *amount });
         }
@@ -685,6 +693,9 @@ fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
         }
         IfYouDoEffect::AddMana { mana } => write_add_mana_sentence(out, &mana, SentenceCase::Lower),
         IfYouDoEffect::Untap { source } => write_untap_sentence(out, source, SentenceCase::Lower),
+        IfYouDoEffect::UntapReferencedPermanent { permanent_type } => {
+            write_untap_referenced_permanent_sentence(out, permanent_type, SentenceCase::Lower);
+        }
         IfYouDoEffect::GainLife { amount } => write_you_gain_life(out, amount, SentenceCase::Lower),
     });
 }
@@ -715,6 +726,19 @@ fn write_untap_sentence(out: &mut String, source: SourceObject, case: SentenceCa
         SentenceCase::Lower => "untap ",
     });
     write_source_object(out, source);
+    out.push('.');
+}
+
+fn write_untap_referenced_permanent_sentence(
+    out: &mut String,
+    permanent_type: PermanentType,
+    case: SentenceCase,
+) {
+    out.push_str(match case {
+        SentenceCase::Upper => "Untap the ",
+        SentenceCase::Lower => "untap the ",
+    });
+    out.push_str(permanent_type_name(permanent_type));
     out.push('.');
 }
 
@@ -1374,6 +1398,11 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_source_object_capitalized(out, *source);
             out.push_str(" doesn't untap during your untap step.");
         }
+        StaticAbility::EnchantedDoesntUntapDuringItsControllersUntapStep { object } => {
+            out.push_str("Enchanted ");
+            write_enchanted_object(out, *object);
+            out.push_str(" doesn't untap during its controller's untap step.");
+        }
         StaticAbility::CreaturesWithPowerOrGreaterDontUntapDuringTheirControllersUntapSteps {
             power,
         } => {
@@ -1806,6 +1835,11 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
         TriggerEffect::YouMayPayMana { cost } => {
             out.push_str("you may pay ");
             write_mana_cost(out, cost);
+            out.push('.');
+        }
+        TriggerEffect::TapEnchanted(object) => {
+            out.push_str("tap enchanted ");
+            write_enchanted_object(out, *object);
             out.push('.');
         }
         TriggerEffect::YouMayPutThisCardOntoTheBattlefield => {

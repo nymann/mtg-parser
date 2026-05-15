@@ -1159,6 +1159,13 @@ fn if_you_do_effect_from_inner_pair(pair: Pair<Rule>) -> Result<IfYouDoEffect, P
                 source: source_object_from_pair(source_pair)?,
             })
         }
+        Rule::untap_referenced_permanent => {
+            let permanent_type_pair =
+                only_inner(pair, "if_you_do untap missing referenced permanent")?;
+            Ok(IfYouDoEffect::UntapReferencedPermanent {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            })
+        }
         Rule::gain_life_effect => Ok(IfYouDoEffect::GainLife {
             amount: if_you_do_gain_life_amount_from_pair(pair)?,
         }),
@@ -1471,7 +1478,8 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         }
         Rule::you_lose_the_game => Ok(TriggerEffect::YouLoseTheGame),
         Rule::you_gain_life => you_gain_life_from_pair(pair),
-        Rule::you_may_pay_mana => you_may_pay_mana_from_pair(pair),
+        Rule::you_may_pay_mana | Rule::player_may_pay_mana => you_may_pay_mana_from_pair(pair),
+        Rule::tap_enchanted_object => tap_enchanted_object_from_pair(pair),
         Rule::you_may_put_this_card_onto_the_battlefield => {
             Ok(TriggerEffect::YouMayPutThisCardOntoTheBattlefield)
         }
@@ -1843,6 +1851,13 @@ fn you_may_pay_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseEr
     Ok(TriggerEffect::YouMayPayMana {
         cost: mana_cost_from_pair(cost_pair),
     })
+}
+
+fn tap_enchanted_object_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let object_pair = only_inner(pair, "tap_enchanted_object missing object")?;
+    Ok(TriggerEffect::TapEnchanted(enchanted_object_from_pair(
+        object_pair,
+    )?))
 }
 
 fn unless_you_pay_mana_do_actions_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
@@ -2759,13 +2774,21 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             })
         }
         Rule::static_source_doesnt_untap_during_your_untap_step => {
-            let source_pair = pair
+            let object_pair = pair
                 .into_inner()
                 .next()
-                .expect("static untap restriction begins with a source object");
-            Ok(StaticAbility::SourceDoesntUntapDuringYourUntapStep {
-                source: source_object_from_pair(source_pair)?,
-            })
+                .expect("static untap restriction names an object");
+            match object_pair.as_rule() {
+                Rule::source_object => Ok(StaticAbility::SourceDoesntUntapDuringYourUntapStep {
+                    source: source_object_from_pair(object_pair)?,
+                }),
+                Rule::permanent_type | Rule::creature_type => Ok(
+                    StaticAbility::EnchantedDoesntUntapDuringItsControllersUntapStep {
+                        object: enchanted_object_from_pair(object_pair)?,
+                    },
+                ),
+                _ => Err(ParseError::Internal("static untap restriction object")),
+            }
         }
         Rule::static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps => {
             let power_pair = pair
