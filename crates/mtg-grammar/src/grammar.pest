@@ -331,6 +331,7 @@ activated_effect = _{
   | add_mana
   | untap_source
   | activated_enchanted_gets_until_eot
+  | prevent_next_damage_from_colored_source
   | physical_action
 }
 add_mana_of_any_one_color = {
@@ -342,6 +343,12 @@ untap_source = { ^"untap" ~ source_object ~ "." }
 activated_enchanted_gets_until_eot = {
     ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier
   ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
+}
+prevent_next_damage_from_colored_source = {
+    ^"the" ~ ^"next" ~ ^"time" ~ article ~ color_word ~ ^"source"
+  ~ ^"of" ~ ^"your" ~ ^"choice" ~ ^"would" ~ ^"deal" ~ ^"damage"
+  ~ ^"to" ~ ^"you" ~ ^"this" ~ ^"turn" ~ "," ~ ^"prevent"
+  ~ ^"that" ~ ^"damage" ~ "."
 }
 sacrifice_source = { ^"sacrifice" ~ source_object }
 

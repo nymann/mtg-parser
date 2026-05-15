@@ -324,6 +324,15 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_pt_modifier(out, *modifier);
             out.push_str(" until end of turn.");
         }
+        ActivatedEffect::PreventNextDamageFromColoredSource { color } => {
+            out.push_str("The next time ");
+            out.push_str(color_article(*color));
+            out.push(' ');
+            out.push_str(color_name(*color));
+            out.push_str(
+                " source of your choice would deal damage to you this turn, prevent that damage.",
+            );
+        }
         ActivatedEffect::PhysicalAction(action) => write_physical_action(out, *action),
     }
 }
@@ -750,6 +759,12 @@ fn color_name(color: Color) -> &'static str {
         Color::Black => "black",
         Color::Red => "red",
         Color::Green => "green",
+    }
+}
+
+fn color_article(color: Color) -> &'static str {
+    match color {
+        Color::White | Color::Blue | Color::Black | Color::Red | Color::Green => "a",
     }
 }
 

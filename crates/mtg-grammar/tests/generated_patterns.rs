@@ -49,3 +49,5 @@ mod channel;
 mod chaos_orb;
 #[path = "generated_patterns/chaoslace.rs"]
 mod chaoslace;
+#[path = "generated_patterns/circle_of_protection_blue.rs"]
+mod circle_of_protection_blue;

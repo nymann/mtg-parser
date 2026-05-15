@@ -872,6 +872,15 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 modifier: pt_modifier_from_pair(modifier_pair)?,
             })
         }
+        Rule::prevent_next_damage_from_colored_source => {
+            let color_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("prevent next damage missing color"))?;
+            Ok(ActivatedEffect::PreventNextDamageFromColoredSource {
+                color: color_from_pair(color_pair)?,
+            })
+        }
         Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
         | Rule::if_source_turns_over_destroy_touched_nontoken_permanents
         | Rule::then_destroy_source => Ok(ActivatedEffect::PhysicalAction(

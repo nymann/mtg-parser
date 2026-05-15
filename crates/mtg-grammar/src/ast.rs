@@ -211,6 +211,11 @@ pub enum ActivatedEffect {
         permanent_type: PermanentType,
         modifier: PtModifier,
     },
+    /// "The next time a/an <color> source of your choice would deal
+    /// damage to you this turn, prevent that damage."
+    PreventNextDamageFromColoredSource {
+        color: Color,
+    },
     PhysicalAction(PhysicalAction),
 }
 
