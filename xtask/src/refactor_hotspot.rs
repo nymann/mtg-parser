@@ -1318,7 +1318,7 @@ fn command_output_tail(out: &std::process::Output, max_lines: usize) -> String {
     lines[start..].join("\n")
 }
 
-fn read_corpus_pp_total() -> (usize, usize) {
+pub fn read_corpus_pp_total() -> (usize, usize) {
     let path = repo_root().join("corpus_status.json");
     let Ok(text) = std::fs::read_to_string(path) else {
         return (0, 0);
@@ -1331,7 +1331,7 @@ fn read_corpus_pp_total() -> (usize, usize) {
     (passing, total)
 }
 
-fn count_grammar_rules() -> usize {
+pub fn count_grammar_rules() -> usize {
     render_grammar_rule_inventory()
         .map(|rules| rules.lines().count())
         .unwrap_or(0)

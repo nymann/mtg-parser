@@ -229,6 +229,26 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
 }
 
 fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
+    // Emit SessionStarted up-front so TUI sinks (session bar, complexity
+    // strip) have something to render. refactor_hotspot::run_with_sink
+    // does this for the standalone command; grind drives
+    // run_single_iteration directly, so we own this emission instead.
+    let (baseline_corpus_passing, baseline_corpus_total) = refactor_hotspot::read_corpus_pp_total();
+    let baseline_grammar_rules = refactor_hotspot::count_grammar_rules();
+    let session_set = opts
+        .theme
+        .clone()
+        .or_else(|| opts.target.clone())
+        .unwrap_or_else(|| "grammar-core".to_string());
+    sink.emit(FlowEvent::SessionStarted {
+        workflow: "grind".to_string(),
+        set: session_set,
+        max_iterations: opts.max_refactor_iterations,
+        baseline_corpus_passing,
+        baseline_corpus_total,
+        baseline_grammar_rules,
+    });
+
     sink.emit(FlowEvent::Note {
         level: NoteLevel::Info,
         text: format!(
