@@ -93,6 +93,10 @@ pub enum Statement {
     TargetPlayerDrawsCards {
         count: CardCount,
     },
+    /// "Target player discards N cards at random."
+    TargetPlayerDiscardsCardsAtRandom {
+        count: CardCount,
+    },
     /// "If you would draw a card during your draw step, instead you may
     /// skip that draw."
     IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw,

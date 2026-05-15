@@ -152,6 +152,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_card_count(out, *count);
             out.push_str(" cards.");
         }
+        Statement::TargetPlayerDiscardsCardsAtRandom { count } => {
+            out.push_str("Target player discards ");
+            write_discard_count(out, *count);
+            out.push_str(" at random.");
+        }
         Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw => {
             out.push_str("If you would draw a card during your draw step, instead you may skip that draw.");
         }

@@ -32,7 +32,10 @@ fn arb_mana_cost() -> impl Strategy<Value = ManaCost> {
 }
 
 fn arb_card_count() -> impl Strategy<Value = CardCount> {
-    (1u32..=10).prop_map(CardCount::Number)
+    prop_oneof![
+        (1u32..=10).prop_map(CardCount::Number),
+        arb_variable().prop_map(CardCount::Variable),
+    ]
 }
 
 fn arb_color() -> impl Strategy<Value = Color> {
@@ -325,6 +328,8 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }
         }),
+        arb_card_count()
+            .prop_map(|count| Statement::TargetPlayerDiscardsCardsAtRandom { count }),
         (1u32..=10).prop_map(|amount| Statement::TargetPlayerGainsLife { amount }),
         Just(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw),
         Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),

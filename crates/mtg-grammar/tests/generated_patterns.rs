@@ -239,3 +239,5 @@ mod manabarbs;
 mod meekstone;
 #[path = "generated_patterns/mesa_pegasus.rs"]
 mod mesa_pegasus;
+#[path = "generated_patterns/mind_twist.rs"]
+mod mind_twist;

@@ -129,6 +129,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             Ok(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw)
         }
         Rule::draw_cards => draw_cards_from_pair(pair),
+        Rule::target_player_discards_cards_at_random => {
+            target_player_discards_cards_at_random_from_pair(pair)
+        }
         Rule::add_mana => add_mana_from_pair(pair),
         Rule::until_eot_you_may_pay_cost_at_timing => {
             until_eot_you_may_pay_cost_at_timing_from_pair(pair)
@@ -900,6 +903,17 @@ fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         .expect("draw_cards always contains a draw_count");
     Ok(Statement::TargetPlayerDrawsCards {
         count: card_count_from_pair(count_pair)?,
+    })
+}
+
+fn target_player_discards_cards_at_random_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let count_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "target player discards at random missing count",
+    ))?;
+    Ok(Statement::TargetPlayerDiscardsCardsAtRandom {
+        count: discard_count_from_pair(count_pair)?,
     })
 }
 

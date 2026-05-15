@@ -69,6 +69,7 @@ sentence_statement = _{
   | target_player_gains_life
   | if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw
   | draw_cards
+  | target_player_discards_cards_at_random
   | add_mana
   | if_you_cant_source_deals_damage_to_you
   | until_eot_you_may_pay_cost_at_timing
@@ -303,6 +304,10 @@ draw_count  = _{ number_word | variable_name }
 number_word = @{
     ^"one" | ^"two" | ^"three" | ^"four" | ^"five"
   | ^"six" | ^"seven" | ^"eight" | ^"nine" | ^"ten"
+}
+target_player_discards_cards_at_random = {
+    ^"target" ~ ^"player" ~ ^"discards"
+  ~ (discard_one_card | discard_counted_cards) ~ ^"at" ~ ^"random" ~ "."
 }
 if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw = {
     ^"if" ~ ^"you" ~ ^"would" ~ ^"draw" ~ article ~ ^"card"
