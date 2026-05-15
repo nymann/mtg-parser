@@ -45,6 +45,7 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             amount: *amount,
             recipients: recipients.clone(),
         },
+        Statement::PreventAllCombatDamageThisTurn => CardEffect::PreventAllCombatDamageThisTurn,
         Statement::SpendOnlyColorManaOnVariable { color, variable } => {
             CardEffect::SpendOnlyColorManaOnVariable {
                 color: *color,

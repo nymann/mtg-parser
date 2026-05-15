@@ -61,6 +61,14 @@ fn lowers_counter_target_spell() {
 }
 
 #[test]
+fn lowers_prevent_all_combat_damage_this_turn() {
+    assert_eq!(
+        lower(&Statement::PreventAllCombatDamageThisTurn).unwrap(),
+        CardEffect::PreventAllCombatDamageThisTurn,
+    );
+}
+
+#[test]
 fn lowers_if_you_do_gain_life() {
     assert_eq!(
         lower(&Statement::IfYouDoGainLife { amount: 1 }).unwrap(),

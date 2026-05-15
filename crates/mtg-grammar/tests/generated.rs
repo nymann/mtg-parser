@@ -144,3 +144,5 @@ mod fear;
 mod fireball;
 #[path = "generated/flashfires.rs"]
 mod flashfires;
+#[path = "generated/fog.rs"]
+mod fog;

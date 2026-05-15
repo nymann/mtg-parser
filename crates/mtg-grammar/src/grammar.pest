@@ -49,6 +49,7 @@ sentence_statement = _{
   | named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets
   | named_source_deals_variable_damage_to_damage_recipients
   | named_source_deals_variable_damage_to_any_target
+  | prevent_all_combat_damage_this_turn
   | spend_only_color_mana_on_variable
   | you_gain_life_equal_damage_dealt_capped
   | if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn
@@ -157,6 +158,10 @@ named_source_deals_variable_damage_to_any_target = {
 named_source_deals_variable_damage_to_damage_recipients = {
     proper_name ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"
   ~ damage_recipient ~ (^"and" ~ damage_recipient)+ ~ "."
+}
+prevent_all_combat_damage_this_turn = {
+    ^"prevent" ~ ^"all" ~ ^"combat" ~ ^"damage" ~ ^"that"
+  ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"this" ~ ^"turn" ~ "."
 }
 damage_recipient = { each_creature_without_keyword | each_player_damage_recipient }
 each_creature_without_keyword = { ^"each" ~ ^"creature" ~ ^"without" ~ keyword }

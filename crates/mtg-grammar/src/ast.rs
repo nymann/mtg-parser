@@ -31,6 +31,8 @@ pub enum Statement {
         amount: Variable,
         recipients: Vec<DamageRecipient>,
     },
+    /// "Prevent all combat damage that would be dealt this turn."
+    PreventAllCombatDamageThisTurn,
     /// "Spend only <color> mana on X."
     SpendOnlyColorManaOnVariable {
         color: Color,

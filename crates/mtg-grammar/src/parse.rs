@@ -77,6 +77,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::named_source_deals_variable_damage_to_damage_recipients => {
             named_source_deals_variable_damage_to_damage_recipients_from_pair(pair)
         }
+        Rule::prevent_all_combat_damage_this_turn => Ok(Statement::PreventAllCombatDamageThisTurn),
         Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
         Rule::you_gain_life_equal_damage_dealt_capped => {
             you_gain_life_equal_damage_dealt_capped_from_pair(pair)

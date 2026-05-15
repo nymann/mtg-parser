@@ -172,6 +172,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 ],
             }
         ),
+        Just(Statement::PreventAllCombatDamageThisTurn),
         (arb_color(), arb_variable()).prop_map(|(color, variable)| {
             Statement::SpendOnlyColorManaOnVariable { color, variable }
         }),

@@ -61,6 +61,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_damage_recipients(out, recipients);
             out.push('.');
         }
+        Statement::PreventAllCombatDamageThisTurn => {
+            out.push_str("Prevent all combat damage that would be dealt this turn.");
+        }
         Statement::SpendOnlyColorManaOnVariable { color, variable } => {
             out.push_str("Spend only ");
             out.push_str(color_name(*color));

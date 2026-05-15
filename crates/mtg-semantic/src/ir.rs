@@ -41,6 +41,8 @@ pub enum CardEffect {
         amount: Variable,
         recipients: Vec<DamageRecipient>,
     },
+    /// "Prevent all combat damage that would be dealt this turn."
+    PreventAllCombatDamageThisTurn,
     /// "Spend only <color> mana on X."
     SpendOnlyColorManaOnVariable { color: Color, variable: Variable },
     /// "You gain life equal to the damage dealt, but not more life than ..."
