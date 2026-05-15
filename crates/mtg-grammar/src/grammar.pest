@@ -63,6 +63,7 @@ sentence_statement = _{
   | if_you_would_gain_life_draw_that_many_cards_instead
   | if_you_cant_you_lose_the_game
   | if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn
+  | tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana
   | target_player_activates_mana_ability_of_each_permanent_they_control
   | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
   | target_player_gains_life
@@ -307,6 +308,12 @@ if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw = {
 }
 target_player_gains_life = {
     ^"target" ~ ^"player" ~ ^"gains" ~ unsigned_number ~ ^"life" ~ "."
+}
+
+tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana = {
+    ^"tap" ~ ^"all" ~ permanent_type_plural ~ ^"target" ~ ^"player"
+  ~ ^"controls" ~ ^"and" ~ ^"that" ~ ^"player" ~ ^"loses" ~ ^"all"
+  ~ ^"unspent" ~ ^"mana" ~ "."
 }
 
 target_player_activates_mana_ability_of_each_permanent_they_control = {

@@ -157,6 +157,13 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::TargetPlayerGainsLife { amount } => {
             write!(out, "Target player gains {amount} life.").expect("write to String never fails");
         }
+        Statement::TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
+            permanent_type,
+        } => {
+            out.push_str("Tap all ");
+            out.push_str(permanent_type_plural_name(*permanent_type));
+            out.push_str(" target player controls and that player loses all unspent mana.");
+        }
         Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
             permanent_type,
         } => {

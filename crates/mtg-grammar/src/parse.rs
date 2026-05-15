@@ -113,6 +113,11 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::destroy_all_basic_lands => destroy_all_basic_lands_from_pair(pair),
         Rule::destroy_all => destroy_all_from_pair(pair),
+        Rule::tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana => {
+            tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana_from_pair(
+                pair,
+            )
+        }
         Rule::target_player_activates_mana_ability_of_each_permanent_they_control => {
             target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(pair)
         }
@@ -909,6 +914,19 @@ fn target_player_gains_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, Pa
         .as_str()
         .parse::<u32>()
         .map_err(|_| ParseError::Internal("target_player_gains_life amount"))
+}
+
+fn tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "tap all permanents target player controls missing permanent_type_plural",
+    ))?;
+    Ok(
+        Statement::TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
+            permanent_type: permanent_type_from_plural_pair(permanent_type_pair)?,
+        },
+    )
 }
 
 fn target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(

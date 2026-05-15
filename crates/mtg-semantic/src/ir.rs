@@ -87,6 +87,11 @@ pub enum CardEffect {
     IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw,
     /// "Target player gains N life."
     TargetPlayerGainsLife { amount: u32 },
+    /// "Tap all <permanent_type>s target player controls and that player
+    /// loses all unspent mana."
+    TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
+        permanent_type: PermanentType,
+    },
     /// "Target player activates a mana ability of each <permanent_type>
     /// they control."
     TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type: PermanentType },

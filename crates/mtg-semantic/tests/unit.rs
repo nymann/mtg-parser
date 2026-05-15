@@ -320,6 +320,21 @@ fn lowers_target_player_activates_mana_ability_of_each_permanent_they_control() 
 }
 
 #[test]
+fn lowers_tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana() {
+    assert_eq!(
+        lower(
+            &Statement::TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
+                permanent_type: PermanentType::Land,
+            }
+        )
+        .unwrap(),
+        CardEffect::TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
+            permanent_type: PermanentType::Land,
+        },
+    );
+}
+
+#[test]
 fn lowers_then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way() {
     assert_eq!(
         lower(&Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay).unwrap(),

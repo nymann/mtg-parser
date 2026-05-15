@@ -229,5 +229,7 @@ mod lure;
 mod magical_hack;
 #[path = "generated_patterns/mana_flare.rs"]
 mod mana_flare;
+#[path = "generated_patterns/mana_short.rs"]
+mod mana_short;
 #[path = "generated_patterns/manabarbs.rs"]
 mod manabarbs;

@@ -240,5 +240,7 @@ mod lure;
 mod magical_hack;
 #[path = "generated/mana_flare.rs"]
 mod mana_flare;
+#[path = "generated/mana_short.rs"]
+mod mana_short;
 #[path = "generated/manabarbs.rs"]
 mod manabarbs;

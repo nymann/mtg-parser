@@ -316,6 +316,11 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             }
         }),
         arb_permanent_type().prop_map(|permanent_type| {
+            Statement::TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
+                permanent_type,
+            }
+        }),
+        arb_permanent_type().prop_map(|permanent_type| {
             Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }
         }),
         (1u32..=10).prop_map(|amount| Statement::TargetPlayerGainsLife { amount }),
