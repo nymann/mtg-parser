@@ -63,6 +63,9 @@ sentence_statement = _{
   | physical_action
   | each_player_equalizes_controlled_permanents
   | players_do_actions_the_same_way
+  | source_enters_with_pt_counters
+  | this_ability_cant_cause_total_pt_counters_greater_than
+  | activate_only_during_your_upkeep
 }
 
 phrase_statement = _{
@@ -324,7 +327,7 @@ enchanted_object = _{ permanent_type | creature_type }
 activated_ability = { activated_cost ~ ":" ~ activated_effect }
 // Multiple non-mana activated costs are printed comma-separated.
 activated_cost = { activated_cost_component ~ ("," ~ activated_cost_component)* }
-activated_cost_component = _{ sacrifice_source | mana_symbol | tap_symbol }
+activated_cost_component = _{ sacrifice_source | variable_mana_symbol | mana_symbol | tap_symbol }
 activated_effect = _{
     add_mana_of_any_one_color
   | add_one_mana_of_any_color
@@ -332,6 +335,7 @@ activated_effect = _{
   | untap_source
   | activated_enchanted_gets_until_eot
   | prevent_next_damage_from_colored_source
+  | put_up_to_variable_pt_counters_on_source
   | physical_action
 }
 add_mana_of_any_one_color = {
@@ -350,6 +354,11 @@ prevent_next_damage_from_colored_source = {
   ~ ^"to" ~ ^"you" ~ ^"this" ~ ^"turn" ~ "," ~ ^"prevent"
   ~ ^"that" ~ ^"damage" ~ "."
 }
+put_up_to_variable_pt_counters_on_source = {
+    ^"put" ~ ^"up" ~ ^"to" ~ variable_name ~ pt_counters
+  ~ ^"on" ~ source_object ~ "."
+}
+variable_mana_symbol = ${ "{" ~ variable_name ~ "}" }
 sacrifice_source = { ^"sacrifice" ~ source_object }
 
 physical_action = _{
@@ -393,6 +402,8 @@ becomes_pt_from_mv = {
 // "+1/+1", "-1/-0", "+0/-2" — sign is always explicit on both sides.
 pt_modifier   = ${ signed_number ~ "/" ~ signed_number }
 signed_number = @{ ("+" | "-") ~ ASCII_DIGIT+ }
+pt_counter    = { pt_modifier ~ ^"counter" }
+pt_counters   = { pt_modifier ~ ^"counters" }
 
 // "+X/+Y, where X is ..." — sign is explicit on both variables, and
 // the variable definitions carry the arithmetic printed after "where".
@@ -441,6 +452,7 @@ trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
 trigger_event = _{
     aura_leaves_battlefield
   | aura_enters
+  | end_of_combat
   | beginning_of_chosen_players_upkeep
   | beginning_of_the_next_end_step
   | permanent_enters
@@ -448,6 +460,7 @@ trigger_event = _{
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
 aura_leaves_battlefield = { ^"this" ~ ^"aura" ~ ^"leaves" ~ ^"the" ~ ^"battlefield" }
 permanent_enters        = { article ~ permanent_type ~ ^"enters" }
+end_of_combat           = { ^"end" ~ ^"of" ~ ^"combat" }
 beginning_of_the_next_end_step = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"next" ~ ^"end" ~ ^"step"
 }
@@ -455,11 +468,15 @@ beginning_of_chosen_players_upkeep = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"chosen" ~ ^"player's" ~ ^"upkeep"
 }
 
-intervening_if         = _{ its_on_the_battlefield }
+intervening_if         = _{ its_on_the_battlefield | source_attacked_or_blocked_this_combat }
 its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
+source_attacked_or_blocked_this_combat = {
+    source_object ~ ^"attacked" ~ ^"or" ~ ^"blocked" ~ ^"this" ~ ^"combat"
+}
 
 trigger_effect = _{
     destroy_that_creature_if_it_attacked_this_turn
+  | remove_pt_counter_from_it
   | loses_and_gains_keyword
   | return_enchanted_card_and_attach
   | source_deals_variable_damage_to_that_player
@@ -477,6 +494,21 @@ target_spell_or_permanent_becomes_color = {
     ^"target" ~ ^"spell" ~ ^"or" ~ ^"permanent" ~ ^"becomes" ~ color_word ~ "."
 }
 
+source_enters_with_pt_counters = {
+    source_object ~ ^"enters" ~ ^"with" ~ number_word ~ pt_counters
+  ~ ^"on" ~ ^"it" ~ "."
+}
+
+this_ability_cant_cause_total_pt_counters_greater_than = {
+    ^"this" ~ ^"ability" ~ ^"can't" ~ ^"cause" ~ ^"the" ~ ^"total"
+  ~ ^"number" ~ ^"of" ~ pt_counters ~ ^"on" ~ source_object
+  ~ ^"to" ~ ^"be" ~ ^"greater" ~ ^"than" ~ number_word ~ "."
+}
+
+activate_only_during_your_upkeep = {
+    ^"activate" ~ ^"only" ~ ^"during" ~ ^"your" ~ ^"upkeep" ~ "."
+}
+
 destroy_that_creature_if_it_attacked_this_turn = {
     ^"destroy" ~ ^"that" ~ ^"creature" ~ ^"if" ~ ^"it"
   ~ ^"attacked" ~ ^"this" ~ ^"turn" ~ "."
@@ -484,6 +516,10 @@ destroy_that_creature_if_it_attacked_this_turn = {
 
 that_creatures_controller_sacrifices_it = {
     ^"that" ~ ^"creature's" ~ ^"controller" ~ ^"sacrifices" ~ ^"it" ~ "."
+}
+
+remove_pt_counter_from_it = {
+    ^"remove" ~ article ~ pt_counter ~ ^"from" ~ ^"it" ~ "."
 }
 
 source_deals_damage_to_that_permanents_controller = {

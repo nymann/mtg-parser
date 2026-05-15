@@ -84,6 +84,34 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(permanent_type_name(*permanent_type));
             out.push_str(" enters, choose an opponent.");
         }
+        Statement::ThisPermanentEntersWithCounters {
+            source,
+            amount,
+            counter,
+        } => {
+            write_source_object_capitalized(out, *source);
+            out.push_str(" enters with ");
+            out.push_str(u32_to_number_word(*amount));
+            out.push(' ');
+            write_pt_modifier(out, *counter);
+            out.push_str(" counters on it.");
+        }
+        Statement::ThisAbilityCantCauseTotalCountersGreaterThan {
+            counter,
+            source,
+            maximum,
+        } => {
+            out.push_str("This ability can't cause the total number of ");
+            write_pt_modifier(out, *counter);
+            out.push_str(" counters on ");
+            write_source_object(out, *source);
+            out.push_str(" to be greater than ");
+            out.push_str(u32_to_number_word(*maximum));
+            out.push('.');
+        }
+        Statement::ActivateOnlyDuringYourUpkeep => {
+            out.push_str("Activate only during your upkeep.");
+        }
         Statement::ModalChoice { modes } => write_modal_choice(out, modes),
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
         Statement::ActivatedAbility(aa) => write_activated_ability(out, aa),
@@ -286,6 +314,11 @@ fn write_activated_ability(out: &mut String, aa: &ActivatedAbility) {
 fn write_activated_cost(out: &mut String, cost: &ActivatedCost) {
     match cost {
         ActivatedCost::Mana(mana) => write_mana_cost(out, mana),
+        ActivatedCost::VariableMana(variable) => {
+            out.push('{');
+            out.push_str(variable_name(*variable));
+            out.push('}');
+        }
         ActivatedCost::Tap => out.push_str("{T}"),
         ActivatedCost::Sacrifice(source) => {
             out.push_str("Sacrifice ");
@@ -332,6 +365,19 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(
                 " source of your choice would deal damage to you this turn, prevent that damage.",
             );
+        }
+        ActivatedEffect::PutUpToVariableCountersOnSource {
+            amount,
+            counter,
+            source,
+        } => {
+            out.push_str("Put up to ");
+            out.push_str(variable_name(*amount));
+            out.push(' ');
+            write_pt_modifier(out, *counter);
+            out.push_str(" counters on ");
+            write_source_object(out, *source);
+            out.push('.');
         }
         ActivatedEffect::PhysicalAction(action) => write_physical_action(out, *action),
     }
@@ -463,9 +509,9 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
 fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
     out.push_str(match ta.event {
         TriggerEvent::PermanentEnters { .. } => "Whenever ",
-        TriggerEvent::BeginningOfTheNextEndStep | TriggerEvent::BeginningOfChosenPlayersUpkeep => {
-            "At "
-        }
+        TriggerEvent::BeginningOfTheNextEndStep
+        | TriggerEvent::BeginningOfChosenPlayersUpkeep
+        | TriggerEvent::EndOfCombat => "At ",
         TriggerEvent::ThisAuraEnters | TriggerEvent::ThisAuraLeavesTheBattlefield => "When ",
     });
     write_trigger_event(out, ta.event);
@@ -501,12 +547,19 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::BeginningOfChosenPlayersUpkeep => {
             out.push_str("the beginning of the chosen player's upkeep");
         }
+        TriggerEvent::EndOfCombat => {
+            out.push_str("end of combat");
+        }
     }
 }
 
 fn write_intervening_if(out: &mut String, iif: InterveningIf) {
     match iif {
         InterveningIf::ItsOnTheBattlefield => out.push_str("it's on the battlefield"),
+        InterveningIf::SourceAttackedOrBlockedThisCombat { source } => {
+            write_source_object(out, source);
+            out.push_str(" attacked or blocked this combat");
+        }
     }
 }
 
@@ -539,6 +592,11 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
             out.push_str(" damage to that player, where ");
             write_variable_definitions(out, definitions);
             out.push('.');
+        }
+        TriggerEffect::RemoveCounterFromIt { counter } => {
+            out.push_str("remove a ");
+            write_pt_modifier(out, *counter);
+            out.push_str(" counter from it.");
         }
         TriggerEffect::LosesAndGainsKeyword { loses, gains } => {
             out.push_str("it loses \"");

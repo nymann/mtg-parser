@@ -62,3 +62,5 @@ mod chaos_orb;
 mod chaoslace;
 #[path = "generated/circle_of_protection_blue.rs"]
 mod circle_of_protection_blue;
+#[path = "generated/clockwork_beast.rs"]
+mod clockwork_beast;

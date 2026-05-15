@@ -56,6 +56,25 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
                 permanent_type: *permanent_type,
             }
         }
+        Statement::ThisPermanentEntersWithCounters {
+            source,
+            amount,
+            counter,
+        } => CardEffect::ThisPermanentEntersWithCounters {
+            source: *source,
+            amount: *amount,
+            counter: *counter,
+        },
+        Statement::ThisAbilityCantCauseTotalCountersGreaterThan {
+            counter,
+            source,
+            maximum,
+        } => CardEffect::ThisAbilityCantCauseTotalCountersGreaterThan {
+            counter: *counter,
+            source: *source,
+            maximum: *maximum,
+        },
+        Statement::ActivateOnlyDuringYourUpkeep => CardEffect::ActivateOnlyDuringYourUpkeep,
         Statement::ModalChoice { modes } => CardEffect::ModalChoice {
             modes: modes.clone(),
         },

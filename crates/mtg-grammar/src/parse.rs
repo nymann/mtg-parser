@@ -75,6 +75,11 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::as_this_permanent_enters_choose_opponent => {
             as_this_permanent_enters_choose_opponent_from_pair(pair)
         }
+        Rule::source_enters_with_pt_counters => source_enters_with_pt_counters_from_pair(pair),
+        Rule::this_ability_cant_cause_total_pt_counters_greater_than => {
+            this_ability_cant_cause_total_pt_counters_greater_than_from_pair(pair)
+        }
+        Rule::activate_only_during_your_upkeep => Ok(Statement::ActivateOnlyDuringYourUpkeep),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::static_as_long_as
         | Rule::static_colored_permanents_get
@@ -264,6 +269,48 @@ fn as_this_permanent_enters_choose_opponent_from_pair(
     Ok(Statement::AsThisPermanentEntersChooseOpponent { permanent_type })
 }
 
+fn source_enters_with_pt_counters_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("enters counters missing source"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("enters counters missing amount"))?;
+    let counter_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("enters counters missing counter"))?;
+    let amount =
+        number_word_to_u32(amount_pair.as_str()).ok_or(ParseError::Internal("number_word"))?;
+    Ok(Statement::ThisPermanentEntersWithCounters {
+        source: source_object_from_pair(source_pair)?,
+        amount,
+        counter: pt_modifier_from_counter_pair(counter_pair)?,
+    })
+}
+
+fn this_ability_cant_cause_total_pt_counters_greater_than_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let counter_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("counter cap missing counter"))?;
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("counter cap missing source"))?;
+    let maximum_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("counter cap missing maximum"))?;
+    let maximum =
+        number_word_to_u32(maximum_pair.as_str()).ok_or(ParseError::Internal("number_word"))?;
+    Ok(Statement::ThisAbilityCantCauseTotalCountersGreaterThan {
+        counter: pt_modifier_from_counter_pair(counter_pair)?,
+        source: source_object_from_pair(source_pair)?,
+        maximum,
+    })
+}
+
 fn balance_same_way_action_from_pair(pair: Pair<Rule>) -> Result<BalanceSameWayAction, ParseError> {
     match pair.as_rule() {
         Rule::discard_cards_action => Ok(BalanceSameWayAction::DiscardCards),
@@ -427,8 +474,19 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::beginning_of_chosen_players_upkeep => {
                 event = Some(TriggerEvent::BeginningOfChosenPlayersUpkeep);
             }
+            Rule::end_of_combat => {
+                event = Some(TriggerEvent::EndOfCombat);
+            }
             Rule::its_on_the_battlefield => {
                 intervening_if = Some(InterveningIf::ItsOnTheBattlefield);
+            }
+            Rule::source_attacked_or_blocked_this_combat => {
+                let source_pair = child.into_inner().next().ok_or(ParseError::Internal(
+                    "attacked-or-blocked condition missing source",
+                ))?;
+                intervening_if = Some(InterveningIf::SourceAttackedOrBlockedThisCombat {
+                    source: source_object_from_pair(source_pair)?,
+                });
             }
             Rule::destroy_that_creature_if_it_attacked_this_turn => {
                 effects.push(TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn);
@@ -451,6 +509,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                 effects.push(source_deals_variable_damage_to_that_player_from_pair(
                     child,
                 )?);
+            }
+            Rule::remove_pt_counter_from_it => {
+                effects.push(remove_pt_counter_from_it_from_pair(child)?);
             }
             _ => return Err(ParseError::Internal("triggered_ability child")),
         }
@@ -579,6 +640,16 @@ fn source_deals_variable_damage_to_that_player_from_pair(
         source: source_object_from_pair(source_pair)?,
         amount,
         definitions,
+    })
+}
+
+fn remove_pt_counter_from_it_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let counter_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("remove counter missing counter"))?;
+    Ok(TriggerEffect::RemoveCounterFromIt {
+        counter: pt_modifier_from_counter_pair(counter_pair)?,
     })
 }
 
@@ -814,6 +885,9 @@ fn activated_cost_from_pair(pair: Pair<Rule>) -> Result<Vec<ActivatedCost>, Pars
             Rule::mana_symbol => Ok(ActivatedCost::Mana(ManaCost {
                 symbols: vec![mana_symbol_from_pair(child)],
             })),
+            Rule::variable_mana_symbol => Ok(ActivatedCost::VariableMana(
+                variable_from_mana_symbol_pair(child)?,
+            )),
             Rule::tap_symbol => Ok(ActivatedCost::Tap),
             Rule::sacrifice_source => {
                 let source_pair = child.into_inner().next().ok_or(ParseError::Internal(
@@ -879,6 +953,23 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 .ok_or(ParseError::Internal("prevent next damage missing color"))?;
             Ok(ActivatedEffect::PreventNextDamageFromColoredSource {
                 color: color_from_pair(color_pair)?,
+            })
+        }
+        Rule::put_up_to_variable_pt_counters_on_source => {
+            let mut inner = pair.into_inner();
+            let amount_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("put counters missing variable amount"))?;
+            let counter_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("put counters missing counter"))?;
+            let source_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("put counters missing source"))?;
+            Ok(ActivatedEffect::PutUpToVariableCountersOnSource {
+                amount: variable_from_str(amount_pair.as_str())?,
+                counter: pt_modifier_from_counter_pair(counter_pair)?,
+                source: source_object_from_pair(source_pair)?,
             })
         }
         Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
@@ -975,6 +1066,19 @@ fn pt_modifier_from_pair(pair: Pair<Rule>) -> Result<PtModifier, ParseError> {
         power: signed_number_from_pair(power_pair)?,
         toughness: signed_number_from_pair(toughness_pair)?,
     })
+}
+
+fn pt_modifier_from_counter_pair(pair: Pair<Rule>) -> Result<PtModifier, ParseError> {
+    match pair.as_rule() {
+        Rule::pt_counter | Rule::pt_counters => {
+            let modifier_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("pt counter missing modifier"))?;
+            pt_modifier_from_pair(modifier_pair)
+        }
+        _ => Err(ParseError::Internal("pt counter")),
+    }
 }
 
 fn signed_number_from_pair(pair: Pair<Rule>) -> Result<SignedNumber, ParseError> {
@@ -1237,4 +1341,16 @@ fn mana_symbol_from_pair(pair: Pair<Rule>) -> ManaSymbol {
         },
         _ => unreachable!("mana_body is silent and only contains generic|color"),
     }
+}
+
+fn variable_from_mana_symbol_pair(pair: Pair<Rule>) -> Result<Variable, ParseError> {
+    if pair.as_rule() != Rule::variable_mana_symbol {
+        return Err(ParseError::Internal("variable_mana_symbol"));
+    }
+    let s = pair.as_str();
+    let variable = s
+        .strip_prefix('{')
+        .and_then(|s| s.strip_suffix('}'))
+        .ok_or(ParseError::Internal("variable_mana_symbol braces"))?;
+    variable_from_str(variable)
 }

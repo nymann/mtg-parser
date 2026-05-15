@@ -49,6 +49,21 @@ pub enum Statement {
     AsThisPermanentEntersChooseOpponent {
         permanent_type: PermanentType,
     },
+    /// "This <permanent_type> enters with N <pt_modifier> counters on it."
+    ThisPermanentEntersWithCounters {
+        source: SourceObject,
+        amount: u32,
+        counter: PtModifier,
+    },
+    /// "This ability can't cause the total number of <pt_modifier>
+    /// counters on this <permanent_type> to be greater than N."
+    ThisAbilityCantCauseTotalCountersGreaterThan {
+        counter: PtModifier,
+        source: SourceObject,
+        maximum: u32,
+    },
+    /// "Activate only during your upkeep."
+    ActivateOnlyDuringYourUpkeep,
     /// "Choose one —" followed by one or more bullet-pointed modes.
     ModalChoice {
         modes: Vec<ModalMode>,
@@ -135,12 +150,16 @@ pub enum TriggerEvent {
     BeginningOfTheNextEndStep,
     /// "the beginning of the chosen player's upkeep"
     BeginningOfChosenPlayersUpkeep,
+    /// "end of combat"
+    EndOfCombat,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum InterveningIf {
     /// "if it's on the battlefield"
     ItsOnTheBattlefield,
+    /// "if this <source> attacked or blocked this combat"
+    SourceAttackedOrBlockedThisCombat { source: SourceObject },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -161,6 +180,8 @@ pub enum TriggerEffect {
         amount: Variable,
         definitions: Vec<VariableDefinition>,
     },
+    /// "remove a <pt_modifier> counter from it"
+    RemoveCounterFromIt { counter: PtModifier },
     /// `it loses "<keyword>" and gains "<keyword>"` — the source object
     /// rewrites its own printed rules text. Reanimator Auras use this
     /// to switch their `Enchant` target from a graveyard card to the
@@ -189,6 +210,7 @@ pub struct ActivatedAbility {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActivatedCost {
     Mana(ManaCost),
+    VariableMana(Variable),
     Tap,
     /// "Sacrifice this <permanent_type>"
     Sacrifice(SourceObject),
@@ -215,6 +237,12 @@ pub enum ActivatedEffect {
     /// damage to you this turn, prevent that damage."
     PreventNextDamageFromColoredSource {
         color: Color,
+    },
+    /// "Put up to X <pt_modifier> counters on this <source>."
+    PutUpToVariableCountersOnSource {
+        amount: Variable,
+        counter: PtModifier,
+        source: SourceObject,
     },
     PhysicalAction(PhysicalAction),
 }

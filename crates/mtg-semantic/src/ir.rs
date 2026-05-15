@@ -1,7 +1,7 @@
 use mtg_grammar::{
     ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Color,
     Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
-    StaticAbility, TriggeredAbility, VariableDefinition,
+    PtModifier, SourceObject, StaticAbility, TriggeredAbility, VariableDefinition,
 };
 use serde::{Deserialize, Serialize};
 
@@ -48,6 +48,21 @@ pub enum CardEffect {
     PlayersDoActionsTheSameWay { actions: Vec<BalanceSameWayAction> },
     /// "As this <permanent_type> enters, choose an opponent."
     AsThisPermanentEntersChooseOpponent { permanent_type: PermanentType },
+    /// "This <permanent_type> enters with N <pt_modifier> counters on it."
+    ThisPermanentEntersWithCounters {
+        source: SourceObject,
+        amount: u32,
+        counter: PtModifier,
+    },
+    /// "This ability can't cause the total number of <pt_modifier>
+    /// counters on this <permanent_type> to be greater than N."
+    ThisAbilityCantCauseTotalCountersGreaterThan {
+        counter: PtModifier,
+        source: SourceObject,
+        maximum: u32,
+    },
+    /// "Activate only during your upkeep."
+    ActivateOnlyDuringYourUpkeep,
     /// A modal spell choice with one or more printed modes.
     ModalChoice { modes: Vec<ModalMode> },
     /// A static ability with a conditional continuous effect. The
