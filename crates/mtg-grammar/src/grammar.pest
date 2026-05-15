@@ -39,7 +39,7 @@ sentence_statement = _{
   | ante_play_restriction
   | you_own_target_card_in_zone
   | exchange_that_card_with_top_card_of_your_library
-  | return_target_card_from_your_zone_to_your_zone
+  | return_target_card_from_your_zone_to_zone
   | copy_target_spell_except_copy_is_color
   | you_may_choose_new_targets_for_the_copy
   | imperative_action_sequence
@@ -435,13 +435,15 @@ you_own_target_card_in_zone = {
     ^"you" ~ ^"own" ~ ^"target" ~ ^"card" ~ ^"in" ~ ^"the" ~ zone ~ "."
 }
 
-return_target_card_from_your_zone_to_your_zone = {
+return_target_card_from_your_zone_to_zone = {
     ^"return" ~ ^"target" ~ return_target_card_kind
   ~ ^"from" ~ ^"your" ~ owned_zone
-  ~ ^"to" ~ ^"your" ~ owned_zone ~ "."
+  ~ ^"to" ~ return_destination_zone ~ "."
 }
 
 return_target_card_kind = { permanent_type? ~ ^"card" }
+return_destination_zone = _{ (^"your" ~ owned_zone) | (^"the" ~ battlefield_zone) }
+battlefield_zone = @{ ^"battlefield" }
 
 exchange_that_card_with_top_card_of_your_library = {
     ^"exchange" ~ ^"that" ~ ^"card" ~ ^"with" ~ ^"the" ~ ^"top"

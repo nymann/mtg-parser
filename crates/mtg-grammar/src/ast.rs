@@ -123,8 +123,8 @@ pub enum Statement {
     YouOwnTargetCardInZone {
         zone: Zone,
     },
-    /// "Return target [<card_type>] card from your <zone> to your <zone>."
-    ReturnTargetCardFromYourZoneToYourZone {
+    /// "Return target [<card_type>] card from your <zone> to your <zone/the battlefield>."
+    ReturnTargetCardFromYourZoneToZone {
         card_type: Option<PermanentType>,
         from: Zone,
         to: Zone,
@@ -1444,6 +1444,7 @@ pub enum Zone {
     Graveyard,
     Hand,
     Ante,
+    Battlefield,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

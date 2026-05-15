@@ -50,69 +50,86 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
             Action::None
         }
 
+        (KeyCode::Char(c), _) if c.is_ascii_digit() && key.modifiers.is_empty() => {
+            if c != '0' || !state.normal.count.is_empty() {
+                state.normal.count.push(c);
+            }
+            state.normal.pending_g = false;
+            Action::None
+        }
+
         (KeyCode::Up, _) | (KeyCode::Char('k'), _) => {
-            state.materialize_output_scroll();
-            state.autoscroll = false;
-            scroll_focused(state, false, scroll_step);
+            let amount = state.normal.take_count().unwrap_or(scroll_step);
+            state.normal.pending_g = false;
+            scroll_focused(state, false, amount);
             Action::None
         }
         (KeyCode::Down, _) | (KeyCode::Char('j'), _) => {
-            state.materialize_output_scroll();
-            state.autoscroll = false;
-            scroll_focused(state, true, scroll_step);
+            let amount = state.normal.take_count().unwrap_or(scroll_step);
+            state.normal.pending_g = false;
+            scroll_focused(state, true, amount);
             Action::None
         }
         (KeyCode::PageUp, _) => {
-            state.materialize_output_scroll();
-            state.autoscroll = false;
+            state.normal.clear();
             scroll_focused(state, false, page_step);
             Action::None
         }
         (KeyCode::PageDown, _) => {
-            state.materialize_output_scroll();
-            state.autoscroll = false;
+            state.normal.clear();
             scroll_focused(state, true, page_step);
             Action::None
         }
 
+        (KeyCode::Char('g'), _) if state.normal.pending_g => {
+            let line = state.normal.take_count().unwrap_or(1).saturating_sub(1);
+            state.normal.pending_g = false;
+            goto_output_line(state, line);
+            Action::None
+        }
         (KeyCode::Char('g'), _) => {
-            state.autoscroll = false;
-            state.scroll = 0;
+            state.normal.pending_g = true;
             Action::None
         }
         (KeyCode::Char('G'), _) => {
+            state.normal.clear();
             // Bottom + re-enable autoscroll so new events stay in view.
+            state.output_cursor = state.output_line_count.saturating_sub(1);
             state.scroll = state.output_bottom_scroll();
             state.autoscroll = true;
             Action::None
         }
 
         (KeyCode::Char('p'), _) => {
+            state.normal.clear();
             if state.autoscroll {
                 state.pause_output();
             } else {
                 state.scroll = state.output_bottom_scroll();
+                state.output_cursor = state.output_line_count.saturating_sub(1);
                 state.autoscroll = true;
             }
             Action::None
         }
         (KeyCode::Char('c'), m) if m.is_empty() => {
+            state.normal.clear();
             state.copy_mode = true;
             Action::None
         }
         (KeyCode::Char('v'), _) | (KeyCode::Char('V'), _) => {
+            state.normal.clear();
             state.materialize_output_scroll();
             state.autoscroll = false;
-            state
-                .visual
-                .start(state.scroll.min(state.output_line_count.saturating_sub(1)));
+            state.visual.start(state.output_cursor);
             Action::None
         }
         (KeyCode::Char('/'), _) => {
+            state.normal.clear();
             state.search.editing = true;
             Action::None
         }
         (KeyCode::Char('f'), _) => {
+            state.normal.clear();
             state.search.filter_mode = !state.search.filter_mode;
             if state.search.query.is_empty() {
                 state.search.editing = true;
@@ -128,22 +145,24 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
             Action::None
         }
         (KeyCode::Char('H'), _) => {
+            state.normal.clear();
             state.history.entries = load_history_entries();
             state.history.open = true;
             state.focus = FocusPane::Modal;
             Action::None
         }
-        (KeyCode::Char(c), _) if ('1'..='9').contains(&c) => {
-            jump_to_step(state, c as u8 - b'0');
-            Action::None
-        }
         (KeyCode::Char('i'), _) => {
+            state.normal.clear();
             state.scroll = 0;
+            state.output_cursor = 0;
             state.autoscroll = false;
             Action::None
         }
 
-        _ => Action::None,
+        _ => {
+            state.normal.clear();
+            Action::None
+        }
     }
 }
 
@@ -351,14 +370,15 @@ fn infer_history_provider(raw: &serde_json::Value) -> AgentProvider {
 fn scroll_focused(state: &mut AppState, down: bool, amount: u16) {
     match state.focus {
         FocusPane::Output | FocusPane::Modal => {
-            if down {
-                state.scroll = state
-                    .scroll
-                    .saturating_add(amount)
-                    .min(state.output_bottom_scroll());
+            state.materialize_output_scroll();
+            state.autoscroll = false;
+            let last_line = state.output_line_count.saturating_sub(1);
+            state.output_cursor = if down {
+                state.output_cursor.saturating_add(amount).min(last_line)
             } else {
-                state.scroll = state.scroll.saturating_sub(amount);
-            }
+                state.output_cursor.saturating_sub(amount)
+            };
+            keep_output_cursor_visible(state);
         }
         FocusPane::Card => {
             if down {
@@ -368,6 +388,26 @@ fn scroll_focused(state: &mut AppState, down: bool, amount: u16) {
             }
         }
     }
+}
+
+fn goto_output_line(state: &mut AppState, line: u16) {
+    state.materialize_output_scroll();
+    state.autoscroll = false;
+    state.output_cursor = line.min(state.output_line_count.saturating_sub(1));
+    keep_output_cursor_visible(state);
+}
+
+fn keep_output_cursor_visible(state: &mut AppState) {
+    let viewport_height = state.output_viewport_height.max(1);
+    let bottom_scroll = state.output_bottom_scroll();
+    if state.output_cursor < state.scroll {
+        state.scroll = state.output_cursor;
+    } else if state.output_cursor >= state.scroll.saturating_add(viewport_height) {
+        state.scroll = state
+            .output_cursor
+            .saturating_sub(viewport_height.saturating_sub(1));
+    }
+    state.scroll = state.scroll.min(bottom_scroll);
 }
 
 fn jump_to_step(state: &mut AppState, step: u8) {

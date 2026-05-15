@@ -285,3 +285,5 @@ mod raise_dead;
 mod regeneration;
 #[path = "generated_patterns/regrowth.rs"]
 mod regrowth;
+#[path = "generated_patterns/resurrection.rs"]
+mod resurrection;

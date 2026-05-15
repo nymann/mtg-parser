@@ -84,8 +84,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::cast_restriction => cast_restriction_from_pair(pair),
         Rule::ante_play_restriction => Ok(Statement::AntePlayRestriction),
         Rule::you_own_target_card_in_zone => you_own_target_card_in_zone_from_pair(pair),
-        Rule::return_target_card_from_your_zone_to_your_zone => {
-            return_target_card_from_your_zone_to_your_zone_from_pair(pair)
+        Rule::return_target_card_from_your_zone_to_zone => {
+            return_target_card_from_your_zone_to_zone_from_pair(pair)
         }
         Rule::exchange_that_card_with_top_card_of_your_library => {
             Ok(Statement::ExchangeThatCardWithTopCardOfYourLibrary)
@@ -392,7 +392,7 @@ fn you_own_target_card_in_zone_from_pair(pair: Pair<Rule>) -> Result<Statement, 
     })
 }
 
-fn return_target_card_from_your_zone_to_your_zone_from_pair(
+fn return_target_card_from_your_zone_to_zone_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
     let mut inner = pair.into_inner();
@@ -410,7 +410,7 @@ fn return_target_card_from_your_zone_to_your_zone_from_pair(
         .next()
         .map(permanent_type_from_pair)
         .transpose()?;
-    Ok(Statement::ReturnTargetCardFromYourZoneToYourZone {
+    Ok(Statement::ReturnTargetCardFromYourZoneToZone {
         card_type,
         from: zone_from_pair(from_pair)?,
         to: zone_from_pair(to_pair)?,
@@ -2896,13 +2896,17 @@ fn enchant_object_from_pair(pair: Pair<Rule>) -> Result<EnchantObject, ParseErro
 }
 
 fn zone_from_pair(pair: Pair<Rule>) -> Result<Zone, ParseError> {
-    if !matches!(pair.as_rule(), Rule::zone | Rule::owned_zone) {
+    if !matches!(
+        pair.as_rule(),
+        Rule::zone | Rule::owned_zone | Rule::battlefield_zone
+    ) {
         return Err(ParseError::Internal("zone"));
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
         "graveyard" => Ok(Zone::Graveyard),
         "hand" => Ok(Zone::Hand),
         "ante" => Ok(Zone::Ante),
+        "battlefield" => Ok(Zone::Battlefield),
         _ => Err(ParseError::Internal("zone variant")),
     }
 }

@@ -31,8 +31,10 @@ pub struct AppState {
     pub card_scroll: u16,
     pub output_line_count: u16,
     pub output_viewport_height: u16,
+    pub output_cursor: u16,
     pub autoscroll: bool,
     pub focus: FocusPane,
+    pub normal: NormalInputState,
     pub search: SearchState,
     pub history: HistoryState,
     pub copy_mode: bool,
@@ -108,6 +110,13 @@ impl AppState {
     pub fn remember_output_view(&mut self, line_count: usize, viewport_height: u16) {
         self.output_line_count = line_count.min(u16::MAX as usize) as u16;
         self.output_viewport_height = viewport_height;
+        let last_line = self.output_line_count.saturating_sub(1);
+        if self.autoscroll {
+            self.output_cursor = last_line;
+        } else {
+            self.output_cursor = self.output_cursor.min(last_line);
+            self.scroll = self.scroll.min(self.output_bottom_scroll());
+        }
     }
 
     pub fn output_bottom_scroll(&self) -> u16 {
@@ -125,6 +134,9 @@ impl AppState {
 
     pub fn materialize_output_scroll(&mut self) {
         self.scroll = self.effective_output_scroll();
+        if self.autoscroll {
+            self.output_cursor = self.output_line_count.saturating_sub(1);
+        }
     }
 
     pub fn pause_output(&mut self) {
@@ -571,6 +583,27 @@ impl VisualState {
         let start = self.anchor.min(self.cursor) as usize;
         let end = self.anchor.max(self.cursor) as usize;
         Some((start, end))
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct NormalInputState {
+    pub count: String,
+    pub pending_g: bool,
+}
+
+impl NormalInputState {
+    pub fn take_count(&mut self) -> Option<u16> {
+        if self.count.is_empty() {
+            None
+        } else {
+            self.count.drain(..).collect::<String>().parse::<u16>().ok()
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.count.clear();
+        self.pending_g = false;
     }
 }
 

@@ -810,7 +810,7 @@ fn set_output_cursor(
     } else if state.autoscroll {
         total_lines.saturating_sub(1)
     } else {
-        scroll
+        state.output_cursor
     }
     .min(total_lines.saturating_sub(1));
     if line < scroll || line >= scroll.saturating_add(area.height) {
@@ -1075,7 +1075,6 @@ fn render_message_block(
             }
         }
     }
-    out.push(message_footer(label_color));
     out
 }
 
@@ -1096,10 +1095,6 @@ fn message_body_line(text: &str, style: Style) -> Line<'static> {
         Span::styled("  │ ", Style::default().fg(C_FAINT)),
         Span::styled(text.to_string(), style),
     ])
-}
-
-fn message_footer(color: Color) -> Line<'static> {
-    Line::from(Span::styled("  ╰", Style::default().fg(color)))
 }
 
 fn body_width(width: u16, reserved: u16) -> usize {

@@ -183,7 +183,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(zone_name(*zone));
             out.push('.');
         }
-        Statement::ReturnTargetCardFromYourZoneToYourZone {
+        Statement::ReturnTargetCardFromYourZoneToZone {
             card_type,
             from,
             to,
@@ -195,7 +195,10 @@ fn write_statement(out: &mut String, statement: &Statement) {
             }
             out.push_str("card from your ");
             out.push_str(zone_name(*from));
-            out.push_str(" to your ");
+            match to {
+                Zone::Battlefield => out.push_str(" to the "),
+                _ => out.push_str(" to your "),
+            }
             out.push_str(zone_name(*to));
             out.push('.');
         }
@@ -1112,6 +1115,7 @@ fn zone_name(zone: Zone) -> &'static str {
         Zone::Graveyard => "graveyard",
         Zone::Hand => "hand",
         Zone::Ante => "ante",
+        Zone::Battlefield => "battlefield",
     }
 }
 
@@ -1120,6 +1124,7 @@ fn zone_article(zone: Zone) -> &'static str {
         Zone::Graveyard => "a",
         Zone::Hand => "a",
         Zone::Ante => "the",
+        Zone::Battlefield => "the",
     }
 }
 

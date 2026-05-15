@@ -296,3 +296,5 @@ mod raise_dead;
 mod regeneration;
 #[path = "generated/regrowth.rs"]
 mod regrowth;
+#[path = "generated/resurrection.rs"]
+mod resurrection;
