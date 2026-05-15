@@ -9,8 +9,9 @@ use crate::ast::{
     ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController,
     PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TargetPermanentEndOfTurnEffect, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
-    Variable, VariableDefinition, VariablePtModifier, Zone,
+    TargetPermanentEndOfTurnEffect, TriggerDamageAmount, TriggerDamageCondition,
+    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
+    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -1638,63 +1639,8 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
         TriggerEffect::ThatCreaturesControllerSacrificesIt => {
             out.push_str("that creature's controller sacrifices it.");
         }
-        TriggerEffect::SourceDealsDamageToThatPermanentController {
-            source,
-            amount,
-            recipient,
-        } => {
-            write_source_object(out, *source);
-            write!(out, " deals {amount} damage to that ").expect("write to String never fails");
-            out.push_str(permanent_type_name(*recipient));
-            out.push_str("'s controller.");
-        }
-        TriggerEffect::SourceDealsDamageToThatPlayer { source, amount } => {
-            write_source_object(out, *source);
-            write!(out, " deals {amount} damage to that player.")
-                .expect("write to String never fails");
-        }
-        TriggerEffect::SourceDealsDamageToYou { source, amount } => {
-            write_source_object(out, *source);
-            write!(out, " deals {amount} damage to you.").expect("write to String never fails");
-        }
-        TriggerEffect::ItDealsDamageToYou { amount } => {
-            write!(out, "it deals {amount} damage to you.").expect("write to String never fails");
-        }
-        TriggerEffect::SourceDealsDamageToYouUnlessYouPay {
-            source,
-            amount,
-            cost,
-        } => {
-            write_source_object(out, *source);
-            write!(out, " deals {amount} damage to you unless you pay ")
-                .expect("write to String never fails");
-            write_mana_cost(out, cost);
-            out.push('.');
-        }
-        TriggerEffect::SourceDealsDamageToThatPermanent {
-            source,
-            amount,
-            recipient,
-        } => {
-            write_source_object(out, *source);
-            write!(out, " deals {amount} damage to that ")
-                .expect("write to String never fails");
-            out.push_str(permanent_type_name(*recipient));
-            if terminal {
-                out.push('.');
-            }
-        }
-        TriggerEffect::SourceDealsVariableDamageToThatPlayer {
-            source,
-            amount,
-            definitions,
-        } => {
-            write_source_object(out, *source);
-            out.push_str(" deals ");
-            out.push_str(variable_name(*amount));
-            out.push_str(" damage to that player, where ");
-            write_variable_definitions(out, definitions);
-            out.push('.');
+        TriggerEffect::SourceDealsDamage(damage) => {
+            write_triggered_damage(out, damage, terminal);
         }
         TriggerEffect::ThatPlayerDrawsAnAdditionalCard => {
             out.push_str("that player draws an additional card.");
@@ -1851,6 +1797,58 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             write_source_object(out, *source);
             out.push('.');
         }
+    }
+}
+
+fn write_triggered_damage(out: &mut String, damage: &TriggeredDamage, terminal: bool) {
+    match damage.source {
+        TriggerDamageSource::Source(source) => write_source_object(out, source),
+        TriggerDamageSource::It => out.push_str("it"),
+    }
+    out.push_str(" deals ");
+    write_trigger_damage_amount(out, &damage.amount);
+    out.push_str(" damage to ");
+    match damage.recipient {
+        TriggerDamageRecipient::You => out.push_str("you"),
+        TriggerDamageRecipient::ThatPlayer => out.push_str("that player"),
+        TriggerDamageRecipient::ThatPermanent(permanent_type) => {
+            out.push_str("that ");
+            out.push_str(permanent_type_name(permanent_type));
+        }
+        TriggerDamageRecipient::ThatPermanentController(permanent_type) => {
+            out.push_str("that ");
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str("'s controller");
+        }
+    }
+    if let Some(condition) = &damage.condition {
+        match condition {
+            TriggerDamageCondition::UnlessYouPay(cost) => {
+                out.push_str(" unless you pay ");
+                write_mana_cost(out, cost);
+            }
+        }
+    }
+    match &damage.amount {
+        TriggerDamageAmount::Variable { definitions, .. } => {
+            out.push_str(", where ");
+            write_variable_definitions(out, definitions);
+            out.push('.');
+        }
+        TriggerDamageAmount::Number(_) => {
+            if terminal {
+                out.push('.');
+            }
+        }
+    }
+}
+
+fn write_trigger_damage_amount(out: &mut String, amount: &TriggerDamageAmount) {
+    match amount {
+        TriggerDamageAmount::Number(amount) => {
+            write!(out, "{amount}").expect("write to String never fails");
+        }
+        TriggerDamageAmount::Variable { amount, .. } => out.push_str(variable_name(*amount)),
     }
 }
 

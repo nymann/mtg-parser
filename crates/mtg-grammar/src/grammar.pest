@@ -1224,13 +1224,7 @@ trigger_effect = _{
   | sacrifice_source_unless_you_pay
   | source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller
   | source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player
-  | source_deals_variable_damage_to_that_player
-  | source_deals_damage_to_you_unless_you_pay
-  | source_deals_damage_to_you
-  | it_deals_damage_to_you
-  | source_deals_damage_to_that_player
-  | source_deals_damage_to_that_permanents_controller
-  | source_deals_damage_to_that_permanent
+  | source_deals_damage
   | that_player_adds_mana_of_any_type_that_permanent_produced
   | that_player_discards_card_at_random
   | that_player_draws_an_additional_card
@@ -1413,6 +1407,15 @@ source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player =
     source_object ~ ^"deals" ~ ^"damage" ~ ^"to" ~ ^"that" ~ ^"player"
   ~ ^"equal" ~ ^"to" ~ ^"the" ~ ^"number" ~ ^"of" ~ basic_land_type_plural
   ~ ^"they" ~ ^"control" ~ "."
+}
+source_deals_damage = {
+    source_deals_variable_damage_to_that_player
+  | source_deals_damage_to_you_unless_you_pay
+  | source_deals_damage_to_you
+  | it_deals_damage_to_you
+  | source_deals_damage_to_that_player
+  | source_deals_damage_to_that_permanents_controller
+  | source_deals_damage_to_that_permanent
 }
 source_deals_damage_to_that_player = {
     source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"that" ~ ^"player" ~ "."

@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"019e2b79-ee56-7570-9d09-2eb2dfe92b83"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"theme: damage"}}
+{"type":"turn.completed","usage":{"input_tokens":24962,"cached_input_tokens":21888,"output_tokens":120,"reasoning_output_tokens":111}}

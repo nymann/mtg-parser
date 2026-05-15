@@ -629,36 +629,8 @@ pub enum TriggerEffect {
     DestroyThatCreatureAtEndOfCombat,
     /// "that creature's controller sacrifices it"
     ThatCreaturesControllerSacrificesIt,
-    /// "this <source> deals N damage to that <recipient>'s controller"
-    SourceDealsDamageToThatPermanentController {
-        source: SourceObject,
-        amount: u32,
-        recipient: PermanentType,
-    },
-    /// "this <source> deals N damage to that player"
-    SourceDealsDamageToThatPlayer { source: SourceObject, amount: u32 },
-    /// "this <source> deals N damage to you"
-    SourceDealsDamageToYou { source: SourceObject, amount: u32 },
-    /// "it deals N damage to you"
-    ItDealsDamageToYou { amount: u32 },
-    /// "this <source> deals N damage to you unless you pay <mana_cost>"
-    SourceDealsDamageToYouUnlessYouPay {
-        source: SourceObject,
-        amount: u32,
-        cost: ManaCost,
-    },
-    /// "this <source> deals N damage to that <permanent_type>"
-    SourceDealsDamageToThatPermanent {
-        source: SourceObject,
-        amount: u32,
-        recipient: PermanentType,
-    },
-    /// "this <source> deals X damage to that player, where X is <expr>"
-    SourceDealsVariableDamageToThatPlayer {
-        source: SourceObject,
-        amount: Variable,
-        definitions: Vec<VariableDefinition>,
-    },
+    /// "<source> deals <amount> damage to <recipient>[ unless you pay <mana_cost>]"
+    SourceDealsDamage(TriggeredDamage),
     /// "that player draws an additional card"
     ThatPlayerDrawsAnAdditionalCard,
     /// "that player discards a card at random"
@@ -745,6 +717,42 @@ pub enum TriggerEffect {
     },
     /// "its controller adds an additional <mana_symbol>"
     ItsControllerAddsAdditionalMana { mana: ManaSymbol },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TriggeredDamage {
+    pub source: TriggerDamageSource,
+    pub amount: TriggerDamageAmount,
+    pub recipient: TriggerDamageRecipient,
+    pub condition: Option<TriggerDamageCondition>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TriggerDamageSource {
+    Source(SourceObject),
+    It,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TriggerDamageAmount {
+    Number(u32),
+    Variable {
+        amount: Variable,
+        definitions: Vec<VariableDefinition>,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TriggerDamageRecipient {
+    You,
+    ThatPlayer,
+    ThatPermanent(PermanentType),
+    ThatPermanentController(PermanentType),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TriggerDamageCondition {
+    UnlessYouPay(ManaCost),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

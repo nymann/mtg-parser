@@ -11,8 +11,10 @@ use crate::ast::{
     ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus, OptionalCost,
     PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
     Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerEffect, TriggerEvent,
-    TriggeredAbility, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerDamageAmount,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -1425,36 +1427,14 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::you_may_remove_named_counter_from_source => {
                 effects.push(you_may_remove_named_counter_from_source_from_pair(child)?);
             }
-            Rule::source_deals_damage_to_that_permanents_controller => {
-                effects.push(source_deals_damage_to_that_permanents_controller_from_pair(
-                    child,
-                )?);
+            Rule::source_deals_damage => {
+                effects.push(source_deals_damage_from_pair(child)?);
             }
             Rule::source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller => {
                 effects.push(source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller_from_pair(child)?);
             }
             Rule::source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player => {
                 effects.push(source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player_from_pair(child)?);
-            }
-            Rule::source_deals_damage_to_that_player => {
-                effects.push(source_deals_damage_to_that_player_from_pair(child)?);
-            }
-            Rule::source_deals_damage_to_you_unless_you_pay => {
-                effects.push(source_deals_damage_to_you_unless_you_pay_from_pair(child)?);
-            }
-            Rule::source_deals_damage_to_you => {
-                effects.push(source_deals_damage_to_you_from_pair(child)?);
-            }
-            Rule::it_deals_damage_to_you => {
-                effects.push(it_deals_damage_to_you_from_pair(child)?);
-            }
-            Rule::source_deals_damage_to_that_permanent => {
-                effects.push(source_deals_damage_to_that_permanent_from_pair(child)?);
-            }
-            Rule::source_deals_variable_damage_to_that_player => {
-                effects.push(source_deals_variable_damage_to_that_player_from_pair(
-                    child,
-                )?);
             }
             Rule::that_player_draws_an_additional_card => {
                 effects.push(TriggerEffect::ThatPlayerDrawsAnAdditionalCard);
@@ -1833,30 +1813,6 @@ fn unless_you_pay_mana_do_actions_from_pair(pair: Pair<Rule>) -> Result<TriggerE
     })
 }
 
-fn source_deals_damage_to_that_permanents_controller_from_pair(
-    pair: Pair<Rule>,
-) -> Result<TriggerEffect, ParseError> {
-    let mut inner = pair.into_inner();
-    let source_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("damage effect missing source"))?;
-    let amount_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("damage effect missing amount"))?;
-    let recipient_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("damage effect missing recipient"))?;
-    let amount = amount_pair
-        .as_str()
-        .parse::<u32>()
-        .map_err(|_| ParseError::Internal("damage amount"))?;
-    Ok(TriggerEffect::SourceDealsDamageToThatPermanentController {
-        source: source_object_from_pair(source_pair)?,
-        amount,
-        recipient: that_permanents_controller_from_pair(recipient_pair)?,
-    })
-}
-
 fn source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEffect, ParseError> {
@@ -1901,9 +1857,63 @@ fn source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_playe
     )
 }
 
+fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let inner = only_inner(pair, "source deals damage missing damage shape")?;
+    let damage = match inner.as_rule() {
+        Rule::source_deals_damage_to_that_permanents_controller => {
+            source_deals_damage_to_that_permanents_controller_from_pair(inner)?
+        }
+        Rule::source_deals_damage_to_that_player => {
+            source_deals_damage_to_that_player_from_pair(inner)?
+        }
+        Rule::source_deals_damage_to_you => source_deals_damage_to_you_from_pair(inner)?,
+        Rule::it_deals_damage_to_you => it_deals_damage_to_you_from_pair(inner)?,
+        Rule::source_deals_damage_to_you_unless_you_pay => {
+            source_deals_damage_to_you_unless_you_pay_from_pair(inner)?
+        }
+        Rule::source_deals_damage_to_that_permanent => {
+            source_deals_damage_to_that_permanent_from_pair(inner)?
+        }
+        Rule::source_deals_variable_damage_to_that_player => {
+            source_deals_variable_damage_to_that_player_from_pair(inner)?
+        }
+        _ => return Err(ParseError::Internal("source deals damage shape")),
+    };
+    Ok(TriggerEffect::SourceDealsDamage(damage))
+}
+
+fn damage_number_from_pair(pair: Pair<Rule>, context: &'static str) -> Result<u32, ParseError> {
+    pair.as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal(context))
+}
+
+fn source_deals_damage_to_that_permanents_controller_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggeredDamage, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("damage effect missing source"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("damage effect missing amount"))?;
+    let recipient_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("damage effect missing recipient"))?;
+    Ok(TriggeredDamage {
+        source: TriggerDamageSource::Source(source_object_from_pair(source_pair)?),
+        amount: TriggerDamageAmount::Number(damage_number_from_pair(amount_pair, "damage amount")?),
+        recipient: TriggerDamageRecipient::ThatPermanentController(
+            that_permanents_controller_from_pair(recipient_pair)?,
+        ),
+        condition: None,
+    })
+}
+
 fn source_deals_damage_to_that_player_from_pair(
     pair: Pair<Rule>,
-) -> Result<TriggerEffect, ParseError> {
+) -> Result<TriggeredDamage, ParseError> {
     let mut inner = pair.into_inner();
     let source_pair = inner.next().ok_or(ParseError::Internal(
         "damage-to-player effect missing source",
@@ -1911,17 +1921,18 @@ fn source_deals_damage_to_that_player_from_pair(
     let amount_pair = inner.next().ok_or(ParseError::Internal(
         "damage-to-player effect missing amount",
     ))?;
-    let amount = amount_pair
-        .as_str()
-        .parse::<u32>()
-        .map_err(|_| ParseError::Internal("damage-to-player amount"))?;
-    Ok(TriggerEffect::SourceDealsDamageToThatPlayer {
-        source: source_object_from_pair(source_pair)?,
-        amount,
+    Ok(TriggeredDamage {
+        source: TriggerDamageSource::Source(source_object_from_pair(source_pair)?),
+        amount: TriggerDamageAmount::Number(damage_number_from_pair(
+            amount_pair,
+            "damage-to-player amount",
+        )?),
+        recipient: TriggerDamageRecipient::ThatPlayer,
+        condition: None,
     })
 }
 
-fn source_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+fn source_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggeredDamage, ParseError> {
     let mut inner = pair.into_inner();
     let source_pair = inner
         .next()
@@ -1929,28 +1940,33 @@ fn source_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggerEffec
     let amount_pair = inner
         .next()
         .ok_or(ParseError::Internal("damage-to-you effect missing amount"))?;
-    let amount = amount_pair
-        .as_str()
-        .parse::<u32>()
-        .map_err(|_| ParseError::Internal("damage-to-you amount"))?;
-    Ok(TriggerEffect::SourceDealsDamageToYou {
-        source: source_object_from_pair(source_pair)?,
-        amount,
+    Ok(TriggeredDamage {
+        source: TriggerDamageSource::Source(source_object_from_pair(source_pair)?),
+        amount: TriggerDamageAmount::Number(damage_number_from_pair(
+            amount_pair,
+            "damage-to-you amount",
+        )?),
+        recipient: TriggerDamageRecipient::You,
+        condition: None,
     })
 }
 
-fn it_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+fn it_deals_damage_to_you_from_pair(pair: Pair<Rule>) -> Result<TriggeredDamage, ParseError> {
     let amount_pair = only_inner(pair, "it-damage-to-you effect missing amount")?;
-    let amount = amount_pair
-        .as_str()
-        .parse::<u32>()
-        .map_err(|_| ParseError::Internal("it-damage-to-you amount"))?;
-    Ok(TriggerEffect::ItDealsDamageToYou { amount })
+    Ok(TriggeredDamage {
+        source: TriggerDamageSource::It,
+        amount: TriggerDamageAmount::Number(damage_number_from_pair(
+            amount_pair,
+            "it-damage-to-you amount",
+        )?),
+        recipient: TriggerDamageRecipient::You,
+        condition: None,
+    })
 }
 
 fn source_deals_damage_to_you_unless_you_pay_from_pair(
     pair: Pair<Rule>,
-) -> Result<TriggerEffect, ParseError> {
+) -> Result<TriggeredDamage, ParseError> {
     let mut inner = pair.into_inner();
     let source_pair = inner.next().ok_or(ParseError::Internal(
         "damage-to-you-unless-pay effect missing source",
@@ -1961,20 +1977,22 @@ fn source_deals_damage_to_you_unless_you_pay_from_pair(
     let cost_pair = inner.next().ok_or(ParseError::Internal(
         "damage-to-you-unless-pay effect missing cost",
     ))?;
-    let amount = amount_pair
-        .as_str()
-        .parse::<u32>()
-        .map_err(|_| ParseError::Internal("damage-to-you-unless-pay amount"))?;
-    Ok(TriggerEffect::SourceDealsDamageToYouUnlessYouPay {
-        source: source_object_from_pair(source_pair)?,
-        amount,
-        cost: mana_cost_from_pair(cost_pair),
+    Ok(TriggeredDamage {
+        source: TriggerDamageSource::Source(source_object_from_pair(source_pair)?),
+        amount: TriggerDamageAmount::Number(damage_number_from_pair(
+            amount_pair,
+            "damage-to-you-unless-pay amount",
+        )?),
+        recipient: TriggerDamageRecipient::You,
+        condition: Some(TriggerDamageCondition::UnlessYouPay(mana_cost_from_pair(
+            cost_pair,
+        ))),
     })
 }
 
 fn source_deals_damage_to_that_permanent_from_pair(
     pair: Pair<Rule>,
-) -> Result<TriggerEffect, ParseError> {
+) -> Result<TriggeredDamage, ParseError> {
     let mut inner = pair.into_inner();
     let source_pair = inner.next().ok_or(ParseError::Internal(
         "damage-to-permanent effect missing source",
@@ -1985,20 +2003,20 @@ fn source_deals_damage_to_that_permanent_from_pair(
     let recipient_pair = inner.next().ok_or(ParseError::Internal(
         "damage-to-permanent effect missing recipient",
     ))?;
-    let amount = amount_pair
-        .as_str()
-        .parse::<u32>()
-        .map_err(|_| ParseError::Internal("damage-to-permanent amount"))?;
-    Ok(TriggerEffect::SourceDealsDamageToThatPermanent {
-        source: source_object_from_pair(source_pair)?,
-        amount,
-        recipient: permanent_type_from_pair(recipient_pair)?,
+    Ok(TriggeredDamage {
+        source: TriggerDamageSource::Source(source_object_from_pair(source_pair)?),
+        amount: TriggerDamageAmount::Number(damage_number_from_pair(
+            amount_pair,
+            "damage-to-permanent amount",
+        )?),
+        recipient: TriggerDamageRecipient::ThatPermanent(permanent_type_from_pair(recipient_pair)?),
+        condition: None,
     })
 }
 
 fn source_deals_variable_damage_to_that_player_from_pair(
     pair: Pair<Rule>,
-) -> Result<TriggerEffect, ParseError> {
+) -> Result<TriggeredDamage, ParseError> {
     let mut inner = pair.into_inner();
     let source_pair = inner.next().ok_or(ParseError::Internal(
         "variable damage effect missing source",
@@ -2019,10 +2037,14 @@ fn source_deals_variable_damage_to_that_player_from_pair(
             "variable damage missing amount definition",
         ));
     }
-    Ok(TriggerEffect::SourceDealsVariableDamageToThatPlayer {
-        source: source_object_from_pair(source_pair)?,
-        amount,
-        definitions,
+    Ok(TriggeredDamage {
+        source: TriggerDamageSource::Source(source_object_from_pair(source_pair)?),
+        amount: TriggerDamageAmount::Variable {
+            amount,
+            definitions,
+        },
+        recipient: TriggerDamageRecipient::ThatPlayer,
+        condition: None,
     })
 }
 
