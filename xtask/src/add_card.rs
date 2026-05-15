@@ -1898,12 +1898,8 @@ fn invoke_supervisor(
         level: NoteLevel::Info,
         text: "running cargo test -p xtask after supervisor repair".into(),
     });
-    let tests_ok = Command::new("cargo")
-        .args(["test", "-p", "xtask"])
-        .current_dir(repo_root())
-        .status()
-        .context("run cargo test -p xtask after supervisor repair")?
-        .success();
+    let tests_ok = command_success("cargo", &["test", "-p", "xtask"])
+        .context("run cargo test -p xtask after supervisor repair")?;
     if !tests_ok {
         sink.emit(FlowEvent::Note {
             level: NoteLevel::Error,
@@ -2115,23 +2111,22 @@ fn trim(s: &str, n: usize) -> String {
 }
 
 fn run_xtask(args: &[&str]) -> Result<bool> {
-    let status = Command::new("cargo")
-        .arg("xtask")
-        .args(args)
-        .current_dir(repo_root())
-        .status()
-        .context("run cargo xtask")?;
-    Ok(status.success())
+    let mut cargo_args = vec!["xtask"];
+    cargo_args.extend_from_slice(args);
+    command_success("cargo", &cargo_args)
 }
 
 fn run_cargo_fmt() -> Result<bool> {
-    let status = Command::new("cargo")
-        .arg("fmt")
-        .arg("--all")
+    command_success("cargo", &["fmt", "--all"])
+}
+
+fn command_success(program: &str, args: &[&str]) -> Result<bool> {
+    let out = Command::new(program)
+        .args(args)
         .current_dir(repo_root())
-        .status()
-        .context("run cargo fmt")?;
-    Ok(status.success())
+        .output()
+        .with_context(|| format!("run {program} {}", args.join(" ")))?;
+    Ok(out.status.success())
 }
 
 fn command_stdout(program: &str, args: &[&str]) -> Result<String> {

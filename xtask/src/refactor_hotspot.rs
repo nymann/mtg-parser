@@ -1167,15 +1167,36 @@ fn trim(s: &str, n: usize) -> String {
 }
 
 fn run_gate(label: &str, program: &str, args: &[&str]) -> Result<()> {
-    let status = Command::new(program)
+    let out = Command::new(program)
         .args(args)
         .current_dir(repo_root())
-        .status()
+        .output()
         .with_context(|| format!("run {label}"))?;
-    if !status.success() {
-        bail!("{label} failed with {status}");
+    if !out.status.success() {
+        bail!(
+            "{label} failed with {}\n{}",
+            out.status,
+            command_output_tail(&out, 40)
+        );
     }
     Ok(())
+}
+
+fn command_output_tail(out: &std::process::Output, max_lines: usize) -> String {
+    let mut text = String::new();
+    text.push_str(&String::from_utf8_lossy(&out.stdout));
+    if !out.stderr.is_empty() {
+        if !text.ends_with('\n') && !text.is_empty() {
+            text.push('\n');
+        }
+        text.push_str(&String::from_utf8_lossy(&out.stderr));
+    }
+    let lines = text.lines().collect::<Vec<_>>();
+    if lines.is_empty() {
+        return "(no output)".to_string();
+    }
+    let start = lines.len().saturating_sub(max_lines);
+    lines[start..].join("\n")
 }
 
 fn read_corpus_pp_total() -> (usize, usize) {
