@@ -6,11 +6,11 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
     CreatureStatus, CreatureType, DamageLifeGainCap, DamageRecipient, EachPlayerAction,
-    EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, LandCountController,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
+    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
+    SpellType, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -2061,6 +2061,25 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 excluded_land_type: basic_land_type_from_pair(excluded_land_type_pair)?,
             })
         }
+        Rule::target_permanent_becomes_basic_land_type_until_source_leaves => {
+            let mut inner = pair.into_inner();
+            let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+                "target becomes land type missing permanent_type",
+            ))?;
+            let land_type_pair = inner.next().ok_or(ParseError::Internal(
+                "target becomes land type missing basic_land_type",
+            ))?;
+            let source_pair = inner.next().ok_or(ParseError::Internal(
+                "target becomes land type missing source_object",
+            ))?;
+            Ok(
+                ActivatedEffect::TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield {
+                    permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                    land_type: basic_land_type_from_pair(land_type_pair)?,
+                    source: source_object_from_pair(source_pair)?,
+                },
+            )
+        }
         Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
         | Rule::if_source_turns_over_destroy_touched_nontoken_permanents
         | Rule::then_destroy_source => Ok(ActivatedEffect::PhysicalAction(
@@ -2368,6 +2387,19 @@ fn condition_from_pair(pair: Pair<Rule>) -> Result<Condition, ParseError> {
                 negated_type: permanent_type_from_pair(neg)?,
             })
         }
+        Rule::source_isnt_attacking | Rule::source_is_attacking => {
+            let is_attacking = pair.as_rule() == Rule::source_is_attacking;
+            let source_name = pair
+                .into_inner()
+                .next()
+                .expect("attacking condition begins with a source name")
+                .as_str()
+                .to_string();
+            Ok(Condition::SourceIsAttacking {
+                source_name,
+                is_attacking,
+            })
+        }
         _ => Err(ParseError::Internal("condition")),
     }
 }
@@ -2381,7 +2413,33 @@ fn continuous_effect_from_pair(pair: Pair<Rule>) -> Result<ContinuousEffect, Par
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(ContinuousEffect::BecomesWithPtFromManaValue { types })
         }
+        Rule::source_pt_equal_to_basic_lands_controlled => {
+            let mut inner = pair.into_inner();
+            let land_type_pair = inner
+                .next()
+                .expect("basic land count effect names a land type");
+            let controller_pair = inner
+                .next()
+                .expect("basic land count effect names a controller");
+            Ok(
+                ContinuousEffect::SourcePowerToughnessEachEqualToBasicLandsControlled {
+                    land_type: basic_land_type_from_plural_pair(land_type_pair)?,
+                    controller: land_count_controller_from_pair(controller_pair)?,
+                },
+            )
+        }
         _ => Err(ParseError::Internal("continuous_effect")),
+    }
+}
+
+fn land_count_controller_from_pair(pair: Pair<Rule>) -> Result<LandCountController, ParseError> {
+    if pair.as_rule() != Rule::land_count_controller {
+        return Err(ParseError::Internal("land_count_controller"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "you control" => Ok(LandCountController::You),
+        "defending player controls" => Ok(LandCountController::DefendingPlayer),
+        _ => Err(ParseError::Internal("land_count_controller variant")),
     }
 }
 

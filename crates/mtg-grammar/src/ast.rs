@@ -517,6 +517,13 @@ pub enum ActivatedEffect {
         counter_name: String,
         excluded_land_type: BasicLandType,
     },
+    /// "Target <permanent_type> becomes a/an <basic_land_type> until
+    /// this <source> leaves the battlefield."
+    TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield {
+        permanent_type: PermanentType,
+        land_type: BasicLandType,
+        source: SourceObject,
+    },
     PhysicalAction(PhysicalAction),
 }
 
@@ -781,6 +788,11 @@ pub enum Condition {
         permanent_type: PermanentType,
         negated_type: PermanentType,
     },
+    /// "<source name> is/isn't attacking"
+    SourceIsAttacking {
+        source_name: String,
+        is_attacking: bool,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -789,6 +801,18 @@ pub enum ContinuousEffect {
     /// mana value" — the enchanted permanent gains the listed types
     /// and a characteristic-defining P/T equal to its mana value.
     BecomesWithPtFromManaValue { types: Vec<PermanentType> },
+    /// "its power and toughness are each equal to the number of
+    /// <basic_land_type>s <controller> controls"
+    SourcePowerToughnessEachEqualToBasicLandsControlled {
+        land_type: BasicLandType,
+        controller: LandCountController,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LandCountController {
+    You,
+    DefendingPlayer,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

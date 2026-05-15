@@ -4,11 +4,11 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
     CreatureStatus, CreatureType, DamageLifeGainCap, DamageRecipient, EachPlayerAction,
-    EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, LandCountController,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
+    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
+    SpellType, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -722,6 +722,19 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(basic_land_type_name(*excluded_land_type));
             out.push_str(" land.");
         }
+        ActivatedEffect::TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield {
+            permanent_type,
+            land_type,
+            source,
+        } => {
+            out.push_str("Target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" becomes a ");
+            out.push_str(basic_land_type_name(*land_type));
+            out.push_str(" until ");
+            write_source_object(out, *source);
+            out.push_str(" leaves the battlefield.");
+        }
         ActivatedEffect::PhysicalAction(action) => write_physical_action(out, *action),
     }
 }
@@ -1391,6 +1404,17 @@ fn write_condition(out: &mut String, cond: &Condition) {
             out.push(' ');
             out.push_str(permanent_type_name(*negated_type));
         }
+        Condition::SourceIsAttacking {
+            source_name,
+            is_attacking,
+        } => {
+            out.push_str(source_name);
+            if *is_attacking {
+                out.push_str(" is attacking");
+            } else {
+                out.push_str(" isn't attacking");
+            }
+        }
     }
 }
 
@@ -1407,6 +1431,18 @@ fn write_continuous_effect(out: &mut String, eff: &ContinuousEffect) {
                 out.push_str(permanent_type_name(*t));
             }
             out.push_str(" with power and toughness each equal to its mana value");
+        }
+        ContinuousEffect::SourcePowerToughnessEachEqualToBasicLandsControlled {
+            land_type,
+            controller,
+        } => {
+            out.push_str("its power and toughness are each equal to the number of ");
+            out.push_str(basic_land_type_plural_name(*land_type));
+            out.push(' ');
+            match controller {
+                LandCountController::You => out.push_str("you control"),
+                LandCountController::DefendingPlayer => out.push_str("defending player controls"),
+            }
         }
     }
 }

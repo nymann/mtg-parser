@@ -143,3 +143,5 @@ mod forcefield;
 mod fork;
 #[path = "generated_patterns/fungusaur.rs"]
 mod fungusaur;
+#[path = "generated_patterns/gaea_s_liege.rs"]
+mod gaea_s_liege;
