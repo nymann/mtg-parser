@@ -5,17 +5,17 @@ use pest_derive::Parser;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
-    BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
-    Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
-    DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
+    ActivationPermission, BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color,
+    ColoredTargetEffect, Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType,
+    DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
     DamagePreventionAmount, DamagePreventionEffect, DamageRecipient, DamageRecipients,
-    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
+    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
+    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -174,12 +174,18 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::as_this_permanent_enters_choose_opponent => {
             as_this_permanent_enters_choose_opponent_from_pair(pair)
         }
+        Rule::activated_ability_with_activation_permission => {
+            activated_ability_with_activation_permission_from_pair(pair)
+        }
         Rule::source_enters_with_pt_counters => source_enters_with_pt_counters_from_pair(pair),
         Rule::this_ability_cant_cause_total_pt_counters_greater_than => {
             this_ability_cant_cause_total_pt_counters_greater_than_from_pair(pair)
         }
         Rule::if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step => {
             if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step_from_pair(pair)
+        }
+        Rule::only_sources_owner_may_activate_this_ability => {
+            only_sources_owner_may_activate_this_ability_from_pair(pair)
         }
         Rule::activate_only_during_your_upkeep => Ok(Statement::ActivateOnlyDuringYourUpkeep),
         Rule::activate_only_during_combat => Ok(Statement::ActivateOnlyDuringCombat),
@@ -765,6 +771,15 @@ fn damage_event_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, Parse
     })
 }
 
+fn only_sources_owner_may_activate_this_ability_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let source_pair = only_inner(pair, "owner activation restriction missing source")?;
+    Ok(Statement::OnlySourcesOwnerMayActivateThisAbility {
+        source: source_object_from_possessive_pair(source_pair)?,
+    })
+}
+
 fn named_damage_event_from_pair(pair: Pair<Rule>) -> Result<NamedDamageEvent, ParseError> {
     let mut inner = pair.into_inner();
     let source_pair = next_inner(&mut inner, "damage event missing source name")?;
@@ -1237,6 +1252,46 @@ fn you_gain_life_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError
     })
 }
 
+fn player_loses_life_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let mut player = None;
+    let mut amount = None;
+    let mut rounding = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::its_owner_life_loss_player => player = Some(LifeLossPlayer::ItsOwner),
+            Rule::half_their_life_loss_amount => {
+                amount = Some(LifeLossAmount::HalfTheirLife {
+                    rounding: Rounding::Down,
+                });
+            }
+            Rule::unsigned_number => {
+                amount = Some(LifeLossAmount::Number(
+                    child
+                        .as_str()
+                        .parse::<u32>()
+                        .map_err(|_| ParseError::Internal("life loss amount"))?,
+                ));
+            }
+            Rule::rounding => rounding = Some(rounding_from_pair(child)?),
+            _ => return Err(ParseError::Internal("player loses life part")),
+        }
+    }
+    let amount = match (amount, rounding) {
+        (Some(LifeLossAmount::HalfTheirLife { .. }), Some(rounding)) => {
+            LifeLossAmount::HalfTheirLife { rounding }
+        }
+        (Some(amount), None) => amount,
+        (Some(LifeLossAmount::Number(_)), Some(_)) => {
+            return Err(ParseError::Internal("number life loss cannot be rounded"));
+        }
+        (None, _) => return Err(ParseError::Internal("player loses life missing amount")),
+    };
+    Ok(TriggerEffect::PlayerLosesLife {
+        player: player.ok_or(ParseError::Internal("player loses life missing player"))?,
+        amount,
+    })
+}
+
 fn action_timing_from_pair(pair: Pair<Rule>) -> Result<ActionTiming, ParseError> {
     match pair.as_rule() {
         Rule::any_time_you_could_activate_a_mana_ability => {
@@ -1374,6 +1429,7 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
         }
         Rule::you_play_permanent => you_play_permanent_from_pair(event_pair),
         Rule::enchanted_permanent_dies => enchanted_permanent_dies_from_pair(event_pair),
+        Rule::source_dies => source_dies_from_pair(event_pair),
         Rule::enchanted_object_becomes_status => {
             enchanted_object_becomes_status_from_pair(event_pair)
         }
@@ -1492,6 +1548,7 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         Rule::sacrifice_that_many_nontoken_permanents => {
             Ok(TriggerEffect::SacrificeThatManyNontokenPermanents)
         }
+        Rule::player_loses_life => player_loses_life_from_pair(pair),
         Rule::you_lose_the_game => Ok(TriggerEffect::YouLoseTheGame),
         Rule::you_gain_life => you_gain_life_from_pair(pair),
         Rule::you_may_pay_mana | Rule::player_may_pay_mana => you_may_pay_mana_from_pair(pair),
@@ -1623,6 +1680,13 @@ fn enchanted_permanent_dies_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, 
     let pt = only_inner(pair, "enchanted_permanent_dies missing permanent_type")?;
     Ok(TriggerEvent::EnchantedPermanentDies {
         permanent_type: permanent_type_from_pair(pt)?,
+    })
+}
+
+fn source_dies_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let source_pair = only_inner(pair, "source_dies missing source_object")?;
+    Ok(TriggerEvent::SourceDies {
+        source: source_object_from_pair(source_pair)?,
     })
 }
 
@@ -2088,6 +2152,7 @@ fn activated_damage_effect_from_pair(
     match pair.as_rule() {
         Rule::activated_direct_damage_effect => activated_direct_damage_effect_from_pair(pair),
         Rule::next_damage_event_effect => next_damage_event_effect_from_pair(pair),
+        Rule::next_damage_redirection_effect => next_damage_redirection_effect_from_pair(pair),
         Rule::activated_damage_prevention_effect => {
             let effect = activated_damage_prevention_effect_from_pair(pair)?;
             Ok(ActivatedDamageEffect::PreventDamageThisTurn { effect })
@@ -2188,6 +2253,51 @@ fn next_damage_event_effect_from_pair(
     })
 }
 
+fn next_damage_redirection_effect_from_pair(
+    pair: Pair<Rule>,
+) -> Result<ActivatedDamageEffect, ParseError> {
+    let mut amount = None;
+    let mut kind = None;
+    let mut recipient = None;
+    let mut destination = None;
+
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::damage_prevention_amount => {
+                amount = Some(damage_amount_from_pair(only_inner(
+                    child,
+                    "damage redirection missing amount",
+                )?)?);
+            }
+            Rule::unsigned_number | Rule::variable_name => {
+                amount = Some(damage_amount_from_pair(child)?);
+            }
+            Rule::damage_kind => kind = Some(damage_kind_from_pair(child)?),
+            Rule::activated_damage_redirection_recipient => {
+                recipient = Some(activated_damage_redirection_recipient_from_pair(child)?);
+            }
+            Rule::you_damage_recipient
+            | Rule::target_permanent_damage_recipient
+            | Rule::source_object_damage_recipient => {
+                recipient = Some(activated_damage_recipient_from_pair(child)?);
+            }
+            Rule::its_owner_damage_destination => {
+                destination = Some(DamageRedirectionDestination::ItsOwner);
+            }
+            _ => return Err(ParseError::Internal("damage redirection part")),
+        }
+    }
+
+    Ok(ActivatedDamageEffect::RedirectNextDamageThisTurn {
+        amount: amount.ok_or(ParseError::Internal("damage redirection missing amount"))?,
+        kind,
+        recipient: recipient.ok_or(ParseError::Internal("damage redirection missing recipient"))?,
+        destination: destination.ok_or(ParseError::Internal(
+            "damage redirection missing destination",
+        ))?,
+    })
+}
+
 fn activated_damage_source_from_pair(
     pair: Pair<Rule>,
 ) -> Result<ActivatedDamageSource, ParseError> {
@@ -2213,6 +2323,12 @@ fn activated_damage_recipient_from_pair(
     match pair.as_rule() {
         Rule::you_damage_recipient => Ok(ActivatedDamageRecipient::You),
         Rule::any_target_prevention_recipient => Ok(ActivatedDamageRecipient::AnyTarget),
+        Rule::source_object_damage_recipient => {
+            let source_pair = only_inner(pair, "source damage recipient missing source")?;
+            Ok(ActivatedDamageRecipient::Source(source_object_from_pair(
+                source_pair,
+            )?))
+        }
         Rule::target_permanent_damage_recipient => {
             let permanent_type_pair = only_inner(pair, "target damage recipient missing type")?;
             Ok(ActivatedDamageRecipient::TargetPermanent {
@@ -2220,6 +2336,20 @@ fn activated_damage_recipient_from_pair(
             })
         }
         _ => Err(ParseError::Internal("activated damage recipient")),
+    }
+}
+
+fn activated_damage_redirection_recipient_from_pair(
+    pair: Pair<Rule>,
+) -> Result<ActivatedDamageRecipient, ParseError> {
+    let recipient_pair = only_inner(pair, "damage redirection recipient missing inner rule")?;
+    match recipient_pair.as_rule() {
+        Rule::you_damage_recipient
+        | Rule::target_permanent_damage_recipient
+        | Rule::source_object_damage_recipient => {
+            activated_damage_recipient_from_pair(recipient_pair)
+        }
+        _ => Err(ParseError::Internal("damage redirection recipient")),
     }
 }
 
@@ -2362,6 +2492,18 @@ fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError>
         Rule::permanent_type => Ok(SourceObject::This(permanent_type_from_pair(kind)?)),
         Rule::aura_source_object => Ok(SourceObject::ThisAura),
         _ => Err(ParseError::Internal("source_object kind")),
+    }
+}
+
+fn source_object_from_possessive_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError> {
+    if pair.as_rule() != Rule::source_object_possessive {
+        return Err(ParseError::Internal("source_object_possessive"));
+    }
+    let kind = only_inner(pair, "source_object_possessive missing kind")?;
+    match kind.as_rule() {
+        Rule::permanent_type => Ok(SourceObject::This(permanent_type_from_pair(kind)?)),
+        Rule::aura_source_object => Ok(SourceObject::ThisAura),
+        _ => Err(ParseError::Internal("source_object_possessive kind")),
     }
 }
 
@@ -2967,6 +3109,34 @@ fn activated_ability_from_pair(pair: Pair<Rule>) -> Result<ActivatedAbility, Par
     })
 }
 
+fn activated_ability_with_activation_permission_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let ability_pair = inner.next().ok_or(ParseError::Internal(
+        "activated ability with permission missing ability",
+    ))?;
+    let permission_pair = inner.next().ok_or(ParseError::Internal(
+        "activated ability with permission missing permission",
+    ))?;
+    Ok(Statement::ActivatedAbilityWithActivationPermission {
+        ability: activated_ability_from_pair(ability_pair)?,
+        permission: activation_permission_from_pair(permission_pair)?,
+    })
+}
+
+fn activation_permission_from_pair(pair: Pair<Rule>) -> Result<ActivationPermission, ParseError> {
+    match pair.as_rule() {
+        Rule::only_sources_owner_may_activate_this_ability => {
+            let source_pair = only_inner(pair, "activation permission missing source")?;
+            Ok(ActivationPermission::OnlySourcesOwner {
+                source: source_object_from_possessive_pair(source_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("activation permission")),
+    }
+}
+
 fn activated_cost_from_pair(pair: Pair<Rule>) -> Result<Vec<ActivatedCost>, ParseError> {
     if pair.as_rule() != Rule::activated_cost {
         return Err(ParseError::Internal("activated_cost"));
@@ -3182,6 +3352,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
         }
         Rule::activated_direct_damage_effect
         | Rule::next_damage_event_effect
+        | Rule::next_damage_redirection_effect
         | Rule::activated_damage_prevention_effect => Ok(ActivatedEffect::DamageEffect(
             activated_damage_effect_from_pair(pair)?,
         )),

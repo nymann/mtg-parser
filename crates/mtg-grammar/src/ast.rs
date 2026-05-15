@@ -233,6 +233,10 @@ pub enum Statement {
         threshold: u32,
         source: SourceObject,
     },
+    /// "Only this <source>'s owner may activate this ability."
+    OnlySourcesOwnerMayActivateThisAbility {
+        source: SourceObject,
+    },
     /// "Activate only during your upkeep."
     ActivateOnlyDuringYourUpkeep,
     /// "Activate only during combat."
@@ -253,6 +257,10 @@ pub enum Statement {
     },
     StaticAbility(StaticAbility),
     ActivatedAbility(ActivatedAbility),
+    ActivatedAbilityWithActivationPermission {
+        ability: ActivatedAbility,
+        permission: ActivationPermission,
+    },
     TriggeredAbility(TriggeredAbility),
     /// Physical dexterity instructions and their conditional results.
     PhysicalAction(PhysicalAction),
@@ -637,6 +645,8 @@ pub enum TriggerEvent {
     YouPlayPermanent { permanent_type: PermanentType },
     /// "enchanted <permanent_type> dies"
     EnchantedPermanentDies { permanent_type: PermanentType },
+    /// "this <source> dies"
+    SourceDies { source: SourceObject },
     /// "enchanted <object> becomes <status>"
     EnchantedObjectBecomesStatus {
         object: EnchantedObject,
@@ -776,6 +786,11 @@ pub enum TriggerEffect {
     YouLoseTheGame,
     /// "you gain N life"
     YouGainLife { amount: u32 },
+    /// "<player> loses <amount> life"
+    PlayerLosesLife {
+        player: LifeLossPlayer,
+        amount: LifeLossAmount,
+    },
     /// "you may pay <mana_cost>"
     YouMayPayMana { cost: ManaCost },
     /// "tap enchanted <object>"
@@ -841,6 +856,20 @@ pub enum TriggerDamageCondition {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LifeLossPlayer {
+    /// "its owner"
+    ItsOwner,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LifeLossAmount {
+    /// "N"
+    Number(u32),
+    /// "half their life, rounded <direction>"
+    HalfTheirLife { rounding: Rounding },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SourceObject {
     /// "this <permanent_type>"
     This(PermanentType),
@@ -860,6 +889,12 @@ pub enum ObjectStatus {
 pub struct ActivatedAbility {
     pub costs: Vec<ActivatedCost>,
     pub effect: ActivatedEffect,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActivationPermission {
+    /// "Only this <source>'s owner may activate this ability."
+    OnlySourcesOwner { source: SourceObject },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -999,6 +1034,14 @@ pub enum ActivatedDamageEffect {
         event: DamageEventPattern<ActivatedDamageSource, ActivatedDamageRecipient>,
         effect: ActivatedDamageEventEffect,
     },
+    /// "The next N [combat] damage that would be dealt to <recipient>
+    /// this turn is dealt to <destination> instead."
+    RedirectNextDamageThisTurn {
+        amount: DamageAmount,
+        kind: Option<DamageKind>,
+        recipient: ActivatedDamageRecipient,
+        destination: DamageRedirectionDestination,
+    },
     /// This-turn damage prevention effect with activated-ability recipient vocabulary.
     PreventDamageThisTurn {
         #[serde(flatten)]
@@ -1037,6 +1080,8 @@ pub enum ActivatedDamageRecipient {
     AnyTarget,
     /// "target <permanent_type>"
     TargetPermanent { permanent_type: PermanentType },
+    /// "this <source>"
+    Source(SourceObject),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1047,6 +1092,12 @@ pub enum ActivatedDamageEventEffect {
     PreventAllBut { amount: u32 },
     /// "that source deals that damage to you instead"
     RedirectToYou,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamageRedirectionDestination {
+    /// "its owner"
+    ItsOwner,
 }
 
 impl ActivatedEffect {

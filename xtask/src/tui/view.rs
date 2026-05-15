@@ -696,7 +696,7 @@ fn render_output(f: &mut Frame<'_>, area: Rect, state: &mut AppState) {
     set_output_cursor(f, inner, state, total_lines, scroll);
 }
 
-fn render_event_lines(state: &AppState, _width: u16) -> Vec<Line<'static>> {
+fn render_event_lines(state: &AppState, width: u16) -> Vec<Line<'static>> {
     let mut out = Vec::new();
     let mut current_iter: Option<u32> = None;
     let root = repo_root();
@@ -718,7 +718,7 @@ fn render_event_lines(state: &AppState, _width: u16) -> Vec<Line<'static>> {
             );
             current_iter = Some(row.iteration_index);
         }
-        for line in render_row(row, &root) {
+        for line in render_row(row, &root, width) {
             push_output_line(&mut out, state, line);
         }
     }
@@ -826,15 +826,15 @@ fn session_end_line(reason: &SessionEndReason) -> Line<'static> {
     ))
 }
 
-fn render_row(row: &TimelineRow, repo: &std::path::Path) -> Vec<Line<'static>> {
+fn render_row(row: &TimelineRow, repo: &std::path::Path, width: u16) -> Vec<Line<'static>> {
     match &row.kind {
         TimelineKind::StepHeader { index, label } => vec![Line::from(vec![
-            Span::styled("  step ", Style::default().fg(C_DIM)),
+            Span::styled("  ┌ step ", Style::default().fg(C_DIM)),
             Span::styled(
                 format!("{index}"),
                 Style::default().fg(C_FAINT).add_modifier(Modifier::BOLD),
             ),
-            Span::raw(" · "),
+            Span::styled(" · ", Style::default().fg(C_FAINT)),
             Span::styled(
                 label.clone(),
                 Style::default().fg(C_TITLE).add_modifier(Modifier::BOLD),
@@ -843,8 +843,8 @@ fn render_row(row: &TimelineRow, repo: &std::path::Path) -> Vec<Line<'static>> {
         TimelineKind::StepResult { ok, summary } => {
             let color = if *ok { C_GOOD } else { C_BAD };
             vec![Line::from(vec![
-                Span::styled("    ", Style::default()),
-                Span::styled(if *ok { "→ " } else { "✗ " }, Style::default().fg(color)),
+                Span::styled("  └ ", Style::default().fg(C_DIM)),
+                Span::styled(if *ok { "ok " } else { "err " }, Style::default().fg(color)),
                 Span::styled(summary.clone(), Style::default().fg(color)),
             ])]
         }
@@ -854,24 +854,23 @@ fn render_row(row: &TimelineRow, repo: &std::path::Path) -> Vec<Line<'static>> {
                 NoteLevel::Warn => C_WARN,
                 NoteLevel::Error => C_BAD,
             };
-            let mut out = Vec::new();
-            for (i, line) in text.lines().enumerate() {
-                out.push(if i == 0 {
-                    Line::from(vec![
-                        delta_cell(row.delta),
-                        kind_cell("note", color),
-                        Span::raw(line.to_string()),
-                    ])
-                } else {
-                    Line::from(vec![
-                        Span::raw("                "),
-                        Span::styled(line.to_string(), Style::default().fg(color)),
-                    ])
-                });
-            }
-            out
+            let label = match level {
+                NoteLevel::Info => "system",
+                NoteLevel::Warn => "warning",
+                NoteLevel::Error => "error",
+            };
+            render_message_block(
+                row.delta,
+                label,
+                color,
+                text,
+                Style::default().fg(color),
+                width,
+            )
         }
-        TimelineKind::Agent { provider, parsed } => render_agent_row(row, *provider, parsed, repo),
+        TimelineKind::Agent { provider, parsed } => {
+            render_agent_row(row, *provider, parsed, repo, width)
+        }
         TimelineKind::IterationFooter(outcome) => {
             let (text, color) = match outcome {
                 IterationOutcomeSummary::Committed {
@@ -903,89 +902,199 @@ fn render_agent_row(
     provider: AgentProvider,
     parsed: &ParsedAgentEvent,
     repo: &std::path::Path,
+    width: u16,
 ) -> Vec<Line<'static>> {
     let label = provider.label();
     match parsed {
-        ParsedAgentEvent::Init { model } => vec![Line::from(vec![
-            delta_cell(row.delta),
-            kind_cell(&format!("{label} init"), C_INFO),
-            Span::styled(format!("model={model}"), Style::default().fg(C_DIM)),
-        ])],
-        ParsedAgentEvent::AssistantText { text } => {
-            let mut out = Vec::new();
-            for (i, line) in text.lines().enumerate() {
-                out.push(if i == 0 {
-                    Line::from(vec![
-                        delta_cell(row.delta),
-                        kind_cell(label, C_TEXT),
-                        Span::styled(line.to_string(), Style::default().fg(C_TEXT)),
-                    ])
+        ParsedAgentEvent::Init { model } => render_message_block(
+            row.delta,
+            &format!("{label} init"),
+            C_INFO,
+            &format!("model={model}"),
+            Style::default().fg(C_DIM),
+            width,
+        ),
+        ParsedAgentEvent::AssistantText { text } => render_message_block(
+            row.delta,
+            label,
+            C_TEXT,
+            text,
+            Style::default().fg(C_TEXT),
+            width,
+        ),
+        ParsedAgentEvent::ToolUse { name, target } => match target {
+            crate::agent_events::ToolUseTarget::Command(command) => {
+                render_command_block(row.delta, command, width)
+            }
+            _ => {
+                let target_str = format_tool_target(target, repo);
+                let body = if target_str.is_empty() {
+                    name.clone()
                 } else {
-                    Line::from(vec![
-                        Span::raw("                "),
-                        Span::styled(line.to_string(), Style::default().fg(C_TEXT)),
-                    ])
-                });
+                    format!("{name} {target_str}")
+                };
+                render_message_block(
+                    row.delta,
+                    "tool",
+                    C_TOOL,
+                    &body,
+                    Style::default().fg(match target {
+                        crate::agent_events::ToolUseTarget::File(_) => C_FILE,
+                        _ => C_TOOL,
+                    }),
+                    width,
+                )
             }
-            out
-        }
-        ParsedAgentEvent::ToolUse { name, target } => {
-            let mut spans = vec![delta_cell(row.delta)];
-            match target {
-                crate::agent_events::ToolUseTarget::Command(command) => {
-                    spans.extend(render_command_spans(command));
-                }
-                _ => {
-                    let target_str = format_tool_target(target, repo);
-                    spans.push(kind_cell(name, C_TOOL));
-                    if !target_str.is_empty() {
-                        spans.push(Span::styled(
-                            target_str,
-                            Style::default().fg(match target {
-                                crate::agent_events::ToolUseTarget::File(_) => C_FILE,
-                                _ => C_TOOL,
-                            }),
-                        ));
-                    }
-                }
-            }
-            vec![Line::from(spans)]
-        }
+        },
         ParsedAgentEvent::ToolResult {
             first_line,
             is_error,
-        } => vec![Line::from(vec![
-            delta_cell(row.delta),
-            kind_cell(
-                if *is_error {
-                    "tool_error"
-                } else {
-                    "tool_result"
-                },
-                if *is_error { C_BAD } else { C_FAINT },
-            ),
-            Span::styled(
-                first_line.clone(),
-                Style::default().fg(if *is_error { C_BAD } else { C_FAINT }),
-            ),
-        ])],
+        } => render_message_block(
+            row.delta,
+            if *is_error {
+                "tool error"
+            } else {
+                "tool result"
+            },
+            if *is_error { C_BAD } else { C_DIM },
+            first_line,
+            Style::default().fg(if *is_error { C_BAD } else { C_DIM }),
+            width,
+        ),
         ParsedAgentEvent::Done {
             subtype,
             num_turns,
             total_cost_usd,
         } => {
             let color = if subtype == "success" { C_GOOD } else { C_BAD };
-            vec![Line::from(vec![
-                delta_cell(row.delta),
-                kind_cell(&format!("{label} done"), color),
-                Span::styled(
-                    format!("subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"),
-                    Style::default().fg(color),
-                ),
-            ])]
+            render_message_block(
+                row.delta,
+                &format!("{label} done"),
+                color,
+                &format!("subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"),
+                Style::default().fg(color),
+                width,
+            )
         }
         ParsedAgentEvent::Other => Vec::new(),
     }
+}
+
+fn render_message_block(
+    delta: u64,
+    label: &str,
+    label_color: Color,
+    text: &str,
+    text_style: Style,
+    width: u16,
+) -> Vec<Line<'static>> {
+    let body_width = body_width(width, 6);
+    let mut out = vec![message_header(delta, label, label_color)];
+    for raw in text.lines() {
+        let wrapped = wrap_plain(raw, body_width.max(1));
+        if wrapped.is_empty() {
+            out.push(message_body_line("", text_style));
+        } else {
+            for part in wrapped {
+                out.push(message_body_line(&part, text_style));
+            }
+        }
+    }
+    out.push(message_footer(label_color));
+    out
+}
+
+fn render_command_block(delta: u64, command: &str, width: u16) -> Vec<Line<'static>> {
+    let command = display_shell_command(command);
+    let body_width = body_width(width, 4);
+    let mut out = vec![message_header(delta, "tool exec", C_TOOL)];
+    let token_lines = wrap_shell_command(&command, body_width.max(1));
+    for (i, spans) in token_lines.into_iter().enumerate() {
+        let prompt = if i == 0 { "$ " } else { "  " };
+        let mut line = vec![Span::styled("  │ ", Style::default().fg(C_FAINT))];
+        line.push(Span::styled(
+            prompt,
+            Style::default().fg(C_CMD).add_modifier(Modifier::BOLD),
+        ));
+        line.extend(spans);
+        out.push(Line::from(line));
+    }
+    out.push(message_footer(C_TOOL));
+    out
+}
+
+fn message_header(delta: u64, label: &str, color: Color) -> Line<'static> {
+    Line::from(vec![
+        Span::styled("╭─ ", Style::default().fg(color)),
+        Span::styled(
+            label.to_string(),
+            Style::default().fg(color).add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(" · ", Style::default().fg(C_FAINT)),
+        delta_cell(delta),
+    ])
+}
+
+fn message_body_line(text: &str, style: Style) -> Line<'static> {
+    Line::from(vec![
+        Span::styled("  │ ", Style::default().fg(C_FAINT)),
+        Span::styled(text.to_string(), style),
+    ])
+}
+
+fn message_footer(color: Color) -> Line<'static> {
+    Line::from(Span::styled("  ╰", Style::default().fg(color)))
+}
+
+fn body_width(width: u16, reserved: u16) -> usize {
+    usize::from(width.saturating_sub(reserved)).max(1)
+}
+
+fn wrap_plain(text: &str, width: usize) -> Vec<String> {
+    if text.is_empty() {
+        return Vec::new();
+    }
+    let mut out = Vec::new();
+    let mut line = String::new();
+    for word in text.split_whitespace() {
+        let word_len = display_width(word);
+        let sep = usize::from(!line.is_empty());
+        if !line.is_empty() && display_width(&line) + sep + word_len > width {
+            out.push(std::mem::take(&mut line));
+        }
+        if word_len > width && line.is_empty() {
+            out.extend(split_long_word(word, width));
+            continue;
+        }
+        if !line.is_empty() {
+            line.push(' ');
+        }
+        line.push_str(word);
+    }
+    if !line.is_empty() {
+        out.push(line);
+    }
+    out
+}
+
+fn split_long_word(word: &str, width: usize) -> Vec<String> {
+    let width = width.max(1);
+    let mut out = Vec::new();
+    let mut line = String::new();
+    for ch in word.chars() {
+        if display_width(&line) >= width {
+            out.push(std::mem::take(&mut line));
+        }
+        line.push(ch);
+    }
+    if !line.is_empty() {
+        out.push(line);
+    }
+    out
+}
+
+fn display_width(text: &str) -> usize {
+    text.chars().count()
 }
 
 fn delta_cell(delta: u64) -> Span<'static> {
@@ -998,25 +1107,40 @@ fn delta_cell(delta: u64) -> Span<'static> {
     Span::styled(txt, Style::default().fg(color))
 }
 
-fn kind_cell(name: &str, color: Color) -> Span<'static> {
-    let padded = format!("[{name:<11}] ");
-    Span::styled(padded, Style::default().fg(color))
-}
-
-fn render_command_spans(command: &str) -> Vec<Span<'static>> {
-    let command = display_shell_command(command);
-    let mut spans = vec![Span::styled(
-        "$ ",
-        Style::default().fg(C_BAD).add_modifier(Modifier::BOLD),
-    )];
-    for (i, token) in shell_tokens(&command).into_iter().enumerate() {
-        if i > 0 {
-            spans.push(Span::raw(" "));
+fn wrap_shell_command(command: &str, width: usize) -> Vec<Vec<Span<'static>>> {
+    let mut out: Vec<Vec<Span<'static>>> = Vec::new();
+    let mut line: Vec<Span<'static>> = Vec::new();
+    let mut len = 0usize;
+    for (i, token) in shell_tokens(command).into_iter().enumerate() {
+        let token_len = display_width(&token);
+        let sep = usize::from(!line.is_empty());
+        if !line.is_empty() && len + sep + token_len > width {
+            out.push(std::mem::take(&mut line));
+            len = 0;
+        }
+        if !line.is_empty() {
+            line.push(Span::raw(" "));
+            len += 1;
         }
         let style = shell_token_style(&token, i == 0);
-        spans.push(Span::styled(token, style));
+        if token_len > width {
+            for part in split_long_word(&token, width) {
+                if !line.is_empty() {
+                    out.push(std::mem::take(&mut line));
+                }
+                line.push(Span::styled(part, style));
+                out.push(std::mem::take(&mut line));
+                len = 0;
+            }
+        } else {
+            len += token_len;
+            line.push(Span::styled(token, style));
+        }
     }
-    spans
+    if !line.is_empty() {
+        out.push(line);
+    }
+    out
 }
 
 fn display_shell_command(command: &str) -> String {

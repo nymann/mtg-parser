@@ -3,16 +3,17 @@ use std::fmt::Write;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
-    BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
-    Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
-    DamageKind, DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration,
-    DamagePreventionEffect, DamageRecipient, DamageRecipients, DestroyTarget, EachPlayerAction,
-    EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
-    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost,
-    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    ActivationPermission, BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color,
+    ColoredTargetEffect, Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType,
+    DamageAmount, DamageKind, DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
+    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -330,6 +331,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_source_object(out, *source);
             out.push_str(" at the beginning of the next end step.");
         }
+        Statement::OnlySourcesOwnerMayActivateThisAbility { source } => {
+            out.push_str("Only ");
+            write_source_object_possessive_without_apostrophe(out, *source);
+            out.push_str(" owner may activate this ability.");
+        }
         Statement::ActivateOnlyDuringYourUpkeep => {
             out.push_str("Activate only during your upkeep.");
         }
@@ -356,6 +362,14 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::ModalChoice { modes } => write_modal_choice(out, modes),
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
         Statement::ActivatedAbility(aa) => write_activated_ability(out, aa),
+        Statement::ActivatedAbilityWithActivationPermission {
+            ability,
+            permission,
+        } => {
+            write_activated_ability(out, ability);
+            out.push(' ');
+            write_activation_permission(out, *permission);
+        }
         Statement::TriggeredAbility(ta) => write_triggered_ability(out, ta),
         Statement::PhysicalAction(pa) => write_physical_action(out, *pa),
         Statement::Compound(stmts) => {
@@ -949,6 +963,16 @@ fn write_activated_ability(out: &mut String, aa: &ActivatedAbility) {
     write_activated_effect(out, &aa.effect);
 }
 
+fn write_activation_permission(out: &mut String, permission: ActivationPermission) {
+    match permission {
+        ActivationPermission::OnlySourcesOwner { source } => {
+            out.push_str("Only ");
+            write_source_object_possessive_without_apostrophe(out, source);
+            out.push_str(" owner may activate this ability.");
+        }
+    }
+}
+
 fn write_activated_cost(out: &mut String, cost: &ActivatedCost) {
     match cost {
         ActivatedCost::Mana(mana) => write_mana_cost(out, mana),
@@ -1529,7 +1553,8 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::EndOfCombat => "At ",
         TriggerEvent::ThisAuraEnters
         | TriggerEvent::ThisAuraLeavesTheBattlefield
-        | TriggerEvent::SourcePutIntoGraveyardFromBattlefield { .. } => "When ",
+        | TriggerEvent::SourcePutIntoGraveyardFromBattlefield { .. }
+        | TriggerEvent::SourceDies { .. } => "When ",
         TriggerEvent::EnchantedPermanentDies { .. } => "When ",
     });
     write_trigger_event(out, condition.event);
@@ -1604,6 +1629,10 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::EnchantedPermanentDies { permanent_type } => {
             out.push_str("enchanted ");
             out.push_str(permanent_type_name(permanent_type));
+            out.push_str(" dies");
+        }
+        TriggerEvent::SourceDies { source } => {
+            write_source_object(out, source);
             out.push_str(" dies");
         }
         TriggerEvent::EnchantedObjectBecomesStatus { object, status } => {
@@ -1824,6 +1853,17 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
         TriggerEffect::YouGainLife { amount } => {
             write_you_gain_life(out, *amount, SentenceCase::Lower);
         }
+        TriggerEffect::PlayerLosesLife { player, amount } => {
+            write_life_loss_player(out, *player);
+            out.push_str(" loses ");
+            write_life_loss_amount(out, *amount);
+            out.push_str(" life");
+            if let LifeLossAmount::HalfTheirLife { rounding } = *amount {
+                out.push_str(", rounded ");
+                out.push_str(rounding_name(rounding));
+            }
+            out.push('.');
+        }
         TriggerEffect::YouMayPayMana { cost } => {
             out.push_str("you may pay ");
             write_mana_cost(out, cost);
@@ -1938,6 +1978,19 @@ fn write_trigger_damage_recipient(out: &mut String, recipient: TriggerDamageReci
     }
 }
 
+fn write_life_loss_player(out: &mut String, player: LifeLossPlayer) {
+    match player {
+        LifeLossPlayer::ItsOwner => out.push_str("its owner"),
+    }
+}
+
+fn write_life_loss_amount(out: &mut String, amount: LifeLossAmount) {
+    match amount {
+        LifeLossAmount::Number(n) => write!(out, "{n}").expect("write to String never fails"),
+        LifeLossAmount::HalfTheirLife { .. } => out.push_str("half their"),
+    }
+}
+
 fn write_activated_damage_effect(out: &mut String, effect: &ActivatedDamageEffect) {
     match effect {
         ActivatedDamageEffect::SourceDealsDamage {
@@ -1970,6 +2023,24 @@ fn write_activated_damage_effect(out: &mut String, effect: &ActivatedDamageEffec
             out.push_str(" this turn, ");
             write_activated_damage_event_effect(out, *effect);
             out.push('.');
+        }
+        ActivatedDamageEffect::RedirectNextDamageThisTurn {
+            amount,
+            kind,
+            recipient,
+            destination,
+        } => {
+            out.push_str("The next ");
+            write_damage_amount(out, *amount);
+            out.push(' ');
+            if let Some(kind) = kind {
+                write_damage_kind_prefix(out, *kind);
+            }
+            out.push_str("damage that would be dealt to ");
+            write_activated_damage_recipient(out, *recipient);
+            out.push_str(" this turn is dealt to ");
+            write_damage_redirection_destination(out, *destination);
+            out.push_str(" instead.");
         }
         ActivatedDamageEffect::PreventDamageThisTurn { effect } => {
             write_activated_damage_prevention_effect(out, *effect);
@@ -2010,6 +2081,16 @@ fn write_activated_damage_recipient(out: &mut String, recipient: ActivatedDamage
             out.push_str("target ");
             out.push_str(permanent_type_name(permanent_type));
         }
+        ActivatedDamageRecipient::Source(source) => write_source_object(out, source),
+    }
+}
+
+fn write_damage_redirection_destination(
+    out: &mut String,
+    destination: DamageRedirectionDestination,
+) {
+    match destination {
+        DamageRedirectionDestination::ItsOwner => out.push_str("its owner"),
     }
 }
 
@@ -2033,6 +2114,17 @@ fn write_source_object(out: &mut String, source: SourceObject) {
             out.push_str(permanent_type_name(pt));
         }
         SourceObject::ThisAura => out.push_str("this Aura"),
+    }
+}
+
+fn write_source_object_possessive_without_apostrophe(out: &mut String, source: SourceObject) {
+    match source {
+        SourceObject::This(pt) => {
+            out.push_str("this ");
+            out.push_str(permanent_type_name(pt));
+            out.push('s');
+        }
+        SourceObject::ThisAura => out.push_str("this Auras"),
     }
 }
 

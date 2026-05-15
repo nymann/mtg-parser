@@ -259,3 +259,5 @@ mod orcish_artillery;
 mod orcish_oriflamme;
 #[path = "generated_patterns/paralyze.rs"]
 mod paralyze;
+#[path = "generated_patterns/personal_incarnation.rs"]
+mod personal_incarnation;

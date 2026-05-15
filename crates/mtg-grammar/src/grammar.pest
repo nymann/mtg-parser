@@ -73,6 +73,7 @@ sentence_statement = _{
   | if_you_do_cast_that_card_face_down_without_paying_mana_cost
   | if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead
   | if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step
+  | only_sources_owner_may_activate_this_ability
   | change_text_of_target_spell_or_permanent_replacing_basic_land_type
   | target_spell_or_permanent_becomes_color
   | target_permanent_until_eot
@@ -89,6 +90,7 @@ sentence_statement = _{
   | assign_each_pile_to_attacking_creature_at_random
   | creatures_in_assigned_pile_block_if_able
   | as_this_permanent_enters_choose_opponent
+  | activated_ability_with_activation_permission
   | activated_ability
   | static_as_long_as
   | static_colored_spells_cost_mana_more_to_cast
@@ -870,6 +872,9 @@ enchanted_object = _{ permanent_type | creature_type }
 // Activated abilities have a printed cost before the colon and one or
 // more effects after it. The cost pieces are kept explicit because tap
 // symbols are costs but not mana symbols.
+activated_ability_with_activation_permission = {
+    activated_ability ~ only_sources_owner_may_activate_this_ability
+}
 activated_ability = { activated_cost ~ ":" ~ activated_effect }
 // Multiple non-mana activated costs are printed comma-separated.
 activated_cost = { activated_cost_component ~ ("," ~ activated_cost_component)* }
@@ -965,6 +970,7 @@ activated_enchanted_gets_until_eot = {
 activated_damage_effect = _{
     activated_direct_damage_effect
   | next_damage_event_effect
+  | next_damage_redirection_effect
   | activated_damage_prevention_effect
 }
 activated_direct_damage_effect = {
@@ -995,9 +1001,14 @@ unblocked_creature_damage_source = { article ~ ^"unblocked" ~ ^"creature" }
 chosen_damage_source = { article ~ ^"source" }
 damage_kind = { ^"combat" }
 activated_damage_recipient = _{ you_damage_recipient | target_permanent_damage_recipient }
+activated_damage_redirection_recipient = _{
+    activated_damage_recipient
+  | source_object_damage_recipient
+}
 activated_damage_prevention_recipient = _{ you_damage_recipient | any_target_prevention_recipient }
 activated_damage_prevention_recipient_clause = { ^"to" ~ activated_damage_prevention_recipient }
 target_permanent_damage_recipient = { ^"target" ~ permanent_type }
+source_object_damage_recipient = { source_object }
 activated_damage_event_result = _{
     prevent_that_damage
   | prevent_all_but_that_damage
@@ -1010,6 +1021,14 @@ prevent_all_but_that_damage = {
 redirect_that_damage_to_you = {
     ^"that" ~ ^"source" ~ ^"deals" ~ ^"that" ~ ^"damage" ~ ^"to" ~ ^"you" ~ ^"instead"
 }
+next_damage_redirection_effect = {
+    ^"the" ~ ^"next" ~ damage_prevention_amount ~ damage_kind? ~ ^"damage"
+  ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"to"
+  ~ activated_damage_redirection_recipient ~ ^"this" ~ ^"turn" ~ ^"is"
+  ~ ^"dealt" ~ ^"to" ~ damage_redirection_destination ~ ^"instead" ~ "."
+}
+damage_redirection_destination = _{ its_owner_damage_destination }
+its_owner_damage_destination = { ^"its" ~ ^"owner" }
 activated_damage_prevention_effect = {
     damage_prevention_replacement_event ~ activated_damage_prevention_recipient_clause
   ~ damage_prevention_duration
@@ -1159,6 +1178,7 @@ trigger_event = _{
     you_are_dealt_damage
   | permanent_put_into_graveyard_from_battlefield
   | source_put_into_graveyard_from_battlefield
+  | source_dies
   | source_deals_damage_to_an_opponent
   | source_is_dealt_damage
   | aura_leaves_battlefield
@@ -1197,6 +1217,7 @@ permanent_put_into_graveyard_from_battlefield = {
   ~ ^"from" ~ ^"the" ~ ^"battlefield"
 }
 enchanted_permanent_dies = { ^"enchanted" ~ permanent_type ~ ^"dies" }
+source_dies = { source_object ~ ^"dies" }
 enchanted_object_becomes_status = {
     ^"enchanted" ~ enchanted_object ~ ^"becomes" ~ object_status
 }
@@ -1285,6 +1306,7 @@ trigger_effect = _{
   | source_gains_static_ability
   | that_creatures_controller_sacrifices_it
   | sacrifice_that_many_nontoken_permanents
+  | player_loses_life
   | you_lose_the_game
   | you_gain_life
 }
@@ -1423,6 +1445,12 @@ if_you_cant_source_deals_damage_to_you = {
   ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"you" ~ "."
 }
 
+only_sources_owner_may_activate_this_ability = {
+    ^"only" ~ source_object_possessive ~ ^"owner" ~ ^"may" ~ ^"activate"
+  ~ ^"this" ~ ^"ability" ~ "."
+}
+source_object_possessive = { ^"this" ~ source_object_kind ~ ("'s" | "s")? }
+
 unless_you_pay_mana_do_actions = {
     ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ ","
   ~ imperative_action ~ (^"and" ~ imperative_action)* ~ "."
@@ -1440,6 +1468,14 @@ put_that_many_named_counters_on_source = {
 you_may_remove_named_counter_from_source = {
     ^"you" ~ ^"may" ~ ^"remove" ~ article ~ named_counter ~ ^"from" ~ source_object ~ "."
 }
+player_loses_life = {
+    life_loss_player ~ ^"loses" ~ life_loss_amount ~ ^"life"
+  ~ ("," ~ rounding)? ~ "."
+}
+life_loss_player = _{ its_owner_life_loss_player }
+its_owner_life_loss_player = { ^"its" ~ ^"owner" }
+life_loss_amount = _{ half_their_life_loss_amount | unsigned_number }
+half_their_life_loss_amount = { ^"half" ~ ^"their" }
 delayed_remove_all_named_counters_from_linked_land = {
     ^"at" ~ ^"the" ~ ^"beginning" ~ ^"of" ~ ^"each" ~ ^"of" ~ ^"your"
   ~ ^"upkeeps" ~ ^"for" ~ ^"the" ~ ^"rest" ~ ^"of" ~ ^"the" ~ ^"game"
