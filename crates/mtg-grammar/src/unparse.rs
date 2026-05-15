@@ -76,6 +76,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 ", it can't be regenerated this turn, and if it would die this turn, exile it instead.",
             );
         }
+        Statement::Destroy { target } => write_destroy(out, target),
         Statement::DestroyTargetPermanents { permanent_types } => {
             write_destroy(
                 out,
@@ -1020,6 +1021,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
                 color: *color,
             });
         }
+        ActivatedEffect::Destroy { target } => write_destroy(out, target),
         ActivatedEffect::DestroyTargetPermanents { permanent_types } => {
             write_destroy(out, &DestroyTarget::TargetPermanents(permanent_types.clone()));
         }

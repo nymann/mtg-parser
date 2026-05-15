@@ -50,7 +50,12 @@ pub enum Statement {
     IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
         permanent_type: PermanentType,
     },
-    /// "Destroy target <permanent_type> [or <permanent_type>]."
+    /// CR 701 destroy keyword action, with the target/all/list axis captured
+    /// as data instead of separate sentence-shaped variants.
+    Destroy {
+        target: DestroyTarget,
+    },
+    /// Legacy spelling of "Destroy target <permanent_type> [or <permanent_type>]."
     DestroyTargetPermanents {
         permanent_types: Vec<PermanentType>,
     },
@@ -916,7 +921,12 @@ pub enum ActivatedEffect {
     DestroyTargetColoredPermanent {
         color: Color,
     },
-    /// "Destroy target <permanent_type> [or <permanent_type>]."
+    /// CR 701 destroy keyword action, with the target/all/list axis captured
+    /// as data instead of separate sentence-shaped variants.
+    Destroy {
+        target: DestroyTarget,
+    },
+    /// Legacy spelling of "Destroy target <permanent_type> [or <permanent_type>]."
     DestroyTargetPermanents {
         permanent_types: Vec<PermanentType>,
     },
