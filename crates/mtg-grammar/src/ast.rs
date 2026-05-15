@@ -16,7 +16,7 @@ pub enum Statement {
     /// "<source name> deals <amount> damage <recipients>."
     NamedSourceDealsDamage {
         #[serde(flatten)]
-        event: DamageEvent<String, DamageRecipients>,
+        event: NamedDamageEvent,
     },
     /// "Prevent <amount> [combat] damage that would be dealt [to <recipient>] this turn."
     PreventDamageThisTurn {
@@ -473,6 +473,8 @@ pub enum DamageRecipients {
     /// "to <recipient> and <recipient>"
     List(Vec<DamageRecipient>),
 }
+
+pub type NamedDamageEvent = DamageEvent<String, DamageRecipients>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DamageAmount {

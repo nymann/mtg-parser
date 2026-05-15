@@ -9,9 +9,9 @@ use crate::ast::{
     DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
     EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
     InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    NamedDamageEvent, ObjectStatus, OptionalCost, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerDamageCondition, TriggerDamageRecipient,
     TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
     ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -35,12 +35,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
         Statement::NamedSourceDealsDamage { event } => {
-            out.push_str(&event.source);
-            out.push_str(" deals ");
-            write_damage_amount(out, event.amount);
-            out.push_str(" damage");
-            write_damage_event_recipients(out, &event.recipient);
-            out.push('.');
+            write_named_damage_event(out, event);
         }
         Statement::PreventDamageThisTurn { effect } => write_damage_prevention_effect(out, *effect),
         Statement::PreventAllCombatDamageThisTurn => {
@@ -492,6 +487,15 @@ fn write_damage_event_recipients(out: &mut String, recipients: &DamageRecipients
             write_damage_recipients(out, recipients);
         }
     }
+}
+
+fn write_named_damage_event(out: &mut String, event: &NamedDamageEvent) {
+    out.push_str(&event.source);
+    out.push_str(" deals ");
+    write_damage_amount(out, event.amount);
+    out.push_str(" damage");
+    write_damage_event_recipients(out, &event.recipient);
+    out.push('.');
 }
 
 fn write_damage_recipient(out: &mut String, recipient: DamageRecipient) {

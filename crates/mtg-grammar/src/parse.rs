@@ -11,8 +11,8 @@ use crate::ast::{
     DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
     DestroyAllTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
     ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost, PermanentController,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerDamageCondition, TriggerDamageRecipient,
     TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
@@ -96,7 +96,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::destroy_target_permanent => destroy_target_permanent_from_pair(pair),
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
-        Rule::named_source_deals_damage => named_source_deals_damage_from_pair(pair),
+        Rule::damage_event_statement => damage_event_statement_from_pair(pair),
         Rule::damage_prevention_effect => damage_prevention_effect_statement_from_pair(pair),
         Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
         Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
@@ -743,17 +743,21 @@ fn this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair
     )
 }
 
-fn named_source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let mut inner = pair.into_inner();
-    let source_pair = next_inner(&mut inner, "named damage missing source name")?;
-    let amount_pair = next_inner(&mut inner, "named damage missing amount")?;
-    let recipients_pair = next_inner(&mut inner, "named damage missing recipients")?;
+fn damage_event_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     Ok(Statement::NamedSourceDealsDamage {
-        event: DamageEvent {
-            source: source_pair.as_str().to_string(),
-            amount: damage_event_amount_from_pair(amount_pair)?,
-            recipient: damage_event_recipients_from_pair(recipients_pair)?,
-        },
+        event: named_damage_event_from_pair(pair)?,
+    })
+}
+
+fn named_damage_event_from_pair(pair: Pair<Rule>) -> Result<NamedDamageEvent, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = next_inner(&mut inner, "damage event missing source name")?;
+    let amount_pair = next_inner(&mut inner, "damage event missing amount")?;
+    let recipients_pair = next_inner(&mut inner, "damage event missing recipients")?;
+    Ok(DamageEvent {
+        source: source_pair.as_str().to_string(),
+        amount: damage_event_amount_from_pair(amount_pair)?,
+        recipient: damage_event_recipients_from_pair(recipients_pair)?,
     })
 }
 

@@ -47,7 +47,7 @@ sentence_statement = _{
   | destroy_target_permanent
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
   | regenerate_target_creature
-  | named_source_deals_damage
+  | damage_event_statement
   | damage_prevention_effect
   | spend_only_color_mana_on_variable
   | as_source_enters_you_lose_life_equal_to_your_life_total
@@ -209,7 +209,7 @@ you_may_choose_new_targets_for_the_copy = {
 spell_type_choice = { spell_type ~ (^"or" ~ spell_type)* }
 spell_type = @{ ^"instant" | ^"sorcery" }
 
-named_source_deals_damage = {
+damage_event_statement = {
     proper_name ~ ^"deals" ~ damage_event_amount ~ ^"damage"
   ~ damage_event_recipients ~ "."
 }

@@ -13,6 +13,7 @@
 use std::path::PathBuf;
 use std::process::{Command, ExitCode};
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::{collections::HashMap, fmt};
 
 use anyhow::{anyhow, bail, Context, Result};
 
@@ -24,6 +25,9 @@ use crate::refactor_hotspot::{self, IterationOutcome};
 
 const DEFAULT_STOP_AFTER: u32 = 3;
 const DEFAULT_MAX_REFACTOR_ITERATIONS: u32 = 50;
+const DEFAULT_MAX_COMMITS_PER_THEME: u32 = 5;
+const DEFAULT_MAX_REPAIRS_PER_THEME: u32 = 2;
+const DEFAULT_LOW_VALUE_STOP_AFTER: u32 = 2;
 const DEFAULT_REPAIR_ATTEMPTS: u8 = 1;
 const AUTO_REFACTOR_THEMES: &[&str] = &[
     "damage",
@@ -37,6 +41,8 @@ const AUTO_REFACTOR_THEMES: &[&str] = &[
 const HELP: &str = "\
 cargo xtask grind [--set CODE]
                   [--stop-after N] [--max-refactor-iterations N]
+                  [--max-commits-per-theme N] [--max-repairs-per-theme N]
+                  [--low-value-stop-after N]
                   [--max-card-iterations N] [--repair-attempts N]
                   [--theme THEME] [--target PATH] [--fixed-refactor-target]
                   [--agent codex|claude] [--ui console|tui]
@@ -44,9 +50,10 @@ cargo xtask grind [--set CODE]
 
 Autonomous TDD-style meta-loop. Phase 1 automatically picks a narrow
 effect-frame refactor theme, runs refactor-hotspot until that theme reaches
---stop-after consecutive no-ops, then picks the next theme. Explicit --theme
-or --target keeps the old fixed-target behavior. Phase 2 then runs add-card on
-the cleaner foundation. Gate failures route to a repair agent before giving up.
+its no-op, commit, repair, or low-value budget, then picks the next theme.
+Explicit --theme or --target keeps the old fixed-target behavior. Phase 2 then
+runs add-card on the cleaner foundation. Gate failures route to a repair agent
+before giving up.
 ";
 
 pub fn run(args: &[String]) -> ExitCode {
@@ -76,6 +83,9 @@ pub struct Options {
     pub set: Option<String>,
     pub stop_after: u32,
     pub max_refactor_iterations: u32,
+    pub max_commits_per_theme: u32,
+    pub max_repairs_per_theme: u32,
+    pub low_value_stop_after: u32,
     /// 0 = unbounded (matches add-card's convention).
     pub max_card_iterations: u32,
     pub repair_attempts: u8,
@@ -92,6 +102,9 @@ impl Options {
         let mut set = None::<String>;
         let mut stop_after = DEFAULT_STOP_AFTER;
         let mut max_refactor_iterations = DEFAULT_MAX_REFACTOR_ITERATIONS;
+        let mut max_commits_per_theme = DEFAULT_MAX_COMMITS_PER_THEME;
+        let mut max_repairs_per_theme = DEFAULT_MAX_REPAIRS_PER_THEME;
+        let mut low_value_stop_after = DEFAULT_LOW_VALUE_STOP_AFTER;
         let mut max_card_iterations = 0u32;
         let mut repair_attempts = DEFAULT_REPAIR_ATTEMPTS;
         let mut agent = AgentProvider::Codex;
@@ -131,6 +144,45 @@ impl Options {
                     max_refactor_iterations = s["--max-refactor-iterations=".len()..]
                         .parse()
                         .with_context(|| format!("--max-refactor-iterations value: {s:?}"))?;
+                }
+                "--max-commits-per-theme" => {
+                    let v = iter
+                        .next()
+                        .ok_or_else(|| anyhow!("--max-commits-per-theme requires a value"))?;
+                    max_commits_per_theme = v
+                        .parse()
+                        .with_context(|| format!("--max-commits-per-theme value: {v:?}"))?;
+                }
+                s if s.starts_with("--max-commits-per-theme=") => {
+                    max_commits_per_theme = s["--max-commits-per-theme=".len()..]
+                        .parse()
+                        .with_context(|| format!("--max-commits-per-theme value: {s:?}"))?;
+                }
+                "--max-repairs-per-theme" => {
+                    let v = iter
+                        .next()
+                        .ok_or_else(|| anyhow!("--max-repairs-per-theme requires a value"))?;
+                    max_repairs_per_theme = v
+                        .parse()
+                        .with_context(|| format!("--max-repairs-per-theme value: {v:?}"))?;
+                }
+                s if s.starts_with("--max-repairs-per-theme=") => {
+                    max_repairs_per_theme = s["--max-repairs-per-theme=".len()..]
+                        .parse()
+                        .with_context(|| format!("--max-repairs-per-theme value: {s:?}"))?;
+                }
+                "--low-value-stop-after" => {
+                    let v = iter
+                        .next()
+                        .ok_or_else(|| anyhow!("--low-value-stop-after requires a value"))?;
+                    low_value_stop_after = v
+                        .parse()
+                        .with_context(|| format!("--low-value-stop-after value: {v:?}"))?;
+                }
+                s if s.starts_with("--low-value-stop-after=") => {
+                    low_value_stop_after = s["--low-value-stop-after=".len()..]
+                        .parse()
+                        .with_context(|| format!("--low-value-stop-after value: {s:?}"))?;
                 }
                 "--max-card-iterations" => {
                     let v = iter
@@ -193,11 +245,23 @@ impl Options {
         if max_refactor_iterations == 0 {
             bail!("--max-refactor-iterations must be greater than 0");
         }
+        if max_commits_per_theme == 0 {
+            bail!("--max-commits-per-theme must be greater than 0");
+        }
+        if max_repairs_per_theme == 0 {
+            bail!("--max-repairs-per-theme must be greater than 0");
+        }
+        if low_value_stop_after == 0 {
+            bail!("--low-value-stop-after must be greater than 0");
+        }
 
         Ok(Self {
             set,
             stop_after,
             max_refactor_iterations,
+            max_commits_per_theme,
+            max_repairs_per_theme,
+            low_value_stop_after,
             max_card_iterations,
             repair_attempts,
             agent,
@@ -215,6 +279,97 @@ fn parse_agent(value: &str) -> Result<AgentProvider> {
         "codex" => Ok(AgentProvider::Codex),
         "claude" => Ok(AgentProvider::Claude),
         other => bail!("--agent must be 'codex' or 'claude', got {other:?}"),
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+struct ThemeState {
+    commits: u32,
+    repairs: u32,
+    no_ops: u32,
+    low_value_commits: u32,
+    last_corpus_passing: Option<usize>,
+    last_grammar_rules: Option<usize>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ExhaustionReason {
+    NoOps,
+    CommitBudget,
+    RepairBudget,
+    LowValue,
+}
+
+impl fmt::Display for ExhaustionReason {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NoOps => write!(f, "no-op budget reached"),
+            Self::CommitBudget => write!(f, "commit budget reached"),
+            Self::RepairBudget => write!(f, "repair budget reached"),
+            Self::LowValue => write!(f, "low-value commit budget reached"),
+        }
+    }
+}
+
+impl ThemeState {
+    fn selected(&mut self) {
+        self.no_ops = 0;
+        self.last_corpus_passing = Some(refactor_hotspot::read_corpus_pp_total().0);
+        self.last_grammar_rules = Some(refactor_hotspot::count_grammar_rules());
+    }
+
+    fn record_commit(
+        &mut self,
+        corpus_passing: usize,
+        grammar_rules: usize,
+        opts: &Options,
+    ) -> Option<ExhaustionReason> {
+        self.commits += 1;
+        self.no_ops = 0;
+
+        let corpus_improved = self
+            .last_corpus_passing
+            .map(|previous| corpus_passing > previous)
+            .unwrap_or(false);
+        let grammar_simplified = self
+            .last_grammar_rules
+            .map(|previous| grammar_rules < previous)
+            .unwrap_or(false);
+        if corpus_improved || grammar_simplified {
+            self.low_value_commits = 0;
+        } else {
+            self.low_value_commits += 1;
+        }
+
+        self.last_corpus_passing = Some(corpus_passing);
+        self.last_grammar_rules = Some(grammar_rules);
+
+        self.exhaustion_reason(opts)
+    }
+
+    fn record_no_change(&mut self, opts: &Options) -> Option<ExhaustionReason> {
+        self.no_ops += 1;
+        self.exhaustion_reason(opts)
+    }
+
+    fn record_repair(&mut self, opts: &Options) -> Option<ExhaustionReason> {
+        self.repairs += 1;
+        self.no_ops = 0;
+        self.exhaustion_reason(opts)
+    }
+
+    fn exhaustion_reason(&self, opts: &Options) -> Option<ExhaustionReason> {
+        if self.no_ops >= opts.stop_after {
+            Some(ExhaustionReason::NoOps)
+        } else if self.commits >= opts.max_commits_per_theme {
+            Some(ExhaustionReason::CommitBudget)
+        } else if self.repairs >= opts.max_repairs_per_theme {
+            Some(ExhaustionReason::RepairBudget)
+        } else if self.low_value_commits >= opts.low_value_stop_after {
+            Some(ExhaustionReason::LowValue)
+        } else {
+            None
+        }
     }
 }
 
@@ -258,12 +413,12 @@ fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
     });
 
     let fixed_mode = opts.fixed_refactor_target || opts.theme.is_some() || opts.target.is_some();
-    let mut target_no_op_streak = 0u32;
     let mut current_theme = opts.theme.clone();
     let mut exhausted_themes = Vec::<String>::new();
+    let mut theme_states = HashMap::<String, ThemeState>::new();
     for iteration in 1..=opts.max_refactor_iterations {
-        if !fixed_mode && (current_theme.is_none() || target_no_op_streak >= opts.stop_after) {
-            if exhausted_themes.len() >= AUTO_REFACTOR_THEMES.len() {
+        if !fixed_mode && current_theme.is_none() {
+            if all_auto_themes_exhausted(&exhausted_themes) {
                 sink.emit(FlowEvent::Note {
                     level: NoteLevel::Info,
                     text: "grind: refactor phase complete — all automatic targets are quiet"
@@ -277,13 +432,25 @@ fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
                 iteration,
                 &exhausted_themes,
             )?);
-            target_no_op_streak = 0;
+            let key = active_refactor_key(opts, current_theme.as_deref());
+            theme_states.entry(key).or_default().selected();
         }
 
         // allow_dirty=true for the inner refactor opts because grind already
         // checked the precondition at the top. Subsequent iterations will
         // legitimately leave behind committed (or restored-after-repair)
         // state that the inner check would reject.
+        if opts.dry_run {
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Info,
+                text: format!(
+                    "grind: dry-run would run refactor-hotspot for `{}`",
+                    active_refactor_key(opts, current_theme.as_deref())
+                ),
+            });
+            return Ok(());
+        }
+
         let refactor_opts = refactor_hotspot::Options::for_grind(
             current_theme.as_deref(),
             opts.target.clone(),
@@ -300,35 +467,64 @@ fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
                 grammar_rules,
                 duration_secs,
             } => {
-                target_no_op_streak = 0;
+                let key = active_refactor_key(opts, current_theme.as_deref());
+                let reason = theme_states.entry(key).or_default().record_commit(
+                    corpus_passing,
+                    grammar_rules,
+                    opts,
+                );
                 sink.emit(FlowEvent::Note {
                     level: NoteLevel::Info,
                     text: format!(
                         "grind: iter {iteration} committed +{new_passes} ({corpus_passing}/{corpus_total}) — {grammar_rules} grammar rules, {duration_secs}s"
                     ),
                 });
+                if let Some(reason) = reason {
+                    if fixed_mode {
+                        sink.emit(FlowEvent::Note {
+                            level: NoteLevel::Info,
+                            text: format!(
+                                "grind: refactor phase complete — current target {reason}"
+                            ),
+                        });
+                        return Ok(());
+                    }
+                    mark_theme_exhausted(
+                        &mut exhausted_themes,
+                        current_theme.as_deref(),
+                        reason,
+                        sink,
+                    );
+                    current_theme = None;
+                }
             }
             IterationOutcome::NoChanges => {
-                target_no_op_streak += 1;
+                let key = active_refactor_key(opts, current_theme.as_deref());
+                let state = theme_states.entry(key).or_default();
+                let reason = state.record_no_change(opts);
                 sink.emit(FlowEvent::Note {
                     level: NoteLevel::Info,
                     text: format!(
                         "grind: target no-op {}/{} (iteration {})",
-                        target_no_op_streak, opts.stop_after, iteration
+                        state.no_ops, opts.stop_after, iteration
                     ),
                 });
-                if fixed_mode && target_no_op_streak >= opts.stop_after {
-                    sink.emit(FlowEvent::Note {
-                        level: NoteLevel::Info,
-                        text: format!(
-                            "grind: refactor phase complete — {} consecutive no-ops after {} iterations",
-                            target_no_op_streak, iteration
-                        ),
-                    });
-                    return Ok(());
-                }
-                if !fixed_mode && target_no_op_streak >= opts.stop_after {
-                    mark_theme_exhausted(&mut exhausted_themes, current_theme.as_deref(), sink);
+                if let Some(reason) = reason {
+                    if fixed_mode {
+                        sink.emit(FlowEvent::Note {
+                            level: NoteLevel::Info,
+                            text: format!(
+                                "grind: refactor phase complete — current target {reason} after {iteration} iterations"
+                            ),
+                        });
+                        return Ok(());
+                    }
+                    mark_theme_exhausted(
+                        &mut exhausted_themes,
+                        current_theme.as_deref(),
+                        reason,
+                        sink,
+                    );
                     current_theme = None;
                 }
             }
@@ -339,25 +535,57 @@ fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
                 });
                 let repaired = try_repair(opts, sink, "refactor", iteration, &error)?;
                 if repaired {
-                    target_no_op_streak = 0;
+                    let key = active_refactor_key(opts, current_theme.as_deref());
+                    let reason = theme_states.entry(key).or_default().record_repair(opts);
+                    if let Some(reason) = reason {
+                        if fixed_mode {
+                            sink.emit(FlowEvent::Note {
+                                level: NoteLevel::Info,
+                                text: format!(
+                                    "grind: refactor phase complete — current target {reason}"
+                                ),
+                            });
+                            return Ok(());
+                        }
+                        mark_theme_exhausted(
+                            &mut exhausted_themes,
+                            current_theme.as_deref(),
+                            reason,
+                            sink,
+                        );
+                        current_theme = None;
+                    }
                 } else {
                     // Repair couldn't fix it. Restore the tree so the next
                     // iteration starts clean, count this as a no-op so the
                     // loop still terminates.
                     discard_working_changes(sink)?;
-                    target_no_op_streak += 1;
+                    let key = active_refactor_key(opts, current_theme.as_deref());
+                    let state = theme_states.entry(key).or_default();
+                    let reason = state.record_no_change(opts);
                     sink.emit(FlowEvent::Note {
                         level: NoteLevel::Warn,
                         text: format!(
                             "grind: repair exhausted, treating as no-op {}/{}",
-                            target_no_op_streak, opts.stop_after
+                            state.no_ops, opts.stop_after
                         ),
                     });
-                    if fixed_mode && target_no_op_streak >= opts.stop_after {
-                        return Ok(());
-                    }
-                    if !fixed_mode && target_no_op_streak >= opts.stop_after {
-                        mark_theme_exhausted(&mut exhausted_themes, current_theme.as_deref(), sink);
+                    if let Some(reason) = reason {
+                        if fixed_mode {
+                            sink.emit(FlowEvent::Note {
+                                level: NoteLevel::Info,
+                                text: format!(
+                                    "grind: refactor phase complete — current target {reason}"
+                                ),
+                            });
+                            return Ok(());
+                        }
+                        mark_theme_exhausted(
+                            &mut exhausted_themes,
+                            current_theme.as_deref(),
+                            reason,
+                            sink,
+                        );
                         current_theme = None;
                     }
                 }
@@ -533,9 +761,23 @@ fn fallback_theme(iteration: u32, exhausted_themes: &[String]) -> String {
     AUTO_REFACTOR_THEMES[0].to_string()
 }
 
+fn all_auto_themes_exhausted(exhausted_themes: &[String]) -> bool {
+    AUTO_REFACTOR_THEMES
+        .iter()
+        .all(|theme| exhausted_themes.iter().any(|done| done == theme))
+}
+
+fn active_refactor_key(opts: &Options, theme: Option<&str>) -> String {
+    theme
+        .or(opts.target.as_deref())
+        .unwrap_or("grammar-core")
+        .to_string()
+}
+
 fn mark_theme_exhausted(
     exhausted_themes: &mut Vec<String>,
     theme: Option<&str>,
+    reason: ExhaustionReason,
     sink: &mut dyn FlowSink,
 ) {
     let Some(theme) = theme else {
@@ -546,7 +788,7 @@ fn mark_theme_exhausted(
     }
     sink.emit(FlowEvent::Note {
         level: NoteLevel::Info,
-        text: format!("grind: target `{theme}` is quiet; selecting another target"),
+        text: format!("grind: target `{theme}` exhausted ({reason}); selecting another target"),
     });
 }
 
@@ -838,10 +1080,10 @@ fn run_command_gate(label: &str, program: &str, args: &[&str]) -> Result<()> {
 
 fn git_commit_repair(message: &str) -> Result<CommitOutcome> {
     let add = Command::new("git")
-        .args(["add", "-A"])
+        .args(["add", "-A", "--", ".", ":(exclude).grind/**"])
         .current_dir(repo_root())
         .status()
-        .context("git add -A")?;
+        .context("git add -A -- . :(exclude).grind/**")?;
     if !add.success() {
         bail!("git add failed");
     }
@@ -949,6 +1191,9 @@ mod tests {
             opts.max_refactor_iterations,
             DEFAULT_MAX_REFACTOR_ITERATIONS
         );
+        assert_eq!(opts.max_commits_per_theme, DEFAULT_MAX_COMMITS_PER_THEME);
+        assert_eq!(opts.max_repairs_per_theme, DEFAULT_MAX_REPAIRS_PER_THEME);
+        assert_eq!(opts.low_value_stop_after, DEFAULT_LOW_VALUE_STOP_AFTER);
         assert_eq!(opts.max_card_iterations, 0);
         assert_eq!(opts.repair_attempts, DEFAULT_REPAIR_ATTEMPTS);
         assert!(!opts.allow_dirty);
@@ -967,6 +1212,12 @@ mod tests {
             "5",
             "--max-refactor-iterations",
             "10",
+            "--max-commits-per-theme",
+            "4",
+            "--max-repairs-per-theme",
+            "3",
+            "--low-value-stop-after",
+            "2",
             "--max-card-iterations",
             "3",
             "--repair-attempts",
@@ -984,6 +1235,9 @@ mod tests {
         assert_eq!(opts.set.as_deref(), Some("neo"));
         assert_eq!(opts.stop_after, 5);
         assert_eq!(opts.max_refactor_iterations, 10);
+        assert_eq!(opts.max_commits_per_theme, 4);
+        assert_eq!(opts.max_repairs_per_theme, 3);
+        assert_eq!(opts.low_value_stop_after, 2);
         assert_eq!(opts.max_card_iterations, 3);
         assert_eq!(opts.repair_attempts, 2);
         assert!(matches!(opts.agent, AgentProvider::Claude));
@@ -1002,6 +1256,9 @@ mod tests {
             "--set=neo",
             "--stop-after=4",
             "--max-refactor-iterations=20",
+            "--max-commits-per-theme=7",
+            "--max-repairs-per-theme=4",
+            "--low-value-stop-after=3",
             "--repair-attempts=0",
             "--agent=claude",
             "--theme=destroy",
@@ -1010,6 +1267,9 @@ mod tests {
         assert_eq!(opts.set.as_deref(), Some("neo"));
         assert_eq!(opts.stop_after, 4);
         assert_eq!(opts.max_refactor_iterations, 20);
+        assert_eq!(opts.max_commits_per_theme, 7);
+        assert_eq!(opts.max_repairs_per_theme, 4);
+        assert_eq!(opts.low_value_stop_after, 3);
         assert_eq!(opts.repair_attempts, 0);
         assert!(matches!(opts.agent, AgentProvider::Claude));
         assert_eq!(opts.theme.as_deref(), Some("destroy"));
@@ -1026,6 +1286,18 @@ mod tests {
         let err =
             Options::parse(&s(&["--max-refactor-iterations", "0"])).expect_err("should reject");
         assert!(err.to_string().contains("max-refactor-iterations"));
+    }
+
+    #[test]
+    fn rejects_zero_theme_budgets() {
+        let err = Options::parse(&s(&["--max-commits-per-theme", "0"])).expect_err("should reject");
+        assert!(err.to_string().contains("max-commits-per-theme"));
+
+        let err = Options::parse(&s(&["--max-repairs-per-theme", "0"])).expect_err("should reject");
+        assert!(err.to_string().contains("max-repairs-per-theme"));
+
+        let err = Options::parse(&s(&["--low-value-stop-after", "0"])).expect_err("should reject");
+        assert!(err.to_string().contains("low-value-stop-after"));
     }
 
     #[test]
@@ -1057,5 +1329,54 @@ mod tests {
     fn fallback_theme_skips_exhausted_themes() {
         let exhausted = vec!["damage".to_string(), "destroy".to_string()];
         assert_eq!(fallback_theme(1, &exhausted), "prevention");
+    }
+
+    #[test]
+    fn detects_all_auto_themes_exhausted() {
+        let exhausted = AUTO_REFACTOR_THEMES
+            .iter()
+            .map(|theme| (*theme).to_string())
+            .collect::<Vec<_>>();
+        assert!(all_auto_themes_exhausted(&exhausted));
+
+        let partial = vec!["damage".to_string(), "destroy".to_string()];
+        assert!(!all_auto_themes_exhausted(&partial));
+    }
+
+    #[test]
+    fn theme_state_exhausts_on_commit_budget() {
+        let opts = Options::parse(&s(&["--max-commits-per-theme", "2"])).expect("parse");
+        let mut state = ThemeState::default();
+        assert_eq!(state.record_commit(10, 100, &opts), None);
+        assert_eq!(
+            state.record_commit(11, 99, &opts),
+            Some(ExhaustionReason::CommitBudget)
+        );
+    }
+
+    #[test]
+    fn theme_state_exhausts_on_repair_budget() {
+        let opts = Options::parse(&s(&["--max-repairs-per-theme", "2"])).expect("parse");
+        let mut state = ThemeState::default();
+        assert_eq!(state.record_repair(&opts), None);
+        assert_eq!(
+            state.record_repair(&opts),
+            Some(ExhaustionReason::RepairBudget)
+        );
+    }
+
+    #[test]
+    fn theme_state_exhausts_on_low_value_streak() {
+        let opts = Options::parse(&s(&["--low-value-stop-after", "2"])).expect("parse");
+        let mut state = ThemeState {
+            last_corpus_passing: Some(198),
+            last_grammar_rules: Some(220),
+            ..ThemeState::default()
+        };
+        assert_eq!(state.record_commit(198, 220, &opts), None);
+        assert_eq!(
+            state.record_commit(198, 221, &opts),
+            Some(ExhaustionReason::LowValue)
+        );
     }
 }

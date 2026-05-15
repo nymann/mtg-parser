@@ -47,14 +47,17 @@ Commands:
               [--out PATH]    triggered-abilities, and unparse-templates.
               [--ui console|tui]
   grind       [--set CODE]    Meta-loop: run refactor-hotspot until N consecutive
-              [--stop-after N]    no-ops (default 3), then hand off to add-card on
-              [--max-refactor-iterations N]  the cleaner foundation. Gate failures
-              [--max-card-iterations N]      route to a freeform repair agent before
-              [--repair-attempts N]          giving up. Use --theme / --target to
-              [--theme THEME] [--target PATH]  steer the refactor phase. Defaults:
-              [--agent codex|claude] [--ui ...]  --stop-after 3,
-              [--allow-dirty] [--dry-run]    --max-refactor-iterations 50,
-                                             --repair-attempts 1.
+              [--stop-after N]    no-ops, commit budget, repair budget, or low-value
+              [--max-refactor-iterations N]  streak, then hand off to add-card on
+              [--max-commits-per-theme N]    the cleaner foundation. Gate failures
+              [--max-repairs-per-theme N]    route to a freeform repair agent before
+              [--low-value-stop-after N]     giving up. Use --theme / --target to
+              [--max-card-iterations N]      steer the refactor phase. Defaults:
+              [--repair-attempts N]          --stop-after 3,
+              [--theme THEME] [--target PATH]  --max-refactor-iterations 50,
+              [--agent codex|claude] [--ui ...]  --max-commits-per-theme 5,
+              [--allow-dirty] [--dry-run]    --max-repairs-per-theme 2,
+                                             --low-value-stop-after 2.
   add-card    [--set CODE]    Orchestrated loop: pick the next failing card in
               [--max-iterations N]  the corpus, hand it to a coding agent, gate the
               [--dry-run] [--allow-dirty]  result through tier-1/2 + corpus + commit. When
