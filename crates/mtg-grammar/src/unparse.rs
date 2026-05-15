@@ -2312,6 +2312,15 @@ fn write_destroy_target(out: &mut String, target: &DestroyTarget) {
             out.push_str("target ");
             write_permanent_type_choice(out, permanent_types);
         }
+        DestroyTarget::TargetColoredPermanent(color) => {
+            out.push_str("target ");
+            out.push_str(color_name(*color));
+            out.push_str(" permanent");
+        }
+        DestroyTarget::TargetCreatureType(creature_type) => {
+            out.push_str("target ");
+            write_creature_type(out, *creature_type);
+        }
         DestroyTarget::AllPermanents(permanent_types) => {
             out.push_str("all ");
             write_permanent_type_plural_list(out, permanent_types);

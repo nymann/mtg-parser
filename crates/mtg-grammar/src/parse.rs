@@ -300,13 +300,16 @@ fn colored_target_effect_from_pair(pair: Pair<Rule>) -> Result<ColoredTargetEffe
 }
 
 fn colored_target_action_from_pair(pair: Pair<Rule>) -> Result<ColoredTargetEffect, ParseError> {
-    let color_pair = only_inner(pair.clone(), "colored target action missing color")?;
-    let color = color_from_pair(color_pair)?;
     match pair.as_rule() {
         Rule::counter_target_colored_spell_action => {
+            let color_pair = only_inner(pair, "counter colored spell missing color")?;
+            let color = color_from_pair(color_pair)?;
             Ok(ColoredTargetEffect::CounterSpell { color })
         }
         Rule::destroy_target_colored_permanent_action => {
+            let target_pair = only_inner(pair, "destroy colored permanent missing target")?;
+            let color_pair = only_inner(target_pair, "target colored permanent missing color")?;
+            let color = color_from_pair(color_pair)?;
             Ok(ColoredTargetEffect::DestroyPermanent { color })
         }
         _ => Err(ParseError::Internal("colored_target_action")),
@@ -690,6 +693,19 @@ fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseErro
         Rule::target_permanent_choice => Ok(DestroyTarget::TargetPermanents(
             target_permanent_choice_from_pair(pair)?,
         )),
+        Rule::target_colored_permanent => {
+            let color_pair = only_inner(pair, "target_colored_permanent missing color")?;
+            Ok(DestroyTarget::TargetColoredPermanent(color_from_pair(
+                color_pair,
+            )?))
+        }
+        Rule::target_creature_type => {
+            let creature_type_pair =
+                only_inner(pair, "target_creature_type missing creature_type")?;
+            Ok(DestroyTarget::TargetCreatureType(creature_type_from_pair(
+                creature_type_pair,
+            )?))
+        }
         Rule::destroy_all => {
             let target_pair = only_inner(pair, "destroy_all missing target")?;
             destroy_target_from_pair(target_pair)
@@ -3050,15 +3066,6 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             }
         }
         Rule::destroy => activated_destroy_from_pair(pair),
-        Rule::destroy_target_creature_type => {
-            let creature_type_pair = pair
-                .into_inner()
-                .next()
-                .ok_or(ParseError::Internal("destroy target missing creature_type"))?;
-            Ok(ActivatedEffect::DestroyTargetCreatureType {
-                creature_type: creature_type_from_pair(creature_type_pair)?,
-            })
-        }
         Rule::look_at_target_players_hand => Ok(ActivatedEffect::LookAtTargetPlayersHand),
         Rule::activated_draw_cards => {
             let count_pair = pair

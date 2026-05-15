@@ -268,6 +268,10 @@ pub enum DestroyTarget {
     /// Shared target axis for the CR 701 destroy keyword action.
     /// "target <permanent_type> [or <permanent_type>]"
     TargetPermanents(Vec<PermanentType>),
+    /// "target <color> permanent"
+    TargetColoredPermanent(Color),
+    /// "target <creature_type>"
+    TargetCreatureType(CreatureType),
     /// "all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]"
     AllPermanents(Vec<PermanentType>),
     /// "all <basic_land_type>s"

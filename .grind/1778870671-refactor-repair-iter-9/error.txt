@@ -1,0 +1,41 @@
+cargo test failed with exit status: 101
+    |                                              ^^^^^^^^^^^^^^^^^^^^^^^ variant not found in `Statement`
+
+error: could not compile `mtg-semantic` (test "unit") due to 5 previous errors
+error[E0599]: no variant named `DestroyTargetPermanents` found for enum `Statement`
+   --> crates/mtg-semantic/tests/prop.rs:238:25
+    |
+238 |         Just(Statement::DestroyTargetPermanents {
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^ variant not found in `Statement`
+
+error[E0599]: no variant named `DestroyTargetPermanents` found for enum `Statement`
+   --> crates/mtg-semantic/tests/prop.rs:328:24
+    |
+328 |             Statement::DestroyTargetPermanents {
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^ variant not found in `Statement`
+
+error[E0599]: no variant named `DestroyTargetPermanents` found for enum `Statement`
+   --> crates/mtg-semantic/tests/prop.rs:333:24
+    |
+333 |             Statement::DestroyTargetPermanents {
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^ variant not found in `Statement`
+
+error[E0599]: no variant named `DestroyAll` found for enum `Statement`
+   --> crates/mtg-semantic/tests/prop.rs:338:54
+    |
+338 |             .prop_map(|permanent_types| { Statement::DestroyAll { permanent_types } }),
+    |                                                      ^^^^^^^^^^
+    |
+help: there is a variant with a similar name
+    |
+338 -             .prop_map(|permanent_types| { Statement::DestroyAll { permanent_types } }),
+338 +             .prop_map(|permanent_types| { Statement::Destroy { permanent_types } }),
+    |
+
+error[E0599]: no variant named `DestroyAllBasicLands` found for enum `Statement`
+   --> crates/mtg-semantic/tests/prop.rs:346:54
+    |
+346 |             .prop_map(|basic_land_type| { Statement::DestroyAllBasicLands { basic_land_type } }),
+    |                                                      ^^^^^^^^^^^^^^^^^^^^ variant not found in `Statement`
+
+error: could not compile `mtg-semantic` (test "prop") due to 5 previous errors
