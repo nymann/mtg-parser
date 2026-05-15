@@ -211,6 +211,9 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_mana_cost(out, mana);
             out.push('.');
         }
+        ActivatedEffect::AddOneManaOfAnyColor => {
+            out.push_str("Add one mana of any color.");
+        }
         ActivatedEffect::Untap(source) => {
             out.push_str("Untap ");
             write_source_object(out, *source);

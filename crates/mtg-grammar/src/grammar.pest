@@ -203,7 +203,8 @@ enchanted_object = _{ permanent_type | creature_type }
 activated_ability = { activated_cost ~ ":" ~ activated_effect }
 activated_cost = { activated_cost_component+ }
 activated_cost_component = _{ mana_symbol | tap_symbol }
-activated_effect = _{ add_mana | untap_source }
+activated_effect = _{ add_one_mana_of_any_color | add_mana | untap_source }
+add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"color" ~ "." }
 add_mana = { ^"add" ~ mana_cost ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
 

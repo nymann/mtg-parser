@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 35,
+  "passing": 36,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -52,8 +52,7 @@
       "status": "pass"
     },
     "lea/Birds of Paradise": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:10\n  |\n2 | {T}: Add one mana of any color.\n  |          ^---\n  |\n  = expected mana_symbol"
+      "status": "pass"
     },
     "lea/Black Knight": {
       "status": "fail",
@@ -77,7 +76,7 @@
     },
     "lea/Blessing": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {W}: Enchanted creature gets +1/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {W}: Enchanted creature gets +1/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Blue Elemental Blast": {
       "status": "fail",
@@ -125,19 +124,19 @@
     },
     "lea/Circle of Protection: Blue": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time a blue source of your choice would deal damage to you this turn, prevent that damage.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time a blue source of your choice would deal damage to you this turn, prevent that damage.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Circle of Protection: Green": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time a green source of your choice would deal damage to you this turn, prevent that damage.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time a green source of your choice would deal damage to you this turn, prevent that damage.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Circle of Protection: Red": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time a red source of your choice would deal damage to you this turn, prevent that damage.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time a red source of your choice would deal damage to you this turn, prevent that damage.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Circle of Protection: White": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time a white source of your choice would deal damage to you this turn, prevent that damage.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time a white source of your choice would deal damage to you this turn, prevent that damage.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Clockwork Beast": {
       "status": "fail",
@@ -220,7 +219,7 @@
     },
     "lea/Deathgrip": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:9\n  |\n1 | {B}{B}: Counter target green spell.\n  |         ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:9\n  |\n1 | {B}{B}: Counter target green spell.\n  |         ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Deathlace": {
       "status": "fail",
@@ -232,7 +231,7 @@
     },
     "lea/Demonic Hordes": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target land.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target land.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Demonic Tutor": {
       "status": "fail",
@@ -256,7 +255,7 @@
     },
     "lea/Dragon Whelp": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn. If this ability has been activated four or more times this turn, sacrifice this creature at the beginning of the next end step.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn. If this ability has been activated four or more times this turn, sacrifice this creature at the beginning of the next end step.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Drain Life": {
       "status": "fail",
@@ -268,15 +267,15 @@
     },
     "lea/Drudge Skeletons": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Dwarven Demolition Team": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target Wall.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target Wall.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Dwarven Warriors": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Target creature with power 2 or less can't be blocked this turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Target creature with power 2 or less can't be blocked this turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Earth Elemental": {
       "status": "fail",
@@ -328,7 +327,7 @@
     },
     "lea/Firebreathing": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: Enchanted creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: Enchanted creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Flashfires": {
       "status": "fail",
@@ -348,7 +347,7 @@
     },
     "lea/Forcefield": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time an unblocked creature of your choice would deal combat damage to you this turn, prevent all but 1 of that damage.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time an unblocked creature of your choice would deal combat damage to you this turn, prevent all but 1 of that damage.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Forest": {
       "status": "fail",
@@ -360,7 +359,7 @@
     },
     "lea/Frozen Shade": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {B}: This creature gets +1/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {B}: This creature gets +1/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Fungusaur": {
       "status": "fail",
@@ -384,7 +383,7 @@
     },
     "lea/Glasses of Urza": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Look at target player's hand.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Look at target player's hand.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Gloom": {
       "status": "fail",
@@ -392,7 +391,7 @@
     },
     "lea/Goblin Balloon Brigade": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {R}: This creature gains flying until end of turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {R}: This creature gains flying until end of turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Goblin King": {
       "status": "fail",
@@ -400,7 +399,7 @@
     },
     "lea/Granite Gargoyle": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +0/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +0/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Gray Ogre": {
       "status": "fail",
@@ -432,7 +431,7 @@
     },
     "lea/Holy Armor": {
       "status": "fail",
-      "error": "parse: parse error:  --> 3:6\n  |\n3 | {W}: Enchanted creature gets +0/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 3:6\n  |\n3 | {W}: Enchanted creature gets +0/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Holy Strength": {
       "status": "pass"
@@ -503,11 +502,11 @@
     },
     "lea/Jade Monolith": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time a source of your choice would deal damage to target creature this turn, that source deals that damage to you instead.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {1}: The next time a source of your choice would deal damage to target creature this turn, that source deals that damage to you instead.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Jade Statue": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {2}: This artifact becomes a 3/6 Golem artifact creature until end of combat. Activate only during combat.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {2}: This artifact becomes a 3/6 Golem artifact creature until end of combat. Activate only during combat.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Jayemdae Tome": {
       "status": "fail",
@@ -555,7 +554,7 @@
     },
     "lea/Lifeforce": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:9\n  |\n1 | {G}{G}: Counter target black spell.\n  |         ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:9\n  |\n1 | {G}{G}: Counter target black spell.\n  |         ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Lifelace": {
       "status": "fail",
@@ -579,7 +578,7 @@
     },
     "lea/Living Wall": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {1}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {1}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Llanowar Elves": {
       "status": "pass"
@@ -668,7 +667,7 @@
     },
     "lea/Nettling Imp": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn. That creature attacks this turn if able. Destroy it at the beginning of the next end step if it didn't attack this turn. Activate only during an opponent's turn, before attackers are declared.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn. That creature attacks this turn if able. Destroy it at the beginning of the next end step if it didn't attack this turn. Activate only during an opponent's turn, before attackers are declared.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Nevinyrral's Disk": {
       "status": "fail",
@@ -688,7 +687,7 @@
     },
     "lea/Orcish Artillery": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: This creature deals 2 damage to any target and 3 damage to you.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: This creature deals 2 damage to any target and 3 damage to you.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Orcish Oriflamme": {
       "status": "fail",
@@ -704,7 +703,7 @@
     },
     "lea/Personal Incarnation": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {0}: The next 1 damage that would be dealt to this creature this turn is dealt to its owner instead. Only this creatures owner may activate this ability.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {0}: The next 1 damage that would be dealt to this creature this turn is dealt to its owner instead. Only this creatures owner may activate this ability.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Pestilence": {
       "status": "fail",
@@ -751,7 +750,7 @@
     },
     "lea/Prodigal Sorcerer": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: This creature deals 1 damage to any target.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: This creature deals 1 damage to any target.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Psionic Blast": {
       "status": "fail",
@@ -783,7 +782,7 @@
     },
     "lea/Regeneration": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {G}: Regenerate enchanted creature.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {G}: Regenerate enchanted creature.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Regrowth": {
       "status": "fail",
@@ -814,7 +813,7 @@
     },
     "lea/Royal Assassin": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target tapped creature.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target tapped creature.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Sacrifice": {
       "status": "fail",
@@ -822,7 +821,7 @@
     },
     "lea/Samite Healer": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Prevent the next 1 damage that would be dealt to any target this turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Prevent the next 1 damage that would be dealt to any target this turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Savannah": {
       "status": "fail",
@@ -873,7 +872,7 @@
     },
     "lea/Shivan Dragon": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Simulacrum": {
       "status": "fail",
@@ -916,7 +915,7 @@
     },
     "lea/Stone Giant": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Stone Rain": {
       "status": "fail",
@@ -1017,7 +1016,7 @@
     },
     "lea/Uthden Troll": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {R}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {R}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Verduran Enchantress": {
       "status": "fail",
@@ -1041,15 +1040,15 @@
     },
     "lea/Wall of Bone": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Wall of Brambles": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {G}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {G}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Wall of Fire": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Wall of Ice": {
       "status": "pass"
@@ -1062,7 +1061,7 @@
     },
     "lea/Wall of Water": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {U}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {U}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Wall of Wood": {
       "status": "pass"
@@ -1107,7 +1106,7 @@
     },
     "lea/Will-o'-the-Wisp": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana or untap_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_one_mana_of_any_color, add_mana, or untap_source"
     },
     "lea/Winter Orb": {
       "status": "fail",

@@ -134,6 +134,8 @@ pub enum ActivatedCost {
 pub enum ActivatedEffect {
     /// "Add <mana>."
     AddMana(ManaCost),
+    /// "Add one mana of any color."
+    AddOneManaOfAnyColor,
     /// "Untap this <permanent_type>."
     Untap(SourceObject),
 }

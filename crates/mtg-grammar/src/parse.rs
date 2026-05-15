@@ -564,6 +564,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 .ok_or(ParseError::Internal("add_mana missing mana_cost"))?;
             Ok(ActivatedEffect::AddMana(mana_cost_from_pair(mana_pair)))
         }
+        Rule::add_one_mana_of_any_color => Ok(ActivatedEffect::AddOneManaOfAnyColor),
         Rule::untap_source => {
             let source_pair = pair
                 .into_inner()

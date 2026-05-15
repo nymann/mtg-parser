@@ -28,3 +28,5 @@ mod basalt_monolith;
 mod benalish_hero;
 #[path = "generated/berserk.rs"]
 mod berserk;
+#[path = "generated/birds_of_paradise.rs"]
+mod birds_of_paradise;
