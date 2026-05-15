@@ -813,6 +813,7 @@ trigger_event = _{
   | beginning_of_the_next_end_step
   | you_play_permanent
   | player_casts_colored_spell
+  | basic_land_type_is_tapped_for_mana
   | permanent_enters
 }
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
@@ -828,6 +829,9 @@ permanent_put_into_graveyard_from_battlefield = {
 }
 enchanted_permanent_dies = { ^"enchanted" ~ permanent_type ~ ^"dies" }
 permanent_enters        = { article ~ permanent_type ~ ^"enters" }
+basic_land_type_is_tapped_for_mana = {
+    article ~ basic_land_type ~ ^"is" ~ ^"tapped" ~ ^"for" ~ ^"mana"
+}
 player_casts_colored_spell = { article ~ ^"player" ~ ^"casts" ~ article ~ color_word ~ ^"spell" }
 you_play_permanent = { ^"you" ~ ^"play" ~ article ~ permanent_type }
 source_blocks_or_becomes_blocked_by_non_creature_type_creature = {
@@ -882,6 +886,7 @@ trigger_effect = _{
   | source_deals_damage_to_that_player
   | source_deals_damage_to_that_permanents_controller
   | source_deals_damage_to_that_permanent
+  | its_controller_adds_an_additional_mana
   | source_gains_static_ability
   | that_creatures_controller_sacrifices_it
 }
@@ -987,6 +992,9 @@ source_deals_damage_to_that_permanent = {
 source_deals_variable_damage_to_that_player = {
     source_object ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"
   ~ ^"that" ~ ^"player" ~ "," ~ where_clause ~ "."
+}
+its_controller_adds_an_additional_mana = {
+    ^"its" ~ ^"controller" ~ ^"adds" ~ article ~ ^"additional" ~ mana_symbol ~ "."
 }
 source_object = { ^"this" ~ source_object_kind }
 source_object_kind = _{ aura_source_object | permanent_type }

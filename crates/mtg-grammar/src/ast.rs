@@ -293,6 +293,8 @@ pub enum TriggerEvent {
     PermanentEnters { permanent_type: PermanentType },
     /// "a player casts a/an <color> spell"
     PlayerCastsColoredSpell { color: Color },
+    /// "a/an <basic_land_type> is tapped for mana"
+    BasicLandTypeIsTappedForMana { land_type: BasicLandType },
     /// "you play a/an <permanent_type>"
     YouPlayPermanent { permanent_type: PermanentType },
     /// "enchanted <permanent_type> dies"
@@ -421,6 +423,8 @@ pub enum TriggerEffect {
         permanent_type: PermanentType,
         source: SourceObject,
     },
+    /// "its controller adds an additional <mana_symbol>"
+    ItsControllerAddsAdditionalMana { mana: ManaSymbol },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

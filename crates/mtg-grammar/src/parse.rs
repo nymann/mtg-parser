@@ -854,6 +854,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::player_casts_colored_spell => {
                 event = Some(player_casts_colored_spell_from_pair(child)?);
             }
+            Rule::basic_land_type_is_tapped_for_mana => {
+                event = Some(basic_land_type_is_tapped_for_mana_from_pair(child)?);
+            }
             Rule::you_play_permanent => {
                 event = Some(you_play_permanent_from_pair(child)?);
             }
@@ -989,6 +992,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                     child,
                 )?);
             }
+            Rule::its_controller_adds_an_additional_mana => {
+                effects.push(its_controller_adds_an_additional_mana_from_pair(child)?);
+            }
             Rule::source_gains_static_ability => {
                 effects.push(source_gains_static_ability_from_pair(child)?);
             }
@@ -1027,6 +1033,17 @@ fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent
     ))?;
     Ok(TriggerEvent::PlayerCastsColoredSpell {
         color: color_from_pair(color)?,
+    })
+}
+
+fn basic_land_type_is_tapped_for_mana_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEvent, ParseError> {
+    let land_type = pair.into_inner().next().ok_or(ParseError::Internal(
+        "basic_land_type_is_tapped_for_mana missing basic_land_type",
+    ))?;
+    Ok(TriggerEvent::BasicLandTypeIsTappedForMana {
+        land_type: basic_land_type_from_pair(land_type)?,
     })
 }
 
@@ -1123,6 +1140,17 @@ fn source_blocks_or_becomes_blocked_by_non_creature_type_creature_from_pair(
             excluded_type: creature_type_from_pair(excluded_type_pair)?,
         },
     )
+}
+
+fn its_controller_adds_an_additional_mana_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mana_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "its_controller_adds_an_additional_mana missing mana_symbol",
+    ))?;
+    Ok(TriggerEffect::ItsControllerAddsAdditionalMana {
+        mana: mana_symbol_from_pair(mana_pair),
+    })
 }
 
 fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {

@@ -964,6 +964,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { .. }
         | TriggerEvent::YouPlayPermanent { .. }
         | TriggerEvent::PlayerCastsColoredSpell { .. }
+        | TriggerEvent::BasicLandTypeIsTappedForMana { .. }
         | TriggerEvent::SourceIsDealtDamage { .. }
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
@@ -1012,6 +1013,11 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str("a player casts a ");
             out.push_str(color_name(color));
             out.push_str(" spell");
+        }
+        TriggerEvent::BasicLandTypeIsTappedForMana { land_type } => {
+            out.push_str("a ");
+            out.push_str(basic_land_type_name(land_type));
+            out.push_str(" is tapped for mana");
         }
         TriggerEvent::YouPlayPermanent { permanent_type } => {
             out.push_str("you play ");
@@ -1155,6 +1161,11 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str(variable_name(*amount));
             out.push_str(" damage to that player, where ");
             write_variable_definitions(out, definitions);
+            out.push('.');
+        }
+        TriggerEffect::ItsControllerAddsAdditionalMana { mana } => {
+            out.push_str("its controller adds an additional ");
+            write_mana_symbol(out, *mana);
             out.push('.');
         }
         TriggerEffect::SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {

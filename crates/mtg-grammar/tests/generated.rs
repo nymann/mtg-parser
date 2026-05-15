@@ -156,3 +156,5 @@ mod fork;
 mod fungusaur;
 #[path = "generated/gaea_s_liege.rs"]
 mod gaea_s_liege;
+#[path = "generated/gauntlet_of_might.rs"]
+mod gauntlet_of_might;
