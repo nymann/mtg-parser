@@ -106,6 +106,8 @@ sentence_statement = _{
   | static_enchanted_can_attack_as_though_it_didnt_have
   | static_enchanted_cant_be_blocked_except_by_creature_type
   | static_you_control_enchanted
+  | static_you_have_no_maximum_hand_size
+  | static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
   | static_you_may_have_source_enter_as_copy
   | static_source_attacks_each_combat_if_able
@@ -622,6 +624,18 @@ static_you_may_have_source_enter_as_copy = {
     ^"you" ~ ^"may" ~ ^"have" ~ source_object ~ ^"enter"
   ~ ^"as" ~ article ~ ^"copy" ~ ^"of" ~ ^"any" ~ permanent_type
   ~ ^"on" ~ ^"the" ~ ^"battlefield" ~ copy_exception? ~ "."
+}
+
+static_you_have_no_maximum_hand_size = {
+    ^"you" ~ ^"have" ~ ^"no" ~ ^"maximum" ~ ^"hand" ~ ^"size" ~ "."
+}
+
+static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead = {
+    ^"if" ~ article ~ ^"effect" ~ ^"causes" ~ ^"you" ~ ^"to" ~ ^"discard"
+  ~ article ~ ^"card" ~ "," ~ ^"discard" ~ ^"it" ~ "," ~ ^"but"
+  ~ ^"you" ~ ^"may" ~ ^"put" ~ ^"it" ~ ^"on" ~ ^"top" ~ ^"of"
+  ~ ^"your" ~ ^"library" ~ ^"instead" ~ ^"of" ~ ^"into" ~ ^"your"
+  ~ ^"graveyard" ~ "."
 }
 
 copy_exception = {

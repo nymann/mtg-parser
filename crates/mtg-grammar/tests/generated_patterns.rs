@@ -207,3 +207,5 @@ mod kormus_bell;
 mod kudzu;
 #[path = "generated_patterns/ley_druid.rs"]
 mod ley_druid;
+#[path = "generated_patterns/library_of_leng.rs"]
+mod library_of_leng;

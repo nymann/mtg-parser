@@ -922,6 +922,11 @@ pub enum StaticAbility {
     /// "You control enchanted <object>." — continuous control-changing
     /// effect from an Aura to the object it enchants.
     YouControlEnchanted { object: EnchantedObject },
+    /// "You have no maximum hand size." — maximum hand size modifier.
+    YouHaveNoMaximumHandSize,
+    /// "If an effect causes you to discard a card, discard it, but you
+    /// may put it on top of your library instead of into your graveyard."
+    IfEffectCausesYouToDiscardCardYouMayPutItOnTopOfYourLibraryInstead,
     /// "You may play any number of <permanent_type>s on each of your
     /// turns." — permission effect that lifts the normal per-turn play
     /// limit for that permanent type.

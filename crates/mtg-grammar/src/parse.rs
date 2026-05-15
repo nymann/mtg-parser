@@ -186,6 +186,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_can_attack_as_though_it_didnt_have
         | Rule::static_enchanted_cant_be_blocked_except_by_creature_type
         | Rule::static_you_control_enchanted
+        | Rule::static_you_have_no_maximum_hand_size
+        | Rule::static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead
         | Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns
         | Rule::static_you_may_have_source_enter_as_copy
         | Rule::static_source_attacks_each_combat_if_able
@@ -2178,6 +2180,10 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::YouControlEnchanted {
                 object: enchanted_object_from_pair(object_pair)?,
             })
+        }
+        Rule::static_you_have_no_maximum_hand_size => Ok(StaticAbility::YouHaveNoMaximumHandSize),
+        Rule::static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead => {
+            Ok(StaticAbility::IfEffectCausesYouToDiscardCardYouMayPutItOnTopOfYourLibraryInstead)
         }
         Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns => {
             let permanent_type_pair = pair

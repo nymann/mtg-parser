@@ -1150,6 +1150,12 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_enchanted_object(out, *object);
             out.push('.');
         }
+        StaticAbility::YouHaveNoMaximumHandSize => {
+            out.push_str("You have no maximum hand size.");
+        }
+        StaticAbility::IfEffectCausesYouToDiscardCardYouMayPutItOnTopOfYourLibraryInstead => {
+            out.push_str("If an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard.");
+        }
         StaticAbility::YouMayPlayAnyNumberOfPermanentsOnEachOfYourTurns { permanent_type } => {
             out.push_str("You may play any number of ");
             out.push_str(permanent_type_plural_name(*permanent_type));
