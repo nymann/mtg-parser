@@ -931,6 +931,12 @@ pub enum StaticAbility {
     SourceDoesntUntapDuringYourUntapStep { source: SourceObject },
     /// "This <permanent_type> can't block creatures with power N or greater."
     SourceCantBlockCreaturesWithPowerOrGreater { source: SourceObject, power: u32 },
+    /// "<source name>'s power and toughness are each equal to the number
+    /// of non-<creature_type> creatures you control."
+    NamedSourcePowerToughnessEachEqualToNonCreatureTypeCreaturesYouControl {
+        source_name: String,
+        excluded_type: CreatureType,
+    },
     /// "All <basic_land_type>s are <basic_land_type>s."
     BasicLandsAreBasicLands {
         from: BasicLandType,

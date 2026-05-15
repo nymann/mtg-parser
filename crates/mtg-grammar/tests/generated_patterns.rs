@@ -199,3 +199,5 @@ mod juggernaut;
 mod jump;
 #[path = "generated_patterns/karma.rs"]
 mod karma;
+#[path = "generated_patterns/keldon_warlord.rs"]
+mod keldon_warlord;

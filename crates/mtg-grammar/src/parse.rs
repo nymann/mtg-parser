@@ -187,6 +187,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_source_cant_be_blocked_by_creature_type
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::static_source_cant_block_creatures_with_power_or_greater
+        | Rule::static_named_source_pt_equal_to_non_creature_type_creatures_you_control
         | Rule::static_basic_lands_are_basic_lands
         | Rule::static_that_permanent_is_basic_land_type_while_has_named_counter
         | Rule::remove_target_creature_defending_player_controls_from_combat
@@ -2209,6 +2210,21 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 source: source_object_from_pair(source_pair)?,
                 power,
             })
+        }
+        Rule::static_named_source_pt_equal_to_non_creature_type_creatures_you_control => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner
+                .next()
+                .expect("named source P/T count begins with a source name");
+            let excluded_type_pair = inner
+                .next()
+                .expect("named source P/T count names an excluded creature type");
+            Ok(
+                StaticAbility::NamedSourcePowerToughnessEachEqualToNonCreatureTypeCreaturesYouControl {
+                    source_name: source_pair.as_str().to_string(),
+                    excluded_type: creature_type_from_pair(excluded_type_pair)?,
+                },
+            )
         }
         Rule::static_basic_lands_are_basic_lands => {
             let mut inner = pair.into_inner();

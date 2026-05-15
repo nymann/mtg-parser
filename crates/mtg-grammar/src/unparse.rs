@@ -1178,6 +1178,15 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             )
             .expect("writing to String cannot fail");
         }
+        StaticAbility::NamedSourcePowerToughnessEachEqualToNonCreatureTypeCreaturesYouControl {
+            source_name,
+            excluded_type,
+        } => {
+            out.push_str(source_name);
+            out.push_str("'s power and toughness are each equal to the number of non-");
+            out.push_str(creature_type_name(*excluded_type));
+            out.push_str(" creatures you control.");
+        }
         StaticAbility::BasicLandsAreBasicLands { from, to } => {
             out.push_str("All ");
             out.push_str(basic_land_type_plural_name(*from));

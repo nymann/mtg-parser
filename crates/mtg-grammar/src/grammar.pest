@@ -111,6 +111,7 @@ sentence_statement = _{
   | static_source_cant_be_blocked_by_creature_type
   | static_source_doesnt_untap_during_your_untap_step
   | static_source_cant_block_creatures_with_power_or_greater
+  | static_named_source_pt_equal_to_non_creature_type_creatures_you_control
   | static_effect_doesnt_remove_this_aura
   | static_basic_lands_are_basic_lands
   | static_that_permanent_is_basic_land_type_while_has_named_counter
@@ -523,6 +524,7 @@ static_ability = _{
   | static_source_attacks_each_combat_if_able
   | static_source_cant_be_blocked_by_creature_type
   | static_source_cant_block_creatures_with_power_or_greater
+  | static_named_source_pt_equal_to_non_creature_type_creatures_you_control
   | static_effect_doesnt_remove_this_aura
   | static_basic_lands_are_basic_lands
   | static_that_permanent_is_basic_land_type_while_has_named_counter
@@ -655,6 +657,14 @@ static_source_cant_block_creatures_with_power_or_greater = {
     source_object ~ ^"can't" ~ ^"block" ~ ^"creatures" ~ ^"with"
   ~ ^"power" ~ unsigned_number ~ ^"or" ~ ^"greater" ~ "."
 }
+
+static_named_source_pt_equal_to_non_creature_type_creatures_you_control = {
+    possessive_proper_name ~ ^"'s" ~ ^"power" ~ ^"and" ~ ^"toughness"
+  ~ ^"are" ~ ^"each" ~ ^"equal" ~ ^"to" ~ ^"the" ~ ^"number" ~ ^"of"
+  ~ ^"non-" ~ creature_type ~ ^"creatures" ~ ^"you" ~ ^"control" ~ "."
+}
+
+possessive_proper_name = @{ upper_alpha ~ (!("'s" ~ WHITESPACE) ~ ANY)* }
 
 target_creature_defending_player_controls_can_block_any_number = {
     ^"target" ~ ^"creature" ~ ^"defending" ~ ^"player" ~ ^"controls"
