@@ -12,9 +12,9 @@ use crate::ast::{
     DamageRecipients, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
     IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, KeywordAbilityName,
     LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
-    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -228,7 +228,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
         | Rule::static_source_cant_block_creatures_with_power_or_greater
-        | Rule::static_named_source_pt_equal_to_non_creature_type_creatures_you_control
+        | Rule::static_named_source_pt_equal_to_count_you_control
         | Rule::static_basic_lands_are_basic_lands
         | Rule::static_basic_lands_are_pt_colored_creatures_still_lands
         | Rule::static_that_permanent_is_basic_land_type_while_has_named_counter
@@ -2764,20 +2764,39 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 power,
             })
         }
-        Rule::static_named_source_pt_equal_to_non_creature_type_creatures_you_control => {
+        Rule::static_named_source_pt_equal_to_count_you_control => {
             let mut inner = pair.into_inner();
             let source_pair = inner
                 .next()
                 .expect("named source P/T count begins with a source name");
-            let excluded_type_pair = inner
+            let count_pair = inner
                 .next()
-                .expect("named source P/T count names an excluded creature type");
-            Ok(
-                StaticAbility::NamedSourcePowerToughnessEachEqualToNonCreatureTypeCreaturesYouControl {
-                    source_name: source_pair.as_str().to_string(),
-                    excluded_type: creature_type_from_pair(excluded_type_pair)?,
-                },
-            )
+                .expect("named source P/T count names counted objects");
+            let count = match count_pair.as_rule() {
+                Rule::non_creature_type_creatures_you_control => {
+                    let excluded_type_pair = count_pair
+                        .into_inner()
+                        .next()
+                        .expect("non-creature count names an excluded creature type");
+                    NamedSourcePowerToughnessCount::NonCreatureTypeCreatures {
+                        excluded_type: creature_type_from_pair(excluded_type_pair)?,
+                    }
+                }
+                Rule::basic_lands_you_control => {
+                    let land_type_pair = count_pair
+                        .into_inner()
+                        .next()
+                        .expect("basic land count names a land type");
+                    NamedSourcePowerToughnessCount::BasicLands {
+                        land_type: basic_land_type_from_plural_pair(land_type_pair)?,
+                    }
+                }
+                _ => return Err(ParseError::Internal("named source P/T count objects")),
+            };
+            Ok(StaticAbility::NamedSourcePowerToughnessEachEqualToCountYouControl {
+                source_name: source_pair.as_str().to_string(),
+                count,
+            })
         }
         Rule::static_basic_lands_are_basic_lands => {
             let mut inner = pair.into_inner();

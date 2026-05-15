@@ -120,7 +120,7 @@ sentence_statement = _{
   | static_source_doesnt_untap_during_your_untap_step
   | static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
   | static_source_cant_block_creatures_with_power_or_greater
-  | static_named_source_pt_equal_to_non_creature_type_creatures_you_control
+  | static_named_source_pt_equal_to_count_you_control
   | static_effect_doesnt_remove_this_aura
   | static_basic_lands_are_pt_colored_creatures_still_lands
   | static_basic_lands_are_basic_lands
@@ -604,7 +604,7 @@ static_ability = _{
   | static_source_cant_be_blocked_by_creature_type
   | static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
   | static_source_cant_block_creatures_with_power_or_greater
-  | static_named_source_pt_equal_to_non_creature_type_creatures_you_control
+  | static_named_source_pt_equal_to_count_you_control
   | static_effect_doesnt_remove_this_aura
   | static_basic_lands_are_pt_colored_creatures_still_lands
   | static_basic_lands_are_basic_lands
@@ -771,11 +771,19 @@ static_source_cant_block_creatures_with_power_or_greater = {
   ~ ^"power" ~ unsigned_number ~ ^"or" ~ ^"greater" ~ "."
 }
 
-static_named_source_pt_equal_to_non_creature_type_creatures_you_control = {
+static_named_source_pt_equal_to_count_you_control = {
     possessive_proper_name ~ ^"'s" ~ ^"power" ~ ^"and" ~ ^"toughness"
   ~ ^"are" ~ ^"each" ~ ^"equal" ~ ^"to" ~ ^"the" ~ ^"number" ~ ^"of"
-  ~ ^"non-" ~ creature_type ~ ^"creatures" ~ ^"you" ~ ^"control" ~ "."
+  ~ named_source_pt_count_you_control ~ "."
 }
+named_source_pt_count_you_control = _{
+    non_creature_type_creatures_you_control
+  | basic_lands_you_control
+}
+non_creature_type_creatures_you_control = {
+    ^"non-" ~ creature_type ~ ^"creatures" ~ ^"you" ~ ^"control"
+}
+basic_lands_you_control = { basic_land_type_plural ~ ^"you" ~ ^"control" }
 
 possessive_proper_name = @{ upper_alpha ~ (!("'s" ~ WHITESPACE) ~ ANY)* }
 

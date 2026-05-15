@@ -260,3 +260,5 @@ mod nether_shadow;
 mod nettling_imp;
 #[path = "generated/nevinyrral_s_disk.rs"]
 mod nevinyrral_s_disk;
+#[path = "generated/nightmare.rs"]
+mod nightmare;

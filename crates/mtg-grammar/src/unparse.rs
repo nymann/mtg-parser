@@ -9,10 +9,11 @@ use crate::ast::{
     DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
     ImperativeAction, InterveningIf, Keyword, KeywordAbilityName, LandCountController, ManaCost,
-    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost,
-    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedSourcePowerToughnessCount,
+    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -1385,14 +1386,23 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             )
             .expect("writing to String cannot fail");
         }
-        StaticAbility::NamedSourcePowerToughnessEachEqualToNonCreatureTypeCreaturesYouControl {
+        StaticAbility::NamedSourcePowerToughnessEachEqualToCountYouControl {
             source_name,
-            excluded_type,
+            count,
         } => {
             out.push_str(source_name);
-            out.push_str("'s power and toughness are each equal to the number of non-");
-            out.push_str(creature_type_name(*excluded_type));
-            out.push_str(" creatures you control.");
+            out.push_str("'s power and toughness are each equal to the number of ");
+            match count {
+                NamedSourcePowerToughnessCount::NonCreatureTypeCreatures { excluded_type } => {
+                    out.push_str("non-");
+                    out.push_str(creature_type_name(*excluded_type));
+                    out.push_str(" creatures");
+                }
+                NamedSourcePowerToughnessCount::BasicLands { land_type } => {
+                    out.push_str(basic_land_type_plural_name(*land_type));
+                }
+            }
+            out.push_str(" you control.");
         }
         StaticAbility::BasicLandsAreBasicLands { from, to } => {
             out.push_str("All ");
