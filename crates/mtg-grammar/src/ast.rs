@@ -1024,8 +1024,12 @@ pub enum ActivatedEffect {
     PhysicalAction(PhysicalAction),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActivatedDamageEffect {
+    /// "This <source> deals N damage to <recipient> [and M damage to <recipient>]."
+    SourceDealsDamage {
+        events: Vec<DamageEvent<SourceObject, ActivatedDamageRecipient>>,
+    },
     /// "The next time <source> of your choice would deal [combat] damage
     /// to <recipient> this turn, <effect>."
     NextDamageEvent {

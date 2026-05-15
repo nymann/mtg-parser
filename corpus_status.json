@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 201,
+  "passing": 204,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -549,8 +549,7 @@
       "error": "empty oracle text (vanilla card)"
     },
     "lea/Orcish Artillery": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {T}: This creature deals 2 damage to any target and 3 damage to you.\n  |           ^---\n  |\n  = expected aura_source_object"
+      "status": "pass"
     },
     "lea/Orcish Oriflamme": {
       "status": "fail",
@@ -611,8 +610,7 @@
       "error": "parse: parse error:  --> 1:102\n  |\n1 | At the beginning of each player's upkeep, this enchantment deals X damage to that player, where X is the number of untapped lands they controlled at the beginning of this turn.\n  |                                                                                                      ^---\n  |\n  = expected half_number_of_basic_lands_you_control, number_of_cards_in_their_hand_minus, or its_power"
     },
     "lea/Prodigal Sorcerer": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {T}: This creature deals 1 damage to any target.\n  |           ^---\n  |\n  = expected aura_source_object"
+      "status": "pass"
     },
     "lea/Psionic Blast": {
       "status": "fail",
@@ -666,8 +664,7 @@
       "error": "parse: parse error:  --> 1:27\n  |\n1 | This creature enters with X +1/+1 counters on it.\n  |                           ^---\n  |\n  = expected number_word"
     },
     "lea/Rod of Ruin": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:16\n  |\n1 | {3}, {T}: This artifact deals 1 damage to any target.\n  |                ^---\n  |\n  = expected aura_source_object"
+      "status": "pass"
     },
     "lea/Royal Assassin": {
       "status": "fail",

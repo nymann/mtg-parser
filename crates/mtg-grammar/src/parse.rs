@@ -2055,6 +2055,7 @@ fn activated_damage_effect_from_pair(
     pair: Pair<Rule>,
 ) -> Result<ActivatedDamageEffect, ParseError> {
     match pair.as_rule() {
+        Rule::activated_direct_damage_effect => activated_direct_damage_effect_from_pair(pair),
         Rule::next_damage_event_effect => next_damage_event_effect_from_pair(pair),
         Rule::activated_damage_prevention_effect => {
             let effect = activated_damage_prevention_effect_from_pair(pair)?;
@@ -2065,6 +2066,40 @@ fn activated_damage_effect_from_pair(
         }
         _ => Err(ParseError::Internal("activated damage effect")),
     }
+}
+
+fn activated_direct_damage_effect_from_pair(
+    pair: Pair<Rule>,
+) -> Result<ActivatedDamageEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = next_inner(&mut inner, "activated direct damage missing source")?;
+    let source = source_object_from_pair(source_pair)?;
+    let events = inner
+        .map(|assignment| activated_damage_assignment_from_pair(source, assignment))
+        .collect::<Result<Vec<_>, _>>()?;
+    if events.is_empty() {
+        return Err(ParseError::Internal(
+            "activated direct damage missing assignment",
+        ));
+    }
+    Ok(ActivatedDamageEffect::SourceDealsDamage { events })
+}
+
+fn activated_damage_assignment_from_pair(
+    source: SourceObject,
+    pair: Pair<Rule>,
+) -> Result<DamageEvent<SourceObject, ActivatedDamageRecipient>, ParseError> {
+    if pair.as_rule() != Rule::activated_damage_assignment {
+        return Err(ParseError::Internal("activated damage assignment"));
+    }
+    let mut inner = pair.into_inner();
+    let amount_pair = next_inner(&mut inner, "activated damage assignment missing amount")?;
+    let recipient_pair = next_inner(&mut inner, "activated damage assignment missing recipient")?;
+    Ok(DamageEvent {
+        source,
+        amount: damage_event_amount_from_pair(amount_pair)?,
+        recipient: activated_damage_recipient_from_pair(recipient_pair)?,
+    })
 }
 
 fn activated_damage_prevention_effect_from_pair(
@@ -3139,9 +3174,11 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 permanent_types,
             })
         }
-        Rule::next_damage_event_effect | Rule::activated_damage_prevention_effect => Ok(
-            ActivatedEffect::DamageEffect(activated_damage_effect_from_pair(pair)?),
-        ),
+        Rule::activated_direct_damage_effect
+        | Rule::next_damage_event_effect
+        | Rule::activated_damage_prevention_effect => Ok(ActivatedEffect::DamageEffect(
+            activated_damage_effect_from_pair(pair)?,
+        )),
         Rule::put_up_to_variable_pt_counters_on_source => {
             let mut inner = pair.into_inner();
             let amount_pair = inner

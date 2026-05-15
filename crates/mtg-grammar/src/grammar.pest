@@ -950,8 +950,21 @@ activated_enchanted_gets_until_eot = {
   ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
 }
 activated_damage_effect = _{
-    next_damage_event_effect
+    activated_direct_damage_effect
+  | next_damage_event_effect
   | activated_damage_prevention_effect
+}
+activated_direct_damage_effect = {
+    source_object ~ ^"deals" ~ activated_damage_assignment
+  ~ (^"and" ~ activated_damage_assignment)* ~ "."
+}
+activated_damage_assignment = {
+    damage_event_amount ~ ^"damage" ~ ^"to" ~ activated_direct_damage_recipient
+}
+activated_direct_damage_recipient = _{
+    you_damage_recipient
+  | any_target_prevention_recipient
+  | target_permanent_damage_recipient
 }
 next_damage_event_effect = {
     ^"the" ~ ^"next" ~ ^"time" ~ activated_damage_source

@@ -1076,7 +1076,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             }
             out.push_str(" until end of combat.");
         }
-        ActivatedEffect::DamageEffect(effect) => write_activated_damage_effect(out, *effect),
+        ActivatedEffect::DamageEffect(effect) => write_activated_damage_effect(out, effect),
         ActivatedEffect::PutUpToVariableCountersOnSource {
             amount,
             counter,
@@ -1912,8 +1912,23 @@ fn write_trigger_damage_recipient(out: &mut String, recipient: TriggerDamageReci
     }
 }
 
-fn write_activated_damage_effect(out: &mut String, effect: ActivatedDamageEffect) {
+fn write_activated_damage_effect(out: &mut String, effect: &ActivatedDamageEffect) {
     match effect {
+        ActivatedDamageEffect::SourceDealsDamage { events } => {
+            if let Some(first) = events.first() {
+                write_source_object_capitalized(out, first.source);
+                out.push_str(" deals ");
+                for (idx, event) in events.iter().enumerate() {
+                    if idx > 0 {
+                        out.push_str(" and ");
+                    }
+                    write_damage_amount(out, event.amount);
+                    out.push_str(" damage to ");
+                    write_activated_damage_recipient(out, event.recipient);
+                }
+                out.push('.');
+            }
+        }
         ActivatedDamageEffect::NextDamageEvent { event, effect } => {
             out.push_str("The next time ");
             write_activated_damage_source(out, event.source);
@@ -1924,11 +1939,11 @@ fn write_activated_damage_effect(out: &mut String, effect: ActivatedDamageEffect
             out.push_str("damage to ");
             write_activated_damage_recipient(out, event.recipient);
             out.push_str(" this turn, ");
-            write_activated_damage_event_effect(out, effect);
+            write_activated_damage_event_effect(out, *effect);
             out.push('.');
         }
         ActivatedDamageEffect::PreventDamageThisTurn { effect } => {
-            write_activated_damage_prevention_effect(out, effect);
+            write_activated_damage_prevention_effect(out, *effect);
         }
     }
 }

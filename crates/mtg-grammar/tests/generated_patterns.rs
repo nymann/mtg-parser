@@ -253,3 +253,5 @@ mod nevinyrral_s_disk;
 mod nightmare;
 #[path = "generated_patterns/northern_paladin.rs"]
 mod northern_paladin;
+#[path = "generated_patterns/orcish_artillery.rs"]
+mod orcish_artillery;
