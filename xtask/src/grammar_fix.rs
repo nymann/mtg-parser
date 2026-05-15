@@ -34,6 +34,7 @@ use crate::paths::{
 const DEFAULT_SET: &str = "lea";
 /// 0 means unbounded; positive values cap the loop.
 const DEFAULT_MAX_ITERATIONS: u32 = 0;
+const DEFAULT_SUPERVISOR_ATTEMPTS: u8 = 1;
 const TOTAL_STEPS: u8 = 9;
 
 pub fn run(args: &[String]) -> ExitCode {
@@ -75,23 +76,63 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
 
     let mut iter = 0u32;
     let mut end_reason = None::<SessionEndReason>;
+    let mut supervisor_attempts = 0u8;
     while opts.max_iterations == 0 || iter < opts.max_iterations {
-        match run_one_iteration(&client, &opts, sink, iter + 1)? {
-            IterationOutcome::AllPass => {
-                end_reason = Some(SessionEndReason::AllPass);
-                break;
+        match run_one_iteration(&client, &opts, sink, iter + 1) {
+            Err(error) if supervisor_attempts < opts.supervisor_attempts => {
+                supervisor_attempts += 1;
+                match invoke_supervisor(&opts, sink, iter + 1, supervisor_attempts, &error) {
+                    Ok(true) => continue,
+                    Ok(false) => {
+                        let reason =
+                            format!("supervisor could not repair unknown problem: {error:#}");
+                        sink.emit(FlowEvent::Note {
+                            level: NoteLevel::Error,
+                            text: reason.clone(),
+                        });
+                        end_reason = Some(SessionEndReason::SurfacedToHuman(reason));
+                        break;
+                    }
+                    Err(supervisor_error) => {
+                        let reason = format!(
+                            "supervisor failed while repairing unknown problem: {supervisor_error:#}; original problem: {error:#}"
+                        );
+                        sink.emit(FlowEvent::Note {
+                            level: NoteLevel::Error,
+                            text: reason.clone(),
+                        });
+                        end_reason = Some(SessionEndReason::SurfacedToHuman(reason));
+                        break;
+                    }
+                }
             }
-            IterationOutcome::DryRunStop => {
-                end_reason = Some(SessionEndReason::DryRunStop);
-                break;
-            }
-            IterationOutcome::SurfaceToHuman(reason) => {
+            Err(error) => {
+                let reason = format!("unknown problem: {error:#}");
+                sink.emit(FlowEvent::Note {
+                    level: NoteLevel::Error,
+                    text: reason.clone(),
+                });
                 end_reason = Some(SessionEndReason::SurfacedToHuman(reason));
                 break;
             }
-            IterationOutcome::Committed => {
-                iter += 1;
-            }
+            Ok(outcome) => match outcome {
+                IterationOutcome::AllPass => {
+                    end_reason = Some(SessionEndReason::AllPass);
+                    break;
+                }
+                IterationOutcome::DryRunStop => {
+                    end_reason = Some(SessionEndReason::DryRunStop);
+                    break;
+                }
+                IterationOutcome::SurfaceToHuman(reason) => {
+                    end_reason = Some(SessionEndReason::SurfacedToHuman(reason));
+                    break;
+                }
+                IterationOutcome::Committed => {
+                    iter += 1;
+                    supervisor_attempts = 0;
+                }
+            },
         }
     }
     let reason = end_reason.unwrap_or(SessionEndReason::MaxIterationsReached(opts.max_iterations));
@@ -107,6 +148,7 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
 pub struct Options {
     pub set: String,
     pub max_iterations: u32,
+    pub supervisor_attempts: u8,
     pub dry_run: bool,
     pub allow_dirty: bool,
     pub agent: AgentProvider,
@@ -116,6 +158,7 @@ impl Options {
     pub fn parse(args: &[String]) -> Result<Self> {
         let mut set = None::<String>;
         let mut max_iterations = DEFAULT_MAX_ITERATIONS;
+        let mut supervisor_attempts = DEFAULT_SUPERVISOR_ATTEMPTS;
         let mut dry_run = false;
         let mut allow_dirty = false;
         let mut agent = AgentProvider::Codex;
@@ -138,6 +181,20 @@ impl Options {
                         .parse()
                         .with_context(|| format!("--max-iterations value: {s:?}"))?;
                 }
+                "--supervisor-attempts" => {
+                    let v = iter
+                        .next()
+                        .ok_or_else(|| anyhow!("--supervisor-attempts requires a value"))?;
+                    supervisor_attempts = v
+                        .parse()
+                        .with_context(|| format!("--supervisor-attempts value: {v:?}"))?;
+                }
+                s if s.starts_with("--supervisor-attempts=") => {
+                    supervisor_attempts = s["--supervisor-attempts=".len()..]
+                        .parse()
+                        .with_context(|| format!("--supervisor-attempts value: {s:?}"))?;
+                }
+                "--no-supervisor" => supervisor_attempts = 0,
                 "--dry-run" => dry_run = true,
                 "--allow-dirty" => allow_dirty = true,
                 "--agent" => {
@@ -162,6 +219,7 @@ impl Options {
         Ok(Self {
             set: set.unwrap_or_else(|| DEFAULT_SET.to_string()),
             max_iterations,
+            supervisor_attempts,
             dry_run,
             allow_dirty,
             agent,
@@ -408,14 +466,32 @@ fn run_one_iteration(
         total: TOTAL_STEPS,
         label: "git commit".into(),
     });
-    git_commit(&commit_msg).context("git commit")?;
-    sink.emit(FlowEvent::StepFinished {
-        index: 9,
-        ok: true,
-        summary: Some(format!(
-            "+{new_passes} pass · status {new_pass_count}/{total}"
-        )),
-    });
+    match git_commit(&commit_msg).context("git commit")? {
+        CommitOutcome::Committed => {
+            sink.emit(FlowEvent::StepFinished {
+                index: 9,
+                ok: true,
+                summary: Some(format!(
+                    "+{new_passes} pass · status {new_pass_count}/{total}"
+                )),
+            });
+        }
+        CommitOutcome::NoChanges => {
+            let reason = "no changes to commit after successful tests and corpus gate".to_string();
+            sink.emit(FlowEvent::StepFinished {
+                index: 9,
+                ok: true,
+                summary: Some("no changes to commit".into()),
+            });
+            sink.emit(FlowEvent::IterationFinished {
+                index: iter_index,
+                outcome: IterationOutcomeSummary::SurfacedToHuman {
+                    reason: reason.clone(),
+                },
+            });
+            return Ok(IterationOutcome::SurfaceToHuman(reason));
+        }
+    }
 
     if let Ok(diff) = git_diff_against_head_parent() {
         std::fs::write(log_dir.join("diff.patch"), diff).ok();
@@ -461,6 +537,15 @@ fn create_log_dir(card: &Card) -> Result<PathBuf> {
     let ts = unix_secs();
     let slug = slugify(&card.name);
     let dir = grammar_fix_log_root().join(format!("{ts}-{slug}"));
+    std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
+    Ok(dir)
+}
+
+fn create_supervisor_log_dir(iter_index: u32, attempt: u8) -> Result<PathBuf> {
+    let ts = unix_secs();
+    let dir = grammar_fix_log_root().join(format!(
+        "{ts}-supervisor-iter-{iter_index}-attempt-{attempt}"
+    ));
     std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
     Ok(dir)
 }
@@ -833,6 +918,39 @@ fn build_pattern_prompt(
     Ok(prompt)
 }
 
+fn build_supervisor_prompt(error: &anyhow::Error, iter_index: u32, attempt: u8) -> Result<String> {
+    let git_status = command_stdout("git", &["status", "--short"])?;
+    let recent_log_dirs = recent_grammar_fix_logs(8);
+    Ok(format!(
+        "{intro}\n\n\
+         ## Unknown Problem\n\n\
+         The grammar-fix orchestrator hit an unexpected error while running iteration {iter_index}. \
+         This is not a known grammar gate such as tier-2 failure, corpus regression, or an agent \
+         saying it could not solve the card.\n\n\
+         Attempt: {attempt}\n\n\
+         Error:\n```text\n{error:#}\n```\n\n\
+         Current git status:\n```text\n{git_status}```\n\n\
+         Recent `.grammar-fix` logs:\n```text\n{recent_log_dirs}```\n\n\
+         ## Mission\n\n\
+         Diagnose and fix the orchestrator or repository state so the main grammar-fix loop can \
+         continue autonomously. Prefer a general fix over a one-off workaround. Keep the patch \
+         tightly scoped to the failure mode.\n\n\
+         ## Rules\n\n\
+         1. Do not bypass deterministic gates. The normal flow must still run tier-2 tests, corpus, \
+         and commit steps where applicable.\n\
+         2. Do not discard user changes. Work with the current tree.\n\
+         3. If the bug is in `xtask`, update `xtask` and add or adjust focused tests where practical.\n\
+         4. Run `cargo fmt` and the narrowest relevant tests before exiting successfully.\n\
+         5. If you cannot repair it safely, exit non-zero or clearly say why.\n",
+        intro = SUPERVISOR_PROMPT_INTRO,
+    ))
+}
+
+const SUPERVISOR_PROMPT_INTRO: &str = "\
+You are the grammar-fix supervisor. The normal card-solving agent or deterministic
+orchestrator flow encountered an unknown infrastructure problem. Your job is to mend
+the automation itself so the outer process can retry without human intervention.";
+
 const PROMPT_INTRO: &str = "\
 You are extending the mtg-parser grammar to handle one specific
 Magic: The Gathering card. The orchestrator that invoked you is
@@ -933,6 +1051,84 @@ struct AgentOutcome {
     exit_code: i32,
     assistant_text: String,
     assistant_blocks: usize,
+}
+
+fn invoke_supervisor(
+    opts: &Options,
+    sink: &mut dyn FlowSink,
+    iter_index: u32,
+    attempt: u8,
+    error: &anyhow::Error,
+) -> Result<bool> {
+    let log_dir = create_supervisor_log_dir(iter_index, attempt)?;
+    let error_text = format!("{error:#}");
+    std::fs::write(log_dir.join("error.txt"), &error_text)?;
+    let prompt = build_supervisor_prompt(error, iter_index, attempt)?;
+    std::fs::write(log_dir.join("prompt.md"), &prompt)?;
+
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Warn,
+        text: format!(
+            "unknown problem in iteration {iter_index}; invoking {} supervisor attempt {attempt}/{}",
+            opts.agent.label(),
+            opts.supervisor_attempts
+        ),
+    });
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: format!("supervisor log dir: {}", log_dir.display()),
+    });
+
+    let transcript_path = log_dir.join("transcript.ndjson");
+    let outcome = invoke_agent(opts.agent, &prompt, &transcript_path, sink)?;
+    std::fs::write(log_dir.join("response.md"), &outcome.assistant_text)?;
+    if !outcome.success {
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Error,
+            text: format!(
+                "{} supervisor exited with status {}",
+                opts.agent.label(),
+                outcome.exit_code
+            ),
+        });
+        return Ok(false);
+    }
+
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: "supervisor finished; running cargo fmt".into(),
+    });
+    if !run_cargo_fmt()? {
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Error,
+            text: "cargo fmt failed after supervisor repair".into(),
+        });
+        return Ok(false);
+    }
+
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: "running cargo test -p xtask after supervisor repair".into(),
+    });
+    let tests_ok = Command::new("cargo")
+        .args(["test", "-p", "xtask"])
+        .current_dir(repo_root())
+        .status()
+        .context("run cargo test -p xtask after supervisor repair")?
+        .success();
+    if !tests_ok {
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Error,
+            text: "cargo test -p xtask failed after supervisor repair".into(),
+        });
+        return Ok(false);
+    }
+
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: "supervisor repair validated; retrying the same iteration".into(),
+    });
+    Ok(true)
 }
 
 fn invoke_agent(
@@ -1140,17 +1336,82 @@ fn run_xtask(args: &[&str]) -> Result<bool> {
     Ok(status.success())
 }
 
+fn run_cargo_fmt() -> Result<bool> {
+    let status = Command::new("cargo")
+        .arg("fmt")
+        .current_dir(repo_root())
+        .status()
+        .context("run cargo fmt")?;
+    Ok(status.success())
+}
+
+fn command_stdout(program: &str, args: &[&str]) -> Result<String> {
+    let out = Command::new(program)
+        .args(args)
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("run {program} {}", args.join(" ")))?;
+    if !out.status.success() {
+        bail!("{program} {} failed", args.join(" "));
+    }
+    let text = String::from_utf8_lossy(&out.stdout).into_owned();
+    if text.is_empty() {
+        Ok("(empty)\n".to_string())
+    } else {
+        Ok(text)
+    }
+}
+
+fn recent_grammar_fix_logs(limit: usize) -> String {
+    let root = grammar_fix_log_root();
+    let mut entries = match std::fs::read_dir(root) {
+        Ok(entries) => entries
+            .filter_map(Result::ok)
+            .filter_map(|entry| {
+                let name = entry.file_name().to_string_lossy().to_string();
+                let modified = entry.metadata().and_then(|m| m.modified()).ok()?;
+                Some((modified, name))
+            })
+            .collect::<Vec<_>>(),
+        Err(_) => return "(none)\n".to_string(),
+    };
+    entries.sort_by_key(|(modified, _)| *modified);
+    entries
+        .into_iter()
+        .rev()
+        .take(limit)
+        .map(|(_, name)| name)
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n"
+}
+
 // ---------------------------------------------------------------------------
 // git
 // ---------------------------------------------------------------------------
 
-fn git_commit(message: &str) -> Result<()> {
+enum CommitOutcome {
+    Committed,
+    NoChanges,
+}
+
+fn git_commit(message: &str) -> Result<CommitOutcome> {
     let add = Command::new("git")
         .args(["add", "-A"])
         .current_dir(repo_root())
         .status()?;
     if !add.success() {
         bail!("git add failed");
+    }
+    let diff = Command::new("git")
+        .args(["diff", "--cached", "--quiet", "--exit-code"])
+        .current_dir(repo_root())
+        .status()?;
+    if diff.success() {
+        return Ok(CommitOutcome::NoChanges);
+    }
+    if diff.code() != Some(1) {
+        bail!("git diff --cached failed");
     }
     let commit = Command::new("git")
         .args(["commit", "-m", message])
@@ -1159,7 +1420,7 @@ fn git_commit(message: &str) -> Result<()> {
     if !commit.success() {
         bail!("git commit failed");
     }
-    Ok(())
+    Ok(CommitOutcome::Committed)
 }
 
 fn git_diff_against_head_parent() -> Result<String> {
@@ -1203,6 +1464,7 @@ mod tests {
         assert_eq!(o.max_iterations, 0);
         assert!(!o.dry_run);
         assert!(!o.allow_dirty);
+        assert_eq!(o.supervisor_attempts, DEFAULT_SUPERVISOR_ATTEMPTS);
         assert_eq!(o.agent, AgentProvider::Codex);
     }
 
@@ -1231,6 +1493,17 @@ mod tests {
         let args = vec!["--agent".to_string(), "claude".to_string()];
         let o = Options::parse(&args).unwrap();
         assert_eq!(o.agent, AgentProvider::Claude);
+    }
+
+    #[test]
+    fn options_parse_supervisor_flags() {
+        let args = vec!["--supervisor-attempts=3".to_string()];
+        let o = Options::parse(&args).unwrap();
+        assert_eq!(o.supervisor_attempts, 3);
+
+        let args = vec!["--no-supervisor".to_string()];
+        let o = Options::parse(&args).unwrap();
+        assert_eq!(o.supervisor_attempts, 0);
     }
 
     #[test]

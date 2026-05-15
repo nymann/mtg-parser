@@ -33,8 +33,9 @@ Commands:
               [--dry-run] [--allow-dirty]  --max-iterations 0 (unbounded). --dry-run builds the
               [--ui console|tui]          prompt and stops; --allow-dirty skips the
               [--agent codex|claude]      clean-tree precondition; --agent defaults
-                                          to codex; --ui tui opens a full-screen
-                                          interactive view.
+              [--supervisor-attempts N]    to codex; unknown infrastructure errors get
+              [--no-supervisor]            one supervisor repair attempt by default.
+                                          --ui tui opens a full-screen interactive view.
 
 Flags:
   -h, --help        Show this message.

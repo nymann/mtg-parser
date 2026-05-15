@@ -10,4 +10,3 @@ fn pattern_01_sentence() {
     let text = "Destroy all lands.";
     mtg_grammar::parse(text).expect("parse pattern");
 }
-
