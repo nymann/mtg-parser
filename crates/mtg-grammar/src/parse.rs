@@ -4,11 +4,11 @@ use pest_derive::Parser;
 
 use crate::ast::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType,
-    CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureType, EnchantObject,
-    EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    PermanentType, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus, CreatureType,
+    EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier,
+    ModalMode, PermanentType, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent,
+    TriggeredAbility, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -70,6 +70,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::static_as_long_as
         | Rule::static_colored_permanents_get
+        | Rule::static_status_creatures_you_control_get
         | Rule::static_enchanted_gets_with_definitions
         | Rule::static_enchanted_gets
         | Rule::static_enchanted_has_keyword
@@ -606,6 +607,19 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 modifier: pt_modifier_from_pair(modifier_pair)?,
             })
         }
+        Rule::static_status_creatures_you_control_get => {
+            let mut inner = pair.into_inner();
+            let status_pair = inner
+                .next()
+                .expect("static_status_creatures_you_control_get begins with a status");
+            let modifier_pair = inner
+                .next()
+                .expect("static_status_creatures_you_control_get has a pt_modifier");
+            Ok(StaticAbility::StatusCreaturesYouControlGet {
+                status: creature_status_from_pair(status_pair)?,
+                modifier: pt_modifier_from_pair(modifier_pair)?,
+            })
+        }
         Rule::static_enchanted_gets => {
             let mut inner = pair.into_inner();
             let pt_pair = inner
@@ -1039,6 +1053,17 @@ fn color_from_pair(pair: Pair<Rule>) -> Result<Color, ParseError> {
         "red" => Ok(Color::Red),
         "green" => Ok(Color::Green),
         _ => Err(ParseError::Internal("color_word variant")),
+    }
+}
+
+fn creature_status_from_pair(pair: Pair<Rule>) -> Result<CreatureStatus, ParseError> {
+    if pair.as_rule() != Rule::creature_status {
+        return Err(ParseError::Internal("creature_status"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "tapped" => Ok(CreatureStatus::Tapped),
+        "untapped" => Ok(CreatureStatus::Untapped),
+        _ => Err(ParseError::Internal("creature_status variant")),
     }
 }
 

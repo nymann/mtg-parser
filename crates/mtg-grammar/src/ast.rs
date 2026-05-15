@@ -244,6 +244,12 @@ pub enum CreatureType {
     Wall,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CreatureStatus {
+    Tapped,
+    Untapped,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ManaCost {
     pub symbols: Vec<ManaSymbol>,
@@ -283,6 +289,12 @@ pub enum StaticAbility {
     ColoredPermanentsGet {
         color: Color,
         permanent_type: PermanentType,
+        modifier: PtModifier,
+    },
+    /// "<status> creatures you control get <modifier>." — P/T modifier
+    /// on controlled creatures matching a tapped/untapped state.
+    StatusCreaturesYouControlGet {
+        status: CreatureStatus,
         modifier: PtModifier,
     },
     /// "Enchanted <type> gets +X/+Y, where X is <expr>, and Y is <expr>."

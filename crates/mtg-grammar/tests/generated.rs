@@ -52,3 +52,5 @@ mod braingeyser;
 mod burrowing;
 #[path = "generated/camouflage.rs"]
 mod camouflage;
+#[path = "generated/castle.rs"]
+mod castle;

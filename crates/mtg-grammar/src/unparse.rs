@@ -2,11 +2,11 @@ use std::fmt::Write;
 
 use crate::ast::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType,
-    CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureType, EnchantObject,
-    EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    PermanentType, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus, CreatureType,
+    EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier,
+    ModalMode, PermanentType, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent,
+    TriggeredAbility, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -320,6 +320,12 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push(' ');
             out.push_str(permanent_type_plural_name(*permanent_type));
             out.push_str(" get ");
+            write_pt_modifier(out, *modifier);
+            out.push('.');
+        }
+        StaticAbility::StatusCreaturesYouControlGet { status, modifier } => {
+            out.push_str(creature_status_name_capitalized(*status));
+            out.push_str(" creatures you control get ");
             write_pt_modifier(out, *modifier);
             out.push('.');
         }
@@ -679,6 +685,13 @@ fn color_name(color: Color) -> &'static str {
         Color::Black => "black",
         Color::Red => "red",
         Color::Green => "green",
+    }
+}
+
+fn creature_status_name_capitalized(status: CreatureStatus) -> &'static str {
+    match status {
+        CreatureStatus::Tapped => "Tapped",
+        CreatureStatus::Untapped => "Untapped",
     }
 }
 

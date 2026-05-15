@@ -49,6 +49,7 @@ sentence_statement = _{
   | activated_ability
   | static_as_long_as
   | static_colored_permanents_get
+  | static_status_creatures_you_control_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
   | static_enchanted_has_keyword
@@ -192,6 +193,8 @@ creature_type = @{ ^"wall" }
 //   - "As long as <cond>, <effect>." — conditional continuous effect.
 //   - "<Color> <type>s get <pt_modifier>." — P/T modifier on objects
 //     matching a color and permanent type.
+//   - "<Status> creatures you control get <pt_modifier>." — P/T
+//     modifier on controlled creatures matching a tapped/untapped state.
 //   - "Enchanted <type> gets <pt_modifier>." — unconditional P/T
 //     modifier on the enchanted permanent (e.g. Animate Dead).
 //   - "Enchanted <type> gets <variable_pt_modifier>, where ..." — a
@@ -205,6 +208,7 @@ creature_type = @{ ^"wall" }
 static_ability = _{
     static_as_long_as
   | static_colored_permanents_get
+  | static_status_creatures_you_control_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
   | static_enchanted_has_keyword
@@ -219,6 +223,12 @@ static_as_long_as = {
 static_colored_permanents_get = {
     color_word ~ permanent_type_plural ~ ^"get" ~ pt_modifier ~ "."
 }
+
+static_status_creatures_you_control_get = {
+    creature_status ~ ^"creatures" ~ ^"you" ~ ^"control" ~ ^"get" ~ pt_modifier ~ "."
+}
+
+creature_status = @{ ^"tapped" | ^"untapped" }
 
 static_enchanted_gets = {
     ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier ~ "."
