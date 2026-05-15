@@ -19,6 +19,27 @@ const DEFAULT_CHURN_WINDOW: usize = 200;
 const DEFAULT_MAX_ITERATIONS: u32 = 3;
 const TOTAL_STEPS: u8 = 9;
 
+/// Outcome of a single refactor iteration, classified so that meta-loops
+/// (e.g. `cargo xtask grind`) can count no-op streaks and route gate
+/// failures to a repair agent instead of aborting.
+#[derive(Debug)]
+pub enum IterationOutcome {
+    /// Agent edited code, every gate passed, commit landed.
+    Committed {
+        new_passes: usize,
+        corpus_passing: usize,
+        corpus_total: usize,
+        grammar_rules: usize,
+        duration_secs: u64,
+    },
+    /// Agent finished cleanly but produced no diff. The natural "nothing
+    /// left to refactor" signal.
+    NoChanges,
+    /// An agent stage or a gate failed. The error captures what went
+    /// wrong so the caller can hand it to a repair agent.
+    GateFailed(anyhow::Error),
+}
+
 const HOT_FILES: &[(&str, &str)] = &[
     ("grammar.pest", "crates/mtg-grammar/src/grammar.pest"),
     ("ast.rs", "crates/mtg-grammar/src/ast.rs"),
@@ -180,6 +201,32 @@ impl Options {
             agent,
             churn_window,
             max_iterations,
+        })
+    }
+
+    /// Build options for a single iteration invoked by a meta-loop like
+    /// `cargo xtask grind`. The meta-loop owns its own iteration counter,
+    /// so `max_iterations` is set to 1; gating happens outside.
+    pub fn for_grind(
+        theme: Option<&str>,
+        target: Option<String>,
+        agent: AgentProvider,
+        allow_dirty: bool,
+    ) -> Result<Self> {
+        let theme = match theme {
+            Some(s) => Some(Theme::parse(s)?),
+            None => None,
+        };
+        Ok(Self {
+            theme,
+            target,
+            out: None,
+            print: false,
+            dry_run: false,
+            allow_dirty,
+            agent,
+            churn_window: DEFAULT_CHURN_WINDOW,
+            max_iterations: 1,
         })
     }
 }
@@ -392,7 +439,17 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
     };
 
     for iteration in 1..=iterations {
-        run_iteration(&opts, sink, iteration)?;
+        match run_iteration(&opts, sink, iteration)? {
+            IterationOutcome::Committed { .. } => {}
+            IterationOutcome::NoChanges => {
+                if opts.dry_run || opts.print {
+                    // Dry-run / print intentionally produces no diff.
+                    continue;
+                }
+                bail!("no changes to commit after successful refactor gates");
+            }
+            IterationOutcome::GateFailed(e) => return Err(e),
+        }
     }
     let reason = if opts.dry_run || opts.print {
         SessionEndReason::DryRunStop
@@ -403,7 +460,25 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
     Ok(ExitCode::SUCCESS)
 }
 
-fn run_iteration(opts: &Options, sink: &mut dyn FlowSink, iteration: u32) -> Result<()> {
+/// Run one refactor iteration without the loud-error semantics of the
+/// `refactor-hotspot` command. Used by meta-loops (`grind`) that want to
+/// classify outcomes themselves — count no-op streaks, hand gate
+/// failures to a repair agent, etc. Setup-level errors (failed file I/O,
+/// dirty tree precondition) still propagate as `Err`; only agent-stage
+/// and gate failures are folded into [`IterationOutcome::GateFailed`].
+pub fn run_single_iteration(
+    opts: &Options,
+    sink: &mut dyn FlowSink,
+    iteration: u32,
+) -> Result<IterationOutcome> {
+    run_iteration(opts, sink, iteration)
+}
+
+fn run_iteration(
+    opts: &Options,
+    sink: &mut dyn FlowSink,
+    iteration: u32,
+) -> Result<IterationOutcome> {
     let iteration_start = Instant::now();
     let baseline_corpus_passing = read_corpus_pp_total().0;
     let selected = resolve_selection(opts)?;
@@ -472,7 +547,7 @@ fn run_iteration(opts: &Options, sink: &mut dyn FlowSink, iteration: u32) -> Res
                 opts.agent.label()
             ),
         });
-        return Ok(());
+        return Ok(IterationOutcome::NoChanges);
     }
 
     sink.emit(FlowEvent::StepStarted {
@@ -494,12 +569,12 @@ fn run_iteration(opts: &Options, sink: &mut dyn FlowSink, iteration: u32) -> Res
         summary: Some(format!("exit={}", cluster_outcome.exit_code)),
     });
     if !cluster_outcome.success {
-        bail!(
+        return Ok(IterationOutcome::GateFailed(anyhow!(
             "{} cluster stage exited with status {}; transcript: {}",
             opts.agent.label(),
             cluster_outcome.exit_code,
             log_dir.join("cluster_transcript.ndjson").display()
-        );
+        )));
     }
 
     let plan_prompt = build_plan_prompt(
@@ -531,12 +606,12 @@ fn run_iteration(opts: &Options, sink: &mut dyn FlowSink, iteration: u32) -> Res
         summary: Some(format!("exit={}", plan_outcome.exit_code)),
     });
     if !plan_outcome.success {
-        bail!(
+        return Ok(IterationOutcome::GateFailed(anyhow!(
             "{} plan stage exited with status {}; transcript: {}",
             opts.agent.label(),
             plan_outcome.exit_code,
             log_dir.join("plan_transcript.ndjson").display()
-        );
+        )));
     }
 
     let implementation_prompt = build_implementation_prompt(
@@ -579,12 +654,12 @@ fn run_iteration(opts: &Options, sink: &mut dyn FlowSink, iteration: u32) -> Res
         )),
     });
     if !implement_outcome.success {
-        bail!(
+        return Ok(IterationOutcome::GateFailed(anyhow!(
             "{} implementation stage exited with status {}; transcript: {}",
             opts.agent.label(),
             implement_outcome.exit_code,
             log_dir.join("transcript.ndjson").display()
-        );
+        )));
     }
 
     sink.emit(FlowEvent::StepStarted {
@@ -592,7 +667,14 @@ fn run_iteration(opts: &Options, sink: &mut dyn FlowSink, iteration: u32) -> Res
         total: TOTAL_STEPS,
         label: "cargo fmt --all".to_string(),
     });
-    run_gate("cargo fmt --all", "cargo", &["fmt", "--all"])?;
+    if let Err(e) = run_gate("cargo fmt --all", "cargo", &["fmt", "--all"]) {
+        sink.emit(FlowEvent::StepFinished {
+            index: 7,
+            ok: false,
+            summary: Some(format!("{e:#}")),
+        });
+        return Ok(IterationOutcome::GateFailed(e));
+    }
     sink.emit(FlowEvent::StepFinished {
         index: 7,
         ok: true,
@@ -603,7 +685,14 @@ fn run_iteration(opts: &Options, sink: &mut dyn FlowSink, iteration: u32) -> Res
         total: TOTAL_STEPS,
         label: "cargo test".to_string(),
     });
-    run_gate("cargo test", "cargo", &["test"])?;
+    if let Err(e) = run_gate("cargo test", "cargo", &["test"]) {
+        sink.emit(FlowEvent::StepFinished {
+            index: 8,
+            ok: false,
+            summary: Some(format!("{e:#}")),
+        });
+        return Ok(IterationOutcome::GateFailed(e));
+    }
     sink.emit(FlowEvent::StepFinished {
         index: 8,
         ok: true,
@@ -614,12 +703,29 @@ fn run_iteration(opts: &Options, sink: &mut dyn FlowSink, iteration: u32) -> Res
         total: TOTAL_STEPS,
         label: "corpus, audit, commit".to_string(),
     });
-    run_gate("cargo xtask corpus", "cargo", &["xtask", "corpus"])?;
-    run_gate("just audit-page", "just", &["audit-page"])?;
+    if let Err(e) = run_gate("cargo xtask corpus", "cargo", &["xtask", "corpus"]) {
+        sink.emit(FlowEvent::StepFinished {
+            index: 9,
+            ok: false,
+            summary: Some(format!("{e:#}")),
+        });
+        return Ok(IterationOutcome::GateFailed(e));
+    }
+    if let Err(e) = run_gate("just audit-page", "just", &["audit-page"]) {
+        sink.emit(FlowEvent::StepFinished {
+            index: 9,
+            ok: false,
+            summary: Some(format!("{e:#}")),
+        });
+        return Ok(IterationOutcome::GateFailed(e));
+    }
 
     match git_commit(&commit_message(&selected, iteration)?)? {
         CommitOutcome::Committed => {
             let (corpus_passing, corpus_total) = read_corpus_pp_total();
+            let new_passes = corpus_passing.saturating_sub(baseline_corpus_passing);
+            let grammar_rules = count_grammar_rules();
+            let duration_secs = iteration_start.elapsed().as_secs();
             sink.emit(FlowEvent::StepFinished {
                 index: 9,
                 ok: true,
@@ -628,17 +734,30 @@ fn run_iteration(opts: &Options, sink: &mut dyn FlowSink, iteration: u32) -> Res
             sink.emit(FlowEvent::IterationFinished {
                 index: iteration,
                 outcome: IterationOutcomeSummary::Committed {
-                    new_passes: corpus_passing.saturating_sub(baseline_corpus_passing),
+                    new_passes,
                     corpus_passing,
                     corpus_total,
-                    grammar_rules: count_grammar_rules(),
-                    duration_secs: iteration_start.elapsed().as_secs(),
+                    grammar_rules,
+                    duration_secs,
                 },
             });
+            Ok(IterationOutcome::Committed {
+                new_passes,
+                corpus_passing,
+                corpus_total,
+                grammar_rules,
+                duration_secs,
+            })
         }
-        CommitOutcome::NoChanges => bail!("no changes to commit after successful refactor gates"),
+        CommitOutcome::NoChanges => {
+            sink.emit(FlowEvent::StepFinished {
+                index: 9,
+                ok: true,
+                summary: Some("no changes to commit".to_string()),
+            });
+            Ok(IterationOutcome::NoChanges)
+        }
     }
-    Ok(())
 }
 
 #[derive(Debug, Clone)]
@@ -1011,13 +1130,13 @@ fn git_churn(path: &str, window: usize) -> Result<usize> {
     Ok(stdout.lines().filter(|line| *line == path).count())
 }
 
-struct AgentOutcome {
-    success: bool,
-    exit_code: i32,
-    assistant_text: String,
+pub struct AgentOutcome {
+    pub success: bool,
+    pub exit_code: i32,
+    pub assistant_text: String,
 }
 
-fn invoke_agent(
+pub fn invoke_agent(
     provider: AgentProvider,
     prompt: &str,
     transcript_path: &Path,

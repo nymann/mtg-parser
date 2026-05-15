@@ -23,6 +23,7 @@ use ratatui::{backend::CrosstermBackend, Terminal};
 
 use crate::add_card;
 use crate::flow::{FlowEvent, FlowSink, NoteLevel};
+use crate::grind;
 use crate::refactor_hotspot;
 
 mod input;
@@ -52,6 +53,13 @@ pub fn run_add_card(opts: add_card::Options) -> Result<std::process::ExitCode> {
 /// Run refactor-hotspot with the TUI as its output surface.
 pub fn run_refactor_hotspot(opts: refactor_hotspot::Options) -> Result<std::process::ExitCode> {
     run_workflow(move |sink| refactor_hotspot::run_with_sink(opts, sink))
+}
+
+/// Run grind with the TUI as its output surface. The two inner workflows
+/// (refactor-hotspot, then add-card) reuse the same FlowEvent stream;
+/// the TUI re-renders as the SessionStarted events from each phase land.
+pub fn run_grind(opts: grind::Options) -> Result<std::process::ExitCode> {
+    run_workflow(move |sink| grind::run_with_sink(opts, sink))
 }
 
 fn run_workflow<F>(orchestrator: F) -> Result<std::process::ExitCode>

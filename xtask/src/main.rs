@@ -10,6 +10,7 @@ mod agent_events;
 mod console_sink;
 mod corpus_cmd;
 mod flow;
+mod grind;
 mod next_card;
 mod paths;
 mod refactor_hotspot;
@@ -45,6 +46,15 @@ Commands:
               [--target PATH] damage, destroy, prevention, keyword-abilities,
               [--out PATH]    triggered-abilities, and unparse-templates.
               [--ui console|tui]
+  grind       [--set CODE]    Meta-loop: run refactor-hotspot until N consecutive
+              [--stop-after N]    no-ops (default 3), then hand off to add-card on
+              [--max-refactor-iterations N]  the cleaner foundation. Gate failures
+              [--max-card-iterations N]      route to a freeform repair agent before
+              [--repair-attempts N]          giving up. Use --theme / --target to
+              [--theme THEME] [--target PATH]  steer the refactor phase. Defaults:
+              [--agent codex|claude] [--ui ...]  --stop-after 3,
+              [--allow-dirty] [--dry-run]    --max-refactor-iterations 50,
+                                             --repair-attempts 1.
   add-card    [--set CODE]    Orchestrated loop: pick the next failing card in
               [--max-iterations N]  the corpus, hand it to a coding agent, gate the
               [--dry-run] [--allow-dirty]  result through tier-1/2 + corpus + commit. When
@@ -109,6 +119,26 @@ fn main() -> ExitCode {
             Ok(Ui::Console) => refactor_hotspot::run(&args[1..]),
             Ok(Ui::Tui) => match refactor_hotspot::Options::parse(&args[1..]) {
                 Ok(opts) => match tui::run_refactor_hotspot(opts) {
+                    Ok(code) => code,
+                    Err(e) => {
+                        eprintln!("tui error: {e:#}");
+                        ExitCode::FAILURE
+                    }
+                },
+                Err(e) => {
+                    eprintln!("{e}");
+                    ExitCode::from(2)
+                }
+            },
+            Err(e) => {
+                eprintln!("{e}");
+                ExitCode::from(2)
+            }
+        },
+        Some("grind") => match parse_ui(&args[1..]) {
+            Ok(Ui::Console) => grind::run(&args[1..]),
+            Ok(Ui::Tui) => match grind::Options::parse(&args[1..]) {
+                Ok(opts) => match tui::run_grind(opts) {
                     Ok(code) => code,
                     Err(e) => {
                         eprintln!("tui error: {e:#}");
