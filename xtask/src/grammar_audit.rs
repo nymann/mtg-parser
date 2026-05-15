@@ -520,7 +520,7 @@ fn best_neighbours(
         .iter()
         .filter_map(|(name, other)| {
             let rhs = rhs_atoms(&other.rhs);
-            if shared_identifier_count(&lhs_atoms, &rhs) < 2 {
+            if shared_meaningful_atom_count(&lhs_atoms, &rhs) < 2 {
                 return None;
             }
             let similarity = skeleton_similarity(&lhs_atoms, &rhs);
@@ -551,54 +551,77 @@ fn rhs_atoms(rhs: &str) -> Vec<String> {
     while let Some(ch) = chars.next() {
         match ch {
             '"' => {
-                if !current.is_empty() {
-                    atoms.push(std::mem::take(&mut current).to_ascii_lowercase());
-                }
+                push_identifier_atom(&mut atoms, &mut current);
+                let mut quoted = String::new();
                 while let Some(q) = chars.next() {
                     if q == '\\' {
                         let _ = chars.next();
                     } else if q == '"' {
                         break;
+                    } else {
+                        quoted.push(q);
                     }
                 }
-                atoms.push("lit".into());
+                for word in words(&quoted) {
+                    if !is_stop_word(&word) {
+                        atoms.push(format!("lit:{word}"));
+                    }
+                }
             }
             c if c.is_ascii_alphanumeric() || c == '_' => current.push(c),
-            c if matches!(c, '~' | '|' | '?' | '*' | '+' | '(' | ')') => {
-                if !current.is_empty() {
-                    atoms.push(format!(
-                        "id:{}",
-                        std::mem::take(&mut current).to_ascii_lowercase()
-                    ));
-                }
+            c if matches!(c, '|' | '?' | '*' | '+') => {
+                push_identifier_atom(&mut atoms, &mut current);
                 atoms.push(c.to_string());
             }
+            c if matches!(c, '~' | '(' | ')') => push_identifier_atom(&mut atoms, &mut current),
             _ => {
-                if !current.is_empty() {
-                    atoms.push(format!(
-                        "id:{}",
-                        std::mem::take(&mut current).to_ascii_lowercase()
-                    ));
-                }
+                push_identifier_atom(&mut atoms, &mut current);
             }
         }
     }
-    if !current.is_empty() {
-        atoms.push(format!("id:{}", current.to_ascii_lowercase()));
-    }
+    push_identifier_atom(&mut atoms, &mut current);
     atoms
 }
 
-fn shared_identifier_count(a: &[String], b: &[String]) -> usize {
-    let a_ids: BTreeSet<&str> = a
+fn push_identifier_atom(atoms: &mut Vec<String>, current: &mut String) {
+    if current.is_empty() {
+        return;
+    }
+    let id = std::mem::take(current).to_ascii_lowercase();
+    if is_generic_grammar_identifier(&id) {
+        return;
+    }
+    atoms.push(format!("id:{id}"));
+}
+
+fn shared_meaningful_atom_count(a: &[String], b: &[String]) -> usize {
+    let a_atoms: BTreeSet<&str> = a
         .iter()
-        .filter_map(|atom| atom.strip_prefix("id:"))
+        .map(String::as_str)
+        .filter(|atom| is_meaningful_similarity_atom(atom))
         .collect();
-    let b_ids: BTreeSet<&str> = b
+    let b_atoms: BTreeSet<&str> = b
         .iter()
-        .filter_map(|atom| atom.strip_prefix("id:"))
+        .map(String::as_str)
+        .filter(|atom| is_meaningful_similarity_atom(atom))
         .collect();
-    a_ids.intersection(&b_ids).count()
+    a_atoms.intersection(&b_atoms).count()
+}
+
+fn is_meaningful_similarity_atom(atom: &str) -> bool {
+    atom.starts_with("id:") || atom.starts_with("lit:")
+}
+
+fn is_generic_grammar_identifier(id: &str) -> bool {
+    matches!(
+        id,
+        "_" | "article"
+            | "permanent_type"
+            | "permanent_type_plural"
+            | "source_object"
+            | "target_player"
+            | "target_creature"
+    )
 }
 
 fn skeleton_similarity(a: &[String], b: &[String]) -> f32 {
@@ -650,6 +673,9 @@ fn one_span_similarity(a: &[String], b: &[String]) -> f32 {
         && a[a.len() - 1 - suffix] == b[b.len() - 1 - suffix]
     {
         suffix += 1;
+    }
+    if a.len() == b.len() && prefix + suffix + 1 == a.len() {
+        return 0.90;
     }
     (prefix + suffix) as f32 / a.len().max(b.len()) as f32
 }
@@ -735,6 +761,25 @@ counter_amount = _{ number_word | variable_name }
             f.severity == Severity::BlockCandidate
                 && f.kind == "rhs_quantity_duplication"
                 && f.message.contains("shared amount/quantity rule")
+        }));
+    }
+
+    #[test]
+    fn does_not_block_on_generic_sentence_shape_similarity() {
+        let diff = "\
++amount_of_mana_equal_to_sacrificed_permanent_mana_value = { article ~ ^\"amount\" ~ ^\"of\" ~ mana_symbol ~ ^\"equal\" ~ ^\"to\" ~ ^\"the\" ~ ^\"sacrificed\" ~ permanent_type ~ ^\"mana\" ~ ^\"value\" }
+";
+        let grammar = "\
+target_player_activates_mana_ability_of_each_permanent_they_control = { ^\"target\" ~ ^\"player\" ~ ^\"activates\" ~ article ~ ^\"mana\" ~ ^\"ability\" ~ ^\"of\" ~ ^\"each\" ~ permanent_type ~ ^\"they\" ~ ^\"control\" }
+amount_of_mana_equal_to_sacrificed_permanent_mana_value = { article ~ ^\"amount\" ~ ^\"of\" ~ mana_symbol ~ ^\"equal\" ~ ^\"to\" ~ ^\"the\" ~ ^\"sacrificed\" ~ permanent_type ~ ^\"mana\" ~ ^\"value\" }
+";
+        let report = audit_grammar_diff(
+            diff,
+            grammar,
+            "Add an amount of {B} equal to the sacrificed creature's mana value.",
+        );
+        assert!(!report.findings.iter().any(|f| {
+            f.severity == Severity::BlockCandidate && f.kind == "rhs_skeleton_similarity"
         }));
     }
 }

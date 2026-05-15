@@ -1989,12 +1989,20 @@ fn invoke_downstream_repair(
 fn classify_downstream_repair_reason(output: &str) -> DownstreamRepairClassification {
     if output.contains("could not compile `mtg-semantic`")
         || (output.contains("mtg-semantic") && output.contains("tests/prop.rs"))
+        || (output.contains("tests/prop.rs")
+            && output.contains("error[")
+            && output.contains("could not compile `mtg-grammar`"))
     {
         return DownstreamRepairClassification {
             reason: DownstreamRepairReason::SemanticPropCompile,
             evidence: first_matching_line(
                 output,
-                &["could not compile `mtg-semantic`", "mtg-semantic"],
+                &[
+                    "could not compile `mtg-semantic`",
+                    "could not compile `mtg-grammar`",
+                    "tests/prop.rs",
+                    "mtg-semantic",
+                ],
             )
             .unwrap_or("mtg-semantic tier-2 failure")
             .to_string(),
@@ -2639,6 +2647,12 @@ mod tests {
         let semantic = "error[E0599]\nerror: could not compile `mtg-semantic` (test \"prop\")";
         assert_eq!(
             classify_downstream_repair_reason(semantic).reason,
+            DownstreamRepairReason::SemanticPropCompile
+        );
+
+        let grammar_prop_compile = "error[E0559]: variant `Statement::AddMana` has no field named `mana`\n   --> crates/mtg-grammar/tests/prop.rs:273:62\nerror: could not compile `mtg-grammar` (test \"prop\") due to 1 previous error";
+        assert_eq!(
+            classify_downstream_repair_reason(grammar_prop_compile).reason,
             DownstreamRepairReason::SemanticPropCompile
         );
 
