@@ -828,6 +828,7 @@ pub enum SpellType {
 pub enum CreatureType {
     Goblin,
     Golem,
+    Merfolk,
     Wall,
 }
 

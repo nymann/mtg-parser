@@ -219,3 +219,5 @@ mod lightning_bolt;
 mod living_artifact;
 #[path = "generated_patterns/living_lands.rs"]
 mod living_lands;
+#[path = "generated_patterns/lord_of_atlantis.rs"]
+mod lord_of_atlantis;

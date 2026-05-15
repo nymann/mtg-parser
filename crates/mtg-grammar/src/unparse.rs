@@ -1981,6 +1981,7 @@ fn creature_type_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Goblin => "Goblin",
         CreatureType::Golem => "Golem",
+        CreatureType::Merfolk => "Merfolk",
         CreatureType::Wall => "Wall",
     }
 }
@@ -1989,6 +1990,7 @@ fn creature_type_plural_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Goblin => "Goblins",
         CreatureType::Golem => "Golems",
+        CreatureType::Merfolk => "Merfolk",
         CreatureType::Wall => "Walls",
     }
 }

@@ -3337,6 +3337,7 @@ fn creature_type_from_pair(pair: Pair<Rule>) -> Result<CreatureType, ParseError>
     match pair.as_str().to_ascii_lowercase().as_str() {
         "goblin" => Ok(CreatureType::Goblin),
         "golem" => Ok(CreatureType::Golem),
+        "merfolk" => Ok(CreatureType::Merfolk),
         "wall" => Ok(CreatureType::Wall),
         _ => Err(ParseError::Internal("creature_type variant")),
     }
@@ -3349,6 +3350,7 @@ fn creature_type_from_plural_pair(pair: Pair<Rule>) -> Result<CreatureType, Pars
     match pair.as_str().to_ascii_lowercase().as_str() {
         "goblins" => Ok(CreatureType::Goblin),
         "golems" => Ok(CreatureType::Golem),
+        "merfolk" => Ok(CreatureType::Merfolk),
         "walls" => Ok(CreatureType::Wall),
         _ => Err(ParseError::Internal("creature_type_plural variant")),
     }

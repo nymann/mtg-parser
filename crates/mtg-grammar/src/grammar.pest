@@ -502,8 +502,8 @@ color_word = @{
 
 // Creature subtypes that appear as Aura targets, enchanted objects, or
 // creature-type selectors.
-creature_type = @{ ^"goblin" | ^"golem" | ^"wall" }
-creature_type_plural = @{ ^"goblins" | ^"golems" | ^"walls" }
+creature_type = @{ ^"goblin" | ^"golem" | ^"merfolk" | ^"wall" }
+creature_type_plural = @{ ^"goblins" | ^"golems" | ^"merfolk" | ^"walls" }
 
 // Static abilities. Five surface shapes today:
 //   - "As long as <cond>, <effect>." — conditional continuous effect.

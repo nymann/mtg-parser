@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 181,
+  "passing": 182,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -464,8 +464,7 @@
       "status": "pass"
     },
     "lea/Lord of Atlantis": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:7\n  |\n1 | Other Merfolk get +1/+1 and have islandwalk.\n  |       ^---\n  |\n  = expected creature_type_plural"
+      "status": "pass"
     },
     "lea/Lord of the Pit": {
       "status": "fail",
