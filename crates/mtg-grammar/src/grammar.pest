@@ -356,6 +356,7 @@ activated_effect = _{
   | untap_source
   | activated_enchanted_gets_until_eot
   | prevent_next_damage_from_colored_source
+  | prevent_next_damage_to_you_this_turn
   | put_up_to_variable_pt_counters_on_source
   | physical_action
 }
@@ -374,6 +375,11 @@ prevent_next_damage_from_colored_source = {
   ~ ^"of" ~ ^"your" ~ ^"choice" ~ ^"would" ~ ^"deal" ~ ^"damage"
   ~ ^"to" ~ ^"you" ~ ^"this" ~ ^"turn" ~ "," ~ ^"prevent"
   ~ ^"that" ~ ^"damage" ~ "."
+}
+prevent_next_damage_to_you_this_turn = {
+    ^"prevent" ~ ^"the" ~ ^"next" ~ unsigned_number ~ ^"damage"
+  ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"to" ~ ^"you"
+  ~ ^"this" ~ ^"turn" ~ "."
 }
 put_up_to_variable_pt_counters_on_source = {
     ^"put" ~ ^"up" ~ ^"to" ~ variable_name ~ pt_counters

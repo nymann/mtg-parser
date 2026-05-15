@@ -1017,6 +1017,17 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 color: color_from_pair(color_pair)?,
             })
         }
+        Rule::prevent_next_damage_to_you_this_turn => {
+            let amount_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("prevent next damage missing amount"))?;
+            let amount = amount_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("prevent next damage amount"))?;
+            Ok(ActivatedEffect::PreventNextDamageToYouThisTurn { amount })
+        }
         Rule::put_up_to_variable_pt_counters_on_source => {
             let mut inner = pair.into_inner();
             let amount_pair = inner

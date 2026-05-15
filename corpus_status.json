@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 76,
+  "passing": 77,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -130,8 +130,7 @@
       "status": "pass"
     },
     "lea/Conservator": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {3}, {T}: Prevent the next 2 damage that would be dealt to you this turn.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "status": "pass"
     },
     "lea/Contract from Below": {
       "status": "fail",
@@ -178,7 +177,7 @@
     },
     "lea/Cyclopean Tomb": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {2}, {T}: Put a mire counter on target non-Swamp land. That land is a Swamp for as long as it has a mire counter on it. Activate only during your upkeep.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {2}, {T}: Put a mire counter on target non-Swamp land. That land is a Swamp for as long as it has a mire counter on it. Activate only during your upkeep.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Dark Ritual": {
       "status": "fail",
@@ -205,7 +204,7 @@
     },
     "lea/Demonic Hordes": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target land.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target land.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Demonic Tutor": {
       "status": "fail",
@@ -225,11 +224,11 @@
     },
     "lea/Disrupting Scepter": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {3}, {T}: Target player discards a card. Activate only during your turn.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {3}, {T}: Target player discards a card. Activate only during your turn.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Dragon Whelp": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn. If this ability has been activated four or more times this turn, sacrifice this creature at the beginning of the next end step.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn. If this ability has been activated four or more times this turn, sacrifice this creature at the beginning of the next end step.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Drain Life": {
       "status": "fail",
@@ -241,15 +240,15 @@
     },
     "lea/Drudge Skeletons": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Dwarven Demolition Team": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target Wall.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target Wall.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Dwarven Warriors": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Target creature with power 2 or less can't be blocked this turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Target creature with power 2 or less can't be blocked this turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Earth Elemental": {
       "status": "fail",
@@ -330,7 +329,7 @@
     },
     "lea/Frozen Shade": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {B}: This creature gets +1/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {B}: This creature gets +1/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Fungusaur": {
       "status": "fail",
@@ -354,7 +353,7 @@
     },
     "lea/Glasses of Urza": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Look at target player's hand.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Look at target player's hand.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Gloom": {
       "status": "fail",
@@ -362,7 +361,7 @@
     },
     "lea/Goblin Balloon Brigade": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {R}: This creature gains flying until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {R}: This creature gains flying until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Goblin King": {
       "status": "fail",
@@ -370,7 +369,7 @@
     },
     "lea/Granite Gargoyle": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +0/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +0/+1 until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Gray Ogre": {
       "status": "fail",
@@ -393,7 +392,7 @@
     },
     "lea/Helm of Chatzuk": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {1}, {T}: Target creature gains banding until end of turn.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {1}, {T}: Target creature gains banding until end of turn.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Hill Giant": {
       "status": "fail",
@@ -431,11 +430,11 @@
     },
     "lea/Icy Manipulator": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {1}, {T}: Tap target artifact, creature, or land.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {1}, {T}: Tap target artifact, creature, or land.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Illusionary Mask": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {X}: You may choose a creature card in your hand whose mana cost could be paid by some amount of, or all of, the mana you spent on {X}. If you do, you may cast that card face down as a 2/2 creature spell without paying its mana cost. If the creature that spell becomes as it resolves has not been turned face up and would assign or deal damage, be dealt damage, or become tapped, instead it's turned face up and assigns or deals damage, is dealt damage, or becomes tapped. Activate only as a sorcery.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {X}: You may choose a creature card in your hand whose mana cost could be paid by some amount of, or all of, the mana you spent on {X}. If you do, you may cast that card face down as a 2/2 creature spell without paying its mana cost. If the creature that spell becomes as it resolves has not been turned face up and would assign or deal damage, be dealt damage, or become tapped, instead it's turned face up and assigns or deals damage, is dealt damage, or becomes tapped. Activate only as a sorcery.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Instill Energy": {
       "status": "fail",
@@ -475,11 +474,11 @@
     },
     "lea/Jade Statue": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {2}: This artifact becomes a 3/6 Golem artifact creature until end of combat. Activate only during combat.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {2}: This artifact becomes a 3/6 Golem artifact creature until end of combat. Activate only during combat.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Jayemdae Tome": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {4}, {T}: Draw a card.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {4}, {T}: Draw a card.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Juggernaut": {
       "status": "fail",
@@ -545,7 +544,7 @@
     },
     "lea/Living Wall": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {1}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {1}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Llanowar Elves": {
       "status": "pass"
@@ -634,7 +633,7 @@
     },
     "lea/Nettling Imp": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn. That creature attacks this turn if able. Destroy it at the beginning of the next end step if it didn't attack this turn. Activate only during an opponent's turn, before attackers are declared.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn. That creature attacks this turn if able. Destroy it at the beginning of the next end step if it didn't attack this turn. Activate only during an opponent's turn, before attackers are declared.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Nevinyrral's Disk": {
       "status": "fail",
@@ -654,7 +653,7 @@
     },
     "lea/Orcish Artillery": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: This creature deals 2 damage to any target and 3 damage to you.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: This creature deals 2 damage to any target and 3 damage to you.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Orcish Oriflamme": {
       "status": "fail",
@@ -670,7 +669,7 @@
     },
     "lea/Personal Incarnation": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {0}: The next 1 damage that would be dealt to this creature this turn is dealt to its owner instead. Only this creatures owner may activate this ability.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {0}: The next 1 damage that would be dealt to this creature this turn is dealt to its owner instead. Only this creatures owner may activate this ability.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Pestilence": {
       "status": "fail",
@@ -717,7 +716,7 @@
     },
     "lea/Prodigal Sorcerer": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: This creature deals 1 damage to any target.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: This creature deals 1 damage to any target.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Psionic Blast": {
       "status": "fail",
@@ -746,7 +745,7 @@
     },
     "lea/Regeneration": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {G}: Regenerate enchanted creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {G}: Regenerate enchanted creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Regrowth": {
       "status": "fail",
@@ -773,11 +772,11 @@
     },
     "lea/Rod of Ruin": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {3}, {T}: This artifact deals 1 damage to any target.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {3}, {T}: This artifact deals 1 damage to any target.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Royal Assassin": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target tapped creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Destroy target tapped creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Sacrifice": {
       "status": "fail",
@@ -785,7 +784,7 @@
     },
     "lea/Samite Healer": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Prevent the next 1 damage that would be dealt to any target this turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Prevent the next 1 damage that would be dealt to any target this turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Savannah": {
       "status": "fail",
@@ -836,7 +835,7 @@
     },
     "lea/Shivan Dragon": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Simulacrum": {
       "status": "fail",
@@ -879,7 +878,7 @@
     },
     "lea/Stone Giant": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Stone Rain": {
       "status": "fail",
@@ -911,7 +910,7 @@
     },
     "lea/The Hive": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:11\n  |\n1 | {5}, {T}: Create a 1/1 colorless Insect artifact creature token with flying named Wasp.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {5}, {T}: Create a 1/1 colorless Insect artifact creature token with flying named Wasp.\n  |           ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Thicket Basilisk": {
       "status": "pass"
@@ -978,7 +977,7 @@
     },
     "lea/Uthden Troll": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | {R}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {R}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Verduran Enchantress": {
       "status": "fail",
@@ -1002,15 +1001,15 @@
     },
     "lea/Wall of Bone": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Wall of Brambles": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {G}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {G}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Wall of Fire": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {R}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Wall of Ice": {
       "status": "pass"
@@ -1023,7 +1022,7 @@
     },
     "lea/Wall of Water": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {U}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {U}: This creature gets +1/+0 until end of turn.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Wall of Wood": {
       "status": "pass"
@@ -1066,7 +1065,7 @@
     },
     "lea/Will-o'-the-Wisp": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {B}: Regenerate this creature.\n  |      ^---\n  |\n  = expected add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, untap_source, activated_enchanted_gets_until_eot, prevent_next_damage_from_colored_source, prevent_next_damage_to_you_this_turn, put_up_to_variable_pt_counters_on_source, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, or then_destroy_source"
     },
     "lea/Winter Orb": {
       "status": "fail",

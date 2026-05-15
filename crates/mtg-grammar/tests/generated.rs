@@ -70,3 +70,5 @@ mod clone;
 mod cockatrice;
 #[path = "generated/consecrate_land.rs"]
 mod consecrate_land;
+#[path = "generated/conservator.rs"]
+mod conservator;

@@ -246,6 +246,10 @@ pub enum ActivatedEffect {
     PreventNextDamageFromColoredSource {
         color: Color,
     },
+    /// "Prevent the next N damage that would be dealt to you this turn."
+    PreventNextDamageToYouThisTurn {
+        amount: u32,
+    },
     /// "Put up to X <pt_modifier> counters on this <source>."
     PutUpToVariableCountersOnSource {
         amount: Variable,

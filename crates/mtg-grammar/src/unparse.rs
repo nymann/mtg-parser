@@ -367,6 +367,13 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
                 " source of your choice would deal damage to you this turn, prevent that damage.",
             );
         }
+        ActivatedEffect::PreventNextDamageToYouThisTurn { amount } => {
+            write!(
+                out,
+                "Prevent the next {amount} damage that would be dealt to you this turn."
+            )
+            .expect("writing to String cannot fail");
+        }
         ActivatedEffect::PutUpToVariableCountersOnSource {
             amount,
             counter,
