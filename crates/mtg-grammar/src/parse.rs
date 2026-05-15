@@ -7,16 +7,17 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
-    ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageAssignment,
-    DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap, DamagePreventionAmount,
-    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
-    DamageRecipients, DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject,
-    EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController,
-    LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
-    OptionalCost, PayManaAmount, PayManaPlayer, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
+    DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
+    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
+    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
+    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer,
+    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
+    SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
     TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -93,7 +94,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             Ok(Statement::YouMayChooseNewTargetsForTheCopy)
         }
         Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
-        Rule::counter_target_spell => Ok(Statement::CounterTargetSpell),
+        Rule::counter_target_spell => counter_target_spell_from_pair(pair),
         Rule::this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first => {
             this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair(pair)
         }
@@ -122,11 +123,10 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 pair,
             )
         }
-        Rule::tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana => {
-            tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana_from_pair(
-                pair,
-            )
+        Rule::tap_all_permanents_then_mana_loss => {
+            tap_all_permanents_then_mana_loss_from_pair(pair)
         }
+        Rule::player_payment_failure => player_payment_failure_from_pair(pair),
         Rule::target_player_activates_mana_ability_of_each_permanent_they_control => {
             target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(pair)
         }
@@ -931,18 +931,64 @@ fn target_player_gains_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, Pa
         .map_err(|_| ParseError::Internal("target_player_gains_life amount"))
 }
 
-fn tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana_from_pair(
-    pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
+fn counter_target_spell_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let unless_cost = pair
+        .into_inner()
+        .next()
+        .map(counter_unless_cost_from_pair)
+        .transpose()?;
+    Ok(Statement::CounterTargetSpell { unless_cost })
+}
+
+fn counter_unless_cost_from_pair(pair: Pair<Rule>) -> Result<CounterUnlessCost, ParseError> {
+    let cost_pair = only_inner(pair, "counter unless missing mana cost")?;
+    Ok(CounterUnlessCost::ItsControllerPays(mana_cost_from_pair(
+        cost_pair,
+    )))
+}
+
+fn tap_all_permanents_then_mana_loss_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let permanent_type_pair = only_inner(
         pair,
         "tap all permanents target player controls missing permanent_type_plural",
     )?;
-    Ok(
-        Statement::TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
-            permanent_type: permanent_type_from_plural_pair(permanent_type_pair)?,
-        },
-    )
+    Ok(Statement::TapAllPermanentsAndPlayerLosesUnspentMana {
+        actor: TapAllPermanentsActor::TargetPlayer,
+        permanent_type: permanent_type_from_plural_pair(permanent_type_pair)?,
+        with_mana_abilities: false,
+    })
+}
+
+fn player_payment_failure_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let effect_pair = only_inner(pair, "player payment failure missing effect")?;
+    Ok(Statement::PlayerPaymentFailure {
+        effect: payment_failure_effect_from_pair(effect_pair)?,
+    })
+}
+
+fn payment_failure_effect_from_pair(pair: Pair<Rule>) -> Result<PaymentFailureEffect, ParseError> {
+    match pair.as_rule() {
+        Rule::payment_failure_tap_mana_sources => {
+            let mut permanent_type = None;
+            let mut with_mana_abilities = false;
+            for child in pair.into_inner() {
+                match child.as_rule() {
+                    Rule::permanent_type_plural => {
+                        permanent_type = Some(permanent_type_from_plural_pair(child)?);
+                    }
+                    Rule::with_mana_abilities => with_mana_abilities = true,
+                    _ => {}
+                }
+            }
+            Ok(PaymentFailureEffect::TapAllPermanentsAndLoseUnspentMana {
+                permanent_type: permanent_type.ok_or(ParseError::Internal(
+                    "payment failure tap missing permanent type",
+                ))?,
+                with_mana_abilities,
+            })
+        }
+        _ => Err(ParseError::Internal("payment failure effect")),
+    }
 }
 
 fn target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(
@@ -4122,6 +4168,9 @@ fn mana_symbol_from_pair(pair: Pair<Rule>) -> ManaSymbol {
                 .parse()
                 .expect("generic is ASCII_DIGIT+, fits u32 in practice"),
         ),
+        Rule::variable_name => ManaSymbol::Variable(
+            variable_from_str(body.as_str()).expect("variable_name restricts to known variables"),
+        ),
         Rule::color => match body.as_str() {
             "W" => ManaSymbol::White,
             "U" => ManaSymbol::Blue,
@@ -4131,7 +4180,7 @@ fn mana_symbol_from_pair(pair: Pair<Rule>) -> ManaSymbol {
             "C" => ManaSymbol::Colorless,
             _ => unreachable!("color rule restricts to WUBRGC"),
         },
-        _ => unreachable!("mana_body is silent and only contains generic|color"),
+        _ => unreachable!("mana_body is silent and only contains generic|color|variable_name"),
     }
 }
 

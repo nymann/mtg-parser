@@ -55,7 +55,8 @@ sentence_statement = _{
   | if_you_would_gain_life_draw_that_many_cards_instead
   | if_you_cant_you_lose_the_game
   | if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn
-  | tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana
+  | tap_all_permanents_then_mana_loss
+  | player_payment_failure
   | target_player_activates_mana_ability_of_each_permanent_they_control
   | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
   | target_player_gains_life
@@ -179,7 +180,7 @@ destroy_target_colored_permanent_action = {
 
 mana_cost   = ${ mana_symbol+ }
 mana_symbol = ${ "{" ~ mana_body ~ "}" }
-mana_body   = _{ generic | color }
+mana_body   = _{ generic | color | variable_name }
 generic     = @{ ASCII_DIGIT+ }
 color       = @{ "W" | "U" | "B" | "R" | "G" | "C" }
 tap_symbol  = ${ "{" ~ "T" ~ "}" }
@@ -202,7 +203,12 @@ destroy_all_objects = { basic_land_type_plural | permanent_type_plural_list }
 permanent_type_plural_list = {
     permanent_type_plural ~ (("," ~ permanent_type_plural)* ~ ","? ~ ^"and" ~ permanent_type_plural)?
 }
-counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }
+counter_target_spell = {
+    ^"counter" ~ ^"target" ~ ^"spell" ~ counter_unless_cost? ~ "."
+}
+counter_unless_cost = {
+    ^"unless" ~ ^"its" ~ ^"controller" ~ ^"pays" ~ mana_cost
+}
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
 
 copy_target_spell_except_copy_is_color = {
@@ -375,11 +381,23 @@ you_may_have_that_player_shuffle = {
     ^"you" ~ ^"may" ~ ^"have" ~ ^"that" ~ ^"player" ~ ^"shuffle" ~ "."
 }
 
-tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana = {
+tap_all_permanents_then_mana_loss = {
     ^"tap" ~ ^"all" ~ permanent_type_plural ~ ^"target" ~ ^"player"
   ~ ^"controls" ~ ^"and" ~ ^"that" ~ ^"player" ~ ^"loses" ~ ^"all"
   ~ ^"unspent" ~ ^"mana" ~ "."
 }
+
+player_payment_failure = {
+    ^"if" ~ ^"that" ~ ^"player" ~ ^"doesn't" ~ ","
+  ~ payment_failure_effect ~ "."
+}
+payment_failure_effect = _{ payment_failure_tap_mana_sources }
+payment_failure_tap_mana_sources = {
+    ^"they" ~ ^"tap" ~ ^"all" ~ permanent_type_plural
+  ~ with_mana_abilities? ~ ^"they" ~ ^"control" ~ ^"and" ~ ^"lose"
+  ~ ^"all" ~ ^"unspent" ~ ^"mana"
+}
+with_mana_abilities = { ^"with" ~ ^"mana" ~ ^"abilities" }
 
 target_player_activates_mana_ability_of_each_permanent_they_control = {
     ^"target" ~ ^"player" ~ ^"activates" ~ article ~ ^"mana" ~ ^"ability"

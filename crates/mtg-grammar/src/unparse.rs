@@ -5,16 +5,17 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
-    ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageKind,
-    DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
-    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer,
-    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
+    DamageKind, DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
+    DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
+    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
+    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
+    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -29,7 +30,13 @@ fn write_statement(out: &mut String, statement: &Statement) {
     match statement {
         Statement::ManaCost(mc) => write_mana_cost(out, mc),
         Statement::CastRestriction(restriction) => write_cast_restriction(out, *restriction),
-        Statement::CounterTargetSpell => out.push_str("Counter target spell."),
+        Statement::CounterTargetSpell { unless_cost } => {
+            out.push_str("Counter target spell");
+            if let Some(unless_cost) = unless_cost {
+                write_counter_unless_cost(out, unless_cost);
+            }
+            out.push('.');
+        }
         Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst { mana } => {
             out.push_str("This spell costs ");
             write_mana_cost(out, mana);
@@ -123,12 +130,29 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::TargetPlayerGainsLife { amount } => {
             write_target_player_gains_life(out, *amount);
         }
-        Statement::TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
+        Statement::TapAllPermanentsAndPlayerLosesUnspentMana {
+            actor,
             permanent_type,
+            with_mana_abilities,
         } => {
             out.push_str("Tap all ");
             out.push_str(permanent_type_plural_name(*permanent_type));
-            out.push_str(" target player controls and that player loses all unspent mana.");
+            if *with_mana_abilities {
+                out.push_str(" with mana abilities");
+            }
+            match actor {
+                TapAllPermanentsActor::TargetPlayer => {
+                    out.push_str(" target player controls and that player loses all unspent mana.");
+                }
+                TapAllPermanentsActor::ThatPlayer => {
+                    out.push_str(" they control and that player loses all unspent mana.");
+                }
+            }
+        }
+        Statement::PlayerPaymentFailure { effect } => {
+            out.push_str("If that player doesn't, ");
+            write_payment_failure_effect(out, effect);
+            out.push('.');
         }
         Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
             permanent_type,
@@ -381,12 +405,20 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::Compound(stmts) => {
             for (i, s) in stmts.iter().enumerate() {
                 if i > 0 {
-                    out.push('\n');
+                    if statement_continues_previous_sentence(s) {
+                        out.push(' ');
+                    } else {
+                        out.push('\n');
+                    }
                 }
                 write_statement(out, s);
             }
         }
     }
+}
+
+fn statement_continues_previous_sentence(statement: &Statement) -> bool {
+    matches!(statement, Statement::PlayerPaymentFailure { .. })
 }
 
 fn write_modal_choice(out: &mut String, modes: &[ModalMode]) {
@@ -918,6 +950,31 @@ fn write_prevention_recipient(out: &mut String, recipient: PreventionRecipient) 
     }
 }
 
+fn write_counter_unless_cost(out: &mut String, cost: &CounterUnlessCost) {
+    match cost {
+        CounterUnlessCost::ItsControllerPays(mana) => {
+            out.push_str(" unless its controller pays ");
+            write_mana_cost(out, mana);
+        }
+    }
+}
+
+fn write_payment_failure_effect(out: &mut String, effect: &PaymentFailureEffect) {
+    match effect {
+        PaymentFailureEffect::TapAllPermanentsAndLoseUnspentMana {
+            permanent_type,
+            with_mana_abilities,
+        } => {
+            out.push_str("they tap all ");
+            out.push_str(permanent_type_plural_name(*permanent_type));
+            if *with_mana_abilities {
+                out.push_str(" with mana abilities");
+            }
+            out.push_str(" they control and lose all unspent mana");
+        }
+    }
+}
+
 fn write_pay_mana_player(out: &mut String, player: PayManaPlayer) {
     match player {
         PayManaPlayer::You => out.push_str("you"),
@@ -1010,6 +1067,9 @@ fn write_mana_cost(out: &mut String, cost: &ManaCost) {
 fn write_mana_symbol(out: &mut String, sym: ManaSymbol) {
     match sym {
         ManaSymbol::Generic(n) => write!(out, "{{{n}}}").expect("write to String never fails"),
+        ManaSymbol::Variable(v) => {
+            write!(out, "{{{}}}", variable_name(v)).expect("write to String never fails")
+        }
         ManaSymbol::White => out.push_str("{W}"),
         ManaSymbol::Blue => out.push_str("{U}"),
         ManaSymbol::Black => out.push_str("{B}"),

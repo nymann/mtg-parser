@@ -5,8 +5,10 @@ pub enum Statement {
     ManaCost(ManaCost),
     /// "Cast this spell only <restriction>."
     CastRestriction(CastRestriction),
-    /// "Counter target spell."
-    CounterTargetSpell,
+    /// "Counter target spell[ unless its controller pays <mana>]."
+    CounterTargetSpell {
+        unless_cost: Option<CounterUnlessCost>,
+    },
     /// "This spell costs <mana> more to cast for each target beyond the first."
     ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst {
         mana: ManaCost,
@@ -88,10 +90,16 @@ pub enum Statement {
     TargetPlayerGainsLife {
         amount: u32,
     },
-    /// "Tap all <permanent_type>s target player controls and that player
-    /// loses all unspent mana."
-    TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
+    /// "Tap all <permanent_type>s <actor> controls and <actor> loses all
+    /// unspent mana."
+    TapAllPermanentsAndPlayerLosesUnspentMana {
+        actor: TapAllPermanentsActor,
         permanent_type: PermanentType,
+        with_mana_abilities: bool,
+    },
+    /// "If that player doesn't, <effect>."
+    PlayerPaymentFailure {
+        effect: PaymentFailureEffect,
     },
     /// "Target player activates a mana ability of each <permanent_type>
     /// they control."
@@ -287,6 +295,25 @@ pub enum DestroyTarget {
     AllPermanents(Vec<PermanentType>),
     /// "all <basic_land_type>s"
     AllBasicLands(BasicLandType),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CounterUnlessCost {
+    ItsControllerPays(ManaCost),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TapAllPermanentsActor {
+    TargetPlayer,
+    ThatPlayer,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PaymentFailureEffect {
+    TapAllPermanentsAndLoseUnspentMana {
+        permanent_type: PermanentType,
+        with_mana_abilities: bool,
+    },
 }
 
 impl Statement {
@@ -1424,6 +1451,7 @@ pub struct ManaCost {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ManaSymbol {
     Generic(u32),
+    Variable(Variable),
     White,
     Blue,
     Black,

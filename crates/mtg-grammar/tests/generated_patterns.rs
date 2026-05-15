@@ -271,3 +271,5 @@ mod pirate_ship;
 mod plague_rats;
 #[path = "generated_patterns/power_leak.rs"]
 mod power_leak;
+#[path = "generated_patterns/power_sink.rs"]
+mod power_sink;

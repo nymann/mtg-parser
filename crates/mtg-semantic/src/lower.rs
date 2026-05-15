@@ -28,6 +28,7 @@ fn lower_mana_cost(mc: &ManaCost) -> ManaValue {
             // produced a vast number of huge generic symbols. Real
             // costs are tiny.
             ManaSymbol::Generic(n) => v.generic = v.generic.saturating_add(*n),
+            ManaSymbol::Variable(_) => {}
             ManaSymbol::White => v.white += 1,
             ManaSymbol::Blue => v.blue += 1,
             ManaSymbol::Black => v.black += 1,

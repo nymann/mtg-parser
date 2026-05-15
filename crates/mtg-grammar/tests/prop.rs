@@ -12,9 +12,9 @@ use mtg_grammar::{
     DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
     DamageRecipients, DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction,
     InterveningIf, Keyword, ManaCost, ManaSymbol, ModalMode, PayManaAmount, PayManaPlayer,
-    PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent,
-    TriggeredAbility, Variable,
+    PaymentFailureEffect, PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility,
+    TapAllPermanentsActor, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -23,6 +23,7 @@ fn arb_mana_symbol() -> impl Strategy<Value = ManaSymbol> {
         // Wider than realistic costs to surface any digit-handling bugs.
         (0u32..=999).prop_map(ManaSymbol::Generic),
         Just(ManaSymbol::White),
+        Just(ManaSymbol::Variable(Variable::X)),
         Just(ManaSymbol::Blue),
         Just(ManaSymbol::Black),
         Just(ManaSymbol::Red),
@@ -251,7 +252,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
     prop_oneof![
         arb_mana_cost().prop_map(Statement::ManaCost),
         arb_mana_cost().prop_map(|mana| Statement::AddMana { mana }),
-        Just(Statement::CounterTargetSpell),
+        Just(Statement::CounterTargetSpell { unless_cost: None }),
         Just(Statement::Destroy {
             target: DestroyTarget::TargetPermanents(vec![PermanentType::Creature]),
         }),
@@ -395,9 +396,17 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             }
         }),
         arb_permanent_type().prop_map(|permanent_type| {
-            Statement::TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
+            Statement::TapAllPermanentsAndPlayerLosesUnspentMana {
+                actor: TapAllPermanentsActor::TargetPlayer,
                 permanent_type,
+                with_mana_abilities: false,
             }
+        }),
+        arb_permanent_type().prop_map(|permanent_type| Statement::PlayerPaymentFailure {
+            effect: PaymentFailureEffect::TapAllPermanentsAndLoseUnspentMana {
+                permanent_type,
+                with_mana_abilities: true,
+            },
         }),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }
