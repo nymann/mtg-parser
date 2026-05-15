@@ -1337,6 +1337,12 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                     child,
                 )?);
             }
+            Rule::put_that_many_named_counters_on_source => {
+                effects.push(put_that_many_named_counters_on_source_from_pair(child)?);
+            }
+            Rule::you_may_remove_named_counter_from_source => {
+                effects.push(you_may_remove_named_counter_from_source_from_pair(child)?);
+            }
             Rule::source_deals_damage_to_that_permanents_controller => {
                 effects.push(source_deals_damage_to_that_permanents_controller_from_pair(
                     child,
@@ -1893,6 +1899,38 @@ fn put_pt_counter_on_it_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Par
         .ok_or(ParseError::Internal("put counter missing counter"))?;
     Ok(TriggerEffect::PutCounterOnIt {
         counter: pt_modifier_from_counter_pair(counter_pair)?,
+    })
+}
+
+fn put_that_many_named_counters_on_source_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let counter_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("put named counters missing counter"))?;
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("put named counters missing source"))?;
+    Ok(TriggerEffect::PutThatManyNamedCountersOnSource {
+        counter_name: counter_name_from_counter_pair(counter_pair)?,
+        source: source_object_from_pair(source_pair)?,
+    })
+}
+
+fn you_may_remove_named_counter_from_source_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let counter_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("remove named counter missing counter"))?;
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("remove named counter missing source"))?;
+    Ok(TriggerEffect::YouMayRemoveNamedCounterFromSource {
+        counter_name: counter_name_from_counter_pair(counter_pair)?,
+        source: source_object_from_pair(source_pair)?,
     })
 }
 

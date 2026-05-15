@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 179,
+  "passing": 180,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -452,8 +452,7 @@
       "status": "pass"
     },
     "lea/Living Artifact": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:31\n  |\n2 | Whenever you're dealt damage, put that many vitality counters on this Aura.\n  |                               ^---\n  |\n  = expected if_you_do_gain_life, destroy_that_creature_if_it_attacked_this_turn, destroy_it, destroy_that_creature_at_end_of_combat, that_creatures_controller_sacrifices_it, sacrifice_source_unless_you_pay, sacrifice_that_many_nontoken_permanents, you_lose_the_game, you_gain_life, you_may_pay_mana, unless_you_pay_mana_do_actions, remove_pt_counter_from_it, put_pt_counter_on_it, delayed_remove_all_named_counters_from_linked_land, that_player_draws_an_additional_card, that_player_discards_card_at_random, its_controller_adds_an_additional_mana, source_object, loses_and_gains_keyword, or return_enchanted_card_and_attach"
+      "status": "pass"
     },
     "lea/Living Lands": {
       "status": "fail",
@@ -577,7 +576,7 @@
     },
     "lea/Paralyze": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:24\n  |\n2 | When this Aura enters, tap enchanted creature.\n  |                        ^---\n  |\n  = expected if_you_do_gain_life, destroy_that_creature_if_it_attacked_this_turn, destroy_it, destroy_that_creature_at_end_of_combat, that_creatures_controller_sacrifices_it, sacrifice_source_unless_you_pay, sacrifice_that_many_nontoken_permanents, you_lose_the_game, you_gain_life, you_may_pay_mana, unless_you_pay_mana_do_actions, remove_pt_counter_from_it, put_pt_counter_on_it, delayed_remove_all_named_counters_from_linked_land, that_player_draws_an_additional_card, that_player_discards_card_at_random, its_controller_adds_an_additional_mana, source_object, loses_and_gains_keyword, or return_enchanted_card_and_attach"
+      "error": "parse: parse error:  --> 2:24\n  |\n2 | When this Aura enters, tap enchanted creature.\n  |                        ^---\n  |\n  = expected if_you_do_gain_life, destroy_that_creature_if_it_attacked_this_turn, destroy_it, destroy_that_creature_at_end_of_combat, that_creatures_controller_sacrifices_it, sacrifice_source_unless_you_pay, sacrifice_that_many_nontoken_permanents, you_lose_the_game, you_gain_life, you_may_pay_mana, unless_you_pay_mana_do_actions, remove_pt_counter_from_it, put_pt_counter_on_it, put_that_many_named_counters_on_source, you_may_remove_named_counter_from_source, delayed_remove_all_named_counters_from_linked_land, that_player_draws_an_additional_card, that_player_discards_card_at_random, its_controller_adds_an_additional_mana, source_object, loses_and_gains_keyword, or return_enchanted_card_and_attach"
     },
     "lea/Pearled Unicorn": {
       "status": "fail",
@@ -619,7 +618,7 @@
     },
     "lea/Power Leak": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:71\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  |                                                                       ^---\n  |\n  = expected if_you_do_gain_life, destroy_that_creature_if_it_attacked_this_turn, destroy_it, destroy_that_creature_at_end_of_combat, that_creatures_controller_sacrifices_it, sacrifice_source_unless_you_pay, sacrifice_that_many_nontoken_permanents, you_lose_the_game, you_gain_life, you_may_pay_mana, unless_you_pay_mana_do_actions, remove_pt_counter_from_it, put_pt_counter_on_it, delayed_remove_all_named_counters_from_linked_land, that_player_draws_an_additional_card, that_player_discards_card_at_random, its_controller_adds_an_additional_mana, source_object, loses_and_gains_keyword, or return_enchanted_card_and_attach"
+      "error": "parse: parse error:  --> 2:71\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  |                                                                       ^---\n  |\n  = expected if_you_do_gain_life, destroy_that_creature_if_it_attacked_this_turn, destroy_it, destroy_that_creature_at_end_of_combat, that_creatures_controller_sacrifices_it, sacrifice_source_unless_you_pay, sacrifice_that_many_nontoken_permanents, you_lose_the_game, you_gain_life, you_may_pay_mana, unless_you_pay_mana_do_actions, remove_pt_counter_from_it, put_pt_counter_on_it, put_that_many_named_counters_on_source, you_may_remove_named_counter_from_source, delayed_remove_all_named_counters_from_linked_land, that_player_draws_an_additional_card, that_player_discards_card_at_random, its_controller_adds_an_additional_mana, source_object, loses_and_gains_keyword, or return_enchanted_card_and_attach"
     },
     "lea/Power Sink": {
       "status": "fail",

@@ -215,3 +215,5 @@ mod lich;
 mod lifetap;
 #[path = "generated_patterns/lightning_bolt.rs"]
 mod lightning_bolt;
+#[path = "generated_patterns/living_artifact.rs"]
+mod living_artifact;

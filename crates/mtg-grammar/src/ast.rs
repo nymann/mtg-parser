@@ -528,6 +528,16 @@ pub enum TriggerEffect {
     RemoveCounterFromIt { counter: PtModifier },
     /// "put a <pt_modifier> counter on it"
     PutCounterOnIt { counter: PtModifier },
+    /// "put that many <counter> counters on this <source>"
+    PutThatManyNamedCountersOnSource {
+        counter_name: String,
+        source: SourceObject,
+    },
+    /// "you may remove a <counter> counter from this <source>"
+    YouMayRemoveNamedCounterFromSource {
+        counter_name: String,
+        source: SourceObject,
+    },
     /// "this <source> gains \"<static ability>\"" — the source object
     /// gains quoted rules text as part of a triggered ability.
     SourceGainsStaticAbility {

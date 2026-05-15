@@ -1584,6 +1584,26 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             write_pt_modifier(out, *counter);
             out.push_str(" counter on it.");
         }
+        TriggerEffect::PutThatManyNamedCountersOnSource {
+            counter_name,
+            source,
+        } => {
+            out.push_str("put that many ");
+            out.push_str(counter_name);
+            out.push_str(" counters on ");
+            write_source_object(out, *source);
+            out.push('.');
+        }
+        TriggerEffect::YouMayRemoveNamedCounterFromSource {
+            counter_name,
+            source,
+        } => {
+            out.push_str("you may remove a ");
+            out.push_str(counter_name);
+            out.push_str(" counter from ");
+            write_source_object(out, *source);
+            out.push('.');
+        }
         TriggerEffect::SourceGainsStaticAbility { source, ability } => {
             write_source_object(out, *source);
             out.push_str(" gains \"");

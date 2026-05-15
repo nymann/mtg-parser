@@ -1122,6 +1122,8 @@ trigger_effect = _{
   | destroy_it
   | destroy_that_creature_at_end_of_combat
   | delayed_remove_all_named_counters_from_linked_land
+  | put_that_many_named_counters_on_source
+  | you_may_remove_named_counter_from_source
   | put_pt_counter_on_it
   | remove_pt_counter_from_it
   | loses_and_gains_keyword
@@ -1258,6 +1260,12 @@ remove_pt_counter_from_it = {
 }
 put_pt_counter_on_it = {
     ^"put" ~ article ~ pt_counter ~ ^"on" ~ ^"it" ~ "."
+}
+put_that_many_named_counters_on_source = {
+    ^"put" ~ ^"that" ~ ^"many" ~ named_counters ~ ^"on" ~ source_object ~ "."
+}
+you_may_remove_named_counter_from_source = {
+    ^"you" ~ ^"may" ~ ^"remove" ~ article ~ named_counter ~ ^"from" ~ source_object ~ "."
 }
 delayed_remove_all_named_counters_from_linked_land = {
     ^"at" ~ ^"the" ~ ^"beginning" ~ ^"of" ~ ^"each" ~ ^"of" ~ ^"your"
