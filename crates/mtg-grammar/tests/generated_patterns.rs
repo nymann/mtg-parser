@@ -119,3 +119,5 @@ mod dwarven_warriors;
 mod earthbind;
 #[path = "generated_patterns/earthquake.rs"]
 mod earthquake;
+#[path = "generated_patterns/evil_presence.rs"]
+mod evil_presence;

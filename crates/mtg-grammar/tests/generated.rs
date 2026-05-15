@@ -130,3 +130,5 @@ mod dwarven_warriors;
 mod earthbind;
 #[path = "generated/earthquake.rs"]
 mod earthquake;
+#[path = "generated/evil_presence.rs"]
+mod evil_presence;

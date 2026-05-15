@@ -621,6 +621,12 @@ pub enum StaticAbility {
         object: EnchantedObject,
         keyword: Keyword,
     },
+    /// "Enchanted <object> is a/an <basic_land_type>." — type-changing
+    /// effect that makes the enchanted object a basic land subtype.
+    EnchantedIsBasicLandType {
+        object: EnchantedObject,
+        land_type: BasicLandType,
+    },
     /// "Enchanted <object> has <keyword> and can't be enchanted by other
     /// Auras." — keyword-granting effect plus an Aura attachment
     /// restriction on the enchanted object.

@@ -128,6 +128,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_has_keyword
         | Rule::static_enchanted_loses_keyword
         | Rule::static_enchanted_loses_keyword_fragment
+        | Rule::static_enchanted_is_basic_land_type
         | Rule::static_enchanted_can_attack_as_though
         | Rule::static_you_control_enchanted
         | Rule::static_you_may_have_source_enter_as_copy
@@ -1456,6 +1457,19 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::EnchantedLosesKeyword {
                 object: enchanted_object_from_pair(object_pair)?,
                 keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
+        Rule::static_enchanted_is_basic_land_type => {
+            let mut inner = pair.into_inner();
+            let object_pair = inner
+                .next()
+                .expect("static_enchanted_is_basic_land_type begins with enchanted object");
+            let land_type_pair = inner
+                .next()
+                .expect("static_enchanted_is_basic_land_type names basic land type");
+            Ok(StaticAbility::EnchantedIsBasicLandType {
+                object: enchanted_object_from_pair(object_pair)?,
+                land_type: basic_land_type_from_pair(land_type_pair)?,
             })
         }
         Rule::static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras => {

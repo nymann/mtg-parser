@@ -770,6 +770,13 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_keyword_lowercase(out, *keyword);
             out.push('.');
         }
+        StaticAbility::EnchantedIsBasicLandType { object, land_type } => {
+            out.push_str("Enchanted ");
+            write_enchanted_object(out, *object);
+            out.push_str(" is a ");
+            out.push_str(basic_land_type_name(*land_type));
+            out.push('.');
+        }
         StaticAbility::EnchantedHasKeywordAndCantBeEnchantedByOtherAuras { object, keyword } => {
             out.push_str("Enchanted ");
             write_enchanted_object(out, *object);

@@ -76,6 +76,7 @@ sentence_statement = _{
   | static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
   | static_enchanted_has_keyword
   | static_enchanted_loses_keyword
+  | static_enchanted_is_basic_land_type
   | static_enchanted_can_attack_as_though
   | static_you_control_enchanted
   | static_you_may_have_source_enter_as_copy
@@ -388,6 +389,7 @@ static_ability = _{
   | static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
   | static_enchanted_has_keyword
   | static_enchanted_loses_keyword
+  | static_enchanted_is_basic_land_type
   | static_enchanted_can_attack_as_though
   | static_you_control_enchanted
   | static_you_may_have_source_enter_as_copy
@@ -428,6 +430,10 @@ static_enchanted_loses_keyword = {
 }
 static_enchanted_loses_keyword_fragment = {
     ^"enchanted" ~ enchanted_object ~ ^"loses" ~ keyword
+}
+
+static_enchanted_is_basic_land_type = {
+    ^"enchanted" ~ enchanted_object ~ ^"is" ~ article ~ basic_land_type ~ "."
 }
 
 static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras = {
