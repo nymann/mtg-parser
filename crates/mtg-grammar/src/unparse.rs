@@ -8,10 +8,10 @@ use crate::ast::{
     DamageKind, DamageLifeGainCap, DamagePrevention, DamagePreventionAmount,
     DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SimpleKeyword, SourceObject, SpellType, Statement,
+    ImperativeAction, InterveningIf, Keyword, KeywordAbilityName, LandCountController, ManaCost,
+    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
     StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -798,7 +798,7 @@ fn write_prevention_recipient(out: &mut String, recipient: PreventionRecipient) 
 
 fn write_keyword(out: &mut String, kw: Keyword) {
     match kw {
-        Keyword::Simple(simple) => out.push_str(simple_keyword_title_name(simple)),
+        Keyword::Named(name) => out.push_str(keyword_ability_title_name(name)),
         Keyword::Landwalk(land_type) => {
             out.push_str(basic_land_type_name(land_type));
             out.push_str("walk");
@@ -1981,7 +1981,7 @@ fn write_copy_exception(out: &mut String, exception: CopyException) {
 /// keyword is printed lowercase, which is what we emit here.
 fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
     match kw {
-        Keyword::Simple(simple) => out.push_str(simple_keyword_name(simple)),
+        Keyword::Named(name) => out.push_str(keyword_ability_name(name)),
         Keyword::Landwalk(land_type) => {
             out.push_str(basic_land_type_lowercase_name(land_type));
             out.push_str("walk");
@@ -1997,31 +1997,31 @@ fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
     }
 }
 
-fn simple_keyword_title_name(keyword: SimpleKeyword) -> &'static str {
+fn keyword_ability_title_name(keyword: KeywordAbilityName) -> &'static str {
     match keyword {
-        SimpleKeyword::FirstStrike => "First strike",
-        SimpleKeyword::Flying => "Flying",
-        SimpleKeyword::Reach => "Reach",
-        SimpleKeyword::Haste => "Haste",
-        SimpleKeyword::Defender => "Defender",
-        SimpleKeyword::Banding => "Banding",
-        SimpleKeyword::Trample => "Trample",
-        SimpleKeyword::Indestructible => "Indestructible",
-        SimpleKeyword::Fear => "Fear",
+        KeywordAbilityName::FirstStrike => "First strike",
+        KeywordAbilityName::Flying => "Flying",
+        KeywordAbilityName::Reach => "Reach",
+        KeywordAbilityName::Haste => "Haste",
+        KeywordAbilityName::Defender => "Defender",
+        KeywordAbilityName::Banding => "Banding",
+        KeywordAbilityName::Trample => "Trample",
+        KeywordAbilityName::Indestructible => "Indestructible",
+        KeywordAbilityName::Fear => "Fear",
     }
 }
 
-fn simple_keyword_name(keyword: SimpleKeyword) -> &'static str {
+fn keyword_ability_name(keyword: KeywordAbilityName) -> &'static str {
     match keyword {
-        SimpleKeyword::FirstStrike => "first strike",
-        SimpleKeyword::Flying => "flying",
-        SimpleKeyword::Reach => "reach",
-        SimpleKeyword::Haste => "haste",
-        SimpleKeyword::Defender => "defender",
-        SimpleKeyword::Banding => "banding",
-        SimpleKeyword::Trample => "trample",
-        SimpleKeyword::Indestructible => "indestructible",
-        SimpleKeyword::Fear => "fear",
+        KeywordAbilityName::FirstStrike => "first strike",
+        KeywordAbilityName::Flying => "flying",
+        KeywordAbilityName::Reach => "reach",
+        KeywordAbilityName::Haste => "haste",
+        KeywordAbilityName::Defender => "defender",
+        KeywordAbilityName::Banding => "banding",
+        KeywordAbilityName::Trample => "trample",
+        KeywordAbilityName::Indestructible => "indestructible",
+        KeywordAbilityName::Fear => "fear",
     }
 }
 

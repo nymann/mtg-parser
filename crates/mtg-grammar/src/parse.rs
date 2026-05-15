@@ -10,14 +10,14 @@ use crate::ast::{
     DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap, DamagePrevention,
     DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect, DamageRecipient,
     DamageRecipients, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost,
-    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost,
-    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SimpleKeyword, SourceObject, SpellType,
-    Statement, StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, KeywordAbilityName,
+    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
+    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
+    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -1751,7 +1751,9 @@ fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, 
 
 fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match pair.as_rule() {
-        Rule::simple_keyword => Ok(Keyword::Simple(simple_keyword_from_str(pair.as_str())?)),
+        Rule::keyword_ability_name => Ok(Keyword::Named(keyword_ability_name_from_str(
+            pair.as_str(),
+        )?)),
         Rule::landwalk => Ok(Keyword::Landwalk(landwalk_from_str(pair.as_str())?)),
         Rule::protection => {
             let color = pair
@@ -1771,18 +1773,18 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     }
 }
 
-fn simple_keyword_from_str(text: &str) -> Result<SimpleKeyword, ParseError> {
+fn keyword_ability_name_from_str(text: &str) -> Result<KeywordAbilityName, ParseError> {
     match text.to_ascii_lowercase().as_str() {
-        "first strike" => Ok(SimpleKeyword::FirstStrike),
-        "flying" => Ok(SimpleKeyword::Flying),
-        "reach" => Ok(SimpleKeyword::Reach),
-        "haste" => Ok(SimpleKeyword::Haste),
-        "defender" => Ok(SimpleKeyword::Defender),
-        "banding" => Ok(SimpleKeyword::Banding),
-        "trample" => Ok(SimpleKeyword::Trample),
-        "indestructible" => Ok(SimpleKeyword::Indestructible),
-        "fear" => Ok(SimpleKeyword::Fear),
-        _ => Err(ParseError::Internal("simple keyword")),
+        "first strike" => Ok(KeywordAbilityName::FirstStrike),
+        "flying" => Ok(KeywordAbilityName::Flying),
+        "reach" => Ok(KeywordAbilityName::Reach),
+        "haste" => Ok(KeywordAbilityName::Haste),
+        "defender" => Ok(KeywordAbilityName::Defender),
+        "banding" => Ok(KeywordAbilityName::Banding),
+        "trample" => Ok(KeywordAbilityName::Trample),
+        "indestructible" => Ok(KeywordAbilityName::Indestructible),
+        "fear" => Ok(KeywordAbilityName::Fear),
+        _ => Err(ParseError::Internal("keyword ability name")),
     }
 }
 
