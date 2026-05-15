@@ -35,6 +35,7 @@ sentence_chain     = _{ sentence_statement+ }
 sentence_statement = _{
     modal_mode
   | cast_restriction
+  | this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first
   | ante_play_restriction
   | you_own_target_card_in_zone
   | exchange_that_card_with_top_card_of_your_library
@@ -44,6 +45,7 @@ sentence_statement = _{
   | destroy_target_permanent_choice
   | destroy
   | regenerate_target_creature
+  | named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets
   | named_source_deals_variable_damage_to_damage_recipients
   | named_source_deals_variable_damage_to_any_target
   | spend_only_color_mana_on_variable
@@ -130,12 +132,23 @@ generic     = @{ ASCII_DIGIT+ }
 color       = @{ "W" | "U" | "B" | "R" | "G" | "C" }
 tap_symbol  = ${ "{" ~ "T" ~ "}" }
 
+this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first = {
+    ^"this" ~ ^"spell" ~ ^"costs" ~ mana_cost ~ ^"more" ~ ^"to"
+  ~ ^"cast" ~ ^"for" ~ ^"each" ~ ^"target" ~ ^"beyond" ~ ^"the"
+  ~ ^"first" ~ "."
+}
+
 destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }
 destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural ~ "." }
 destroy_target_permanent_choice = { ^"destroy" ~ ^"target" ~ permanent_type ~ (^"or" ~ permanent_type)+ ~ "." }
 counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
 
+named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets = {
+    proper_name ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"divided"
+  ~ ^"evenly" ~ "," ~ ^"rounded" ~ ^"down" ~ "," ~ ^"among"
+  ~ ^"any" ~ ^"number" ~ ^"of" ~ ^"targets" ~ "."
+}
 named_source_deals_variable_damage_to_any_target = {
     proper_name ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to" ~ ^"any" ~ ^"target" ~ "."
 }

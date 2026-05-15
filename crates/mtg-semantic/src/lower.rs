@@ -15,6 +15,20 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::CounterTargetSpell => CardEffect::CounterTargetSpell,
         Statement::DestroyTargetCreature => CardEffect::DestroyTargetCreature,
         Statement::RegenerateTargetCreature => CardEffect::RegenerateTargetCreature,
+        Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst { mana } => {
+            CardEffect::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst {
+                mana: mana.clone(),
+            }
+        }
+        Statement::NamedSourceDealsVariableDamageDividedEvenlyRoundedDownAmongAnyNumberOfTargets {
+            source_name,
+            amount,
+        } => {
+            CardEffect::NamedSourceDealsVariableDamageDividedEvenlyRoundedDownAmongAnyNumberOfTargets {
+                source_name: source_name.clone(),
+                amount: *amount,
+            }
+        }
         Statement::NamedSourceDealsVariableDamageToAnyTarget {
             source_name,
             amount,

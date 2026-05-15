@@ -63,8 +63,14 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
         Rule::counter_target_spell => Ok(Statement::CounterTargetSpell),
+        Rule::this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first => {
+            this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair(pair)
+        }
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
+        Rule::named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets => {
+            named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets_from_pair(pair)
+        }
         Rule::named_source_deals_variable_damage_to_any_target => {
             named_source_deals_variable_damage_to_any_target_from_pair(pair)
         }
@@ -508,6 +514,38 @@ fn destroy_target_permanent_choice_from_pair(pair: Pair<Rule>) -> Result<Stateme
         .map(permanent_type_from_pair)
         .collect::<Result<Vec<_>, _>>()?;
     Ok(Statement::DestroyTargetPermanentChoice { permanent_types })
+}
+
+fn this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mana_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("additional target cost missing mana"))?;
+    Ok(
+        Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst {
+            mana: mana_cost_from_pair(mana_pair),
+        },
+    )
+}
+
+fn named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "divided variable damage missing source name",
+    ))?;
+    let amount_pair = inner.next().ok_or(ParseError::Internal(
+        "divided variable damage missing amount",
+    ))?;
+    Ok(
+        Statement::NamedSourceDealsVariableDamageDividedEvenlyRoundedDownAmongAnyNumberOfTargets {
+            source_name: source_pair.as_str().to_string(),
+            amount: variable_from_str(amount_pair.as_str())?,
+        },
+    )
 }
 
 fn named_source_deals_variable_damage_to_any_target_from_pair(

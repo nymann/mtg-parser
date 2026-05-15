@@ -7,9 +7,19 @@ pub enum Statement {
     CastRestriction(CastRestriction),
     /// "Counter target spell."
     CounterTargetSpell,
+    /// "This spell costs <mana> more to cast for each target beyond the first."
+    ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst {
+        mana: ManaCost,
+    },
     DestroyTargetCreature,
     /// "Regenerate target creature."
     RegenerateTargetCreature,
+    /// "<source name> deals X damage divided evenly, rounded down, among
+    /// any number of targets."
+    NamedSourceDealsVariableDamageDividedEvenlyRoundedDownAmongAnyNumberOfTargets {
+        source_name: String,
+        amount: Variable,
+    },
     /// "<source name> deals X damage to any target."
     NamedSourceDealsVariableDamageToAnyTarget {
         source_name: String,

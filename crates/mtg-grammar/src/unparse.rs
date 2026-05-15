@@ -22,8 +22,24 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::ManaCost(mc) => write_mana_cost(out, mc),
         Statement::CastRestriction(restriction) => write_cast_restriction(out, *restriction),
         Statement::CounterTargetSpell => out.push_str("Counter target spell."),
+        Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst { mana } => {
+            out.push_str("This spell costs ");
+            write_mana_cost(out, mana);
+            out.push_str(" more to cast for each target beyond the first.");
+        }
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
         Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
+        Statement::NamedSourceDealsVariableDamageDividedEvenlyRoundedDownAmongAnyNumberOfTargets {
+            source_name,
+            amount,
+        } => {
+            out.push_str(source_name);
+            out.push_str(" deals ");
+            out.push_str(variable_name(*amount));
+            out.push_str(
+                " damage divided evenly, rounded down, among any number of targets.",
+            );
+        }
         Statement::NamedSourceDealsVariableDamageToAnyTarget {
             source_name,
             amount,

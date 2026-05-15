@@ -133,6 +133,15 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_mana_cost().prop_map(|mana| Statement::AddMana { mana }),
         Just(Statement::CounterTargetSpell),
         Just(Statement::DestroyTargetCreature),
+        arb_mana_cost().prop_map(|mana| {
+            Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst { mana }
+        }),
+        Just(
+            Statement::NamedSourceDealsVariableDamageDividedEvenlyRoundedDownAmongAnyNumberOfTargets {
+                source_name: "Fireball".to_string(),
+                amount: Variable::X,
+            }
+        ),
         Just(Statement::NamedSourceDealsVariableDamageToAnyTarget {
             source_name: "Disintegrate".to_string(),
             amount: Variable::X,

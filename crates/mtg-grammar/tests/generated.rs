@@ -140,3 +140,5 @@ mod farmstead;
 mod fastbond;
 #[path = "generated/fear.rs"]
 mod fear;
+#[path = "generated/fireball.rs"]
+mod fireball;
