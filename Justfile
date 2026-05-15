@@ -5,3 +5,9 @@ corpus-summary:
 
 corpus-left:
 	@jq -r '.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text") | not)) | .key' corpus_status.json
+
+corpus-add-set code:
+	cargo xtask corpus-add-set {{code}}
+
+corpus-advance *args:
+	cargo xtask corpus-advance {{args}}

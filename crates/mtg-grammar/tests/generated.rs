@@ -50,3 +50,5 @@ mod bog_wraith;
 mod braingeyser;
 #[path = "generated/burrowing.rs"]
 mod burrowing;
+#[path = "generated/camouflage.rs"]
+mod camouflage;

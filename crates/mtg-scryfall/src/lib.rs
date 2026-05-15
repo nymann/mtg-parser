@@ -11,5 +11,5 @@ mod date;
 
 pub use cache::{CachedSet, CACHE_SCHEMA_VERSION, REFRESH_WINDOW_DAYS};
 pub use card::{Card, Layout};
-pub use client::ScryfallClient;
+pub use client::{ScryfallClient, SetSummary};
 pub use date::today_iso;

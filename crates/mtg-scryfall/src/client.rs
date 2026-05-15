@@ -59,6 +59,33 @@ impl ScryfallClient {
         self.load_set(code, true)
     }
 
+    /// Paper core/expansion sets, ordered by release date then set code.
+    pub fn paper_expansion_sets(&self) -> Result<Vec<SetSummary>> {
+        let page: SetsPage = self
+            .get_json(&format!("{SCRYFALL_BASE}/sets"))
+            .context("fetch /sets")?;
+        let mut sets: Vec<SetSummary> = page
+            .data
+            .into_iter()
+            .filter(|s| {
+                !s.digital
+                    && s.released_at.is_some()
+                    && matches!(s.set_type.as_str(), "core" | "expansion")
+            })
+            .map(|s| SetSummary {
+                code: s.code.to_lowercase(),
+                name: s.name,
+                released_at: s.released_at.expect("filtered above"),
+            })
+            .collect();
+        sets.sort_by(|a, b| {
+            a.released_at
+                .cmp(&b.released_at)
+                .then_with(|| a.code.cmp(&b.code))
+        });
+        Ok(sets)
+    }
+
     fn load_set(&self, code: &str, force_refresh: bool) -> Result<Vec<Card>> {
         let path = self.cache_path(code);
         if !force_refresh {
@@ -166,6 +193,13 @@ impl ScryfallClient {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SetSummary {
+    pub code: String,
+    pub name: String,
+    pub released_at: String,
+}
+
 fn read_fresh_cache(path: &std::path::Path) -> Option<CachedSet> {
     let cached = read_any_cache(path)?;
     if cached.is_fresh(&today_iso()) {
@@ -183,6 +217,21 @@ fn read_any_cache(path: &std::path::Path) -> Option<CachedSet> {
 #[derive(Deserialize)]
 struct SetMeta {
     released_at: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct SetsPage {
+    data: Vec<RawSet>,
+}
+
+#[derive(Deserialize)]
+struct RawSet {
+    code: String,
+    name: String,
+    released_at: Option<String>,
+    set_type: String,
+    #[serde(default)]
+    digital: bool,
 }
 
 #[derive(Deserialize)]

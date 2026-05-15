@@ -112,6 +112,11 @@ fn write_cast_restriction(out: &mut String, restriction: CastRestriction) {
             out.push_str(step_name(step));
             out.push_str(" step.");
         }
+        CastRestriction::DuringYourStep { step } => {
+            out.push_str("during your ");
+            out.push_str(step_name(step));
+            out.push_str(" step.");
+        }
         CastRestriction::DuringCombatBeforeBlockersAreDeclared => {
             out.push_str("during combat before blockers are declared.");
         }
@@ -359,6 +364,18 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
         }
         StaticAbility::ItBlocksEachAttackingCreatureThisTurnIfAble => {
             out.push_str("It blocks each attacking creature this turn if able.");
+        }
+        StaticAbility::ThisTurnDefendingPlayersMakeRandomBlockingPiles => {
+            out.push_str("This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player.");
+        }
+        StaticAbility::AdditionalBlockersMayBePutIntoAdditionalPiles => {
+            out.push_str("Creatures those players control that can block additional creatures may likewise be put into additional piles.");
+        }
+        StaticAbility::AssignEachPileToAttackingCreatureAtRandom => {
+            out.push_str("Assign each pile to a different one of those attacking creatures at random.");
+        }
+        StaticAbility::CreaturesInAssignedPileBlockIfAble => {
+            out.push_str("Each creature in a pile that can block the creature that pile is assigned to does so.");
         }
     }
 }
@@ -674,6 +691,7 @@ fn creature_type_name(ct: CreatureType) -> &'static str {
 fn step_name(step: Step) -> &'static str {
     match step {
         Step::CombatDamage => "combat damage",
+        Step::DeclareAttackers => "declare attackers",
     }
 }
 

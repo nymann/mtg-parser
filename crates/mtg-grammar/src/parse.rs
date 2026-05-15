@@ -77,6 +77,10 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::target_creature_defending_player_controls_can_block_any_number
         | Rule::it_blocks_each_attacking_creature_if_able
+        | Rule::this_turn_defending_players_make_random_blocking_piles
+        | Rule::additional_blockers_may_be_put_into_additional_piles
+        | Rule::assign_each_pile_to_attacking_creature_at_random
+        | Rule::creatures_in_assigned_pile_block_if_able
         | Rule::static_effect_doesnt_remove_this_aura => {
             Ok(Statement::StaticAbility(static_ability_from_pair(pair)?))
         }
@@ -142,6 +146,15 @@ fn cast_restriction_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError>
                 step: step_from_pair(step_pair)?,
             }
         }
+        Rule::during_your_step => {
+            let step_pair = timing
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("during_your_step missing step"))?;
+            CastRestriction::DuringYourStep {
+                step: step_from_pair(step_pair)?,
+            }
+        }
         Rule::during_combat_before_blockers_declared => {
             CastRestriction::DuringCombatBeforeBlockersAreDeclared
         }
@@ -156,6 +169,7 @@ fn step_from_pair(pair: Pair<Rule>) -> Result<Step, ParseError> {
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
         "combat damage" => Ok(Step::CombatDamage),
+        "declare attackers" => Ok(Step::DeclareAttackers),
         _ => Err(ParseError::Internal("step variant")),
     }
 }
@@ -665,6 +679,18 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
         ),
         Rule::it_blocks_each_attacking_creature_if_able => {
             Ok(StaticAbility::ItBlocksEachAttackingCreatureThisTurnIfAble)
+        }
+        Rule::this_turn_defending_players_make_random_blocking_piles => {
+            Ok(StaticAbility::ThisTurnDefendingPlayersMakeRandomBlockingPiles)
+        }
+        Rule::additional_blockers_may_be_put_into_additional_piles => {
+            Ok(StaticAbility::AdditionalBlockersMayBePutIntoAdditionalPiles)
+        }
+        Rule::assign_each_pile_to_attacking_creature_at_random => {
+            Ok(StaticAbility::AssignEachPileToAttackingCreatureAtRandom)
+        }
+        Rule::creatures_in_assigned_pile_block_if_able => {
+            Ok(StaticAbility::CreaturesInAssignedPileBlockIfAble)
         }
         _ => Err(ParseError::Internal("static_ability variant")),
     }

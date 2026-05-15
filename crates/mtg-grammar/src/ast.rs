@@ -62,6 +62,8 @@ pub enum ModalMode {
 pub enum CastRestriction {
     /// "before the <step> step"
     BeforeStep { step: Step },
+    /// "during your <step> step"
+    DuringYourStep { step: Step },
     /// "during combat before blockers are declared"
     DuringCombatBeforeBlockersAreDeclared,
 }
@@ -69,6 +71,7 @@ pub enum CastRestriction {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Step {
     CombatDamage,
+    DeclareAttackers,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -312,6 +315,18 @@ pub enum StaticAbility {
     TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn,
     /// "It blocks each attacking creature this turn if able."
     ItBlocksEachAttackingCreatureThisTurnIfAble,
+    /// "This turn, instead of declaring blockers, each defending player
+    /// chooses ... and divides them into ... piles ..."
+    ThisTurnDefendingPlayersMakeRandomBlockingPiles,
+    /// "Creatures those players control that can block additional
+    /// creatures may likewise be put into additional piles."
+    AdditionalBlockersMayBePutIntoAdditionalPiles,
+    /// "Assign each pile to a different one of those attacking creatures
+    /// at random."
+    AssignEachPileToAttackingCreatureAtRandom,
+    /// "Each creature in a pile that can block the creature that pile is
+    /// assigned to does so."
+    CreaturesInAssignedPileBlockIfAble,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

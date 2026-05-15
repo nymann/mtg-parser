@@ -13,6 +13,10 @@ pub fn corpus_status_path() -> PathBuf {
     repo_root().join("corpus_status.json")
 }
 
+pub fn corpus_sets_path() -> PathBuf {
+    repo_root().join("corpus_sets.json")
+}
+
 pub fn generated_tests_dir() -> PathBuf {
     repo_root().join("crates/mtg-grammar/tests/generated")
 }

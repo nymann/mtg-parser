@@ -26,6 +26,9 @@ Commands:
   corpus [--update]           Parse every card in the tracked sets and diff against the
                               committed corpus_status.json. --update overwrites it even
                               if there are regressions (use with care).
+  corpus-add-set CODE         Add a set to corpus_sets.json, refresh it, then run corpus.
+  corpus-advance              Add the next paper core/expansion set once the current newest
+              [--max-grammar-left N]  tracked set has at most N actionable failures.
   refresh-corpus [--set CODE] Force re-fetch a set from Scryfall, bypassing the cache.
                               Without --set, refreshes every set tracked by `corpus`.
   grammar-fix [--set CODE]    Orchestrated loop: next-card → agent → tier-1/2 →
@@ -79,6 +82,8 @@ fn main() -> ExitCode {
         Some("test") => testrun::run(&args[1..]),
         Some("next-card") => next_card::run(&args[1..]),
         Some("corpus") => corpus_cmd::run(&args[1..]),
+        Some("corpus-add-set") => corpus_cmd::add_set(&args[1..]),
+        Some("corpus-advance") => corpus_cmd::advance(&args[1..]),
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),
         Some("grammar-fix") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => grammar_fix::run(&args[1..]),

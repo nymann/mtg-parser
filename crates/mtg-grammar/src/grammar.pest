@@ -41,6 +41,10 @@ sentence_statement = _{
   | target_permanent_gains_keyword_and_gets_eot
   | target_creature_defending_player_controls_can_block_any_number
   | it_blocks_each_attacking_creature_if_able
+  | this_turn_defending_players_make_random_blocking_piles
+  | additional_blockers_may_be_put_into_additional_piles
+  | assign_each_pile_to_attacking_creature_at_random
+  | creatures_in_assigned_pile_block_if_able
   | as_this_permanent_enters_choose_opponent
   | activated_ability
   | static_as_long_as
@@ -133,8 +137,9 @@ cast_restriction = {
     ^"cast" ~ ^"this" ~ ^"spell" ~ ^"only" ~ cast_timing ~ "."
 }
 before_step = { ^"before" ~ ^"the" ~ step ~ ^"step" }
-step = { ^"combat" ~ ^"damage" }
-cast_timing = _{ during_combat_before_blockers_declared | before_step }
+during_your_step = { ^"during" ~ ^"your" ~ step ~ ^"step" }
+step = { ^"combat" ~ ^"damage" | ^"declare" ~ ^"attackers" }
+cast_timing = _{ during_combat_before_blockers_declared | during_your_step | before_step }
 during_combat_before_blockers_declared = {
     ^"during" ~ ^"combat" ~ ^"before" ~ ^"blockers" ~ ^"are" ~ ^"declared"
 }
@@ -251,6 +256,34 @@ target_creature_defending_player_controls_can_block_any_number = {
 it_blocks_each_attacking_creature_if_able = {
     ^"it" ~ ^"blocks" ~ ^"each" ~ ^"attacking" ~ ^"creature"
   ~ ^"this" ~ ^"turn" ~ ^"if" ~ ^"able" ~ "."
+}
+
+this_turn_defending_players_make_random_blocking_piles = {
+    ^"this" ~ ^"turn" ~ "," ~ ^"instead" ~ ^"of" ~ ^"declaring" ~ ^"blockers"
+  ~ "," ~ ^"each" ~ ^"defending" ~ ^"player" ~ ^"chooses" ~ ^"any"
+  ~ ^"number" ~ ^"of" ~ ^"creatures" ~ ^"they" ~ ^"control" ~ ^"and"
+  ~ ^"divides" ~ ^"them" ~ ^"into" ~ article ~ ^"number" ~ ^"of"
+  ~ ^"piles" ~ ^"equal" ~ ^"to" ~ ^"the" ~ ^"number" ~ ^"of"
+  ~ ^"attacking" ~ ^"creatures" ~ ^"for" ~ ^"whom" ~ ^"that"
+  ~ ^"player" ~ ^"is" ~ ^"the" ~ ^"defending" ~ ^"player" ~ "."
+}
+
+additional_blockers_may_be_put_into_additional_piles = {
+    ^"creatures" ~ ^"those" ~ ^"players" ~ ^"control" ~ ^"that"
+  ~ ^"can" ~ ^"block" ~ ^"additional" ~ ^"creatures" ~ ^"may"
+  ~ ^"likewise" ~ ^"be" ~ ^"put" ~ ^"into" ~ ^"additional" ~ ^"piles" ~ "."
+}
+
+assign_each_pile_to_attacking_creature_at_random = {
+    ^"assign" ~ ^"each" ~ ^"pile" ~ ^"to" ~ article ~ ^"different"
+  ~ ^"one" ~ ^"of" ~ ^"those" ~ ^"attacking" ~ ^"creatures"
+  ~ ^"at" ~ ^"random" ~ "."
+}
+
+creatures_in_assigned_pile_block_if_able = {
+    ^"each" ~ ^"creature" ~ ^"in" ~ article ~ ^"pile" ~ ^"that"
+  ~ ^"can" ~ ^"block" ~ ^"the" ~ ^"creature" ~ ^"that" ~ ^"pile"
+  ~ ^"is" ~ ^"assigned" ~ ^"to" ~ ^"does" ~ ^"so" ~ "."
 }
 
 enchanted_object = _{ permanent_type | creature_type }
