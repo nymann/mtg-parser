@@ -160,7 +160,7 @@ modal_mode    = { "•" ~ modal_effect }
 modal_effect  = _{
     colored_target_effect
   | target_player_gains_life
-  | prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
+  | prevent_damage_this_turn
 }
 colored_target_effect = { colored_target_action ~ "." }
 colored_target_action = _{
@@ -242,13 +242,6 @@ damage_prevention_replacement_effect = _{
 damage_prevention_amount_axis = { damage_prevention_all_amount | damage_prevention_next_amount }
 damage_prevention_all_amount = { ^"all" }
 damage_prevention_next_amount = { ^"the" ~ ^"next" ~ damage_prevention_amount }
-prevent_next_damage_that_would_be_dealt_to_recipient_this_turn = {
-    damage_prevention_next_replacement_effect ~ this_turn_period
-}
-damage_prevention_next_replacement_effect = _{
-    ^"prevent" ~ damage_prevention_next_amount ~ ^"damage"
-  ~ damage_prevention_event ~ damage_prevention_recipient
-}
 prevent_next_damage_body = _{
     ^"prevent" ~ damage_prevention_next_amount ~ ^"damage" ~ damage_prevention_event
 }
@@ -450,7 +443,7 @@ if_you_do_effect_body = _{
     add_mana
   | untap_source
   | gain_life_effect
-  | prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
+  | prevent_damage_this_turn
 }
 if_you_do_gain_life = { ^"if" ~ ^"you" ~ ^"do" ~ "," ~ gain_life_effect }
 gain_life_effect = { ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "." }
