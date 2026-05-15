@@ -215,6 +215,8 @@ pub enum TriggerEvent {
     BeginningOfYourUpkeep,
     /// "this <source> is put into a graveyard from the battlefield"
     SourcePutIntoGraveyardFromBattlefield { source: SourceObject },
+    /// "a/an <permanent_type> is put into a graveyard from the battlefield"
+    PermanentPutIntoGraveyardFromBattlefield { permanent_type: PermanentType },
     /// "the beginning of the upkeep of enchanted <permanent_type>'s
     /// controller"
     BeginningOfUpkeepOfEnchantedPermanentController { permanent_type: PermanentType },

@@ -685,6 +685,7 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
 fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
     out.push_str(match ta.event {
         TriggerEvent::PermanentEnters { .. }
+        | TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { .. }
         | TriggerEvent::PlayerCastsColoredSpell { .. }
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
@@ -749,6 +750,12 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         }
         TriggerEvent::SourcePutIntoGraveyardFromBattlefield { source } => {
             write_source_object(out, source);
+            out.push_str(" is put into a graveyard from the battlefield");
+        }
+        TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { permanent_type } => {
+            out.push_str(indefinite_article(permanent_type));
+            out.push(' ');
+            out.push_str(permanent_type_name(permanent_type));
             out.push_str(" is put into a graveyard from the battlefield");
         }
         TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController { permanent_type } => {

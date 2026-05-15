@@ -106,3 +106,5 @@ mod demonic_attorney;
 mod demonic_hordes;
 #[path = "generated/demonic_tutor.rs"]
 mod demonic_tutor;
+#[path = "generated/dingus_egg.rs"]
+mod dingus_egg;

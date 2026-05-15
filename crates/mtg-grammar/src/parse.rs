@@ -620,6 +620,11 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::source_put_into_graveyard_from_battlefield => {
                 event = Some(source_put_into_graveyard_from_battlefield_from_pair(child)?);
             }
+            Rule::permanent_put_into_graveyard_from_battlefield => {
+                event = Some(permanent_put_into_graveyard_from_battlefield_from_pair(
+                    child,
+                )?);
+            }
             Rule::beginning_of_upkeep_of_enchanted_permanent_controller => {
                 event = Some(beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(
                     child,
@@ -763,6 +768,24 @@ fn source_put_into_graveyard_from_battlefield_from_pair(
     }
     Ok(TriggerEvent::SourcePutIntoGraveyardFromBattlefield {
         source: source_object_from_pair(source_pair)?,
+    })
+}
+
+fn permanent_put_into_graveyard_from_battlefield_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEvent, ParseError> {
+    let mut inner = pair.into_inner();
+    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+        "put-into-graveyard event missing permanent_type",
+    ))?;
+    let zone_pair = inner.next().ok_or(ParseError::Internal(
+        "put-into-graveyard event missing zone",
+    ))?;
+    if zone_from_pair(zone_pair)? != Zone::Graveyard {
+        return Err(ParseError::Internal("put-into-graveyard event zone"));
+    }
+    Ok(TriggerEvent::PermanentPutIntoGraveyardFromBattlefield {
+        permanent_type: permanent_type_from_pair(permanent_type_pair)?,
     })
 }
 

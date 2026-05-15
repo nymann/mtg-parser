@@ -596,7 +596,8 @@ triggered_ability = {
 trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
 
 trigger_event = _{
-    source_put_into_graveyard_from_battlefield
+    permanent_put_into_graveyard_from_battlefield
+  | source_put_into_graveyard_from_battlefield
   | aura_leaves_battlefield
   | aura_enters
   | enchanted_permanent_dies
@@ -614,6 +615,10 @@ aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
 aura_leaves_battlefield = { ^"this" ~ ^"aura" ~ ^"leaves" ~ ^"the" ~ ^"battlefield" }
 source_put_into_graveyard_from_battlefield = {
     source_object ~ ^"is" ~ ^"put" ~ ^"into" ~ article ~ zone
+  ~ ^"from" ~ ^"the" ~ ^"battlefield"
+}
+permanent_put_into_graveyard_from_battlefield = {
+    article ~ permanent_type ~ ^"is" ~ ^"put" ~ ^"into" ~ article ~ zone
   ~ ^"from" ~ ^"the" ~ ^"battlefield"
 }
 enchanted_permanent_dies = { ^"enchanted" ~ permanent_type ~ ^"dies" }
