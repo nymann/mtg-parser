@@ -8,7 +8,7 @@ use crate::ast::{
     DamageKind, DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamageRecipient, DamageRecipients, DestroyTarget, EachPlayerAction,
     EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
-    KeywordAbilityName, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    KeywordAbility, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
     NamedDamageEvent, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost,
     PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
     Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
@@ -2091,31 +2091,31 @@ fn write_landwalk_lowercase(out: &mut String, land_type: BasicLandType) {
     out.push_str("walk");
 }
 
-fn keyword_ability_title_name(keyword: KeywordAbilityName) -> &'static str {
+fn keyword_ability_title_name(keyword: KeywordAbility) -> &'static str {
     match keyword {
-        KeywordAbilityName::FirstStrike => "First strike",
-        KeywordAbilityName::Flying => "Flying",
-        KeywordAbilityName::Reach => "Reach",
-        KeywordAbilityName::Haste => "Haste",
-        KeywordAbilityName::Defender => "Defender",
-        KeywordAbilityName::Banding => "Banding",
-        KeywordAbilityName::Trample => "Trample",
-        KeywordAbilityName::Indestructible => "Indestructible",
-        KeywordAbilityName::Fear => "Fear",
+        KeywordAbility::FirstStrike => "First strike",
+        KeywordAbility::Flying => "Flying",
+        KeywordAbility::Reach => "Reach",
+        KeywordAbility::Haste => "Haste",
+        KeywordAbility::Defender => "Defender",
+        KeywordAbility::Banding => "Banding",
+        KeywordAbility::Trample => "Trample",
+        KeywordAbility::Indestructible => "Indestructible",
+        KeywordAbility::Fear => "Fear",
     }
 }
 
-fn keyword_ability_name(keyword: KeywordAbilityName) -> &'static str {
+fn keyword_ability_name(keyword: KeywordAbility) -> &'static str {
     match keyword {
-        KeywordAbilityName::FirstStrike => "first strike",
-        KeywordAbilityName::Flying => "flying",
-        KeywordAbilityName::Reach => "reach",
-        KeywordAbilityName::Haste => "haste",
-        KeywordAbilityName::Defender => "defender",
-        KeywordAbilityName::Banding => "banding",
-        KeywordAbilityName::Trample => "trample",
-        KeywordAbilityName::Indestructible => "indestructible",
-        KeywordAbilityName::Fear => "fear",
+        KeywordAbility::FirstStrike => "first strike",
+        KeywordAbility::Flying => "flying",
+        KeywordAbility::Reach => "reach",
+        KeywordAbility::Haste => "haste",
+        KeywordAbility::Defender => "defender",
+        KeywordAbility::Banding => "banding",
+        KeywordAbility::Trample => "trample",
+        KeywordAbility::Indestructible => "indestructible",
+        KeywordAbility::Fear => "fear",
     }
 }
 

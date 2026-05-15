@@ -1078,7 +1078,7 @@ pub enum PhysicalAction {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
-    Named(KeywordAbilityName),
+    Named(KeywordAbility),
     /// §702 landwalk abilities are parameterized by the basic land type.
     Landwalk(BasicLandType),
     /// §702 protection abilities are parameterized by the protected quality.
@@ -1089,20 +1089,20 @@ pub enum Keyword {
 }
 
 impl Keyword {
-    pub const FIRST_STRIKE: Self = Self::Named(KeywordAbilityName::FirstStrike);
-    pub const FLYING: Self = Self::Named(KeywordAbilityName::Flying);
-    pub const REACH: Self = Self::Named(KeywordAbilityName::Reach);
-    pub const HASTE: Self = Self::Named(KeywordAbilityName::Haste);
-    pub const DEFENDER: Self = Self::Named(KeywordAbilityName::Defender);
-    pub const BANDING: Self = Self::Named(KeywordAbilityName::Banding);
-    pub const TRAMPLE: Self = Self::Named(KeywordAbilityName::Trample);
+    pub const FIRST_STRIKE: Self = Self::Named(KeywordAbility::FirstStrike);
+    pub const FLYING: Self = Self::Named(KeywordAbility::Flying);
+    pub const REACH: Self = Self::Named(KeywordAbility::Reach);
+    pub const HASTE: Self = Self::Named(KeywordAbility::Haste);
+    pub const DEFENDER: Self = Self::Named(KeywordAbility::Defender);
+    pub const BANDING: Self = Self::Named(KeywordAbility::Banding);
+    pub const TRAMPLE: Self = Self::Named(KeywordAbility::Trample);
     pub const PLAINSWALK: Self = Self::Landwalk(BasicLandType::Plains);
     pub const ISLANDWALK: Self = Self::Landwalk(BasicLandType::Island);
     pub const SWAMPWALK: Self = Self::Landwalk(BasicLandType::Swamp);
     pub const MOUNTAINWALK: Self = Self::Landwalk(BasicLandType::Mountain);
     pub const FORESTWALK: Self = Self::Landwalk(BasicLandType::Forest);
-    pub const INDESTRUCTIBLE: Self = Self::Named(KeywordAbilityName::Indestructible);
-    pub const FEAR: Self = Self::Named(KeywordAbilityName::Fear);
+    pub const INDESTRUCTIBLE: Self = Self::Named(KeywordAbility::Indestructible);
+    pub const FEAR: Self = Self::Named(KeywordAbility::Fear);
 
     #[allow(non_upper_case_globals)]
     pub const FirstStrike: Self = Self::FIRST_STRIKE;
@@ -1158,20 +1158,20 @@ enum KeywordSerde {
 impl From<Keyword> for KeywordSerde {
     fn from(keyword: Keyword) -> Self {
         match keyword {
-            Keyword::Named(KeywordAbilityName::FirstStrike) => Self::FirstStrike,
-            Keyword::Named(KeywordAbilityName::Flying) => Self::Flying,
-            Keyword::Named(KeywordAbilityName::Reach) => Self::Reach,
-            Keyword::Named(KeywordAbilityName::Haste) => Self::Haste,
-            Keyword::Named(KeywordAbilityName::Defender) => Self::Defender,
-            Keyword::Named(KeywordAbilityName::Banding) => Self::Banding,
-            Keyword::Named(KeywordAbilityName::Trample) => Self::Trample,
+            Keyword::Named(KeywordAbility::FirstStrike) => Self::FirstStrike,
+            Keyword::Named(KeywordAbility::Flying) => Self::Flying,
+            Keyword::Named(KeywordAbility::Reach) => Self::Reach,
+            Keyword::Named(KeywordAbility::Haste) => Self::Haste,
+            Keyword::Named(KeywordAbility::Defender) => Self::Defender,
+            Keyword::Named(KeywordAbility::Banding) => Self::Banding,
+            Keyword::Named(KeywordAbility::Trample) => Self::Trample,
             Keyword::Landwalk(BasicLandType::Plains) => Self::Plainswalk,
             Keyword::Landwalk(BasicLandType::Island) => Self::Islandwalk,
             Keyword::Landwalk(BasicLandType::Swamp) => Self::Swampwalk,
             Keyword::Landwalk(BasicLandType::Mountain) => Self::Mountainwalk,
             Keyword::Landwalk(BasicLandType::Forest) => Self::Forestwalk,
-            Keyword::Named(KeywordAbilityName::Indestructible) => Self::Indestructible,
-            Keyword::Named(KeywordAbilityName::Fear) => Self::Fear,
+            Keyword::Named(KeywordAbility::Indestructible) => Self::Indestructible,
+            Keyword::Named(KeywordAbility::Fear) => Self::Fear,
             Keyword::Protection(color) => Self::Protection(color),
             Keyword::Enchant(object) => Self::Enchant(object),
         }
@@ -1181,21 +1181,21 @@ impl From<Keyword> for KeywordSerde {
 impl From<KeywordSerde> for Keyword {
     fn from(keyword: KeywordSerde) -> Self {
         match keyword {
-            KeywordSerde::FirstStrike => Self::Named(KeywordAbilityName::FirstStrike),
-            KeywordSerde::Flying => Self::Named(KeywordAbilityName::Flying),
-            KeywordSerde::Reach => Self::Named(KeywordAbilityName::Reach),
-            KeywordSerde::Haste => Self::Named(KeywordAbilityName::Haste),
-            KeywordSerde::Defender => Self::Named(KeywordAbilityName::Defender),
-            KeywordSerde::Banding => Self::Named(KeywordAbilityName::Banding),
-            KeywordSerde::Trample => Self::Named(KeywordAbilityName::Trample),
+            KeywordSerde::FirstStrike => Self::Named(KeywordAbility::FirstStrike),
+            KeywordSerde::Flying => Self::Named(KeywordAbility::Flying),
+            KeywordSerde::Reach => Self::Named(KeywordAbility::Reach),
+            KeywordSerde::Haste => Self::Named(KeywordAbility::Haste),
+            KeywordSerde::Defender => Self::Named(KeywordAbility::Defender),
+            KeywordSerde::Banding => Self::Named(KeywordAbility::Banding),
+            KeywordSerde::Trample => Self::Named(KeywordAbility::Trample),
             KeywordSerde::Plainswalk => Self::Landwalk(BasicLandType::Plains),
             KeywordSerde::Islandwalk => Self::Landwalk(BasicLandType::Island),
             KeywordSerde::Swampwalk => Self::Landwalk(BasicLandType::Swamp),
             KeywordSerde::Mountainwalk => Self::Landwalk(BasicLandType::Mountain),
             KeywordSerde::Forestwalk => Self::Landwalk(BasicLandType::Forest),
             KeywordSerde::Landwalk(land_type) => Self::Landwalk(land_type),
-            KeywordSerde::Indestructible => Self::Named(KeywordAbilityName::Indestructible),
-            KeywordSerde::Fear => Self::Named(KeywordAbilityName::Fear),
+            KeywordSerde::Indestructible => Self::Named(KeywordAbility::Indestructible),
+            KeywordSerde::Fear => Self::Named(KeywordAbility::Fear),
             KeywordSerde::Protection(color) => Self::Protection(color),
             KeywordSerde::Enchant(object) => Self::Enchant(object),
         }
@@ -1221,7 +1221,7 @@ impl<'de> Deserialize<'de> for Keyword {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum KeywordAbilityName {
+pub enum KeywordAbility {
     FirstStrike,
     Flying,
     Reach,

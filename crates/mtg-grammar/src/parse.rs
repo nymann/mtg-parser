@@ -10,7 +10,7 @@ use crate::ast::{
     DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
     DamagePreventionAmount, DamagePreventionEffect, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, KeywordAbilityName, LandCountController, ManaCost,
+    ImperativeAction, InterveningIf, Keyword, KeywordAbility, LandCountController, ManaCost,
     ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedSourcePowerToughnessCount,
     ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
@@ -1775,9 +1775,7 @@ fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, 
 
 fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match pair.as_rule() {
-        Rule::keyword_ability_name => Ok(Keyword::Named(keyword_ability_name_from_str(
-            pair.as_str(),
-        )?)),
+        Rule::named_keyword_ability => Ok(Keyword::Named(keyword_ability_from_str(pair.as_str())?)),
         Rule::landwalk => {
             let land_type = only_inner(pair, "landwalk missing basic_land_type")?;
             Ok(Keyword::Landwalk(basic_land_type_from_pair(land_type)?))
@@ -1800,17 +1798,17 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     }
 }
 
-fn keyword_ability_name_from_str(text: &str) -> Result<KeywordAbilityName, ParseError> {
+fn keyword_ability_from_str(text: &str) -> Result<KeywordAbility, ParseError> {
     match text.to_ascii_lowercase().as_str() {
-        "first strike" => Ok(KeywordAbilityName::FirstStrike),
-        "flying" => Ok(KeywordAbilityName::Flying),
-        "reach" => Ok(KeywordAbilityName::Reach),
-        "haste" => Ok(KeywordAbilityName::Haste),
-        "defender" => Ok(KeywordAbilityName::Defender),
-        "banding" => Ok(KeywordAbilityName::Banding),
-        "trample" => Ok(KeywordAbilityName::Trample),
-        "indestructible" => Ok(KeywordAbilityName::Indestructible),
-        "fear" => Ok(KeywordAbilityName::Fear),
+        "first strike" => Ok(KeywordAbility::FirstStrike),
+        "flying" => Ok(KeywordAbility::Flying),
+        "reach" => Ok(KeywordAbility::Reach),
+        "haste" => Ok(KeywordAbility::Haste),
+        "defender" => Ok(KeywordAbility::Defender),
+        "banding" => Ok(KeywordAbility::Banding),
+        "trample" => Ok(KeywordAbility::Trample),
+        "indestructible" => Ok(KeywordAbility::Indestructible),
+        "fear" => Ok(KeywordAbility::Fear),
         _ => Err(ParseError::Internal("keyword ability name")),
     }
 }
