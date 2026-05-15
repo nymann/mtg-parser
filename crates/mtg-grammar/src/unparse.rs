@@ -6,10 +6,10 @@ use crate::ast::{
     CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
     EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
     LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus,
-    OptionalCost, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    OptionalCost, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
+    SpellType, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -1295,6 +1295,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::YouPlayPermanent { .. }
         | TriggerEvent::PlayerCastsColoredSpell { .. }
         | TriggerEvent::BasicLandTypeIsTappedForMana { .. }
+        | TriggerEvent::BasicLandTypeControllerBecomesStatus { .. }
         | TriggerEvent::YouAreDealtDamage
         | TriggerEvent::SourceIsDealtDamage { .. }
         | TriggerEvent::SourceDealsDamageToAnOpponent { .. }
@@ -1352,6 +1353,18 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str("a ");
             out.push_str(basic_land_type_name(land_type));
             out.push_str(" is tapped for mana");
+        }
+        TriggerEvent::BasicLandTypeControllerBecomesStatus {
+            land_type,
+            controller,
+            status,
+        } => {
+            out.push_str("a ");
+            out.push_str(basic_land_type_name(land_type));
+            out.push(' ');
+            write_permanent_controller(out, controller);
+            out.push_str(" becomes ");
+            out.push_str(object_status_name(status));
         }
         TriggerEvent::YouPlayPermanent { permanent_type } => {
             out.push_str("you play ");
@@ -1592,6 +1605,9 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
         }
         TriggerEffect::YouLoseTheGame => {
             out.push_str("you lose the game.");
+        }
+        TriggerEffect::YouGainLife { amount } => {
+            write!(out, "you gain {amount} life.").expect("write to String never fails");
         }
         TriggerEffect::YouMayPayMana { cost } => {
             out.push_str("you may pay ");
@@ -1919,6 +1935,13 @@ fn object_status_name(status: ObjectStatus) -> &'static str {
     match status {
         ObjectStatus::Tapped => "tapped",
         ObjectStatus::Untapped => "untapped",
+    }
+}
+
+fn write_permanent_controller(out: &mut String, controller: PermanentController) {
+    match controller {
+        PermanentController::You => out.push_str("you control"),
+        PermanentController::Opponent => out.push_str("an opponent controls"),
     }
 }
 

@@ -222,3 +222,5 @@ mod ley_druid;
 mod library_of_leng;
 #[path = "generated/lich.rs"]
 mod lich;
+#[path = "generated/lifetap.rs"]
+mod lifetap;

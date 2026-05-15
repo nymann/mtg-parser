@@ -8,10 +8,10 @@ use crate::ast::{
     CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
     EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
     LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus,
-    OptionalCost, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    OptionalCost, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
+    SpellType, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -1072,6 +1072,19 @@ fn if_you_do_gain_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, ParseEr
         .map_err(|_| ParseError::Internal("if_you_do_gain_life amount"))
 }
 
+fn you_gain_life_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let amount_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("you_gain_life missing amount"))?;
+    Ok(TriggerEffect::YouGainLife {
+        amount: amount_pair
+            .as_str()
+            .parse::<u32>()
+            .map_err(|_| ParseError::Internal("you_gain_life amount"))?,
+    })
+}
+
 fn action_timing_from_pair(pair: Pair<Rule>) -> Result<ActionTiming, ParseError> {
     match pair.as_rule() {
         Rule::any_time_you_could_activate_a_mana_ability => {
@@ -1150,6 +1163,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::basic_land_type_is_tapped_for_mana => {
                 event = Some(basic_land_type_is_tapped_for_mana_from_pair(child)?);
+            }
+            Rule::basic_land_type_controller_becomes_status => {
+                event = Some(basic_land_type_controller_becomes_status_from_pair(child)?);
             }
             Rule::you_play_permanent => {
                 event = Some(you_play_permanent_from_pair(child)?);
@@ -1279,6 +1295,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::you_lose_the_game => {
                 effects.push(TriggerEffect::YouLoseTheGame);
             }
+            Rule::you_gain_life => {
+                effects.push(you_gain_life_from_pair(child)?);
+            }
             Rule::you_may_pay_mana => {
                 effects.push(you_may_pay_mana_from_pair(child)?);
             }
@@ -1381,6 +1400,26 @@ fn basic_land_type_is_tapped_for_mana_from_pair(
     ))?;
     Ok(TriggerEvent::BasicLandTypeIsTappedForMana {
         land_type: basic_land_type_from_pair(land_type)?,
+    })
+}
+
+fn basic_land_type_controller_becomes_status_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEvent, ParseError> {
+    let mut inner = pair.into_inner();
+    let land_type_pair = inner.next().ok_or(ParseError::Internal(
+        "basic_land_type_controller_becomes_status missing basic_land_type",
+    ))?;
+    let controller_pair = inner.next().ok_or(ParseError::Internal(
+        "basic_land_type_controller_becomes_status missing controller",
+    ))?;
+    let status_pair = inner.next().ok_or(ParseError::Internal(
+        "basic_land_type_controller_becomes_status missing status",
+    ))?;
+    Ok(TriggerEvent::BasicLandTypeControllerBecomesStatus {
+        land_type: basic_land_type_from_pair(land_type_pair)?,
+        controller: permanent_controller_from_pair(controller_pair)?,
+        status: object_status_from_pair(status_pair)?,
     })
 }
 
@@ -3044,6 +3083,17 @@ fn basic_land_type_from_pair(pair: Pair<Rule>) -> Result<BasicLandType, ParseErr
         "mountain" => Ok(BasicLandType::Mountain),
         "forest" => Ok(BasicLandType::Forest),
         _ => Err(ParseError::Internal("basic_land_type variant")),
+    }
+}
+
+fn permanent_controller_from_pair(pair: Pair<Rule>) -> Result<PermanentController, ParseError> {
+    if pair.as_rule() != Rule::permanent_controller {
+        return Err(ParseError::Internal("permanent_controller"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "you control" => Ok(PermanentController::You),
+        "an opponent controls" | "a opponent controls" => Ok(PermanentController::Opponent),
+        _ => Err(ParseError::Internal("permanent_controller variant")),
     }
 }
 

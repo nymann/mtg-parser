@@ -1043,6 +1043,7 @@ trigger_event = _{
   | you_play_permanent
   | player_casts_colored_spell
   | basic_land_type_is_tapped_for_mana
+  | basic_land_type_controller_becomes_status
   | permanent_enters
 }
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
@@ -1068,6 +1069,10 @@ permanent_enters        = { article ~ permanent_type ~ ^"enters" }
 basic_land_type_is_tapped_for_mana = {
     article ~ basic_land_type ~ ^"is" ~ ^"tapped" ~ ^"for" ~ ^"mana"
 }
+basic_land_type_controller_becomes_status = {
+    article ~ basic_land_type ~ permanent_controller ~ ^"becomes" ~ object_status
+}
+permanent_controller = { ^"you" ~ ^"control" | article ~ ^"opponent" ~ ^"controls" }
 player_casts_colored_spell = { article ~ ^"player" ~ ^"casts" ~ article ~ color_word ~ ^"spell" }
 you_play_permanent = { ^"you" ~ ^"play" ~ article ~ permanent_type }
 source_blocks_or_becomes_blocked_by_non_creature_type_creature = {
@@ -1136,6 +1141,7 @@ trigger_effect = _{
   | that_creatures_controller_sacrifices_it
   | sacrifice_that_many_nontoken_permanents
   | you_lose_the_game
+  | you_gain_life
 }
 
 target_permanent_gains_keyword_and_gets_eot = {
@@ -1230,6 +1236,8 @@ sacrifice_that_many_nontoken_permanents = {
 }
 
 you_lose_the_game = { ^"you" ~ ^"lose" ~ ^"the" ~ ^"game" ~ "." }
+
+you_gain_life = { ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "." }
 
 you_may_pay_mana = { ^"you" ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
 if_you_do_gain_life_fragment = {

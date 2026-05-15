@@ -211,3 +211,5 @@ mod ley_druid;
 mod library_of_leng;
 #[path = "generated_patterns/lich.rs"]
 mod lich;
+#[path = "generated_patterns/lifetap.rs"]
+mod lifetap;

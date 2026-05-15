@@ -391,6 +391,12 @@ pub enum TriggerEvent {
     PlayerCastsColoredSpell { color: Color },
     /// "a/an <basic_land_type> is tapped for mana"
     BasicLandTypeIsTappedForMana { land_type: BasicLandType },
+    /// "a/an <basic_land_type> <controller> becomes <status>"
+    BasicLandTypeControllerBecomesStatus {
+        land_type: BasicLandType,
+        controller: PermanentController,
+        status: ObjectStatus,
+    },
     /// "you play a/an <permanent_type>"
     YouPlayPermanent { permanent_type: PermanentType },
     /// "enchanted <permanent_type> dies"
@@ -451,6 +457,12 @@ pub enum InterveningIf {
         source: SourceObject,
         status: ObjectStatus,
     },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PermanentController {
+    You,
+    Opponent,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -535,6 +547,8 @@ pub enum TriggerEffect {
     SacrificeThatManyNontokenPermanents,
     /// "you lose the game"
     YouLoseTheGame,
+    /// "you gain N life"
+    YouGainLife { amount: u32 },
     /// "you may pay <mana_cost>"
     YouMayPayMana { cost: ManaCost },
     /// "If you do, you gain N life."
