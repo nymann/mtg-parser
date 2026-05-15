@@ -425,6 +425,15 @@ pub(crate) enum TargetPermanentEndOfTurnEffect {
     },
 }
 
+impl TargetPermanentEndOfTurnEffect {
+    pub(crate) fn gets_numbered(modifier: PtModifier) -> Self {
+        Self::Gets(MixedPtModifier {
+            power: SignedPtComponent::Number(modifier.power),
+            toughness: SignedPtComponent::Number(modifier.toughness),
+        })
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ColoredTargetEffect {
     /// "Counter target <color> spell."

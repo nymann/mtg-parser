@@ -1,0 +1,75 @@
+You are selecting the next autonomous grammar refactor target for `mtg-parser`.
+This is iteration 15 of the outer grind loop.
+
+Pick one narrow effect-frame theme for the next `refactor-hotspot` run. Do not
+choose broad `grammar-core` unless every narrower theme is exhausted.
+
+## Allowed Themes
+
+- `damage` — damage amounts, sources, recipients, damage-linked life gain.
+- `destroy` — destroy/tap/sacrifice/attach target/all/list action frames.
+- `prevention` — prevent/replacement effect amount and recipient frames.
+- `keyword-abilities` — keyword ability variants and keyword data axes.
+- `triggered-abilities` — event + optional condition + effect-list factoring.
+- `unparse-templates` — reusable rendering/template slots.
+- `parser-boilerplate` — parser mechanics only, no grammar/AST shape change.
+
+Do not choose an exhausted theme.
+
+## Exhausted Themes
+
+- `damage`
+- `prevention`
+- `destroy`
+- `triggered-abilities`
+- `keyword-abilities`
+
+
+## Preference Rules
+
+1. Prefer a theme where repeated sentence-shaped rules can become one
+   phenomenon-shaped rule plus data axes.
+2. Prefer themes that reduce grammar, AST, parse, and unparse coupling together.
+3. Avoid tiny common-substring deduplication unless it is part of a real frame.
+4. If the recent commits already worked one theme and it is still yielding
+   meaningful commits, you may continue it. If it is producing only small helper
+   shuffles, switch.
+5. Return exactly one line at the end: `theme: <allowed-theme>`.
+
+## Current Grammar Surface
+
+```text
+crates/mtg-grammar/src/grammar.pest        loc=1507  surface-count=395
+crates/mtg-grammar/src/ast.rs              loc=1678  surface-count=62
+crates/mtg-grammar/src/parse.rs            loc=3725  surface-count=173
+crates/mtg-grammar/src/unparse.rs          loc=2417  surface-count=105
+```
+
+## Git Status
+
+```text
+(empty)
+```
+
+## Current Diff Stat
+
+```text
+(empty)
+```
+
+## Recent Commits
+
+```text
+3b82008 Refactor keyword-abilities hotspot iteration 14
+cb48e89 Refactor keyword-abilities hotspot iteration 13
+d71abdd Refactor keyword-abilities hotspot iteration 12
+0976a79 Refactor keyword-abilities hotspot iteration 11
+799c1f2 Refactor triggered-abilities hotspot iteration 10
+c5beeb6 Refactor triggered-abilities hotspot iteration 9
+8db6c0f Refactor destroy hotspot iteration 8
+8d4e9ef Refactor destroy hotspot iteration 7
+4845990 Refactor prevention hotspot iteration 6
+d0043d7 Refactor prevention hotspot iteration 5
+10ba039 Refactor prevention hotspot iteration 4
+f950d55 Refactor prevention hotspot iteration 3
+```

@@ -130,7 +130,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str("You may have that player shuffle.");
         }
         Statement::TargetPlayerGainsLife { amount } => {
-            write!(out, "Target player gains {amount} life.").expect("write to String never fails");
+            write_target_player_gains_life(out, *amount);
         }
         Statement::TapAllPermanentsTargetPlayerControlsAndThatPlayerLosesUnspentMana {
             permanent_type,
@@ -155,9 +155,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str("Change the text of target spell or permanent by replacing all instances of one basic land type with another.");
         }
         Statement::AddMana { mana } => {
-            out.push_str("Add ");
-            write_mana_cost(out, mana);
-            out.push('.');
+            write_add_mana_sentence(out, mana, SentenceCase::Upper);
         }
         Statement::AntePlayRestriction => {
             out.push_str(
@@ -253,10 +251,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_target_permanent_until_end_of_turn(
                 out,
                 *permanent_type,
-                &TargetPermanentEndOfTurnEffect::Gets(MixedPtModifier {
-                    power: SignedPtComponent::Number(modifier.power),
-                    toughness: SignedPtComponent::Number(modifier.toughness),
-                }),
+                &TargetPermanentEndOfTurnEffect::gets_numbered(*modifier),
             );
         }
         Statement::TargetPermanentGetsMixedUntilEndOfTurn {
@@ -405,7 +400,7 @@ fn write_modal_mode(out: &mut String, mode: ModalMode) {
             write_colored_target_effect(out, ColoredTargetEffect::DestroyPermanent { color });
         }
         ModalMode::TargetPlayerGainsLife { amount } => {
-            write!(out, "Target player gains {amount} life.").expect("write to String never fails");
+            write_target_player_gains_life(out, amount);
         }
         ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
             write_prevent_next_damage_to_recipient(out, prevention);
@@ -680,28 +675,58 @@ fn write_optional_cost(out: &mut String, cost: &OptionalCost) {
 }
 
 fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
-    out.push_str("If you do, ");
-    match effect {
+    write_if_you_do(out, |out| match effect {
         IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
             write_damage_prevention_effect_lowercase(
                 out,
                 DamagePreventionEffect::next_this_turn(prevention),
             );
         }
-        IfYouDoEffect::AddMana { mana } => {
-            out.push_str("add ");
-            write_mana_cost(out, &mana);
-            out.push('.');
-        }
-        IfYouDoEffect::Untap { source } => {
-            out.push_str("untap ");
-            write_source_object(out, source);
-            out.push('.');
-        }
-        IfYouDoEffect::GainLife { amount } => {
-            write!(out, "you gain {amount} life.").expect("write to String never fails");
-        }
-    }
+        IfYouDoEffect::AddMana { mana } => write_add_mana_sentence(out, &mana, SentenceCase::Lower),
+        IfYouDoEffect::Untap { source } => write_untap_sentence(out, source, SentenceCase::Lower),
+        IfYouDoEffect::GainLife { amount } => write_you_gain_life(out, amount, SentenceCase::Lower),
+    });
+}
+
+fn write_if_you_do(out: &mut String, write_effect: impl FnOnce(&mut String)) {
+    out.push_str("If you do, ");
+    write_effect(out);
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SentenceCase {
+    Upper,
+    Lower,
+}
+
+fn write_add_mana_sentence(out: &mut String, mana: &ManaCost, case: SentenceCase) {
+    out.push_str(match case {
+        SentenceCase::Upper => "Add ",
+        SentenceCase::Lower => "add ",
+    });
+    write_mana_cost(out, mana);
+    out.push('.');
+}
+
+fn write_untap_sentence(out: &mut String, source: SourceObject, case: SentenceCase) {
+    out.push_str(match case {
+        SentenceCase::Upper => "Untap ",
+        SentenceCase::Lower => "untap ",
+    });
+    write_source_object(out, source);
+    out.push('.');
+}
+
+fn write_you_gain_life(out: &mut String, amount: u32, case: SentenceCase) {
+    out.push_str(match case {
+        SentenceCase::Upper => "You gain ",
+        SentenceCase::Lower => "you gain ",
+    });
+    write!(out, "{amount} life.").expect("write to String never fails");
+}
+
+fn write_target_player_gains_life(out: &mut String, amount: u32) {
+    write!(out, "Target player gains {amount} life.").expect("write to String never fails");
 }
 
 fn write_prevent_next_damage_to_recipient(
@@ -913,9 +938,7 @@ fn write_activated_cost(out: &mut String, cost: &ActivatedCost) {
 fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
     match effect {
         ActivatedEffect::AddMana(mana) => {
-            out.push_str("Add ");
-            write_mana_cost(out, mana);
-            out.push('.');
+            write_add_mana_sentence(out, mana, SentenceCase::Upper);
         }
         ActivatedEffect::AddOneManaOfAnyColor => {
             out.push_str("Add one mana of any color.");
@@ -931,9 +954,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push('.');
         }
         ActivatedEffect::Untap(source) => {
-            out.push_str("Untap ");
-            write_source_object(out, *source);
-            out.push('.');
+            write_untap_sentence(out, *source, SentenceCase::Upper);
         }
         ActivatedEffect::UntapTargetPermanent { permanent_type } => {
             out.push_str("Untap target ");
@@ -1000,11 +1021,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             permanent_type,
             keyword,
         } => {
-            out.push_str("Target ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str(" gains ");
-            write_keyword_lowercase(out, *keyword);
-            out.push_str(" until end of turn.");
+            write_target_permanent_until_end_of_turn(
+                out,
+                *permanent_type,
+                &TargetPermanentEndOfTurnEffect::GainsKeyword(*keyword),
+            );
         }
         ActivatedEffect::EnchantedGetsUntilEndOfTurn {
             permanent_type,
@@ -1760,7 +1781,7 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str("you lose the game.");
         }
         TriggerEffect::YouGainLife { amount } => {
-            write!(out, "you gain {amount} life.").expect("write to String never fails");
+            write_you_gain_life(out, *amount, SentenceCase::Lower);
         }
         TriggerEffect::YouMayPayMana { cost } => {
             out.push_str("you may pay ");
@@ -1771,7 +1792,7 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str("you may put this card onto the battlefield.");
         }
         TriggerEffect::IfYouDoGainLife { amount } => {
-            write!(out, "If you do, you gain {amount} life.").expect("write to String never fails");
+            write_if_you_do_effect(out, IfYouDoEffect::GainLife { amount: *amount });
         }
         TriggerEffect::UnlessYouPayManaDoActions { cost, actions } => {
             out.push_str("unless you pay ");
