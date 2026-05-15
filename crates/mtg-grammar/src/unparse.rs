@@ -885,6 +885,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_permanent_type_plural_list(out, permanent_types);
             out.push('.');
         }
+        ActivatedEffect::DestroyAllBasicLands { basic_land_type } => {
+            out.push_str("Destroy all ");
+            out.push_str(basic_land_type_plural_name(*basic_land_type));
+            out.push('.');
+        }
         ActivatedEffect::DestroyTargetCreatureType { creature_type } => {
             out.push_str("Destroy target ");
             write_creature_type(out, *creature_type);

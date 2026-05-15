@@ -43,7 +43,6 @@ sentence_statement = _{
   | you_may_choose_new_targets_for_the_copy
   | imperative_action_sequence
   | counter_target_spell
-  | destroy_all_basic_lands
   | destroy_all
   | destroy_target_permanent
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
@@ -188,8 +187,9 @@ this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first = {
   ~ ^"first" ~ "."
 }
 
-destroy_all_basic_lands = { ^"destroy" ~ ^"all" ~ basic_land_type_plural ~ "." }
-destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural_list ~ "." }
+destroy_all = {
+    ^"destroy" ~ ^"all" ~ (basic_land_type_plural | permanent_type_plural_list) ~ "."
+}
 permanent_type_plural_list = {
     permanent_type_plural ~ (("," ~ permanent_type_plural)* ~ ","? ~ ^"and" ~ permanent_type_plural)?
 }

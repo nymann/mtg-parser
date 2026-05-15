@@ -274,11 +274,7 @@ fn render_complexity_strip(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let grammar: Vec<usize> = session.history.iter().map(|s| s.grammar_rules).collect();
     let corpus_pass: Vec<usize> = session.history.iter().map(|s| s.corpus_passing).collect();
     let loc: Vec<usize> = session.history.iter().map(|s| s.hot_file_loc).collect();
-    let corpus_total = session
-        .history
-        .last()
-        .map(|s| s.corpus_total)
-        .unwrap_or(0);
+    let corpus_total = session.history.last().map(|s| s.corpus_total).unwrap_or(0);
 
     let cols = Layout::default()
         .direction(Direction::Horizontal)
@@ -344,7 +340,11 @@ fn complexity_segment_spans(
     let raw_delta = current - baseline;
     // For "lower is better" metrics, flip the sign so the delta_span
     // colors a reduction green and a growth red.
-    let display_delta = if lower_is_better { -raw_delta } else { raw_delta };
+    let display_delta = if lower_is_better {
+        -raw_delta
+    } else {
+        raw_delta
+    };
     vec![
         label_span(label),
         Span::styled(spark, Style::default().fg(spark_color)),
@@ -380,7 +380,11 @@ fn sparkline(values: &[usize], width: usize, lower_is_better: bool) -> (String, 
     let first = recent.first().copied().unwrap_or(0) as i64;
     let last = recent.last().copied().unwrap_or(0) as i64;
     let raw_delta = last - first;
-    let trend = if lower_is_better { -raw_delta } else { raw_delta };
+    let trend = if lower_is_better {
+        -raw_delta
+    } else {
+        raw_delta
+    };
     let color = match trend.cmp(&0) {
         std::cmp::Ordering::Greater => C_GOOD,
         std::cmp::Ordering::Less => C_BAD,

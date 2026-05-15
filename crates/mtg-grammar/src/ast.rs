@@ -272,7 +272,26 @@ pub enum Statement {
     Compound(Vec<Statement>),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DestroyAllTarget {
+    /// "<permanent_type>s[, <permanent_type>s, and <permanent_type>s]"
+    PermanentTypes(Vec<PermanentType>),
+    /// "<basic_land_type>s"
+    BasicLandType(BasicLandType),
+}
+
 impl Statement {
+    pub(crate) fn destroy_all(target: DestroyAllTarget) -> Self {
+        match target {
+            DestroyAllTarget::PermanentTypes(permanent_types) => {
+                Statement::DestroyAll { permanent_types }
+            }
+            DestroyAllTarget::BasicLandType(basic_land_type) => {
+                Statement::DestroyAllBasicLands { basic_land_type }
+            }
+        }
+    }
+
     pub(crate) fn destroy_target_permanent_choice(permanent_types: Vec<PermanentType>) -> Self {
         match permanent_types.as_slice() {
             [PermanentType::Creature] => Statement::DestroyTargetCreature,
@@ -770,6 +789,10 @@ pub enum ActivatedEffect {
     DestroyAll {
         permanent_types: Vec<PermanentType>,
     },
+    /// "Destroy all <basic_land_type>s."
+    DestroyAllBasicLands {
+        basic_land_type: BasicLandType,
+    },
     /// "Look at target player's hand."
     LookAtTargetPlayersHand,
     /// "Draw N cards."
@@ -862,6 +885,19 @@ pub enum ActivatedEffect {
         source: SourceObject,
     },
     PhysicalAction(PhysicalAction),
+}
+
+impl ActivatedEffect {
+    pub(crate) fn destroy_all(target: DestroyAllTarget) -> Self {
+        match target {
+            DestroyAllTarget::PermanentTypes(permanent_types) => {
+                ActivatedEffect::DestroyAll { permanent_types }
+            }
+            DestroyAllTarget::BasicLandType(basic_land_type) => {
+                ActivatedEffect::DestroyAllBasicLands { basic_land_type }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

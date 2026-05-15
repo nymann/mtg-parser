@@ -145,10 +145,7 @@ fn count_pest_rules(text: &str) -> usize {
                 return false;
             };
             let name = name.trim();
-            !name.is_empty()
-                && name
-                    .chars()
-                    .all(|c| c.is_ascii_alphanumeric() || c == '_')
+            !name.is_empty() && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
         })
         .count()
 }

@@ -6,11 +6,11 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
     CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
-    DamageRecipients, EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction,
-    InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    DamageRecipients, DestroyAllTarget, EachPlayerAction, EnchantObject, EnchantedObject,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
+    MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
     Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -115,7 +115,6 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 pair,
             )
         }
-        Rule::destroy_all_basic_lands => destroy_all_basic_lands_from_pair(pair),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana => {
             tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana_from_pair(
@@ -666,25 +665,26 @@ fn balance_same_way_action_from_pair(pair: Pair<Rule>) -> Result<BalanceSameWayA
 }
 
 fn destroy_all_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let permanent_type_list_pair =
-        only_inner(pair, "destroy_all missing permanent_type_plural_list")?;
-    Ok(Statement::DestroyAll {
-        permanent_types: permanent_type_plural_list_from_pair(permanent_type_list_pair)?,
-    })
-}
-
-fn destroy_all_basic_lands_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let land_type = only_inner(
-        pair,
-        "destroy_all_basic_lands missing basic_land_type_plural",
-    )?;
-    Ok(Statement::DestroyAllBasicLands {
-        basic_land_type: basic_land_type_from_plural_pair(land_type)?,
-    })
+    let target_pair = only_inner(pair, "destroy_all missing target")?;
+    Ok(Statement::destroy_all(destroy_all_target_from_pair(
+        target_pair,
+    )?))
 }
 
 fn permanent_type_choice_from_pair(pair: Pair<Rule>) -> Result<Vec<PermanentType>, ParseError> {
     pair.into_inner().map(permanent_type_from_pair).collect()
+}
+
+fn destroy_all_target_from_pair(pair: Pair<Rule>) -> Result<DestroyAllTarget, ParseError> {
+    match pair.as_rule() {
+        Rule::permanent_type_plural_list => Ok(DestroyAllTarget::PermanentTypes(
+            permanent_type_plural_list_from_pair(pair)?,
+        )),
+        Rule::basic_land_type_plural => Ok(DestroyAllTarget::BasicLandType(
+            basic_land_type_from_plural_pair(pair)?,
+        )),
+        _ => Err(ParseError::Internal("destroy_all target")),
+    }
 }
 
 fn destroy_target_permanent_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
@@ -2806,11 +2806,10 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             Ok(ActivatedEffect::DestroyTargetPermanents { permanent_types })
         }
         Rule::destroy_all => {
-            let permanent_type_list_pair =
-                only_inner(pair, "destroy all missing permanent_type list")?;
-            Ok(ActivatedEffect::DestroyAll {
-                permanent_types: permanent_type_plural_list_from_pair(permanent_type_list_pair)?,
-            })
+            let target_pair = only_inner(pair, "destroy all missing target")?;
+            Ok(ActivatedEffect::destroy_all(destroy_all_target_from_pair(
+                target_pair,
+            )?))
         }
         Rule::destroy_target_creature_type => {
             let creature_type_pair = pair
