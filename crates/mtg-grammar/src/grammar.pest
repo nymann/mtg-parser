@@ -1,7 +1,7 @@
 // Walking-skeleton grammar. Covers:
 //   - Scryfall-style mana costs, e.g. `{2}{R}{R}`
 //   - "Destroy target creature." / "Destroy all <permanent type>s."
-//   - "Target player draws N cards." (N as an English word)
+//   - "Target player draws N cards." (N as an English word or variable)
 //   - Keyword abilities (`Flying`, parameterized `Enchant <type>`, ...)
 //   - Cards with multiple abilities separated by newlines
 //   - Static abilities of the form
@@ -86,7 +86,8 @@ tap_symbol  = ${ "{" ~ "T" ~ "}" }
 destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }
 destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural ~ "." }
 
-draw_cards  = { ^"target" ~ ^"player" ~ ^"draws" ~ number_word ~ ^"cards" ~ "." }
+draw_cards  = { ^"target" ~ ^"player" ~ ^"draws" ~ draw_count ~ ^"cards" ~ "." }
+draw_count  = _{ number_word | variable_name }
 number_word = @{
     ^"one" | ^"two" | ^"three" | ^"four" | ^"five"
   | ^"six" | ^"seven" | ^"eight" | ^"nine" | ^"ten"

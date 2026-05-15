@@ -4,7 +4,7 @@ use pest_derive::Parser;
 
 use crate::ast::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType,
-    CastRestriction, Color, Condition, ContinuousEffect, CreatureType, EnchantObject,
+    CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureType, EnchantObject,
     EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
     PermanentType, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
     SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
@@ -250,11 +250,19 @@ fn destroy_all_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
 }
 
 fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let word = pair
+    let count_pair = pair
         .into_inner()
         .next()
-        .expect("draw_cards always contains a number_word");
-    let count = number_word_to_u32(word.as_str()).ok_or(ParseError::Internal("number_word"))?;
+        .expect("draw_cards always contains a draw_count");
+    let count = match count_pair.as_rule() {
+        Rule::number_word => {
+            let count = number_word_to_u32(count_pair.as_str())
+                .ok_or(ParseError::Internal("number_word"))?;
+            CardCount::Number(count)
+        }
+        Rule::variable_name => CardCount::Variable(variable_from_str(count_pair.as_str())?),
+        _ => return Err(ParseError::Internal("draw_count")),
+    };
     Ok(Statement::TargetPlayerDrawsCards { count })
 }
 

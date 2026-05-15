@@ -1,6 +1,6 @@
 use mtg_grammar::{
-    ActivatedAbility, BalanceSameWayAction, CastRestriction, Keyword, MixedPtModifier, ModalMode,
-    PermanentType, StaticAbility, TriggeredAbility, VariableDefinition,
+    ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Keyword, MixedPtModifier,
+    ModalMode, PermanentType, StaticAbility, TriggeredAbility, VariableDefinition,
 };
 use serde::{Deserialize, Serialize};
 
@@ -21,7 +21,7 @@ pub enum CardEffect {
     /// A single keyword ability such as `Flying` or `Enchant artifact`.
     Keyword(Keyword),
     /// "Target player draws N cards."
-    TargetPlayerDrawsCards { count: u32 },
+    TargetPlayerDrawsCards { count: CardCount },
     /// "Target <type> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
     TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {

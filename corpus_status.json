@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 56,
+  "passing": 57,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -82,8 +82,7 @@
       "status": "pass"
     },
     "lea/Braingeyser": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:21\n  |\n1 | Target player draws X cards.\n  |                     ^---\n  |\n  = expected number_word"
+      "status": "pass"
     },
     "lea/Burrowing": {
       "status": "fail",

@@ -35,3 +35,5 @@ mod blessing;
 mod blue_elemental_blast;
 #[path = "generated_patterns/bog_wraith.rs"]
 mod bog_wraith;
+#[path = "generated_patterns/braingeyser.rs"]
+mod braingeyser;

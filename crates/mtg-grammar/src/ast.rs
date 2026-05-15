@@ -12,7 +12,7 @@ pub enum Statement {
     },
     Keyword(Keyword),
     TargetPlayerDrawsCards {
-        count: u32,
+        count: CardCount,
     },
     /// "Target <type> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
@@ -77,6 +77,12 @@ pub enum BalanceSameWayAction {
     DiscardCards,
     /// "sacrifice <permanent_type>s"
     SacrificePermanents { permanent_type: PermanentType },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CardCount {
+    Number(u32),
+    Variable(Variable),
 }
 
 /// "When/Whenever <event>, [if <intervening-if>,] <effect>[. <effect>]*."

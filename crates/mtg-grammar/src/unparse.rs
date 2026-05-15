@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use crate::ast::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType,
-    CastRestriction, Color, Condition, ContinuousEffect, CreatureType, EnchantObject,
+    CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureType, EnchantObject,
     EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
     PermanentType, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
     SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
@@ -27,12 +27,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::Keyword(kw) => write_keyword(out, *kw),
         Statement::TargetPlayerDrawsCards { count } => {
-            write!(
-                out,
-                "Target player draws {} cards.",
-                u32_to_number_word(*count)
-            )
-            .expect("write to String never fails");
+            out.push_str("Target player draws ");
+            write_card_count(out, *count);
+            out.push_str(" cards.");
         }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             permanent_type,
@@ -157,6 +154,13 @@ fn u32_to_number_word(n: u32) -> &'static str {
         9 => "nine",
         10 => "ten",
         _ => panic!("u32_to_number_word: {n} outside supported range 1..=10"),
+    }
+}
+
+fn write_card_count(out: &mut String, count: CardCount) {
+    match count {
+        CardCount::Number(n) => out.push_str(u32_to_number_word(n)),
+        CardCount::Variable(variable) => out.push_str(variable_name(variable)),
     }
 }
 
