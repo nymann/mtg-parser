@@ -737,11 +737,17 @@ pub enum TriggerEffect {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TriggeredDamage {
-    pub source: TriggerDamageSource,
-    pub amount: DamageAmount,
-    pub recipient: TriggerDamageRecipient,
+    #[serde(flatten)]
+    pub event: DamageEvent<TriggerDamageSource, TriggerDamageRecipient>,
     pub condition: Option<TriggerDamageCondition>,
     pub definitions: Vec<VariableDefinition>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DamageEvent<S, R> {
+    pub source: S,
+    pub amount: DamageAmount,
+    pub recipient: R,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

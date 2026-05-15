@@ -7,7 +7,7 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
-    DamageKind, DamageLifeGainCap, DamagePrevention, DamagePreventionAmount,
+    DamageEvent, DamageKind, DamageLifeGainCap, DamagePrevention, DamagePreventionAmount,
     DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
     DestroyAllTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
     ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
@@ -1867,32 +1867,14 @@ fn unless_you_pay_mana_do_actions_from_pair(pair: Pair<Rule>) -> Result<TriggerE
 }
 
 fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
-    let mut source = None;
-    let mut amount = None;
-    let mut recipient = None;
+    let mut event = None;
     let mut condition = None;
     let mut definitions = None;
 
     for child in pair.into_inner() {
         match child.as_rule() {
-            Rule::source_object => {
-                source = Some(TriggerDamageSource::Source(source_object_from_pair(child)?));
-            }
-            Rule::it_damage_source => {
-                source = Some(TriggerDamageSource::It);
-            }
-            Rule::trigger_damage_amount => {
-                amount = Some(trigger_damage_amount_from_pair(child)?);
-            }
-            Rule::trigger_damage_equal_to_amount => {
-                amount = Some(trigger_damage_equal_to_amount_from_pair(child)?);
-            }
-            Rule::that_permanents_controller
-            | Rule::the_permanents_controller
-            | Rule::that_player_damage_recipient
-            | Rule::you_damage_recipient
-            | Rule::that_permanent_damage_recipient => {
-                recipient = Some(trigger_damage_recipient_from_pair(child)?);
+            Rule::trigger_damage_event => {
+                event = Some(trigger_damage_event_from_pair(child)?);
             }
             Rule::trigger_damage_condition => {
                 condition = Some(trigger_damage_condition_from_pair(child)?);
@@ -1905,14 +1887,10 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
         }
     }
 
-    let source = source.ok_or(ParseError::Internal("source deals damage missing source"))?;
-    let amount = amount.ok_or(ParseError::Internal("source deals damage missing amount"))?;
-    let recipient = recipient.ok_or(ParseError::Internal(
-        "source deals damage missing recipient",
-    ))?;
-    validate_trigger_damage_amount_recipient(amount, recipient)?;
+    let event = event.ok_or(ParseError::Internal("source deals damage missing event"))?;
+    validate_trigger_damage_amount_recipient(event.amount, event.recipient)?;
 
-    let definitions = match (amount, definitions) {
+    let definitions = match (event.amount, definitions) {
         (DamageAmount::Number(_), Some(_)) => {
             return Err(ParseError::Internal(
                 "number damage cannot have variable definition",
@@ -1946,12 +1924,51 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
     };
 
     Ok(TriggerEffect::SourceDealsDamage(TriggeredDamage {
-        source,
-        amount,
-        recipient,
+        event,
         condition,
         definitions,
     }))
+}
+
+fn trigger_damage_event_from_pair(
+    pair: Pair<Rule>,
+) -> Result<DamageEvent<TriggerDamageSource, TriggerDamageRecipient>, ParseError> {
+    let mut source = None;
+    let mut amount = None;
+    let mut recipient = None;
+
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::source_object => {
+                source = Some(TriggerDamageSource::Source(source_object_from_pair(child)?));
+            }
+            Rule::it_damage_source => {
+                source = Some(TriggerDamageSource::It);
+            }
+            Rule::trigger_damage_amount => {
+                amount = Some(trigger_damage_amount_from_pair(child)?);
+            }
+            Rule::trigger_damage_equal_to_amount => {
+                amount = Some(trigger_damage_equal_to_amount_from_pair(child)?);
+            }
+            Rule::that_permanents_controller
+            | Rule::the_permanents_controller
+            | Rule::that_player_damage_recipient
+            | Rule::you_damage_recipient
+            | Rule::that_permanent_damage_recipient => {
+                recipient = Some(trigger_damage_recipient_from_pair(child)?);
+            }
+            _ => return Err(ParseError::Internal("trigger damage event part")),
+        }
+    }
+
+    Ok(DamageEvent {
+        source: source.ok_or(ParseError::Internal("trigger damage event missing source"))?,
+        amount: amount.ok_or(ParseError::Internal("trigger damage event missing amount"))?,
+        recipient: recipient.ok_or(ParseError::Internal(
+            "trigger damage event missing recipient",
+        ))?,
+    })
 }
 
 fn damage_number_from_pair(pair: Pair<Rule>, context: &'static str) -> Result<u32, ParseError> {

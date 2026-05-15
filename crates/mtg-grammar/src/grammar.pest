@@ -1413,12 +1413,16 @@ delayed_remove_all_named_counters_from_linked_land = {
 }
 
 source_deals_damage = {
-    trigger_damage_source ~ ^"deals" ~ (
-      trigger_damage_amount ~ ^"damage" ~ ^"to" ~ trigger_damage_recipient
-    | ^"damage" ~ trigger_damage_equal_to_amount ~ ^"to" ~ trigger_damage_recipient
-    | ^"damage" ~ ^"to" ~ trigger_damage_recipient ~ trigger_damage_equal_to_amount
-    ) ~ trigger_damage_condition?
+    trigger_damage_event ~ trigger_damage_condition?
   ~ trigger_damage_variable_definition? ~ trigger_damage_terminator
+}
+trigger_damage_event = {
+    trigger_damage_source ~ ^"deals" ~ trigger_damage_body
+}
+trigger_damage_body = _{
+    trigger_damage_amount ~ ^"damage" ~ ^"to" ~ trigger_damage_recipient
+  | ^"damage" ~ trigger_damage_equal_to_amount ~ ^"to" ~ trigger_damage_recipient
+  | ^"damage" ~ ^"to" ~ trigger_damage_recipient ~ trigger_damage_equal_to_amount
 }
 trigger_damage_terminator = _{ "." | &(^"and") }
 trigger_damage_source = _{ it_damage_source | source_object }

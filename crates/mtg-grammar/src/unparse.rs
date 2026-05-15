@@ -1812,27 +1812,27 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
 }
 
 fn write_triggered_damage(out: &mut String, damage: &TriggeredDamage, terminal: bool) {
-    match damage.source {
+    match damage.event.source {
         TriggerDamageSource::Source(source) => write_source_object(out, source),
         TriggerDamageSource::It => out.push_str("it"),
     }
     out.push_str(" deals ");
-    match damage.amount {
+    match damage.event.amount {
         DamageAmount::Number(_) | DamageAmount::Variable(_) => {
-            let amount = damage.amount;
+            let amount = damage.event.amount;
             write_damage_amount(out, amount);
             out.push_str(" damage to ");
-            write_trigger_damage_recipient(out, damage.recipient);
+            write_trigger_damage_recipient(out, damage.event.recipient);
         }
         DamageAmount::ThatPermanentsToughness(permanent_type) => {
             out.push_str("damage equal to that ");
             out.push_str(permanent_type_name(permanent_type));
             out.push_str("'s toughness to ");
-            write_trigger_damage_recipient(out, damage.recipient);
+            write_trigger_damage_recipient(out, damage.event.recipient);
         }
         DamageAmount::NumberOfBasicLandsTheyControl(basic_land_type) => {
             out.push_str("damage to ");
-            write_trigger_damage_recipient(out, damage.recipient);
+            write_trigger_damage_recipient(out, damage.event.recipient);
             out.push_str(" equal to the number of ");
             out.push_str(basic_land_type_plural_name(basic_land_type));
             out.push_str(" they control");
@@ -1846,7 +1846,7 @@ fn write_triggered_damage(out: &mut String, damage: &TriggeredDamage, terminal: 
             }
         }
     }
-    match damage.amount {
+    match damage.event.amount {
         DamageAmount::Variable(_) => {
             out.push_str(", where ");
             write_variable_definitions(out, &damage.definitions);
