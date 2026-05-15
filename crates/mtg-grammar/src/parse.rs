@@ -2996,6 +2996,14 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 source_pair,
             )?))
         }
+        Rule::colored_target_effect => match colored_target_effect_from_pair(pair)? {
+            ColoredTargetEffect::CounterSpell { color } => {
+                Ok(ActivatedEffect::CounterTargetColoredSpell { color })
+            }
+            ColoredTargetEffect::DestroyPermanent { color } => {
+                Ok(ActivatedEffect::DestroyTargetColoredPermanent { color })
+            }
+        },
         Rule::counter_target_colored_spell => {
             let action_pair = only_inner(pair, "counter colored spell missing action")?;
             match colored_target_action_from_pair(action_pair)? {

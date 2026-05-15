@@ -975,6 +975,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
         ActivatedEffect::CounterTargetColoredSpell { color } => {
             write_colored_target_effect(out, ColoredTargetEffect::CounterSpell { color: *color });
         }
+        ActivatedEffect::DestroyTargetColoredPermanent { color } => {
+            write_colored_target_effect(out, ColoredTargetEffect::DestroyPermanent {
+                color: *color,
+            });
+        }
         ActivatedEffect::DestroyTargetPermanents { permanent_types } => {
             write_destroy(out, &DestroyTarget::TargetPermanents(permanent_types.clone()));
         }

@@ -262,3 +262,5 @@ mod nettling_imp;
 mod nevinyrral_s_disk;
 #[path = "generated/nightmare.rs"]
 mod nightmare;
+#[path = "generated/northern_paladin.rs"]
+mod northern_paladin;
