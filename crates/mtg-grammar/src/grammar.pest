@@ -436,10 +436,12 @@ you_own_target_card_in_zone = {
 }
 
 return_target_card_from_your_zone_to_your_zone = {
-    ^"return" ~ ^"target" ~ permanent_type ~ ^"card"
+    ^"return" ~ ^"target" ~ return_target_card_kind
   ~ ^"from" ~ ^"your" ~ owned_zone
   ~ ^"to" ~ ^"your" ~ owned_zone ~ "."
 }
+
+return_target_card_kind = { permanent_type? ~ ^"card" }
 
 exchange_that_card_with_top_card_of_your_library = {
     ^"exchange" ~ ^"that" ~ ^"card" ~ ^"with" ~ ^"the" ~ ^"top"

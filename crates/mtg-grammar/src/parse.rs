@@ -396,17 +396,22 @@ fn return_target_card_from_your_zone_to_your_zone_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
     let mut inner = pair.into_inner();
-    let card_type_pair = inner
+    let card_kind_pair = inner
         .next()
-        .ok_or(ParseError::Internal("return target card missing card_type"))?;
+        .ok_or(ParseError::Internal("return target card missing card kind"))?;
     let from_pair = inner.next().ok_or(ParseError::Internal(
         "return target card missing source zone",
     ))?;
     let to_pair = inner.next().ok_or(ParseError::Internal(
         "return target card missing destination zone",
     ))?;
+    let card_type = card_kind_pair
+        .into_inner()
+        .next()
+        .map(permanent_type_from_pair)
+        .transpose()?;
     Ok(Statement::ReturnTargetCardFromYourZoneToYourZone {
-        card_type: permanent_type_from_pair(card_type_pair)?,
+        card_type,
         from: zone_from_pair(from_pair)?,
         to: zone_from_pair(to_pair)?,
     })

@@ -189,8 +189,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             to,
         } => {
             out.push_str("Return target ");
-            out.push_str(permanent_type_name(*card_type));
-            out.push_str(" card from your ");
+            if let Some(card_type) = card_type {
+                out.push_str(permanent_type_name(*card_type));
+                out.push(' ');
+            }
+            out.push_str("card from your ");
             out.push_str(zone_name(*from));
             out.push_str(" to your ");
             out.push_str(zone_name(*to));

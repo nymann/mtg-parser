@@ -123,9 +123,9 @@ pub enum Statement {
     YouOwnTargetCardInZone {
         zone: Zone,
     },
-    /// "Return target <card_type> card from your <zone> to your <zone>."
+    /// "Return target [<card_type>] card from your <zone> to your <zone>."
     ReturnTargetCardFromYourZoneToYourZone {
-        card_type: PermanentType,
+        card_type: Option<PermanentType>,
         from: Zone,
         to: Zone,
     },

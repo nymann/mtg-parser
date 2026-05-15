@@ -294,3 +294,5 @@ mod raging_river;
 mod raise_dead;
 #[path = "generated/regeneration.rs"]
 mod regeneration;
+#[path = "generated/regrowth.rs"]
+mod regrowth;
