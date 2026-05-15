@@ -659,6 +659,9 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_creature_type(out, *creature_type);
             out.push('.');
         }
+        ActivatedEffect::LookAtTargetPlayersHand => {
+            out.push_str("Look at target player's hand.");
+        }
         ActivatedEffect::TargetPlayerDiscardsCards { count } => {
             out.push_str("Target player discards ");
             write_discard_count(out, *count);

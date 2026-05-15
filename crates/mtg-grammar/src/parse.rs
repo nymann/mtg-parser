@@ -1990,6 +1990,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 creature_type: creature_type_from_pair(creature_type_pair)?,
             })
         }
+        Rule::look_at_target_players_hand => Ok(ActivatedEffect::LookAtTargetPlayersHand),
         Rule::target_player_discards_cards => {
             let count_pair = pair
                 .into_inner()

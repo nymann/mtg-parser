@@ -483,6 +483,8 @@ pub enum ActivatedEffect {
     DestroyTargetCreatureType {
         creature_type: CreatureType,
     },
+    /// "Look at target player's hand."
+    LookAtTargetPlayersHand,
     /// "Target player discards N cards."
     TargetPlayerDiscardsCards {
         count: CardCount,

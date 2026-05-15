@@ -612,6 +612,7 @@ activated_effect = _{
   | destroy_target_permanent
   | counter_target_colored_spell
   | untap_source
+  | look_at_target_players_hand
   | target_player_discards_cards
   | target_creature_with_power_or_less_cant_be_blocked
   | activated_source_gets_until_eot
@@ -636,6 +637,7 @@ regenerate_source = { ^"regenerate" ~ source_object ~ "." }
 destroy_target_creature_type = { ^"destroy" ~ ^"target" ~ creature_type ~ "." }
 destroy_target_permanent = { ^"destroy" ~ ^"target" ~ permanent_type ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
+look_at_target_players_hand = { ^"look" ~ ^"at" ~ ^"target" ~ ^"player's" ~ ^"hand" ~ "." }
 target_player_discards_cards = {
     ^"target" ~ ^"player" ~ ^"discards"
   ~ (discard_one_card | discard_counted_cards) ~ "."

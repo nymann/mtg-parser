@@ -162,3 +162,5 @@ mod gauntlet_of_might;
 mod giant_growth;
 #[path = "generated/giant_spider.rs"]
 mod giant_spider;
+#[path = "generated/glasses_of_urza.rs"]
+mod glasses_of_urza;
