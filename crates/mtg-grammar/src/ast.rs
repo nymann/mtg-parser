@@ -627,6 +627,7 @@ pub enum SpellType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CreatureType {
+    Goblin,
     Wall,
 }
 
@@ -687,6 +688,13 @@ pub enum StaticAbility {
         color: Color,
         permanent_type: PermanentType,
         modifier: PtModifier,
+    },
+    /// "Other <creature_type>s get <modifier> and have <keyword>." —
+    /// P/T modifier plus keyword grant for other creatures of a subtype.
+    OtherCreatureTypeGetAndHaveKeyword {
+        creature_type: CreatureType,
+        modifier: PtModifier,
+        keyword: Keyword,
     },
     /// "<status> creatures you control get <modifier>." — P/T modifier
     /// on controlled creatures matching a tapped/untapped state.

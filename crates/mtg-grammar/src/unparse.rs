@@ -852,6 +852,19 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_pt_modifier(out, *modifier);
             out.push('.');
         }
+        StaticAbility::OtherCreatureTypeGetAndHaveKeyword {
+            creature_type,
+            modifier,
+            keyword,
+        } => {
+            out.push_str("Other ");
+            out.push_str(creature_type_plural_name(*creature_type));
+            out.push_str(" get ");
+            write_pt_modifier(out, *modifier);
+            out.push_str(" and have ");
+            write_keyword_lowercase(out, *keyword);
+            out.push('.');
+        }
         StaticAbility::StatusCreaturesYouControlGet { status, modifier } => {
             out.push_str(creature_status_name_capitalized(*status));
             out.push_str(" creatures you control get ");
@@ -1566,7 +1579,15 @@ fn creature_status_name_capitalized(status: CreatureStatus) -> &'static str {
 
 fn creature_type_name(ct: CreatureType) -> &'static str {
     match ct {
+        CreatureType::Goblin => "Goblin",
         CreatureType::Wall => "Wall",
+    }
+}
+
+fn creature_type_plural_name(ct: CreatureType) -> &'static str {
+    match ct {
+        CreatureType::Goblin => "Goblins",
+        CreatureType::Wall => "Walls",
     }
 }
 

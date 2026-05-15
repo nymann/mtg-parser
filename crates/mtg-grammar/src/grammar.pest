@@ -83,6 +83,7 @@ sentence_statement = _{
   | static_colored_spells_cost_mana_more_to_cast
   | static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
   | static_colored_permanents_get
+  | static_other_creature_type_get_and_have_keyword
   | static_status_creatures_you_control_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
@@ -403,13 +404,17 @@ color_word = @{
   | ^"green"
  }
 
-// Creature subtypes that appear as Aura targets or enchanted objects.
-creature_type = @{ ^"wall" }
+// Creature subtypes that appear as Aura targets, enchanted objects, or
+// creature-type selectors.
+creature_type = @{ ^"goblin" | ^"wall" }
+creature_type_plural = @{ ^"goblins" | ^"walls" }
 
 // Static abilities. Five surface shapes today:
 //   - "As long as <cond>, <effect>." — conditional continuous effect.
 //   - "<Color> <type>s get <pt_modifier>." — P/T modifier on objects
 //     matching a color and permanent type.
+//   - "Other <creature_type>s get <pt_modifier> and have <keyword>." —
+//     lord-style P/T and keyword grant for other creatures of a subtype.
 //   - "<Status> creatures you control get <pt_modifier>." — P/T
 //     modifier on controlled creatures matching a tapped/untapped state.
 //   - "Enchanted <type> gets <pt_modifier>." — unconditional P/T
@@ -434,6 +439,7 @@ static_ability = _{
   | static_colored_spells_cost_mana_more_to_cast
   | static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
   | static_colored_permanents_get
+  | static_other_creature_type_get_and_have_keyword
   | static_status_creatures_you_control_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
@@ -466,6 +472,11 @@ static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate = {
 
 static_colored_permanents_get = {
     color_word ~ permanent_type_plural ~ ^"get" ~ pt_modifier ~ "."
+}
+
+static_other_creature_type_get_and_have_keyword = {
+    ^"other" ~ creature_type_plural ~ ^"get" ~ pt_modifier ~ ^"and"
+  ~ ^"have" ~ keyword ~ "."
 }
 
 static_status_creatures_you_control_get = {

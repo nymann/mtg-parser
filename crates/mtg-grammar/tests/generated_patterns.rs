@@ -157,3 +157,5 @@ mod glasses_of_urza;
 mod gloom;
 #[path = "generated_patterns/goblin_balloon_brigade.rs"]
 mod goblin_balloon_brigade;
+#[path = "generated_patterns/goblin_king.rs"]
+mod goblin_king;

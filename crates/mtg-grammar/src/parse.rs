@@ -138,6 +138,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_colored_spells_cost_mana_more_to_cast
         | Rule::static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
         | Rule::static_colored_permanents_get
+        | Rule::static_other_creature_type_get_and_have_keyword
         | Rule::static_status_creatures_you_control_get
         | Rule::static_enchanted_gets_with_definitions
         | Rule::static_enchanted_gets
@@ -1667,6 +1668,23 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 modifier: pt_modifier_from_pair(modifier_pair)?,
             })
         }
+        Rule::static_other_creature_type_get_and_have_keyword => {
+            let mut inner = pair.into_inner();
+            let creature_type_pair = inner.next().expect(
+                "static_other_creature_type_get_and_have_keyword names the creature subtype",
+            );
+            let modifier_pair = inner
+                .next()
+                .expect("static_other_creature_type_get_and_have_keyword has a pt_modifier");
+            let keyword_pair = inner
+                .next()
+                .expect("static_other_creature_type_get_and_have_keyword has a keyword");
+            Ok(StaticAbility::OtherCreatureTypeGetAndHaveKeyword {
+                creature_type: creature_type_from_plural_pair(creature_type_pair)?,
+                modifier: pt_modifier_from_pair(modifier_pair)?,
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
         Rule::static_status_creatures_you_control_get => {
             let mut inner = pair.into_inner();
             let status_pair = inner
@@ -2604,8 +2622,20 @@ fn creature_type_from_pair(pair: Pair<Rule>) -> Result<CreatureType, ParseError>
         return Err(ParseError::Internal("creature_type"));
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
+        "goblin" => Ok(CreatureType::Goblin),
         "wall" => Ok(CreatureType::Wall),
         _ => Err(ParseError::Internal("creature_type variant")),
+    }
+}
+
+fn creature_type_from_plural_pair(pair: Pair<Rule>) -> Result<CreatureType, ParseError> {
+    if pair.as_rule() != Rule::creature_type_plural {
+        return Err(ParseError::Internal("creature_type_plural"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "goblins" => Ok(CreatureType::Goblin),
+        "walls" => Ok(CreatureType::Wall),
+        _ => Err(ParseError::Internal("creature_type_plural variant")),
     }
 }
 
