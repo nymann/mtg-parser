@@ -188,7 +188,7 @@ fn format_secs(s: u64) -> String {
 fn render_main(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let cols = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(38), Constraint::Min(0)])
+        .constraints([Constraint::Length(44), Constraint::Min(0)])
         .split(area);
 
     render_left_column(f, cols[0], state);
@@ -198,7 +198,10 @@ fn render_main(f: &mut Frame<'_>, area: Rect, state: &AppState) {
 fn render_left_column(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let rows = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(8), Constraint::Length(12)])
+        // 13 lines for the step list: 1 top border + 1 title + 9 step rows
+        // + 1 spacing + 1 bottom border. The card panel takes everything
+        // else (Min(8) lets it shrink only when the terminal is short).
+        .constraints([Constraint::Min(8), Constraint::Length(13)])
         .split(area);
 
     render_card_panel(f, rows[0], state);
@@ -319,23 +322,38 @@ fn step_line(index: u8, total: u8, step: &StepState) -> Line<'static> {
         StepStatus::Done => ("✓", C_GOOD),
         StepStatus::Failed => ("✗", C_BAD),
     };
-    let label_style = Style::default().fg(color);
-    let label_style = if step.status == StepStatus::Running {
-        label_style.add_modifier(Modifier::BOLD)
-    } else {
-        label_style
-    };
+    let mut label_style = Style::default().fg(color);
+    if step.status == StepStatus::Running {
+        label_style = label_style.add_modifier(Modifier::BOLD);
+    }
+    if step.status == StepStatus::Done {
+        // Done steps use the muted "completed" tint from the mockup
+        // so the currently-running one stands out.
+        label_style = Style::default().fg(Color::Rgb(0xb6, 0xcf, 0xa9));
+    }
     let dur = step.duration_secs();
     let extra = match (step.status, dur) {
         (StepStatus::Running, Some(d)) => format!(" +{d}s"),
         (StepStatus::Done | StepStatus::Failed, Some(d)) if d > 0 => format!(" {d}s"),
         _ => String::new(),
     };
+    // Pending slots have no label until their StepStarted arrives.
+    // Show "(pending)" so the row visually communicates intent.
+    let label_text = if step.label.is_empty() {
+        "(pending)".to_string()
+    } else {
+        step.label.clone()
+    };
+    let resolved_style = if step.label.is_empty() {
+        Style::default().fg(C_FAINT)
+    } else {
+        label_style
+    };
     Line::from(vec![
         Span::styled(format!(" {icon} "), Style::default().fg(color)),
         Span::styled(format!("{index}/{total}"), Style::default().fg(C_FAINT)),
         Span::raw("  "),
-        Span::styled(step.label.clone(), label_style),
+        Span::styled(label_text, resolved_style),
         Span::styled(extra, Style::default().fg(C_FAINT)),
     ])
 }

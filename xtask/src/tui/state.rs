@@ -329,9 +329,17 @@ impl Iteration {
     }
 
     fn set_step(&mut self, index: u8, state: StepState) {
+        // Use the StepState's `total` field as the target Vec length —
+        // this lets the timeline render all 9 step slots as Pending
+        // before they start, instead of only the ones that have fired.
         let i = index.saturating_sub(1) as usize;
-        if i >= self.steps.len() {
-            self.steps.resize_with(i + 1, StepState::default);
+        let needed = state.total.max(index) as usize;
+        let target = self.steps.len().max(needed).max(i + 1);
+        if self.steps.len() < target {
+            // Preserve any totals so pending slots also know "/9".
+            let total = state.total;
+            self.steps
+                .resize_with(target, || StepState::pending_with_total(total));
         }
         self.steps[i] = state;
     }
@@ -358,6 +366,17 @@ pub struct StepState {
 }
 
 impl StepState {
+    pub fn pending_with_total(total: u8) -> Self {
+        StepState {
+            label: String::new(),
+            status: StepStatus::Pending,
+            started_at: None,
+            finished_at: None,
+            summary: None,
+            total,
+        }
+    }
+
     pub fn duration_secs(&self) -> Option<u64> {
         match (self.started_at, self.finished_at) {
             (Some(s), Some(f)) => Some(f.duration_since(s).as_secs()),
@@ -409,6 +428,58 @@ pub enum TimelineKind {
     Claude(ParsedClaudeEvent),
     Note { level: NoteLevel, text: String },
     IterationFooter(IterationOutcomeSummary),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::flow::FlowEvent;
+
+    #[test]
+    fn step_started_prepopulates_all_pending_slots() {
+        let mut state = AppState::new();
+        state.apply(FlowEvent::StepStarted {
+            index: 1,
+            total: 9,
+            label: "find next failing card".into(),
+        });
+        let iter = state.active_iteration().expect("iteration");
+        assert_eq!(iter.steps.len(), 9);
+        assert_eq!(iter.steps[0].status, StepStatus::Running);
+        assert_eq!(iter.steps[0].label, "find next failing card");
+        for s in &iter.steps[1..] {
+            assert_eq!(s.status, StepStatus::Pending);
+            assert!(s.label.is_empty());
+            assert_eq!(s.total, 9);
+        }
+    }
+
+    #[test]
+    fn later_step_started_fills_the_correct_slot() {
+        let mut state = AppState::new();
+        state.apply(FlowEvent::StepStarted {
+            index: 1,
+            total: 9,
+            label: "step 1".into(),
+        });
+        state.apply(FlowEvent::StepFinished {
+            index: 1,
+            ok: true,
+            summary: None,
+        });
+        state.apply(FlowEvent::StepStarted {
+            index: 5,
+            total: 9,
+            label: "step 5".into(),
+        });
+        let iter = state.active_iteration().expect("iteration");
+        assert_eq!(iter.steps.len(), 9);
+        assert_eq!(iter.steps[0].status, StepStatus::Done);
+        assert_eq!(iter.steps[1].status, StepStatus::Pending);
+        assert_eq!(iter.steps[4].status, StepStatus::Running);
+        assert_eq!(iter.steps[4].label, "step 5");
+        assert_eq!(iter.steps[8].status, StepStatus::Pending);
+    }
 }
 
 /// Helper used by the view to format a tool_use one-liner with file
