@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 224,
+  "passing": 225,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -648,8 +648,7 @@
       "status": "pass"
     },
     "lea/Royal Assassin": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:21\n  |\n1 | {T}: Destroy target tapped creature.\n  |                     ^---\n  |\n  = expected permanent_type, color_word, or creature_type"
+      "status": "pass"
     },
     "lea/Sacrifice": {
       "status": "fail",
@@ -771,7 +770,7 @@
     },
     "lea/Terror": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:16\n  |\n1 | Destroy target nonartifact, nonblack creature. It can't be regenerated.\n  |                ^---\n  |\n  = expected permanent_type, color_word, or creature_type"
+      "error": "parse: parse error:  --> 1:16\n  |\n1 | Destroy target nonartifact, nonblack creature. It can't be regenerated.\n  |                ^---\n  |\n  = expected permanent_type, color_word, creature_type, or creature_status"
     },
     "lea/The Hive": {
       "status": "fail",

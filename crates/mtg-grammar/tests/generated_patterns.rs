@@ -293,3 +293,5 @@ mod reverse_damage;
 mod righteousness;
 #[path = "generated_patterns/rock_hydra.rs"]
 mod rock_hydra;
+#[path = "generated_patterns/royal_assassin.rs"]
+mod royal_assassin;

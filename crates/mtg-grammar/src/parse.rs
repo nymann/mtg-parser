@@ -852,6 +852,12 @@ fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseErro
                 color_pair,
             )?))
         }
+        Rule::target_status_creature => {
+            let status_pair = only_inner(pair, "target_status_creature missing creature_status")?;
+            Ok(DestroyTarget::TargetStatusCreature(
+                creature_status_from_pair(status_pair)?,
+            ))
+        }
         Rule::target_creature_type => {
             let creature_type_pair =
                 only_inner(pair, "target_creature_type missing creature_type")?;

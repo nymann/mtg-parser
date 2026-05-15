@@ -319,6 +319,8 @@ pub enum DestroyTarget {
     TargetPermanents(Vec<PermanentType>),
     /// "target <color> permanent"
     TargetColoredPermanent(Color),
+    /// "target <status> creature"
+    TargetStatusCreature(CreatureStatus),
     /// "target <creature_type>"
     TargetCreatureType(CreatureType),
     /// "all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]"

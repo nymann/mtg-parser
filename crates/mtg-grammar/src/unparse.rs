@@ -2791,6 +2791,11 @@ fn write_destroy_target(out: &mut String, target: &DestroyTarget) {
             out.push_str(color_name(*color));
             out.push_str(" permanent");
         }
+        DestroyTarget::TargetStatusCreature(status) => {
+            out.push_str("target ");
+            out.push_str(creature_status_name(*status));
+            out.push_str(" creature");
+        }
         DestroyTarget::TargetCreatureType(creature_type) => {
             out.push_str("target ");
             write_creature_type(out, *creature_type);
@@ -2985,6 +2990,14 @@ fn creature_status_name_capitalized(status: CreatureStatus) -> &'static str {
         CreatureStatus::Attacking => "Attacking",
         CreatureStatus::Tapped => "Tapped",
         CreatureStatus::Untapped => "Untapped",
+    }
+}
+
+fn creature_status_name(status: CreatureStatus) -> &'static str {
+    match status {
+        CreatureStatus::Attacking => "attacking",
+        CreatureStatus::Tapped => "tapped",
+        CreatureStatus::Untapped => "untapped",
     }
 }
 

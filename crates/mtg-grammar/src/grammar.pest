@@ -200,6 +200,7 @@ destroy = { ^"destroy" ~ destroy_target ~ "." }
 destroy_target = {
     destroy_all
   | target_colored_permanent
+  | target_status_creature
   | target_creature_type
   | target_permanent_choice
 }
@@ -1023,6 +1024,7 @@ add_mana = { ^"add" ~ mana_cost ~ "." }
 tap_target_permanent_choice = { ^"tap" ~ target_permanent_choice ~ "." }
 target_permanent_choice = { ^"target" ~ permanent_type_choice }
 target_colored_permanent = { ^"target" ~ color_word ~ ^"permanent" }
+target_status_creature = { ^"target" ~ creature_status ~ ^"creature" }
 target_creature_type = { ^"target" ~ creature_type }
 permanent_type_choice = { permanent_type ~ ((("," ~ permanent_type)* ~ ","? ~ ^"or") ~ permanent_type)? }
 activated_draw_cards = {
