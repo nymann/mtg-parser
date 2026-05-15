@@ -55,23 +55,11 @@ pub enum Statement {
     Destroy {
         target: DestroyTarget,
     },
-    /// Legacy spelling of "Destroy target <permanent_type> [or <permanent_type>]."
-    DestroyTargetPermanents {
-        permanent_types: Vec<PermanentType>,
-    },
     /// "That <permanent_type>'s controller may attach this Aura to a/an
     /// <permanent_type> of their choice."
     ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
         controller_of: PermanentType,
         attach_to: PermanentType,
-    },
-    /// "Destroy all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]."
-    DestroyAll {
-        permanent_types: Vec<PermanentType>,
-    },
-    /// "Destroy all <basic_land_type>s."
-    DestroyAllBasicLands {
-        basic_land_type: BasicLandType,
     },
     Keyword(Keyword),
     /// "<keyword>, <keyword>[, ...]"
@@ -288,17 +276,7 @@ pub enum DestroyTarget {
 
 impl Statement {
     pub(crate) fn destroy(target: DestroyTarget) -> Self {
-        match target {
-            DestroyTarget::TargetPermanents(permanent_types) => {
-                Statement::DestroyTargetPermanents { permanent_types }
-            }
-            DestroyTarget::AllPermanents(permanent_types) => {
-                Statement::DestroyAll { permanent_types }
-            }
-            DestroyTarget::AllBasicLands(basic_land_type) => {
-                Statement::DestroyAllBasicLands { basic_land_type }
-            }
-        }
+        Statement::Destroy { target }
     }
 
     pub(crate) fn target_permanent_until_end_of_turn(
@@ -926,21 +904,9 @@ pub enum ActivatedEffect {
     Destroy {
         target: DestroyTarget,
     },
-    /// Legacy spelling of "Destroy target <permanent_type> [or <permanent_type>]."
-    DestroyTargetPermanents {
-        permanent_types: Vec<PermanentType>,
-    },
     /// "Destroy target <creature_type>."
     DestroyTargetCreatureType {
         creature_type: CreatureType,
-    },
-    /// "Destroy all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]."
-    DestroyAll {
-        permanent_types: Vec<PermanentType>,
-    },
-    /// "Destroy all <basic_land_type>s."
-    DestroyAllBasicLands {
-        basic_land_type: BasicLandType,
     },
     /// "Look at target player's hand."
     LookAtTargetPlayersHand,
@@ -1085,17 +1051,7 @@ pub enum ActivatedDamageEventEffect {
 
 impl ActivatedEffect {
     pub(crate) fn destroy(target: DestroyTarget) -> Self {
-        match target {
-            DestroyTarget::TargetPermanents(permanent_types) => {
-                ActivatedEffect::DestroyTargetPermanents { permanent_types }
-            }
-            DestroyTarget::AllPermanents(permanent_types) => {
-                ActivatedEffect::DestroyAll { permanent_types }
-            }
-            DestroyTarget::AllBasicLands(basic_land_type) => {
-                ActivatedEffect::DestroyAllBasicLands { basic_land_type }
-            }
-        }
+        ActivatedEffect::Destroy { target }
     }
 }
 

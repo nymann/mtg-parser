@@ -77,12 +77,6 @@ fn write_statement(out: &mut String, statement: &Statement) {
             );
         }
         Statement::Destroy { target } => write_destroy(out, target),
-        Statement::DestroyTargetPermanents { permanent_types } => {
-            write_destroy(
-                out,
-                &DestroyTarget::TargetPermanents(permanent_types.clone()),
-            );
-        }
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of,
             attach_to,
@@ -94,12 +88,6 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push(' ');
             out.push_str(permanent_type_name(*attach_to));
             out.push_str(" of their choice.");
-        }
-        Statement::DestroyAll { permanent_types } => {
-            write_destroy(out, &DestroyTarget::AllPermanents(permanent_types.clone()));
-        }
-        Statement::DestroyAllBasicLands { basic_land_type } => {
-            write_destroy(out, &DestroyTarget::AllBasicLands(*basic_land_type));
         }
         Statement::Keyword(kw) => write_keyword(out, *kw),
         Statement::KeywordList(keywords) => write_keyword_list(out, keywords),
@@ -1022,15 +1010,6 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             });
         }
         ActivatedEffect::Destroy { target } => write_destroy(out, target),
-        ActivatedEffect::DestroyTargetPermanents { permanent_types } => {
-            write_destroy(out, &DestroyTarget::TargetPermanents(permanent_types.clone()));
-        }
-        ActivatedEffect::DestroyAll { permanent_types } => {
-            write_destroy(out, &DestroyTarget::AllPermanents(permanent_types.clone()));
-        }
-        ActivatedEffect::DestroyAllBasicLands { basic_land_type } => {
-            write_destroy(out, &DestroyTarget::AllBasicLands(*basic_land_type));
-        }
         ActivatedEffect::DestroyTargetCreatureType { creature_type } => {
             out.push_str("Destroy target ");
             write_creature_type(out, *creature_type);

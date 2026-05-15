@@ -1,6 +1,6 @@
 // Tier 1 lowering unit tests. Hand-written AST -> expected IR.
 
-use mtg_grammar::{ManaCost, ManaSymbol, PermanentType, Statement};
+use mtg_grammar::{DestroyTarget, ManaCost, ManaSymbol, PermanentType, Statement};
 use mtg_semantic::{lower, CardEffect, ManaValue};
 
 fn mc(symbols: Vec<ManaSymbol>) -> Statement {
@@ -79,21 +79,21 @@ fn mixed_cost_total_is_correct() {
 
 #[test]
 fn non_normalized_statement_lowers_to_syntactic_wrapper() {
-    let stmt = Statement::DestroyTargetPermanents {
-        permanent_types: vec![PermanentType::Creature],
+    let stmt = Statement::Destroy {
+        target: DestroyTarget::TargetPermanents(vec![PermanentType::Creature]),
     };
     assert_eq!(
         lower(&stmt).unwrap(),
-        CardEffect::Syntactic(Statement::DestroyTargetPermanents {
-            permanent_types: vec![PermanentType::Creature],
+        CardEffect::Syntactic(Statement::Destroy {
+            target: DestroyTarget::TargetPermanents(vec![PermanentType::Creature]),
         }),
     );
 }
 
 #[test]
 fn syntactic_wrapper_preserves_statement_payload() {
-    let stmt = Statement::DestroyTargetPermanents {
-        permanent_types: vec![PermanentType::Land],
+    let stmt = Statement::Destroy {
+        target: DestroyTarget::TargetPermanents(vec![PermanentType::Land]),
     };
     assert_eq!(lower(&stmt).unwrap(), CardEffect::Syntactic(stmt));
 }
@@ -101,8 +101,8 @@ fn syntactic_wrapper_preserves_statement_payload() {
 #[test]
 fn compound_lowers_children_in_source_order() {
     let stmt = Statement::Compound(vec![
-        Statement::DestroyTargetPermanents {
-            permanent_types: vec![PermanentType::Creature],
+        Statement::Destroy {
+            target: DestroyTarget::TargetPermanents(vec![PermanentType::Creature]),
         },
         mc(vec![ManaSymbol::Generic(1), ManaSymbol::Red]),
     ]);
@@ -110,8 +110,8 @@ fn compound_lowers_children_in_source_order() {
     assert_eq!(
         lower(&stmt).unwrap(),
         CardEffect::Compound(vec![
-            CardEffect::Syntactic(Statement::DestroyTargetPermanents {
-                permanent_types: vec![PermanentType::Creature],
+            CardEffect::Syntactic(Statement::Destroy {
+                target: DestroyTarget::TargetPermanents(vec![PermanentType::Creature]),
             }),
             CardEffect::ManaCost(ManaValue {
                 generic: 1,

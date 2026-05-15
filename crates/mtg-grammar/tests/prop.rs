@@ -9,10 +9,10 @@ use mtg_grammar::{
     parse, unparse, ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount,
     Color, DamageAmount, DamageEvent, DamageKind, DamageLifeGainCap, DamagePreventionAmount,
     DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
-    EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode,
-    PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent,
-    TriggeredAbility, Variable,
+    DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, ManaCost,
+    ManaSymbol, ModalMode, PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility,
+    TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -240,8 +240,8 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_mana_cost().prop_map(Statement::ManaCost),
         arb_mana_cost().prop_map(|mana| Statement::AddMana { mana }),
         Just(Statement::CounterTargetSpell),
-        Just(Statement::DestroyTargetPermanents {
-            permanent_types: vec![PermanentType::Creature],
+        Just(Statement::Destroy {
+            target: DestroyTarget::TargetPermanents(vec![PermanentType::Creature]),
         }),
         arb_mana_cost().prop_map(|mana| {
             Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst { mana }
@@ -310,25 +310,29 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             }
         }),
         (arb_permanent_type(), arb_permanent_type()).prop_map(|(a, b)| {
-            Statement::DestroyTargetPermanents {
-                permanent_types: vec![a, b],
+            Statement::Destroy {
+                target: DestroyTarget::TargetPermanents(vec![a, b]),
             }
         }),
         arb_noncreature_permanent_type().prop_map(|permanent_type| {
-            Statement::DestroyTargetPermanents {
-                permanent_types: vec![permanent_type],
+            Statement::Destroy {
+                target: DestroyTarget::TargetPermanents(vec![permanent_type]),
             }
         }),
-        prop::collection::vec(arb_permanent_type(), 1..5)
-            .prop_map(|permanent_types| { Statement::DestroyAll { permanent_types } }),
+        prop::collection::vec(arb_permanent_type(), 1..5).prop_map(|permanent_types| {
+            Statement::Destroy {
+                target: DestroyTarget::AllPermanents(permanent_types),
+            }
+        }),
         (arb_permanent_type(), arb_permanent_type()).prop_map(|(controller_of, attach_to)| {
             Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
                 controller_of,
                 attach_to,
             }
         }),
-        arb_basic_land_type()
-            .prop_map(|basic_land_type| { Statement::DestroyAllBasicLands { basic_land_type } }),
+        arb_basic_land_type().prop_map(|basic_land_type| Statement::Destroy {
+            target: DestroyTarget::AllBasicLands(basic_land_type),
+        }),
         (arb_permanent_type(), arb_pt_modifier()).prop_map(|(permanent_type, modifier)| {
             Statement::TargetPermanentGetsUntilEndOfTurn {
                 permanent_type,
