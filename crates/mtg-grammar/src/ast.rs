@@ -659,6 +659,17 @@ pub enum StaticAbility {
         condition: Condition,
         effect: ContinuousEffect,
     },
+    /// "<color> spells cost <mana> more to cast." — cost-increase effect
+    /// for spells matching the color filter.
+    ColoredSpellsCostManaMoreToCast { color: Color, mana: ManaCost },
+    /// "Activated abilities of <color> <permanent_type>s cost <mana> more
+    /// to activate." — cost-increase effect for activated abilities of
+    /// permanents matching the color and type filters.
+    ActivatedAbilitiesOfColoredPermanentsCostManaMoreToActivate {
+        color: Color,
+        permanent_type: PermanentType,
+        mana: ManaCost,
+    },
     /// "Enchanted <type> gets <modifier>." — P/T modifier on the
     /// enchanted permanent, active while the Aura is attached.
     EnchantedGets {

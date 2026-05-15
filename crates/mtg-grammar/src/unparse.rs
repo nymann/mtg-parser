@@ -805,6 +805,25 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_continuous_effect(out, effect);
             out.push('.');
         }
+        StaticAbility::ColoredSpellsCostManaMoreToCast { color, mana } => {
+            out.push_str(color_name_capitalized(*color));
+            out.push_str(" spells cost ");
+            write_mana_cost(out, mana);
+            out.push_str(" more to cast.");
+        }
+        StaticAbility::ActivatedAbilitiesOfColoredPermanentsCostManaMoreToActivate {
+            color,
+            permanent_type,
+            mana,
+        } => {
+            out.push_str("Activated abilities of ");
+            out.push_str(color_name(*color));
+            out.push(' ');
+            out.push_str(permanent_type_plural_name(*permanent_type));
+            out.push_str(" cost ");
+            write_mana_cost(out, mana);
+            out.push_str(" more to activate.");
+        }
         StaticAbility::EnchantedGets {
             permanent_type,
             modifier,

@@ -135,6 +135,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::activate_only_during_your_turn => Ok(Statement::ActivateOnlyDuringYourTurn),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::static_as_long_as
+        | Rule::static_colored_spells_cost_mana_more_to_cast
+        | Rule::static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
         | Rule::static_colored_permanents_get
         | Rule::static_status_creatures_you_control_get
         | Rule::static_enchanted_gets_with_definitions
@@ -1615,6 +1617,38 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 condition: condition_from_pair(cond_pair)?,
                 effect: continuous_effect_from_pair(effect_pair)?,
             })
+        }
+        Rule::static_colored_spells_cost_mana_more_to_cast => {
+            let mut inner = pair.into_inner();
+            let color_pair = inner
+                .next()
+                .expect("static_colored_spells_cost_mana_more_to_cast begins with a color");
+            let mana_pair = inner
+                .next()
+                .expect("static_colored_spells_cost_mana_more_to_cast has a mana cost");
+            Ok(StaticAbility::ColoredSpellsCostManaMoreToCast {
+                color: color_from_pair(color_pair)?,
+                mana: mana_cost_from_pair(mana_pair),
+            })
+        }
+        Rule::static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate => {
+            let mut inner = pair.into_inner();
+            let color_pair = inner.next().expect(
+                "static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate begins with a color",
+            );
+            let permanent_type_pair = inner.next().expect(
+                "static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate names a permanent type",
+            );
+            let mana_pair = inner.next().expect(
+                "static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate has a mana cost",
+            );
+            Ok(
+                StaticAbility::ActivatedAbilitiesOfColoredPermanentsCostManaMoreToActivate {
+                    color: color_from_pair(color_pair)?,
+                    permanent_type: permanent_type_from_plural_pair(permanent_type_pair)?,
+                    mana: mana_cost_from_pair(mana_pair),
+                },
+            )
         }
         Rule::static_colored_permanents_get => {
             let mut inner = pair.into_inner();

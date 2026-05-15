@@ -164,3 +164,5 @@ mod giant_growth;
 mod giant_spider;
 #[path = "generated/glasses_of_urza.rs"]
 mod glasses_of_urza;
+#[path = "generated/gloom.rs"]
+mod gloom;

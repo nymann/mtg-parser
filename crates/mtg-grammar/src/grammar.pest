@@ -80,6 +80,8 @@ sentence_statement = _{
   | as_this_permanent_enters_choose_opponent
   | activated_ability
   | static_as_long_as
+  | static_colored_spells_cost_mana_more_to_cast
+  | static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
   | static_colored_permanents_get
   | static_status_creatures_you_control_get
   | static_enchanted_gets
@@ -429,6 +431,8 @@ creature_type = @{ ^"wall" }
 //     that preserves the Aura while applying the preceding static effect.
 static_ability = _{
     static_as_long_as
+  | static_colored_spells_cost_mana_more_to_cast
+  | static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
   | static_colored_permanents_get
   | static_status_creatures_you_control_get
   | static_enchanted_gets
@@ -449,6 +453,15 @@ static_ability = _{
 
 static_as_long_as = {
     ^"as" ~ ^"long" ~ ^"as" ~ condition ~ "," ~ continuous_effect ~ "."
+}
+
+static_colored_spells_cost_mana_more_to_cast = {
+    color_word ~ ^"spells" ~ ^"cost" ~ mana_cost ~ ^"more" ~ ^"to" ~ ^"cast" ~ "."
+}
+
+static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate = {
+    ^"activated" ~ ^"abilities" ~ ^"of" ~ color_word ~ permanent_type_plural
+  ~ ^"cost" ~ mana_cost ~ ^"more" ~ ^"to" ~ ^"activate" ~ "."
 }
 
 static_colored_permanents_get = {
