@@ -1431,14 +1431,18 @@ points there.";
 const WORKFLOW_BLOCK: &str = "\
 ## Workflow
 
-1. Read `grammar.pest`, `ast.rs`, `parse.rs`, `unparse.rs`, and the failing test.
-2. Decide what general pattern this card is an instance of (a keyword
+1. Start from the retrieved context and generated test snippets above.
+   Do not read whole source files up front.
+2. Inspect additional source only when the retrieved snippets are
+   insufficient, and prefer narrow line ranges around the relevant rule,
+   enum, parser branch, or unparser branch.
+3. Decide what general pattern this card is an instance of (a keyword
    ability, a triggered ability, a static effect, ...). Name it.
-3. Extend `grammar.pest` to recognize the pattern.
-4. Extend `ast.rs` with whatever new node(s) the grammar needs.
-5. Extend `parse.rs` and `unparse.rs` so the AST round-trips cleanly.
-6. Run only the focused generated test command(s) supplied by the orchestrator.
-7. Stop once focused generated tests pass. The orchestrator runs tier 2,
+4. Extend `grammar.pest` to recognize the pattern.
+5. Extend `ast.rs` with whatever new node(s) the grammar needs.
+6. Extend `parse.rs` and `unparse.rs` so the AST round-trips cleanly.
+7. Run only the focused generated test command(s) supplied by the orchestrator.
+8. Stop once focused generated tests pass. The orchestrator runs tier 2,
    corpus, and commit gates.";
 
 const CONSTRAINTS_BLOCK: &str = "\
