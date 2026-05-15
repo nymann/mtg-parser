@@ -26,6 +26,7 @@ use crate::flow::{FlowEvent, FlowSink, NoteLevel};
 use crate::grind;
 use crate::refactor_hotspot;
 
+mod complexity;
 mod input;
 mod state;
 mod view;

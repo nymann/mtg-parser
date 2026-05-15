@@ -13,6 +13,10 @@ use serde_json::json;
 
 use crate::agent_events::{self, ParsedAgentEvent, ToolUseTarget};
 use crate::flow::{AgentProvider, FlowEvent, IterationOutcomeSummary, NoteLevel, SessionEndReason};
+use crate::tui::complexity::{self, MetricSnapshot};
+
+/// How many historical commits to seed the complexity sparkline with.
+const COMPLEXITY_HISTORY_DEPTH: usize = 24;
 
 #[derive(Default)]
 pub struct AppState {
@@ -266,6 +270,15 @@ impl AppState {
                 baseline_corpus_total,
                 baseline_grammar_rules,
             } => {
+                // Reuse existing history when grind transitions from
+                // refactor-hotspot to add-card (both phases emit their
+                // own SessionStarted). Backfill from git only on the
+                // very first session of the process.
+                let history = if let Some(existing) = self.session.as_ref() {
+                    existing.history.clone()
+                } else {
+                    complexity::historical_snapshots(COMPLEXITY_HISTORY_DEPTH)
+                };
                 self.session = Some(SessionMeta {
                     workflow,
                     set,
@@ -277,6 +290,7 @@ impl AppState {
                     current_corpus_total: baseline_corpus_total,
                     current_grammar_rules: baseline_grammar_rules,
                     started_at: Instant::now(),
+                    history,
                 });
             }
 
@@ -457,6 +471,9 @@ impl AppState {
                         s.current_corpus_passing = *corpus_passing;
                         s.current_corpus_total = *corpus_total;
                         s.current_grammar_rules = *grammar_rules;
+                        if let Some(live) = complexity::live_snapshot() {
+                            s.history.push(live);
+                        }
                     }
                     let _ = new_passes;
                 }
@@ -557,6 +574,10 @@ pub struct SessionMeta {
     pub current_corpus_total: usize,
     pub current_grammar_rules: usize,
     pub started_at: Instant,
+    /// Oldest → newest complexity snapshots, used to render the
+    /// sparkline strip above the main area. Seeded from recent git
+    /// history; appended on each committed iteration.
+    pub history: Vec<MetricSnapshot>,
 }
 
 impl SessionMeta {

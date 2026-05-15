@@ -32,12 +32,22 @@ const C_CMD: Color = Color::LightRed;
 
 pub fn render(f: &mut Frame<'_>, state: &mut AppState) {
     let area = f.area();
+    let show_complexity = state
+        .session
+        .as_ref()
+        .map(|s| !s.history.is_empty())
+        .unwrap_or(false);
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(1), // title bar
             Constraint::Length(1), // session bar
-            Constraint::Min(0),    // main (left + output)
+            if show_complexity {
+                Constraint::Length(1) // complexity sparkline strip
+            } else {
+                Constraint::Length(0)
+            },
+            Constraint::Min(0), // main (left + output)
             if state.search.editing || !state.search.query.is_empty() {
                 Constraint::Length(1)
             } else {
@@ -50,9 +60,12 @@ pub fn render(f: &mut Frame<'_>, state: &mut AppState) {
 
     render_title_bar(f, chunks[0], state);
     render_session_bar(f, chunks[1], state);
-    render_main(f, chunks[2], state);
-    render_search_bar(f, chunks[3], state);
-    render_status_bar(f, chunks[4], state);
+    if show_complexity {
+        render_complexity_strip(f, chunks[2], state);
+    }
+    render_main(f, chunks[3], state);
+    render_search_bar(f, chunks[4], state);
+    render_status_bar(f, chunks[5], state);
     render_history_modal(f, area, state);
 }
 
@@ -241,6 +254,139 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
 
 fn label_span(label: &'static str) -> Span<'static> {
     Span::styled(format!("{label} "), Style::default().fg(C_FAINT))
+}
+
+// ---------------------------------------------------------------------------
+// complexity strip
+// ---------------------------------------------------------------------------
+
+const SPARKLINE_WIDTH: usize = 16;
+const SPARKLINE_BLOCKS: [char; 8] = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+
+fn render_complexity_strip(f: &mut Frame<'_>, area: Rect, state: &AppState) {
+    let Some(session) = state.session.as_ref() else {
+        return;
+    };
+    if session.history.is_empty() {
+        return;
+    }
+
+    let grammar: Vec<usize> = session.history.iter().map(|s| s.grammar_rules).collect();
+    let corpus_pass: Vec<usize> = session.history.iter().map(|s| s.corpus_passing).collect();
+    let loc: Vec<usize> = session.history.iter().map(|s| s.hot_file_loc).collect();
+    let corpus_total = session
+        .history
+        .last()
+        .map(|s| s.corpus_total)
+        .unwrap_or(0);
+
+    let cols = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(34),
+            Constraint::Percentage(34),
+            Constraint::Percentage(32),
+        ])
+        .split(area);
+
+    render_bar_segment(
+        f,
+        cols[0],
+        complexity_segment_spans(
+            "grammar",
+            &grammar,
+            grammar.last().copied().unwrap_or(0).to_string(),
+            "rules",
+            /*lower_is_better=*/ true,
+        ),
+        Alignment::Left,
+    );
+    render_bar_segment(
+        f,
+        cols[1],
+        complexity_segment_spans(
+            "corpus",
+            &corpus_pass,
+            format!(
+                "{}/{}",
+                corpus_pass.last().copied().unwrap_or(0),
+                corpus_total
+            ),
+            "passes",
+            /*lower_is_better=*/ false,
+        ),
+        Alignment::Center,
+    );
+    render_bar_segment(
+        f,
+        cols[2],
+        complexity_segment_spans(
+            "hot loc",
+            &loc,
+            loc.last().copied().unwrap_or(0).to_string(),
+            "lines",
+            /*lower_is_better=*/ true,
+        ),
+        Alignment::Right,
+    );
+}
+
+fn complexity_segment_spans(
+    label: &'static str,
+    series: &[usize],
+    value_text: String,
+    delta_suffix: &'static str,
+    lower_is_better: bool,
+) -> Vec<Span<'static>> {
+    let (spark, spark_color) = sparkline(series, SPARKLINE_WIDTH, lower_is_better);
+    let baseline = series.first().copied().unwrap_or(0) as i64;
+    let current = series.last().copied().unwrap_or(0) as i64;
+    let raw_delta = current - baseline;
+    // For "lower is better" metrics, flip the sign so the delta_span
+    // colors a reduction green and a growth red.
+    let display_delta = if lower_is_better { -raw_delta } else { raw_delta };
+    vec![
+        label_span(label),
+        Span::styled(spark, Style::default().fg(spark_color)),
+        Span::raw(format!(" {value_text}")),
+        delta_span(display_delta, &format!(" {delta_suffix}")),
+    ]
+}
+
+/// Render the recent tail of `values` as block-char sparkline.
+/// Returns the rendered string and a color hint based on overall trend.
+fn sparkline(values: &[usize], width: usize, lower_is_better: bool) -> (String, Color) {
+    if values.is_empty() {
+        return (String::new(), C_FAINT);
+    }
+    let recent: &[usize] = if values.len() > width {
+        &values[values.len() - width..]
+    } else {
+        values
+    };
+    let min = *recent.iter().min().unwrap();
+    let max = *recent.iter().max().unwrap();
+    let rendered: String = recent
+        .iter()
+        .map(|&v| {
+            let idx = if max == min {
+                3
+            } else {
+                ((v - min) * 7 / (max - min)).min(7)
+            };
+            SPARKLINE_BLOCKS[idx]
+        })
+        .collect();
+    let first = recent.first().copied().unwrap_or(0) as i64;
+    let last = recent.last().copied().unwrap_or(0) as i64;
+    let raw_delta = last - first;
+    let trend = if lower_is_better { -raw_delta } else { raw_delta };
+    let color = match trend.cmp(&0) {
+        std::cmp::Ordering::Greater => C_GOOD,
+        std::cmp::Ordering::Less => C_BAD,
+        std::cmp::Ordering::Equal => C_FAINT,
+    };
+    (rendered, color)
 }
 
 fn render_bar_segment(
