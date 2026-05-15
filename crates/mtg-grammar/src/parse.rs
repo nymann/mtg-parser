@@ -682,11 +682,19 @@ fn destroy_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
 
 fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseError> {
     match pair.as_rule() {
+        Rule::destroy_target => {
+            let target_pair = only_inner(pair, "destroy_target missing target")?;
+            destroy_target_from_pair(target_pair)
+        }
         Rule::target_permanent_choice => Ok(DestroyTarget::TargetPermanents(
             target_permanent_choice_from_pair(pair)?,
         )),
-        Rule::destroy_each_target => {
-            let target_pair = only_inner(pair, "destroy_each_target missing target")?;
+        Rule::destroy_target_all => {
+            let target_pair = only_inner(pair, "destroy_target_all missing target")?;
+            destroy_target_from_pair(target_pair)
+        }
+        Rule::destroy_all_target => {
+            let target_pair = only_inner(pair, "destroy_all_target missing target")?;
             destroy_target_from_pair(target_pair)
         }
         Rule::permanent_type_plural_list => Ok(DestroyTarget::AllPermanents(

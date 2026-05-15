@@ -187,8 +187,10 @@ this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first = {
   ~ ^"first" ~ "."
 }
 
-destroy = { ^"destroy" ~ (destroy_each_target | target_permanent_choice) ~ "." }
-destroy_each_target = { ^"all" ~ (basic_land_type_plural | permanent_type_plural_list) }
+destroy = { ^"destroy" ~ destroy_target ~ "." }
+destroy_target = { destroy_target_all | target_permanent_choice }
+destroy_target_all = { ^"all" ~ destroy_all_target }
+destroy_all_target = { basic_land_type_plural | permanent_type_plural_list }
 permanent_type_plural_list = {
     permanent_type_plural ~ (("," ~ permanent_type_plural)* ~ ","? ~ ^"and" ~ permanent_type_plural)?
 }

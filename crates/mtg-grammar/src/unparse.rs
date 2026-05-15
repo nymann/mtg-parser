@@ -2186,6 +2186,11 @@ fn write_permanent_type_choice(out: &mut String, permanent_types: &[PermanentTyp
 
 fn write_destroy(out: &mut String, target: &DestroyTarget) {
     out.push_str("Destroy ");
+    write_destroy_target(out, target);
+    out.push('.');
+}
+
+fn write_destroy_target(out: &mut String, target: &DestroyTarget) {
     match target {
         DestroyTarget::TargetPermanents(permanent_types) => {
             out.push_str("target ");
@@ -2200,7 +2205,6 @@ fn write_destroy(out: &mut String, target: &DestroyTarget) {
             out.push_str(basic_land_type_plural_name(*basic_land_type));
         }
     }
-    out.push('.');
 }
 
 fn write_target_permanent_until_end_of_turn(

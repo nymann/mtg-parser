@@ -273,6 +273,7 @@ pub enum Statement {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DestroyTarget {
+    /// Shared target axis for the CR 701 destroy keyword action.
     /// "target <permanent_type> [or <permanent_type>]"
     TargetPermanents(Vec<PermanentType>),
     /// "all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]"
