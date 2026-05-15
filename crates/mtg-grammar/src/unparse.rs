@@ -799,10 +799,7 @@ fn write_prevention_recipient(out: &mut String, recipient: PreventionRecipient) 
 fn write_keyword(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::Named(name) => out.push_str(keyword_ability_title_name(name)),
-        Keyword::Landwalk(land_type) => {
-            out.push_str(basic_land_type_name(land_type));
-            out.push_str("walk");
-        }
+        Keyword::Landwalk(land_type) => write_landwalk(out, land_type),
         Keyword::Protection(color) => {
             out.push_str("Protection from ");
             out.push_str(color_name(color));
@@ -1982,10 +1979,7 @@ fn write_copy_exception(out: &mut String, exception: CopyException) {
 fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::Named(name) => out.push_str(keyword_ability_name(name)),
-        Keyword::Landwalk(land_type) => {
-            out.push_str(basic_land_type_lowercase_name(land_type));
-            out.push_str("walk");
-        }
+        Keyword::Landwalk(land_type) => write_landwalk_lowercase(out, land_type),
         Keyword::Protection(color) => {
             out.push_str("protection from ");
             out.push_str(color_name(color));
@@ -1995,6 +1989,16 @@ fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
             write_enchant_object(out, object);
         }
     }
+}
+
+fn write_landwalk(out: &mut String, land_type: BasicLandType) {
+    out.push_str(basic_land_type_name(land_type));
+    out.push_str("walk");
+}
+
+fn write_landwalk_lowercase(out: &mut String, land_type: BasicLandType) {
+    out.push_str(basic_land_type_lowercase_name(land_type));
+    out.push_str("walk");
 }
 
 fn keyword_ability_title_name(keyword: KeywordAbilityName) -> &'static str {

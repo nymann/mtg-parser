@@ -1754,7 +1754,10 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         Rule::keyword_ability_name => Ok(Keyword::Named(keyword_ability_name_from_str(
             pair.as_str(),
         )?)),
-        Rule::landwalk => Ok(Keyword::Landwalk(landwalk_from_str(pair.as_str())?)),
+        Rule::landwalk => {
+            let land_type = only_inner(pair, "landwalk missing basic_land_type")?;
+            Ok(Keyword::Landwalk(basic_land_type_from_pair(land_type)?))
+        }
         Rule::protection => {
             let color = pair
                 .into_inner()
@@ -1785,17 +1788,6 @@ fn keyword_ability_name_from_str(text: &str) -> Result<KeywordAbilityName, Parse
         "indestructible" => Ok(KeywordAbilityName::Indestructible),
         "fear" => Ok(KeywordAbilityName::Fear),
         _ => Err(ParseError::Internal("keyword ability name")),
-    }
-}
-
-fn landwalk_from_str(text: &str) -> Result<BasicLandType, ParseError> {
-    match text.to_ascii_lowercase().as_str() {
-        "plainswalk" => Ok(BasicLandType::Plains),
-        "islandwalk" => Ok(BasicLandType::Island),
-        "swampwalk" => Ok(BasicLandType::Swamp),
-        "mountainwalk" => Ok(BasicLandType::Mountain),
-        "forestwalk" => Ok(BasicLandType::Forest),
-        _ => Err(ParseError::Internal("landwalk keyword")),
     }
 }
 

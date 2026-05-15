@@ -1106,8 +1106,12 @@ pub enum PhysicalAction {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
     Named(KeywordAbilityName),
+    /// §702 landwalk abilities are parameterized by the basic land type.
     Landwalk(BasicLandType),
+    /// §702 protection abilities are parameterized by the protected quality.
     Protection(Color),
+    /// §702 enchant abilities are parameterized by the object this Aura can
+    /// enchant.
     Enchant(EnchantObject),
 }
 
