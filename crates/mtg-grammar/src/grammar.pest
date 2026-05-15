@@ -875,10 +875,7 @@ activated_effect = _{
   | activated_source_gains_keyword_until_eot
   | activated_source_gets_until_eot
   | activated_enchanted_gets_until_eot
-  | prevent_all_but_damage_from_unblocked_creature
-  | next_damage_from_source_to_target_permanent_is_dealt_to_you_instead
-  | prevent_next_damage_from_colored_source
-  | prevent_next_damage_to_you_this_turn
+  | activated_damage_effect
   | put_up_to_variable_pt_counters_on_source
   | put_named_counter_on_target_non_basic_land
   | choose_creature_card_in_hand_payable_by_mana_spent_on_variable
@@ -942,28 +939,43 @@ activated_enchanted_gets_until_eot = {
     ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier
   ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
 }
-prevent_next_damage_from_colored_source = {
-    ^"the" ~ ^"next" ~ ^"time" ~ article ~ color_word ~ ^"source"
-  ~ ^"of" ~ ^"your" ~ ^"choice" ~ ^"would" ~ ^"deal" ~ ^"damage"
-  ~ ^"to" ~ ^"you" ~ ^"this" ~ ^"turn" ~ "," ~ ^"prevent"
-  ~ ^"that" ~ ^"damage" ~ "."
+activated_damage_effect = _{
+    next_damage_event_effect
+  | prevent_next_damage_this_turn
 }
-prevent_all_but_damage_from_unblocked_creature = {
-    ^"the" ~ ^"next" ~ ^"time" ~ article ~ ^"unblocked" ~ ^"creature"
-  ~ ^"of" ~ ^"your" ~ ^"choice" ~ ^"would" ~ ^"deal" ~ ^"combat" ~ ^"damage"
-  ~ ^"to" ~ ^"you" ~ ^"this" ~ ^"turn" ~ "," ~ ^"prevent"
-  ~ ^"all" ~ ^"but" ~ unsigned_number ~ ^"of" ~ ^"that" ~ ^"damage" ~ "."
+next_damage_event_effect = {
+    ^"the" ~ ^"next" ~ ^"time" ~ activated_damage_source
+  ~ ^"of" ~ ^"your" ~ ^"choice" ~ ^"would" ~ ^"deal"
+  ~ damage_kind? ~ ^"damage" ~ ^"to" ~ activated_damage_recipient
+  ~ ^"this" ~ ^"turn" ~ "," ~ activated_damage_event_result ~ "."
 }
-next_damage_from_source_to_target_permanent_is_dealt_to_you_instead = {
-    ^"the" ~ ^"next" ~ ^"time" ~ article ~ ^"source"
-  ~ ^"of" ~ ^"your" ~ ^"choice" ~ ^"would" ~ ^"deal" ~ ^"damage"
-  ~ ^"to" ~ ^"target" ~ permanent_type ~ ^"this" ~ ^"turn" ~ ","
-  ~ ^"that" ~ ^"source" ~ ^"deals" ~ ^"that" ~ ^"damage"
-  ~ ^"to" ~ ^"you" ~ ^"instead" ~ "."
+activated_damage_source = _{
+    colored_damage_source
+  | unblocked_creature_damage_source
+  | chosen_damage_source
 }
-prevent_next_damage_to_you_this_turn = {
+colored_damage_source = { article ~ color_word ~ ^"source" }
+unblocked_creature_damage_source = { article ~ ^"unblocked" ~ ^"creature" }
+chosen_damage_source = { article ~ ^"source" }
+damage_kind = { ^"combat" }
+activated_damage_recipient = _{ you_damage_recipient | target_permanent_damage_recipient }
+activated_damage_prevention_recipient = _{ you_damage_recipient | any_target_prevention_recipient }
+target_permanent_damage_recipient = { ^"target" ~ permanent_type }
+activated_damage_event_result = _{
+    prevent_that_damage
+  | prevent_all_but_that_damage
+  | redirect_that_damage_to_you
+}
+prevent_that_damage = { ^"prevent" ~ ^"that" ~ ^"damage" }
+prevent_all_but_that_damage = {
+    ^"prevent" ~ ^"all" ~ ^"but" ~ unsigned_number ~ ^"of" ~ ^"that" ~ ^"damage"
+}
+redirect_that_damage_to_you = {
+    ^"that" ~ ^"source" ~ ^"deals" ~ ^"that" ~ ^"damage" ~ ^"to" ~ ^"you" ~ ^"instead"
+}
+prevent_next_damage_this_turn = {
     ^"prevent" ~ ^"the" ~ ^"next" ~ unsigned_number ~ ^"damage"
-  ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"to" ~ ^"you"
+  ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"to" ~ activated_damage_prevention_recipient
   ~ ^"this" ~ ^"turn" ~ "."
 }
 put_up_to_variable_pt_counters_on_source = {
@@ -1395,10 +1407,6 @@ delayed_remove_all_named_counters_from_linked_land = {
   ~ ^"with" ~ source_object ~ "."
 }
 
-source_deals_damage_to_that_permanents_controller = {
-    source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to"
-  ~ that_permanents_controller ~ "."
-}
 source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller = {
     source_object ~ ^"deals" ~ ^"damage" ~ ^"equal" ~ ^"to"
   ~ that_permanents_toughness ~ ^"to" ~ the_permanents_controller ~ "."
@@ -1409,33 +1417,28 @@ source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player =
   ~ ^"they" ~ ^"control" ~ "."
 }
 source_deals_damage = {
-    source_deals_variable_damage_to_that_player
-  | source_deals_damage_to_you_unless_you_pay
-  | source_deals_damage_to_you
-  | it_deals_damage_to_you
-  | source_deals_damage_to_that_player
-  | source_deals_damage_to_that_permanents_controller
-  | source_deals_damage_to_that_permanent
+    trigger_damage_source ~ ^"deals" ~ trigger_damage_amount ~ ^"damage"
+  ~ ^"to" ~ trigger_damage_recipient ~ trigger_damage_condition?
+  ~ trigger_damage_variable_definition? ~ trigger_damage_terminator
 }
-source_deals_damage_to_that_player = {
-    source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"that" ~ ^"player" ~ "."
+trigger_damage_terminator = _{ "." | &(^"and") }
+trigger_damage_source = _{ it_damage_source | source_object }
+it_damage_source = { ^"it" }
+trigger_damage_amount = { variable_name | damage_amount }
+trigger_damage_recipient = _{
+    that_permanents_controller
+  | that_player_damage_recipient
+  | you_damage_recipient
+  | that_permanent_damage_recipient
 }
-source_deals_damage_to_you = {
-    source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"you" ~ "."
+that_player_damage_recipient = { ^"that" ~ ^"player" }
+you_damage_recipient = { ^"you" }
+that_permanent_damage_recipient = { ^"that" ~ permanent_type }
+trigger_damage_condition = {
+    ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost
 }
-it_deals_damage_to_you = {
-    ^"it" ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"you" ~ "."
-}
-source_deals_damage_to_you_unless_you_pay = {
-    source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"you"
-  ~ ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ "."
-}
-source_deals_damage_to_that_permanent = {
-    source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"that" ~ permanent_type
-}
-source_deals_variable_damage_to_that_player = {
-    source_object ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"
-  ~ ^"that" ~ ^"player" ~ "," ~ where_clause ~ "."
+trigger_damage_variable_definition = {
+    "," ~ where_clause
 }
 that_player_adds_mana_of_any_type_that_permanent_produced = {
     ^"that" ~ ^"player" ~ ^"adds" ~ number_word ~ ^"mana" ~ ^"of"

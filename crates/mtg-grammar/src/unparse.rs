@@ -1,17 +1,19 @@
 use std::fmt::Write;
 
 use crate::ast::{
-    ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
-    BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
-    ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap,
-    DamageRecipient, DamageRecipients, EachPlayerAction, EnchantObject, EnchantedObject,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost,
-    ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TargetPermanentEndOfTurnEffect, TriggerDamageAmount, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
+    ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
+    BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
+    Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
+    DamageKind, DamageLifeGainCap, DamageRecipient, DamageRecipients, EachPlayerAction,
+    EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
+    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus,
+    OptionalCost, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
+    SpellType, Statement, StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerDamageAmount,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -1000,36 +1002,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             }
             out.push_str(" until end of combat.");
         }
-        ActivatedEffect::PreventNextDamageFromColoredSource { color } => {
-            out.push_str("The next time ");
-            out.push_str(color_article(*color));
-            out.push(' ');
-            out.push_str(color_name(*color));
-            out.push_str(
-                " source of your choice would deal damage to you this turn, prevent that damage.",
-            );
-        }
-        ActivatedEffect::PreventAllButDamageFromUnblockedCreature { amount } => {
-            write!(
-                out,
-                "The next time an unblocked creature of your choice would deal combat damage to you this turn, prevent all but {amount} of that damage."
-            )
-            .expect("writing to String cannot fail");
-        }
-        ActivatedEffect::NextDamageFromSourceToTargetPermanentIsDealtToYouInstead {
-            permanent_type,
-        } => {
-            out.push_str("The next time a source of your choice would deal damage to target ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str(" this turn, that source deals that damage to you instead.");
-        }
-        ActivatedEffect::PreventNextDamageToYouThisTurn { amount } => {
-            write!(
-                out,
-                "Prevent the next {amount} damage that would be dealt to you this turn."
-            )
-            .expect("writing to String cannot fail");
-        }
+        ActivatedEffect::DamageEffect(effect) => write_activated_damage_effect(out, *effect),
         ActivatedEffect::PutUpToVariableCountersOnSource {
             amount,
             counter,
@@ -1849,6 +1822,75 @@ fn write_trigger_damage_amount(out: &mut String, amount: &TriggerDamageAmount) {
             write!(out, "{amount}").expect("write to String never fails");
         }
         TriggerDamageAmount::Variable { amount, .. } => out.push_str(variable_name(*amount)),
+    }
+}
+
+fn write_activated_damage_effect(out: &mut String, effect: ActivatedDamageEffect) {
+    match effect {
+        ActivatedDamageEffect::NextDamageEvent {
+            source,
+            kind,
+            recipient,
+            effect,
+        } => {
+            out.push_str("The next time ");
+            write_activated_damage_source(out, source);
+            out.push_str(" of your choice would deal ");
+            if kind == DamageKind::CombatDamage {
+                out.push_str("combat ");
+            }
+            out.push_str("damage to ");
+            write_activated_damage_recipient(out, recipient);
+            out.push_str(" this turn, ");
+            write_activated_damage_event_effect(out, effect);
+            out.push('.');
+        }
+        ActivatedDamageEffect::PreventNextDamageThisTurn { amount, recipient } => {
+            write!(
+                out,
+                "Prevent the next {amount} damage that would be dealt to "
+            )
+            .expect("writing to String cannot fail");
+            write_activated_damage_recipient(out, recipient);
+            out.push_str(" this turn.");
+        }
+    }
+}
+
+fn write_activated_damage_source(out: &mut String, source: ActivatedDamageSource) {
+    match source {
+        ActivatedDamageSource::ColoredSource { color } => {
+            out.push_str(color_article(color));
+            out.push(' ');
+            out.push_str(color_name(color));
+            out.push_str(" source");
+        }
+        ActivatedDamageSource::UnblockedCreature => out.push_str("an unblocked creature"),
+        ActivatedDamageSource::Source => out.push_str("a source"),
+    }
+}
+
+fn write_activated_damage_recipient(out: &mut String, recipient: ActivatedDamageRecipient) {
+    match recipient {
+        ActivatedDamageRecipient::You => out.push_str("you"),
+        ActivatedDamageRecipient::AnyTarget => out.push_str("any target"),
+        ActivatedDamageRecipient::TargetPermanent { permanent_type } => {
+            out.push_str("target ");
+            out.push_str(permanent_type_name(permanent_type));
+        }
+    }
+}
+
+fn write_activated_damage_event_effect(out: &mut String, effect: ActivatedDamageEventEffect) {
+    match effect {
+        ActivatedDamageEventEffect::PreventThatDamage => out.push_str("prevent that damage"),
+        ActivatedDamageEventEffect::PreventAllBut { amount } => {
+            write!(out, "prevent all but {amount} of that damage")
+                .expect("writing to String cannot fail");
+        }
+        ActivatedDamageEventEffect::RedirectToYou => {
+            out.push_str("that source deals that damage to you instead");
+        }
     }
 }
 

@@ -629,7 +629,8 @@ pub enum TriggerEffect {
     DestroyThatCreatureAtEndOfCombat,
     /// "that creature's controller sacrifices it"
     ThatCreaturesControllerSacrificesIt,
-    /// "<source> deals <amount> damage to <recipient>[ unless you pay <mana_cost>]"
+    /// Damage dealt by a trigger, with source, amount, recipient, and
+    /// optional replacement/prevention-style condition captured as axes.
     SourceDealsDamage(TriggeredDamage),
     /// "that player draws an additional card"
     ThatPlayerDrawsAnAdditionalCard,
@@ -873,26 +874,9 @@ pub enum ActivatedEffect {
         creature_type: CreatureType,
         permanent_types: Vec<PermanentType>,
     },
-    /// "The next time a/an <color> source of your choice would deal
-    /// damage to you this turn, prevent that damage."
-    PreventNextDamageFromColoredSource {
-        color: Color,
-    },
-    /// "The next time an unblocked creature of your choice would deal
-    /// combat damage to you this turn, prevent all but N of that damage."
-    PreventAllButDamageFromUnblockedCreature {
-        amount: u32,
-    },
-    /// "The next time a source of your choice would deal damage to
-    /// target <permanent_type> this turn, that source deals that damage
-    /// to you instead."
-    NextDamageFromSourceToTargetPermanentIsDealtToYouInstead {
-        permanent_type: PermanentType,
-    },
-    /// "Prevent the next N damage that would be dealt to you this turn."
-    PreventNextDamageToYouThisTurn {
-        amount: u32,
-    },
+    /// Activated damage prevention/replacement effects, with amount,
+    /// source, recipient, and event timing captured as axes.
+    DamageEffect(ActivatedDamageEffect),
     /// "Put up to X <pt_modifier> counters on this <source>."
     PutUpToVariableCountersOnSource {
         amount: Variable,
@@ -922,6 +906,59 @@ pub enum ActivatedEffect {
         source: SourceObject,
     },
     PhysicalAction(PhysicalAction),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActivatedDamageEffect {
+    /// "The next time <source> of your choice would deal [combat] damage
+    /// to <recipient> this turn, <effect>."
+    NextDamageEvent {
+        source: ActivatedDamageSource,
+        kind: DamageKind,
+        recipient: ActivatedDamageRecipient,
+        effect: ActivatedDamageEventEffect,
+    },
+    /// "Prevent the next N damage that would be dealt to <recipient> this turn."
+    PreventNextDamageThisTurn {
+        amount: u32,
+        recipient: ActivatedDamageRecipient,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActivatedDamageSource {
+    /// "a/an <color> source"
+    ColoredSource { color: Color },
+    /// "an unblocked creature"
+    UnblockedCreature,
+    /// "a source"
+    Source,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamageKind {
+    Damage,
+    CombatDamage,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActivatedDamageRecipient {
+    /// "you"
+    You,
+    /// "any target"
+    AnyTarget,
+    /// "target <permanent_type>"
+    TargetPermanent { permanent_type: PermanentType },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActivatedDamageEventEffect {
+    /// "prevent that damage"
+    PreventThatDamage,
+    /// "prevent all but N of that damage"
+    PreventAllBut { amount: u32 },
+    /// "that source deals that damage to you instead"
+    RedirectToYou,
 }
 
 impl ActivatedEffect {
