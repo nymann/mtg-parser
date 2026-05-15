@@ -7,14 +7,14 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
-    DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap, DamagePrevention,
-    DamagePreventionAmount, DamagePreventionEffect, DamageRecipient, DamageRecipients,
-    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, KeywordAbilityName, LandCountController, ManaCost,
-    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedSourcePowerToughnessCount,
-    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
+    DamagePrevention, DamagePreventionAmount, DamagePreventionEffect, DamageRecipient,
+    DamageRecipients, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, KeywordAbilityName,
+    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -2104,29 +2104,30 @@ fn activated_direct_damage_effect_from_pair(
     let mut inner = pair.into_inner();
     let source_pair = next_inner(&mut inner, "activated direct damage missing source")?;
     let source = source_object_from_pair(source_pair)?;
-    let events = inner
-        .map(|assignment| activated_damage_assignment_from_pair(source, assignment))
+    let assignments = inner
+        .map(activated_damage_assignment_from_pair)
         .collect::<Result<Vec<_>, _>>()?;
-    if events.is_empty() {
+    if assignments.is_empty() {
         return Err(ParseError::Internal(
             "activated direct damage missing assignment",
         ));
     }
-    Ok(ActivatedDamageEffect::SourceDealsDamage { events })
+    Ok(ActivatedDamageEffect::SourceDealsDamage {
+        source,
+        assignments,
+    })
 }
 
 fn activated_damage_assignment_from_pair(
-    source: SourceObject,
     pair: Pair<Rule>,
-) -> Result<DamageEvent<SourceObject, ActivatedDamageRecipient>, ParseError> {
-    if pair.as_rule() != Rule::activated_damage_assignment {
+) -> Result<DamageAssignment<ActivatedDamageRecipient>, ParseError> {
+    if pair.as_rule() != Rule::damage_assignment {
         return Err(ParseError::Internal("activated damage assignment"));
     }
     let mut inner = pair.into_inner();
     let amount_pair = next_inner(&mut inner, "activated damage assignment missing amount")?;
     let recipient_pair = next_inner(&mut inner, "activated damage assignment missing recipient")?;
-    Ok(DamageEvent {
-        source,
+    Ok(DamageAssignment {
         amount: damage_event_amount_from_pair(amount_pair)?,
         recipient: activated_damage_recipient_from_pair(recipient_pair)?,
     })

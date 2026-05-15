@@ -962,10 +962,10 @@ activated_damage_effect = _{
   | activated_damage_prevention_effect
 }
 activated_direct_damage_effect = {
-    source_object ~ ^"deals" ~ activated_damage_assignment
-  ~ (^"and" ~ activated_damage_assignment)* ~ "."
+    source_object ~ ^"deals" ~ damage_assignment
+  ~ (^"and" ~ damage_assignment)* ~ "."
 }
-activated_damage_assignment = {
+damage_assignment = {
     damage_event_amount ~ ^"damage" ~ ^"to" ~ activated_direct_damage_recipient
 }
 activated_direct_damage_recipient = _{

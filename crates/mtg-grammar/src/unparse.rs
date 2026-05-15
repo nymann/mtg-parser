@@ -1949,17 +1949,20 @@ fn write_trigger_damage_recipient(out: &mut String, recipient: TriggerDamageReci
 
 fn write_activated_damage_effect(out: &mut String, effect: &ActivatedDamageEffect) {
     match effect {
-        ActivatedDamageEffect::SourceDealsDamage { events } => {
-            if let Some(first) = events.first() {
-                write_source_object_capitalized(out, first.source);
+        ActivatedDamageEffect::SourceDealsDamage {
+            source,
+            assignments,
+        } => {
+            if !assignments.is_empty() {
+                write_source_object_capitalized(out, *source);
                 out.push_str(" deals ");
-                for (idx, event) in events.iter().enumerate() {
+                for (idx, assignment) in assignments.iter().enumerate() {
                     if idx > 0 {
                         out.push_str(" and ");
                     }
-                    write_damage_amount(out, event.amount);
+                    write_damage_amount(out, assignment.amount);
                     out.push_str(" damage to ");
-                    write_activated_damage_recipient(out, event.recipient);
+                    write_activated_damage_recipient(out, assignment.recipient);
                 }
                 out.push('.');
             }

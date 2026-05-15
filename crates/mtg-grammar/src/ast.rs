@@ -872,6 +872,12 @@ pub struct DamageEvent<S, R> {
     pub recipient: R,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DamageAssignment<R> {
+    pub amount: DamageAmount,
+    pub recipient: R,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TriggerDamageSource {
     Source(SourceObject),
@@ -1051,7 +1057,8 @@ pub enum ActivatedEffect {
 pub enum ActivatedDamageEffect {
     /// "This <source> deals N damage to <recipient> [and M damage to <recipient>]."
     SourceDealsDamage {
-        events: Vec<DamageEvent<SourceObject, ActivatedDamageRecipient>>,
+        source: SourceObject,
+        assignments: Vec<DamageAssignment<ActivatedDamageRecipient>>,
     },
     /// "The next time <source> of your choice would deal [combat] damage
     /// to <recipient> this turn, <effect>."
