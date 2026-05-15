@@ -1,14 +1,17 @@
 //! Refactor-oriented workflow. Unlike `add-card`, this flow is not
-//! trying to make the next card pass. It prepares a bounded,
-//! qmd-grounded refactor prompt whose success criteria are unchanged
-//! behavior and lower future edit cost.
+//! trying to make the next card pass. It runs a bounded, qmd-grounded
+//! agent refactor whose success criteria are unchanged behavior and
+//! lower future edit cost.
 
+use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitCode};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::process::{Command, ExitCode, Stdio};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail, Context, Result};
 
+use crate::agent_events;
+use crate::flow::AgentProvider;
 use crate::paths::{refactor_hotspot_log_root, repo_root};
 
 const DEFAULT_THEME: Theme = Theme::ParserBoilerplate;
@@ -35,10 +38,7 @@ pub fn run(args: &[String]) -> ExitCode {
         return ExitCode::SUCCESS;
     }
     match Options::parse(args).and_then(run_inner) {
-        Ok(path) => {
-            println!("{}", path.display());
-            ExitCode::SUCCESS
-        }
+        Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("refactor-hotspot: {e:#}");
             ExitCode::FAILURE
@@ -52,6 +52,9 @@ struct Options {
     target: Option<String>,
     out: Option<PathBuf>,
     print: bool,
+    dry_run: bool,
+    allow_dirty: bool,
+    agent: AgentProvider,
     churn_window: usize,
 }
 
@@ -61,6 +64,9 @@ impl Options {
         let mut target = None::<String>;
         let mut out = None::<PathBuf>;
         let mut print = false;
+        let mut dry_run = false;
+        let mut allow_dirty = false;
+        let mut agent = AgentProvider::Codex;
         let mut churn_window = DEFAULT_CHURN_WINDOW;
 
         let mut iter = args.iter();
@@ -95,6 +101,17 @@ impl Options {
                     out = Some(PathBuf::from(&s["--out=".len()..]));
                 }
                 "--print" => print = true,
+                "--dry-run" => dry_run = true,
+                "--allow-dirty" => allow_dirty = true,
+                "--agent" => {
+                    let value = iter
+                        .next()
+                        .ok_or_else(|| anyhow!("--agent requires a value"))?;
+                    agent = parse_agent(value)?;
+                }
+                s if s.starts_with("--agent=") => {
+                    agent = parse_agent(&s["--agent=".len()..])?;
+                }
                 "--churn-window" => {
                     let value = iter
                         .next()
@@ -117,13 +134,21 @@ impl Options {
             target,
             out,
             print,
+            dry_run,
+            allow_dirty,
+            agent,
             churn_window,
         })
     }
 }
 
 const HELP: &str = "\
-cargo xtask refactor-hotspot [--theme THEME] [--target PATH] [--out PATH] [--print]
+cargo xtask refactor-hotspot [--theme THEME] [--target PATH] [--agent codex|claude]
+                             [--dry-run] [--allow-dirty] [--out PATH] [--print]
+
+Autonomous by default: builds a qmd-grounded prompt, invokes the agent, runs
+`cargo test`, `cargo xtask corpus`, `just audit-page`, and commits the result.
+Use --dry-run or --print to stop after writing/printing the prompt.
 
 Themes:
   parser-boilerplate   Parser helper/extraction cleanup without AST changes.
@@ -134,6 +159,14 @@ Themes:
   triggered-abilities  Trigger and intervening-if factoring.
   unparse-templates    Unparser template/slot extraction.
 ";
+
+fn parse_agent(value: &str) -> Result<AgentProvider> {
+    match value {
+        "codex" => Ok(AgentProvider::Codex),
+        "claude" => Ok(AgentProvider::Claude),
+        other => bail!("--agent must be 'codex' or 'claude', got {other:?}"),
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Theme {
@@ -265,7 +298,12 @@ impl Theme {
     }
 }
 
-fn run_inner(opts: Options) -> Result<PathBuf> {
+fn run_inner(opts: Options) -> Result<()> {
+    if !opts.dry_run && !opts.print && !opts.allow_dirty {
+        ensure_clean_working_tree()
+            .context("working tree must be clean (or pass --allow-dirty)")?;
+    }
+
     let prompt = build_prompt(&opts)?;
     if opts.print {
         print!("{prompt}");
@@ -280,8 +318,47 @@ fn run_inner(opts: Options) -> Result<PathBuf> {
     if let Some(parent) = out.parent() {
         std::fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
     }
-    std::fs::write(&out, prompt).with_context(|| format!("write {}", out.display()))?;
-    Ok(out)
+    std::fs::write(&out, &prompt).with_context(|| format!("write {}", out.display()))?;
+    println!("prompt: {}", out.display());
+
+    if opts.dry_run || opts.print {
+        println!(
+            "dry-run: not invoking {}, not running gates, not committing",
+            opts.agent.label()
+        );
+        return Ok(());
+    }
+
+    let log_dir = out
+        .parent()
+        .map(Path::to_path_buf)
+        .unwrap_or_else(refactor_hotspot_log_root);
+    let transcript = log_dir.join("transcript.ndjson");
+    let response = log_dir.join("response.md");
+
+    println!("agent: {}", opts.agent.label());
+    let outcome = invoke_agent(opts.agent, &prompt, &transcript)?;
+    std::fs::write(&response, &outcome.assistant_text)
+        .with_context(|| format!("write {}", response.display()))?;
+    if !outcome.success {
+        bail!(
+            "{} exited with status {}; transcript: {}",
+            opts.agent.label(),
+            outcome.exit_code,
+            transcript.display()
+        );
+    }
+
+    run_gate("cargo fmt --all", "cargo", &["fmt", "--all"])?;
+    run_gate("cargo test", "cargo", &["test"])?;
+    run_gate("cargo xtask corpus", "cargo", &["xtask", "corpus"])?;
+    run_gate("just audit-page", "just", &["audit-page"])?;
+
+    match git_commit(&commit_message(&opts)?)? {
+        CommitOutcome::Committed => println!("committed refactor-hotspot result"),
+        CommitOutcome::NoChanges => bail!("no changes to commit after successful refactor gates"),
+    }
+    Ok(())
 }
 
 fn create_log_dir(theme: Theme) -> Result<PathBuf> {
@@ -452,6 +529,252 @@ fn git_churn(path: &str, window: usize) -> Result<usize> {
     }
     let stdout = String::from_utf8_lossy(&output.stdout);
     Ok(stdout.lines().filter(|line| *line == path).count())
+}
+
+struct AgentOutcome {
+    success: bool,
+    exit_code: i32,
+    assistant_text: String,
+}
+
+fn invoke_agent(
+    provider: AgentProvider,
+    prompt: &str,
+    transcript_path: &Path,
+) -> Result<AgentOutcome> {
+    let command = base_agent_command(provider);
+    invoke_jsonl_agent(provider, command, prompt, transcript_path)
+}
+
+fn base_agent_command(provider: AgentProvider) -> Command {
+    match provider {
+        AgentProvider::Codex => {
+            let mut cmd = Command::new("codex");
+            cmd.arg("exec")
+                .arg("--dangerously-bypass-approvals-and-sandbox")
+                .arg("--json")
+                .arg("--cd")
+                .arg(repo_root())
+                .arg("-");
+            cmd
+        }
+        AgentProvider::Claude => {
+            let mut cmd = Command::new("claude");
+            cmd.arg("-p")
+                .arg("--dangerously-skip-permissions")
+                .arg("--output-format")
+                .arg("stream-json")
+                .arg("--verbose");
+            cmd
+        }
+    }
+}
+
+fn invoke_jsonl_agent(
+    provider: AgentProvider,
+    mut command: Command,
+    prompt: &str,
+    transcript_path: &Path,
+) -> Result<AgentOutcome> {
+    let mut child = command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::inherit())
+        .current_dir(repo_root())
+        .spawn()
+        .with_context(|| format!("spawn {}", provider.label()))?;
+    {
+        let mut stdin = child.stdin.take().expect("piped stdin");
+        stdin.write_all(prompt.as_bytes())?;
+    }
+
+    let stdout = child.stdout.take().expect("piped stdout");
+    let reader = BufReader::new(stdout);
+    let mut transcript = std::fs::File::create(transcript_path)
+        .with_context(|| format!("create {}", transcript_path.display()))?;
+    let start = Instant::now();
+    let mut assistant_text = Vec::<String>::new();
+
+    for raw in reader.lines() {
+        let line = raw?;
+        writeln!(transcript, "{line}")?;
+        if line.trim().is_empty() {
+            continue;
+        }
+        match serde_json::from_str::<serde_json::Value>(&line) {
+            Ok(parsed) => {
+                collect_assistant_text(provider, &parsed, &mut assistant_text);
+                let elapsed_secs = start.elapsed().as_secs();
+                for event in agent_events::parse(provider, &parsed) {
+                    println!("    [+{elapsed_secs:>3}s] {}", event.first_line);
+                }
+            }
+            Err(_) => println!(
+                "    non-JSON line from {}: {}",
+                provider.label(),
+                trim(&line, 200)
+            ),
+        }
+    }
+
+    let status = child.wait()?;
+    Ok(AgentOutcome {
+        success: status.success(),
+        exit_code: status.code().unwrap_or(-1),
+        assistant_text: assistant_text.join("\n\n"),
+    })
+}
+
+fn collect_assistant_text(
+    provider: AgentProvider,
+    parsed: &serde_json::Value,
+    assistant_text: &mut Vec<String>,
+) {
+    match provider {
+        AgentProvider::Claude => {
+            if parsed.get("type").and_then(|v| v.as_str()) != Some("assistant") {
+                return;
+            }
+            if let Some(content) = parsed
+                .get("message")
+                .and_then(|m| m.get("content"))
+                .and_then(|c| c.as_array())
+            {
+                for c in content {
+                    if c.get("type").and_then(|v| v.as_str()) == Some("text") {
+                        if let Some(t) = c.get("text").and_then(|v| v.as_str()) {
+                            assistant_text.push(t.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        AgentProvider::Codex => {
+            let kind = parsed
+                .get("type")
+                .or_else(|| parsed.get("event"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_ascii_lowercase();
+            if !(kind.contains("assistant") || kind.contains("message") || kind.contains("text")) {
+                return;
+            }
+            for key in ["text", "message", "content", "output"] {
+                if let Some(text) = parsed.get(key).and_then(|v| v.as_str()) {
+                    assistant_text.push(text.to_string());
+                    return;
+                }
+            }
+        }
+    }
+}
+
+fn trim(s: &str, n: usize) -> String {
+    if s.chars().count() <= n {
+        s.to_string()
+    } else {
+        let mut out: String = s.chars().take(n).collect();
+        out.push('…');
+        out
+    }
+}
+
+fn run_gate(label: &str, program: &str, args: &[&str]) -> Result<()> {
+    println!("gate: {label}");
+    let status = Command::new(program)
+        .args(args)
+        .current_dir(repo_root())
+        .status()
+        .with_context(|| format!("run {label}"))?;
+    if !status.success() {
+        bail!("{label} failed with {status}");
+    }
+    Ok(())
+}
+
+fn ensure_clean_working_tree() -> Result<()> {
+    let out = Command::new("git")
+        .args(["status", "--porcelain"])
+        .current_dir(repo_root())
+        .output()
+        .context("git status --porcelain")?;
+    if !out.status.success() {
+        bail!("git status failed");
+    }
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    if !stdout.trim().is_empty() {
+        bail!("working tree is dirty:\n{stdout}");
+    }
+    Ok(())
+}
+
+enum CommitOutcome {
+    Committed,
+    NoChanges,
+}
+
+fn git_commit(message: &str) -> Result<CommitOutcome> {
+    let add = Command::new("git")
+        .args(["add", "-A"])
+        .current_dir(repo_root())
+        .status()
+        .context("git add -A")?;
+    if !add.success() {
+        bail!("git add failed");
+    }
+
+    let diff = Command::new("git")
+        .args(["diff", "--cached", "--quiet", "--exit-code"])
+        .current_dir(repo_root())
+        .status()
+        .context("git diff --cached")?;
+    if diff.success() {
+        return Ok(CommitOutcome::NoChanges);
+    }
+    if diff.code() != Some(1) {
+        bail!("git diff --cached failed");
+    }
+
+    let commit = Command::new("git")
+        .args(["commit", "--no-verify", "-m", message])
+        .current_dir(repo_root())
+        .output()
+        .context("git commit")?;
+    if !commit.status.success() {
+        bail!(
+            "git commit failed with status {}\nstdout:\n{}\nstderr:\n{}",
+            commit.status,
+            String::from_utf8_lossy(&commit.stdout),
+            String::from_utf8_lossy(&commit.stderr)
+        );
+    }
+    Ok(CommitOutcome::Committed)
+}
+
+fn commit_message(opts: &Options) -> Result<String> {
+    let stat = git_diff_stat()?;
+    Ok(format!(
+        "Refactor {} hotspot\n\nGates: cargo test; cargo xtask corpus; just audit-page.\nBehavior: intended unchanged.\nPrimary LOC delta:\n{}",
+        opts.theme.label(),
+        stat.trim()
+    ))
+}
+
+fn git_diff_stat() -> Result<String> {
+    let out = Command::new("git")
+        .args(["diff", "--stat"])
+        .current_dir(repo_root())
+        .output()
+        .context("git diff --stat")?;
+    if !out.status.success() {
+        bail!("git diff --stat failed");
+    }
+    let text = String::from_utf8_lossy(&out.stdout).into_owned();
+    if text.trim().is_empty() {
+        Ok("(no diff)".to_string())
+    } else {
+        Ok(text)
+    }
 }
 
 #[cfg(test)]
