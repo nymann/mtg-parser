@@ -5,3 +5,5 @@ mod animate_wall;
 mod ankh_of_mishra;
 #[path = "generated_patterns/armageddon.rs"]
 mod armageddon;
+#[path = "generated_patterns/aspect_of_wolf.rs"]
+mod aspect_of_wolf;

@@ -38,6 +38,7 @@ sentence_statement = _{
   | draw_cards
   | static_as_long_as
   | static_enchanted_gets
+  | static_enchanted_gets_with_definitions
   | static_enchanted_can_attack_as_though
   | triggered_ability
 }
@@ -103,13 +104,20 @@ permanent_type_plural = @{
 // Creature subtypes that appear as Aura targets or enchanted objects.
 creature_type = @{ ^"wall" }
 
-// Static abilities. Three surface shapes today:
+// Static abilities. Four surface shapes today:
 //   - "As long as <cond>, <effect>." — conditional continuous effect.
 //   - "Enchanted <type> gets <pt_modifier>." — unconditional P/T
 //     modifier on the enchanted permanent (e.g. Animate Dead).
+//   - "Enchanted <type> gets <variable_pt_modifier>, where ..." — a
+//     variable P/T modifier with printed definitions for those variables.
 //   - "Enchanted <object> can attack as though it didn't have
 //     <keyword>." — permission effect that ignores an attack restriction.
-static_ability = _{ static_as_long_as | static_enchanted_gets | static_enchanted_can_attack_as_though }
+static_ability = _{
+    static_as_long_as
+  | static_enchanted_gets
+  | static_enchanted_gets_with_definitions
+  | static_enchanted_can_attack_as_though
+}
 
 static_as_long_as = {
     ^"as" ~ ^"long" ~ ^"as" ~ condition ~ "," ~ continuous_effect ~ "."
@@ -117,6 +125,11 @@ static_as_long_as = {
 
 static_enchanted_gets = {
     ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier ~ "."
+}
+
+static_enchanted_gets_with_definitions = {
+    ^"enchanted" ~ permanent_type ~ ^"gets" ~ variable_pt_modifier
+  ~ "," ~ where_clause ~ "."
 }
 
 static_enchanted_can_attack_as_though = {
@@ -141,6 +154,23 @@ becomes_pt_from_mv = {
 // "+1/+1", "-1/-0", "+0/-2" — sign is always explicit on both sides.
 pt_modifier   = ${ signed_number ~ "/" ~ signed_number }
 signed_number = @{ ("+" | "-") ~ ASCII_DIGIT+ }
+
+// "+X/+Y, where X is ..." — sign is explicit on both variables, and
+// the variable definitions carry the arithmetic printed after "where".
+variable_pt_modifier = { signed_variable ~ "/" ~ signed_variable }
+signed_variable      = @{ ("+" | "-") ~ variable_name }
+variable_name        = @{ "X" | "Y" }
+
+where_clause        = { ^"where" ~ variable_definition ~ "," ~ ^"and" ~ variable_definition }
+variable_definition = { variable_name ~ ^"is" ~ value_expression }
+value_expression    = _{ half_number_of_basic_lands_you_control }
+half_number_of_basic_lands_you_control = {
+    ^"half" ~ ^"the" ~ ^"number" ~ ^"of" ~ basic_land_type_plural
+  ~ ^"you" ~ ^"control" ~ "," ~ rounding
+}
+rounding = { ^"rounded" ~ rounding_direction }
+rounding_direction = @{ ^"down" | ^"up" }
+basic_land_type_plural = @{ ^"forests" }
 
 // "When <event>, [if <cond>,] <effect>+"
 // Each trigger_effect rule below carries its own terminator (a closing

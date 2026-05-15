@@ -10,6 +10,7 @@ mod console_sink;
 mod corpus_cmd;
 mod flow;
 mod grammar_fix;
+mod hooks;
 mod next_card;
 mod paths;
 mod testrun;
@@ -28,6 +29,7 @@ Commands:
                               if there are regressions (use with care).
   refresh-corpus [--set CODE] Force re-fetch a set from Scryfall, bypassing the cache.
                               Without --set, refreshes every set tracked by `corpus`.
+  install-hooks               Configure git to use the repo's tracked .githooks.
   grammar-fix [--set CODE]    Orchestrated loop: next-card → agent → tier-1/2 →
               [--max-iterations N]  corpus diff → commit. Defaults: --set lea,
               [--dry-run] [--allow-dirty]  --max-iterations 0 (unbounded). --dry-run builds the
@@ -80,6 +82,7 @@ fn main() -> ExitCode {
         Some("next-card") => next_card::run(&args[1..]),
         Some("corpus") => corpus_cmd::run(&args[1..]),
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),
+        Some("install-hooks") => hooks::install(),
         Some("grammar-fix") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => grammar_fix::run(&args[1..]),
             Ok(Ui::Tui) => match grammar_fix::Options::parse(&args[1..]) {

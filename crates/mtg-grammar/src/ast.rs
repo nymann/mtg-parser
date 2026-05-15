@@ -151,6 +151,13 @@ pub enum StaticAbility {
         permanent_type: PermanentType,
         modifier: PtModifier,
     },
+    /// "Enchanted <type> gets +X/+Y, where X is <expr>, and Y is <expr>."
+    /// — P/T modifier whose printed variables are defined inline.
+    EnchantedGetsWithDefinitions {
+        permanent_type: PermanentType,
+        modifier: VariablePtModifier,
+        definitions: Vec<VariableDefinition>,
+    },
     /// "Enchanted <object> can attack as though it didn't have
     /// <keyword>." — permission effect that ignores an attacking
     /// restriction such as defender.
@@ -187,6 +194,50 @@ pub enum ContinuousEffect {
 pub struct PtModifier {
     pub power: SignedNumber,
     pub toughness: SignedNumber,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VariablePtModifier {
+    pub power: SignedVariable,
+    pub toughness: SignedVariable,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SignedVariable {
+    pub sign: Sign,
+    pub variable: Variable,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Variable {
+    X,
+    Y,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VariableDefinition {
+    pub variable: Variable,
+    pub value: ValueExpression,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ValueExpression {
+    /// "half the number of <basic_land_type>s you control, rounded <...>"
+    HalfNumberOfBasicLandsYouControl {
+        basic_land_type: BasicLandType,
+        rounding: Rounding,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BasicLandType {
+    Forest,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Rounding {
+    Down,
+    Up,
 }
 
 /// Magnitude plus an explicit printed sign. Magic prints "-0" and "+0"

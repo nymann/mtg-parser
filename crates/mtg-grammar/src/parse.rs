@@ -3,9 +3,11 @@ use pest::Parser;
 use pest_derive::Parser;
 
 use crate::ast::{
-    Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject, InterveningIf,
-    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber, SourceObject,
-    Statement, StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Zone,
+    BasicLandType, Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject,
+    InterveningIf, Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Rounding, Sign,
+    SignedNumber, SignedVariable, SourceObject, Statement, StaticAbility, TriggerEffect,
+    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -51,6 +53,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::static_as_long_as
+        | Rule::static_enchanted_gets_with_definitions
         | Rule::static_enchanted_gets
         | Rule::static_enchanted_can_attack_as_though => {
             Ok(Statement::StaticAbility(static_ability_from_pair(pair)?))
@@ -335,6 +338,23 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 modifier: pt_modifier_from_pair(modifier_pair)?,
             })
         }
+        Rule::static_enchanted_gets_with_definitions => {
+            let mut inner = pair.into_inner();
+            let pt_pair = inner.next().expect(
+                "static_enchanted_gets_with_definitions begins with the enchanted permanent type",
+            );
+            let modifier_pair = inner
+                .next()
+                .expect("static_enchanted_gets_with_definitions has a variable_pt_modifier");
+            let where_pair = inner
+                .next()
+                .expect("static_enchanted_gets_with_definitions has a where_clause");
+            Ok(StaticAbility::EnchantedGetsWithDefinitions {
+                permanent_type: permanent_type_from_pair(pt_pair)?,
+                modifier: variable_pt_modifier_from_pair(modifier_pair)?,
+                definitions: where_clause_from_pair(where_pair)?,
+            })
+        }
         Rule::static_enchanted_can_attack_as_though => {
             let mut inner = pair.into_inner();
             let object_pair = inner
@@ -390,6 +410,116 @@ fn signed_number_from_pair(pair: Pair<Rule>) -> Result<SignedNumber, ParseError>
         .parse::<u32>()
         .map_err(|_| ParseError::Internal("signed_number magnitude"))?;
     Ok(SignedNumber { sign, magnitude })
+}
+
+fn variable_pt_modifier_from_pair(pair: Pair<Rule>) -> Result<VariablePtModifier, ParseError> {
+    if pair.as_rule() != Rule::variable_pt_modifier {
+        return Err(ParseError::Internal("variable_pt_modifier"));
+    }
+    let mut inner = pair.into_inner();
+    let power_pair = inner.next().expect("variable_pt_modifier has power first");
+    let toughness_pair = inner
+        .next()
+        .expect("variable_pt_modifier has toughness second");
+    Ok(VariablePtModifier {
+        power: signed_variable_from_pair(power_pair)?,
+        toughness: signed_variable_from_pair(toughness_pair)?,
+    })
+}
+
+fn signed_variable_from_pair(pair: Pair<Rule>) -> Result<SignedVariable, ParseError> {
+    if pair.as_rule() != Rule::signed_variable {
+        return Err(ParseError::Internal("signed_variable"));
+    }
+    let s = pair.as_str();
+    let (sign_char, rest) = s.split_at(1);
+    let sign = match sign_char {
+        "+" => Sign::Plus,
+        "-" => Sign::Minus,
+        _ => return Err(ParseError::Internal("signed_variable sign")),
+    };
+    Ok(SignedVariable {
+        sign,
+        variable: variable_from_str(rest)?,
+    })
+}
+
+fn where_clause_from_pair(pair: Pair<Rule>) -> Result<Vec<VariableDefinition>, ParseError> {
+    if pair.as_rule() != Rule::where_clause {
+        return Err(ParseError::Internal("where_clause"));
+    }
+    pair.into_inner()
+        .map(variable_definition_from_pair)
+        .collect()
+}
+
+fn variable_definition_from_pair(pair: Pair<Rule>) -> Result<VariableDefinition, ParseError> {
+    if pair.as_rule() != Rule::variable_definition {
+        return Err(ParseError::Internal("variable_definition"));
+    }
+    let mut inner = pair.into_inner();
+    let variable_pair = inner
+        .next()
+        .expect("variable_definition begins with a variable_name");
+    let value_pair = inner
+        .next()
+        .expect("variable_definition has a value_expression");
+    Ok(VariableDefinition {
+        variable: variable_from_str(variable_pair.as_str())?,
+        value: value_expression_from_pair(value_pair)?,
+    })
+}
+
+fn value_expression_from_pair(pair: Pair<Rule>) -> Result<ValueExpression, ParseError> {
+    match pair.as_rule() {
+        Rule::half_number_of_basic_lands_you_control => {
+            let mut inner = pair.into_inner();
+            let land_type_pair = inner
+                .next()
+                .expect("half-number expression names a basic land type");
+            let rounding_pair = inner
+                .next()
+                .expect("half-number expression names a rounding direction");
+            Ok(ValueExpression::HalfNumberOfBasicLandsYouControl {
+                basic_land_type: basic_land_type_from_plural_pair(land_type_pair)?,
+                rounding: rounding_from_pair(rounding_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("value_expression")),
+    }
+}
+
+fn variable_from_str(s: &str) -> Result<Variable, ParseError> {
+    match s {
+        "X" => Ok(Variable::X),
+        "Y" => Ok(Variable::Y),
+        _ => Err(ParseError::Internal("variable_name")),
+    }
+}
+
+fn basic_land_type_from_plural_pair(pair: Pair<Rule>) -> Result<BasicLandType, ParseError> {
+    if pair.as_rule() != Rule::basic_land_type_plural {
+        return Err(ParseError::Internal("basic_land_type_plural"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "forests" => Ok(BasicLandType::Forest),
+        _ => Err(ParseError::Internal("basic_land_type_plural variant")),
+    }
+}
+
+fn rounding_from_pair(pair: Pair<Rule>) -> Result<Rounding, ParseError> {
+    if pair.as_rule() != Rule::rounding {
+        return Err(ParseError::Internal("rounding"));
+    }
+    let direction = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("rounding missing direction"))?;
+    match direction.as_str().to_ascii_lowercase().as_str() {
+        "down" => Ok(Rounding::Down),
+        "up" => Ok(Rounding::Up),
+        _ => Err(ParseError::Internal("rounding direction")),
+    }
 }
 
 fn condition_from_pair(pair: Pair<Rule>) -> Result<Condition, ParseError> {

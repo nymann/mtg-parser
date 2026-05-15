@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+set -eu
+
+echo "pre-commit: cargo fmt --all"
+cargo fmt --all
+
+echo "pre-commit: cargo xtask corpus"
+cargo xtask corpus
+
+if ! git diff --quiet; then
+  echo "pre-commit: cargo fmt or cargo xtask corpus changed files; stage the updates and commit again." >&2
+  git status --short >&2
+  exit 1
+fi

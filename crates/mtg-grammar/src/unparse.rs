@@ -1,9 +1,11 @@
 use std::fmt::Write;
 
 use crate::ast::{
-    Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject, InterveningIf,
-    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber, SourceObject,
-    Statement, StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Zone,
+    BasicLandType, Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject,
+    InterveningIf, Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Rounding, Sign,
+    SignedNumber, SignedVariable, SourceObject, Statement, StaticAbility, TriggerEffect,
+    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -137,6 +139,19 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_pt_modifier(out, *modifier);
             out.push('.');
         }
+        StaticAbility::EnchantedGetsWithDefinitions {
+            permanent_type,
+            modifier,
+            definitions,
+        } => {
+            out.push_str("Enchanted ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" gets ");
+            write_variable_pt_modifier(out, *modifier);
+            out.push_str(", where ");
+            write_variable_definitions(out, definitions);
+            out.push('.');
+        }
         StaticAbility::EnchantedCanAttackAsThoughItDidntHave { object, keyword } => {
             out.push_str("Enchanted ");
             write_enchanted_object(out, *object);
@@ -262,6 +277,60 @@ fn write_signed_number(out: &mut String, n: SignedNumber) {
     write!(out, "{}", n.magnitude).expect("write to String never fails");
 }
 
+fn write_variable_pt_modifier(out: &mut String, m: VariablePtModifier) {
+    write_signed_variable(out, m.power);
+    out.push('/');
+    write_signed_variable(out, m.toughness);
+}
+
+fn write_signed_variable(out: &mut String, v: SignedVariable) {
+    out.push(match v.sign {
+        Sign::Plus => '+',
+        Sign::Minus => '-',
+    });
+    out.push_str(variable_name(v.variable));
+}
+
+fn write_variable_definitions(out: &mut String, definitions: &[VariableDefinition]) {
+    for (i, definition) in definitions.iter().enumerate() {
+        if i > 0 {
+            if i + 1 == definitions.len() {
+                out.push_str(", and ");
+            } else {
+                out.push_str(", ");
+            }
+        }
+        write_variable_definition(out, definition);
+    }
+}
+
+fn write_variable_definition(out: &mut String, definition: &VariableDefinition) {
+    out.push_str(variable_name(definition.variable));
+    out.push_str(" is ");
+    write_value_expression(out, &definition.value);
+}
+
+fn write_value_expression(out: &mut String, expression: &ValueExpression) {
+    match expression {
+        ValueExpression::HalfNumberOfBasicLandsYouControl {
+            basic_land_type,
+            rounding,
+        } => {
+            out.push_str("half the number of ");
+            out.push_str(basic_land_type_plural_name(*basic_land_type));
+            out.push_str(" you control, rounded ");
+            out.push_str(rounding_name(*rounding));
+        }
+    }
+}
+
+fn variable_name(variable: Variable) -> &'static str {
+    match variable {
+        Variable::X => "X",
+        Variable::Y => "Y",
+    }
+}
+
 fn write_condition(out: &mut String, cond: &Condition) {
     match cond {
         Condition::EnchantedIsNot {
@@ -318,6 +387,19 @@ fn permanent_type_plural_name(pt: PermanentType) -> &'static str {
 fn creature_type_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Wall => "Wall",
+    }
+}
+
+fn basic_land_type_plural_name(land_type: BasicLandType) -> &'static str {
+    match land_type {
+        BasicLandType::Forest => "Forests",
+    }
+}
+
+fn rounding_name(rounding: Rounding) -> &'static str {
+    match rounding {
+        Rounding::Down => "down",
+        Rounding::Up => "up",
     }
 }
 
