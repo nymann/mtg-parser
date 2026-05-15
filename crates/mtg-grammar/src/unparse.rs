@@ -395,8 +395,16 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn => {
             out.push_str("Activate only during your turn and only once each turn.");
         }
+        Statement::ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared => {
+            out.push_str("Activate only during an opponent's turn, before attackers are declared.");
+        }
         Statement::ActivateOnlyAsSorcery => {
             out.push_str("Activate only as a sorcery.");
+        }
+        Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn => {
+            out.push_str(
+                "Destroy it at the beginning of the next end step if it didn't attack this turn.",
+            );
         }
         Statement::ModalChoice { modes } => write_modal_choice(out, modes),
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
@@ -902,6 +910,15 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_discard_count(out, *count);
             out.push('.');
         }
+        ActivatedEffect::ChooseTargetNonCreatureTypeCreatureActivePlayerControlledContinuouslySinceBeginningOfTurn {
+            excluded_type,
+        } => {
+            out.push_str("Choose target non-");
+            write_creature_type(out, *excluded_type);
+            out.push_str(
+                " creature the active player has controlled continuously since the beginning of the turn.",
+            );
+        }
         ActivatedEffect::TargetCreatureWithPowerOrLessCantBeBlockedThisTurn { power } => {
             write!(
                 out,
@@ -1354,6 +1371,9 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
         }
         StaticAbility::YouMayHaveItBlockAttackingCreatureOfYourChoice => {
             out.push_str("You may have it block an attacking creature of your choice.");
+        }
+        StaticAbility::ThatCreatureAttacksThisTurnIfAble => {
+            out.push_str("That creature attacks this turn if able.");
         }
         StaticAbility::ItBlocksEachAttackingCreatureThisTurnIfAble => {
             out.push_str("It blocks each attacking creature this turn if able.");

@@ -279,7 +279,13 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn => {
             CardEffect::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn
         }
+        Statement::ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared => {
+            CardEffect::ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared
+        }
         Statement::ActivateOnlyAsSorcery => CardEffect::ActivateOnlyAsSorcery,
+        Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn => {
+            CardEffect::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn
+        }
         Statement::ModalChoice { modes } => CardEffect::ModalChoice {
             modes: modes.clone(),
         },

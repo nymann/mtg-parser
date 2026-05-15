@@ -93,8 +93,10 @@ sentence_statement = _{
   | remove_target_creature_defending_player_controls_from_combat
   | creatures_it_was_blocking_become_unblocked
   | you_may_have_it_block_attacking_creature
+  | that_creature_attacks_this_turn_if_able
   | target_creature_defending_player_controls_can_block_any_number
   | it_blocks_each_attacking_creature_if_able
+  | destroy_it_at_beginning_of_next_end_step_if_it_didnt_attack_this_turn
   | this_turn_defending_players_make_random_blocking_piles
   | additional_blockers_may_be_put_into_additional_piles
   | assign_each_pile_to_attacking_creature_at_random
@@ -146,6 +148,7 @@ sentence_statement = _{
   | activate_only_during_combat
   | activate_only_during_your_turn_and_only_once_each_turn
   | activate_only_during_your_turn
+  | activate_only_during_opponents_turn_before_attackers_declared
   | activate_only_as_sorcery
 }
 
@@ -789,9 +792,20 @@ you_may_have_it_block_attacking_creature = {
   ~ ^"attacking" ~ ^"creature" ~ ^"of" ~ ^"your" ~ ^"choice" ~ "."
 }
 
+that_creature_attacks_this_turn_if_able = {
+    ^"that" ~ ^"creature" ~ ^"attacks" ~ ^"this" ~ ^"turn"
+  ~ ^"if" ~ ^"able" ~ "."
+}
+
 it_blocks_each_attacking_creature_if_able = {
     ^"it" ~ ^"blocks" ~ ^"each" ~ ^"attacking" ~ ^"creature"
   ~ ^"this" ~ ^"turn" ~ ^"if" ~ ^"able" ~ "."
+}
+
+destroy_it_at_beginning_of_next_end_step_if_it_didnt_attack_this_turn = {
+    ^"destroy" ~ ^"it" ~ ^"at" ~ ^"the" ~ ^"beginning" ~ ^"of"
+  ~ ^"the" ~ ^"next" ~ ^"end" ~ ^"step" ~ ^"if" ~ ^"it"
+  ~ ^"didn't" ~ ^"attack" ~ ^"this" ~ ^"turn" ~ "."
 }
 
 this_turn_defending_players_make_random_blocking_piles = {
@@ -860,6 +874,7 @@ activated_effect = _{
   | put_up_to_variable_pt_counters_on_source
   | put_named_counter_on_target_non_basic_land
   | choose_creature_card_in_hand_payable_by_mana_spent_on_variable
+  | choose_target_non_creature_type_creature_active_player_controlled_continuously
   | physical_action
 }
 add_mana_of_any_one_color = {
@@ -891,6 +906,12 @@ target_player_discards_cards = {
 }
 discard_one_card = { article ~ ^"card" }
 discard_counted_cards = { draw_count ~ ^"cards" }
+choose_target_non_creature_type_creature_active_player_controlled_continuously = {
+    ^"choose" ~ ^"target" ~ ^"non-" ~ creature_type ~ ^"creature"
+  ~ ^"the" ~ ^"active" ~ ^"player" ~ ^"has" ~ ^"controlled"
+  ~ ^"continuously" ~ ^"since" ~ ^"the" ~ ^"beginning" ~ ^"of"
+  ~ ^"the" ~ ^"turn" ~ "."
+}
 target_creature_with_power_or_less_cant_be_blocked = {
     ^"target" ~ ^"creature" ~ ^"with" ~ ^"power" ~ unsigned_number
   ~ ^"or" ~ ^"less" ~ ^"can't" ~ ^"be" ~ ^"blocked"
@@ -1283,6 +1304,11 @@ activate_only_during_your_turn_and_only_once_each_turn = {
 }
 activate_only_during_your_turn = {
     ^"activate" ~ ^"only" ~ ^"during" ~ ^"your" ~ ^"turn" ~ "."
+}
+activate_only_during_opponents_turn_before_attackers_declared = {
+    ^"activate" ~ ^"only" ~ ^"during" ~ article ~ ^"opponent's"
+  ~ ^"turn" ~ "," ~ ^"before" ~ ^"attackers" ~ ^"are"
+  ~ ^"declared" ~ "."
 }
 activate_only_as_sorcery = {
     ^"activate" ~ ^"only" ~ ^"as" ~ article ~ ^"sorcery" ~ "."

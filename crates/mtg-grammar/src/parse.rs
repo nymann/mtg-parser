@@ -194,7 +194,13 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             Ok(Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn)
         }
         Rule::activate_only_during_your_turn => Ok(Statement::ActivateOnlyDuringYourTurn),
+        Rule::activate_only_during_opponents_turn_before_attackers_declared => {
+            Ok(Statement::ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared)
+        }
         Rule::activate_only_as_sorcery => Ok(Statement::ActivateOnlyAsSorcery),
+        Rule::destroy_it_at_beginning_of_next_end_step_if_it_didnt_attack_this_turn => {
+            Ok(Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn)
+        }
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::keyword_ability_list => keyword_list_from_pair(pair),
         Rule::semicolon_keyword_ability_list => semicolon_keyword_list_from_pair(pair),
@@ -235,6 +241,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::remove_target_creature_defending_player_controls_from_combat
         | Rule::creatures_it_was_blocking_become_unblocked
         | Rule::you_may_have_it_block_attacking_creature
+        | Rule::that_creature_attacks_this_turn_if_able
         | Rule::target_creature_defending_player_controls_can_block_any_number
         | Rule::it_blocks_each_attacking_creature_if_able
         | Rule::this_turn_defending_players_make_random_blocking_piles
@@ -2724,6 +2731,9 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
         Rule::you_may_have_it_block_attacking_creature => {
             Ok(StaticAbility::YouMayHaveItBlockAttackingCreatureOfYourChoice)
         }
+        Rule::that_creature_attacks_this_turn_if_able => {
+            Ok(StaticAbility::ThatCreatureAttacksThisTurnIfAble)
+        }
         Rule::it_blocks_each_attacking_creature_if_able => {
             Ok(StaticAbility::ItBlocksEachAttackingCreatureThisTurnIfAble)
         }
@@ -3100,6 +3110,16 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             Ok(
                 ActivatedEffect::ChooseCreatureCardInHandPayableByManaSpentOnVariable {
                     variable: variable_from_mana_symbol_pair(variable_pair)?,
+                },
+            )
+        }
+        Rule::choose_target_non_creature_type_creature_active_player_controlled_continuously => {
+            let excluded_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "choose target non creature type missing creature_type",
+            ))?;
+            Ok(
+                ActivatedEffect::ChooseTargetNonCreatureTypeCreatureActivePlayerControlledContinuouslySinceBeginningOfTurn {
+                    excluded_type: creature_type_from_pair(excluded_pair)?,
                 },
             )
         }

@@ -266,8 +266,12 @@ pub enum Statement {
     ActivateOnlyDuringYourTurn,
     /// "Activate only during your turn and only once each turn."
     ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn,
+    /// "Activate only during an opponent's turn, before attackers are declared."
+    ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared,
     /// "Activate only as a sorcery."
     ActivateOnlyAsSorcery,
+    /// "Destroy it at the beginning of the next end step if it didn't attack this turn."
+    DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn,
     /// "Choose one —" followed by one or more bullet-pointed modes.
     ModalChoice {
         modes: Vec<ModalMode>,
@@ -786,6 +790,11 @@ pub enum ActivatedEffect {
     ChooseCreatureCardInHandPayableByManaSpentOnVariable {
         variable: Variable,
     },
+    /// "Choose target non-<creature_type> creature the active player has
+    /// controlled continuously since the beginning of the turn."
+    ChooseTargetNonCreatureTypeCreatureActivePlayerControlledContinuouslySinceBeginningOfTurn {
+        excluded_type: CreatureType,
+    },
     /// "Target <permanent_type> becomes a/an <basic_land_type> until
     /// this <source> leaves the battlefield."
     TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield {
@@ -1098,6 +1107,8 @@ pub enum StaticAbility {
     CreaturesItWasBlockingBecomeUnblocked,
     /// "You may have it block an attacking creature of your choice."
     YouMayHaveItBlockAttackingCreatureOfYourChoice,
+    /// "That creature attacks this turn if able."
+    ThatCreatureAttacksThisTurnIfAble,
     /// "It blocks each attacking creature this turn if able."
     ItBlocksEachAttackingCreatureThisTurnIfAble,
     /// "This turn, instead of declaring blockers, each defending player

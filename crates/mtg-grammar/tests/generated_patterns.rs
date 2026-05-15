@@ -245,3 +245,5 @@ mod mind_twist;
 mod natural_selection;
 #[path = "generated_patterns/nether_shadow.rs"]
 mod nether_shadow;
+#[path = "generated_patterns/nettling_imp.rs"]
+mod nettling_imp;

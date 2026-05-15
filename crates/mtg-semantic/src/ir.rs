@@ -226,8 +226,12 @@ pub enum CardEffect {
     ActivateOnlyDuringYourTurn,
     /// "Activate only during your turn and only once each turn."
     ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn,
+    /// "Activate only during an opponent's turn, before attackers are declared."
+    ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared,
     /// "Activate only as a sorcery."
     ActivateOnlyAsSorcery,
+    /// "Destroy it at the beginning of the next end step if it didn't attack this turn."
+    DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn,
     /// A modal spell choice with one or more printed modes.
     ModalChoice { modes: Vec<ModalMode> },
     /// A static ability with a conditional continuous effect. The
