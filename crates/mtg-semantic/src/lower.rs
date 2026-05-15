@@ -214,6 +214,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         },
         Statement::ActivateOnlyDuringYourUpkeep => CardEffect::ActivateOnlyDuringYourUpkeep,
         Statement::ActivateOnlyDuringYourTurn => CardEffect::ActivateOnlyDuringYourTurn,
+        Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn => {
+            CardEffect::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn
+        }
         Statement::ActivateOnlyAsSorcery => CardEffect::ActivateOnlyAsSorcery,
         Statement::ModalChoice { modes } => CardEffect::ModalChoice {
             modes: modes.clone(),

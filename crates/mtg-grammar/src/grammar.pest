@@ -98,7 +98,8 @@ sentence_statement = _{
   | static_enchanted_has_keyword
   | static_enchanted_loses_keyword
   | static_enchanted_is_basic_land_type
-  | static_enchanted_can_attack_as_though
+  | static_enchanted_can_attack_as_though_it_had
+  | static_enchanted_can_attack_as_though_it_didnt_have
   | static_you_control_enchanted
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
   | static_you_may_have_source_enter_as_copy
@@ -114,6 +115,7 @@ sentence_statement = _{
   | source_enters_with_pt_counters
   | this_ability_cant_cause_total_pt_counters_greater_than
   | activate_only_during_your_upkeep
+  | activate_only_during_your_turn_and_only_once_each_turn
   | activate_only_during_your_turn
   | activate_only_as_sorcery
 }
@@ -374,11 +376,12 @@ discard_cards_action = { ^"discard" ~ ^"cards" }
 sacrifice_permanents_action = { ^"sacrifice" ~ permanent_type_plural }
 
 keyword_ability = { keyword }
-keyword         = _{ enchant | first_strike | protection | flying | reach | defender | banding | trample | mountainwalk | swampwalk | indestructible | fear }
+keyword         = _{ enchant | first_strike | protection | flying | reach | haste | defender | banding | trample | mountainwalk | swampwalk | indestructible | fear }
 first_strike    = { ^"first" ~ ^"strike" }
 protection      = { ^"protection" ~ ^"from" ~ color_word }
 flying          = @{ ^"flying" }
 reach           = @{ ^"reach" }
+haste           = @{ ^"haste" }
 defender        = @{ ^"defender" }
 banding         = @{ ^"banding" }
 trample         = @{ ^"trample" }
@@ -464,8 +467,8 @@ creature_type_plural = @{ ^"goblins" | ^"walls" }
 //   - "Enchanted <object> has <keyword> and can't be enchanted by other
 //     Auras." — keyword-granting effect plus an Aura attachment
 //     restriction on the enchanted object.
-//   - "Enchanted <object> can attack as though it didn't have
-//     <keyword>." — permission effect that ignores an attack restriction.
+//   - "Enchanted <object> can attack as though it had/didn't have
+//     <keyword>." — permission effect that changes attack eligibility.
 //   - "You control enchanted <object>." — continuous control-changing
 //     effect from an Aura to its enchanted object.
 //   - "You may have this <type> enter as a copy of any <type> on the
@@ -486,7 +489,8 @@ static_ability = _{
   | static_enchanted_has_keyword
   | static_enchanted_loses_keyword
   | static_enchanted_is_basic_land_type
-  | static_enchanted_can_attack_as_though
+  | static_enchanted_can_attack_as_though_it_had
+  | static_enchanted_can_attack_as_though_it_didnt_have
   | static_you_control_enchanted
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
   | static_you_may_have_source_enter_as_copy
@@ -556,7 +560,12 @@ static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras = {
   ~ ^"be" ~ ^"enchanted" ~ ^"by" ~ ^"other" ~ ^"auras" ~ "."
 }
 
-static_enchanted_can_attack_as_though = {
+static_enchanted_can_attack_as_though_it_had = {
+    ^"enchanted" ~ enchanted_object ~ ^"can" ~ ^"attack"
+  ~ ^"as" ~ ^"though" ~ ^"it" ~ ^"had" ~ keyword ~ "."
+}
+
+static_enchanted_can_attack_as_though_it_didnt_have = {
     ^"enchanted" ~ enchanted_object ~ ^"can" ~ ^"attack"
   ~ ^"as" ~ ^"though" ~ ^"it" ~ ^"didn't" ~ ^"have" ~ keyword ~ "."
 }
@@ -675,6 +684,7 @@ activated_effect = _{
   | destroy_target_permanent
   | counter_target_colored_spell
   | untap_source
+  | untap_enchanted_object
   | look_at_target_players_hand
   | target_player_discards_cards
   | target_creature_with_power_or_less_cant_be_blocked
@@ -705,6 +715,7 @@ regenerate_source = { ^"regenerate" ~ source_object ~ "." }
 destroy_target_creature_type = { ^"destroy" ~ ^"target" ~ creature_type ~ "." }
 destroy_target_permanent = { ^"destroy" ~ ^"target" ~ permanent_type ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
+untap_enchanted_object = { ^"untap" ~ ^"enchanted" ~ enchanted_object ~ "." }
 look_at_target_players_hand = { ^"look" ~ ^"at" ~ ^"target" ~ ^"player's" ~ ^"hand" ~ "." }
 target_player_discards_cards = {
     ^"target" ~ ^"player" ~ ^"discards"
@@ -1042,6 +1053,10 @@ if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_inst
 
 activate_only_during_your_upkeep = {
     ^"activate" ~ ^"only" ~ ^"during" ~ ^"your" ~ ^"upkeep" ~ "."
+}
+activate_only_during_your_turn_and_only_once_each_turn = {
+    ^"activate" ~ ^"only" ~ ^"during" ~ ^"your" ~ ^"turn" ~ ^"and"
+  ~ ^"only" ~ ^"once" ~ ^"each" ~ ^"turn" ~ "."
 }
 activate_only_during_your_turn = {
     ^"activate" ~ ^"only" ~ ^"during" ~ ^"your" ~ ^"turn" ~ "."

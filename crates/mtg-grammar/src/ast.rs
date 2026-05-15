@@ -200,6 +200,8 @@ pub enum Statement {
     ActivateOnlyDuringYourUpkeep,
     /// "Activate only during your turn."
     ActivateOnlyDuringYourTurn,
+    /// "Activate only during your turn and only once each turn."
+    ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn,
     /// "Activate only as a sorcery."
     ActivateOnlyAsSorcery,
     /// "Choose one —" followed by one or more bullet-pointed modes.
@@ -554,6 +556,8 @@ pub enum ActivatedEffect {
     },
     /// "Untap this <permanent_type>."
     Untap(SourceObject),
+    /// "Untap enchanted <object>."
+    UntapEnchanted(EnchantedObject),
     /// "Regenerate this <permanent_type>."
     Regenerate(SourceObject),
     /// "Counter target <color> spell."
@@ -660,6 +664,7 @@ pub enum Keyword {
     FirstStrike,
     Flying,
     Reach,
+    Haste,
     Defender,
     Banding,
     Trample,
@@ -832,6 +837,13 @@ pub enum StaticAbility {
     /// Auras." — keyword-granting effect plus an Aura attachment
     /// restriction on the enchanted object.
     EnchantedHasKeywordAndCantBeEnchantedByOtherAuras {
+        object: EnchantedObject,
+        keyword: Keyword,
+    },
+    /// "Enchanted <object> can attack as though it had <keyword>." —
+    /// permission effect that grants an attack-enabling quality such as
+    /// haste for attack eligibility.
+    EnchantedCanAttackAsThoughItHad {
         object: EnchantedObject,
         keyword: Keyword,
     },

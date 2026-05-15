@@ -147,6 +147,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step_from_pair(pair)
         }
         Rule::activate_only_during_your_upkeep => Ok(Statement::ActivateOnlyDuringYourUpkeep),
+        Rule::activate_only_during_your_turn_and_only_once_each_turn => {
+            Ok(Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn)
+        }
         Rule::activate_only_during_your_turn => Ok(Statement::ActivateOnlyDuringYourTurn),
         Rule::activate_only_as_sorcery => Ok(Statement::ActivateOnlyAsSorcery),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
@@ -164,7 +167,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_loses_keyword
         | Rule::static_enchanted_loses_keyword_fragment
         | Rule::static_enchanted_is_basic_land_type
-        | Rule::static_enchanted_can_attack_as_though
+        | Rule::static_enchanted_can_attack_as_though_it_had
+        | Rule::static_enchanted_can_attack_as_though_it_didnt_have
         | Rule::static_you_control_enchanted
         | Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns
         | Rule::static_you_may_have_source_enter_as_copy
@@ -1400,6 +1404,7 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match pair.as_rule() {
         Rule::flying => Ok(Keyword::Flying),
         Rule::reach => Ok(Keyword::Reach),
+        Rule::haste => Ok(Keyword::Haste),
         Rule::first_strike => Ok(Keyword::FirstStrike),
         Rule::defender => Ok(Keyword::Defender),
         Rule::banding => Ok(Keyword::Banding),
@@ -2006,7 +2011,20 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 },
             )
         }
-        Rule::static_enchanted_can_attack_as_though => {
+        Rule::static_enchanted_can_attack_as_though_it_had => {
+            let mut inner = pair.into_inner();
+            let object_pair = inner
+                .next()
+                .expect("static_enchanted_can_attack begins with enchanted object");
+            let keyword_pair = inner
+                .next()
+                .expect("static_enchanted_can_attack names gained keyword");
+            Ok(StaticAbility::EnchantedCanAttackAsThoughItHad {
+                object: enchanted_object_from_pair(object_pair)?,
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
+        Rule::static_enchanted_can_attack_as_though_it_didnt_have => {
             let mut inner = pair.into_inner();
             let object_pair = inner
                 .next()
@@ -2224,6 +2242,14 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 .ok_or(ParseError::Internal("untap_source missing source_object"))?;
             Ok(ActivatedEffect::Untap(source_object_from_pair(
                 source_pair,
+            )?))
+        }
+        Rule::untap_enchanted_object => {
+            let object_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "untap_enchanted_object missing object",
+            ))?;
+            Ok(ActivatedEffect::UntapEnchanted(enchanted_object_from_pair(
+                object_pair,
             )?))
         }
         Rule::regenerate_source => {

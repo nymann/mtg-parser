@@ -179,3 +179,5 @@ mod ice_storm;
 mod icy_manipulator;
 #[path = "generated_patterns/illusionary_mask.rs"]
 mod illusionary_mask;
+#[path = "generated_patterns/instill_energy.rs"]
+mod instill_energy;

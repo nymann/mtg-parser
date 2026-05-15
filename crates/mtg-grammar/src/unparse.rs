@@ -303,6 +303,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::ActivateOnlyDuringYourTurn => {
             out.push_str("Activate only during your turn.");
         }
+        Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn => {
+            out.push_str("Activate only during your turn and only once each turn.");
+        }
         Statement::ActivateOnlyAsSorcery => {
             out.push_str("Activate only as a sorcery.");
         }
@@ -623,6 +626,7 @@ fn write_keyword(out: &mut String, kw: Keyword) {
         Keyword::FirstStrike => out.push_str("First strike"),
         Keyword::Flying => out.push_str("Flying"),
         Keyword::Reach => out.push_str("Reach"),
+        Keyword::Haste => out.push_str("Haste"),
         Keyword::Defender => out.push_str("Defender"),
         Keyword::Banding => out.push_str("Banding"),
         Keyword::Trample => out.push_str("Trample"),
@@ -741,6 +745,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
         ActivatedEffect::Untap(source) => {
             out.push_str("Untap ");
             write_source_object(out, *source);
+            out.push('.');
+        }
+        ActivatedEffect::UntapEnchanted(object) => {
+            out.push_str("Untap enchanted ");
+            write_enchanted_object(out, *object);
             out.push('.');
         }
         ActivatedEffect::Regenerate(source) => {
@@ -1038,6 +1047,13 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str(" has ");
             write_keyword_lowercase(out, *keyword);
             out.push_str(" and can't be enchanted by other Auras.");
+        }
+        StaticAbility::EnchantedCanAttackAsThoughItHad { object, keyword } => {
+            out.push_str("Enchanted ");
+            write_enchanted_object(out, *object);
+            out.push_str(" can attack as though it had ");
+            write_keyword_lowercase(out, *keyword);
+            out.push('.');
         }
         StaticAbility::EnchantedCanAttackAsThoughItDidntHave { object, keyword } => {
             out.push_str("Enchanted ");
@@ -1484,6 +1500,7 @@ fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
         Keyword::FirstStrike => out.push_str("first strike"),
         Keyword::Flying => out.push_str("flying"),
         Keyword::Reach => out.push_str("reach"),
+        Keyword::Haste => out.push_str("haste"),
         Keyword::Defender => out.push_str("defender"),
         Keyword::Banding => out.push_str("banding"),
         Keyword::Trample => out.push_str("trample"),

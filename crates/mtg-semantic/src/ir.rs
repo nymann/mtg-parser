@@ -171,6 +171,8 @@ pub enum CardEffect {
     ActivateOnlyDuringYourUpkeep,
     /// "Activate only during your turn."
     ActivateOnlyDuringYourTurn,
+    /// "Activate only during your turn and only once each turn."
+    ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn,
     /// "Activate only as a sorcery."
     ActivateOnlyAsSorcery,
     /// A modal spell choice with one or more printed modes.
