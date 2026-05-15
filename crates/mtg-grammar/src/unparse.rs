@@ -874,10 +874,8 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(color_name(*color));
             out.push_str(" spell.");
         }
-        ActivatedEffect::DestroyTargetPermanent { permanent_type } => {
-            out.push_str("Destroy target ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push('.');
+        ActivatedEffect::DestroyTargetPermanents { permanent_types } => {
+            write_destroy_target_permanent_types(out, permanent_types);
         }
         ActivatedEffect::DestroyAll { permanent_types } => {
             out.push_str("Destroy all ");

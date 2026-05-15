@@ -709,9 +709,9 @@ pub enum ActivatedEffect {
     CounterTargetColoredSpell {
         color: Color,
     },
-    /// "Destroy target <permanent_type>."
-    DestroyTargetPermanent {
-        permanent_type: PermanentType,
+    /// "Destroy target <permanent_type> [or <permanent_type>]."
+    DestroyTargetPermanents {
+        permanent_types: Vec<PermanentType>,
     },
     /// "Destroy target <creature_type>."
     DestroyTargetCreatureType {
