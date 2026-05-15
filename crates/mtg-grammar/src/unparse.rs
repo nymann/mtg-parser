@@ -2347,28 +2347,36 @@ fn write_target_permanent_until_end_of_turn(
     permanent_type: PermanentType,
     effect: &TargetPermanentEndOfTurnEffect,
 ) {
-    write_target_permanent_subject(out, permanent_type);
-    out.push(' ');
     match effect {
         TargetPermanentEndOfTurnEffect::Gets(modifier) => {
-            write_gets_mixed_pt_modifier_clause(out, *modifier);
-            write_until_end_of_turn(out);
+            write_until_end_of_turn_sentence(
+                out,
+                |out| write_target_permanent_subject(out, permanent_type),
+                |out| write_gets_mixed_pt_modifier_clause(out, *modifier),
+            );
         }
         TargetPermanentEndOfTurnEffect::GainsKeyword(keyword) => {
-            write_gains_keyword_clause(out, *keyword);
-            write_until_end_of_turn(out);
+            write_until_end_of_turn_sentence(
+                out,
+                |out| write_target_permanent_subject(out, permanent_type),
+                |out| write_gains_keyword_clause(out, *keyword),
+            );
         }
         TargetPermanentEndOfTurnEffect::GainsKeywordAndGets {
             keyword,
             modifier,
             definitions,
         } => {
-            write_gains_keyword_clause(out, *keyword);
-            out.push_str(" and gets ");
-            write_mixed_pt_modifier(out, *modifier);
-            out.push_str(" until end of turn, where ");
-            write_variable_definitions(out, definitions);
-            out.push('.');
+            write_until_end_of_turn_sentence_with_tail(
+                out,
+                |out| write_target_permanent_subject(out, permanent_type),
+                |out| {
+                    write_gains_keyword_clause(out, *keyword);
+                    out.push_str(" and gets ");
+                    write_mixed_pt_modifier(out, *modifier);
+                },
+                UntilEndOfTurnTail::Where(definitions),
+            );
         }
     }
 }
@@ -2383,14 +2391,42 @@ fn write_until_end_of_turn_sentence(
     write_subject: impl FnOnce(&mut String),
     write_effect: impl FnOnce(&mut String),
 ) {
+    write_until_end_of_turn_sentence_with_tail(
+        out,
+        write_subject,
+        write_effect,
+        UntilEndOfTurnTail::Period,
+    );
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum UntilEndOfTurnTail<'a> {
+    Period,
+    Where(&'a [VariableDefinition]),
+}
+
+fn write_until_end_of_turn_sentence_with_tail(
+    out: &mut String,
+    write_subject: impl FnOnce(&mut String),
+    write_effect: impl FnOnce(&mut String),
+    tail: UntilEndOfTurnTail<'_>,
+) {
     write_subject(out);
     out.push(' ');
     write_effect(out);
-    write_until_end_of_turn(out);
+    write_until_end_of_turn_tail(out, tail);
 }
 
-fn write_until_end_of_turn(out: &mut String) {
-    out.push_str(" until end of turn.");
+fn write_until_end_of_turn_tail(out: &mut String, tail: UntilEndOfTurnTail<'_>) {
+    out.push_str(" until end of turn");
+    match tail {
+        UntilEndOfTurnTail::Period => out.push('.'),
+        UntilEndOfTurnTail::Where(definitions) => {
+            out.push_str(", where ");
+            write_variable_definitions(out, definitions);
+            out.push('.');
+        }
+    }
 }
 
 fn write_gets_pt_modifier_clause(out: &mut String, modifier: PtModifier) {
