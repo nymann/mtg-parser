@@ -14,27 +14,11 @@ pub enum Statement {
     DestroyTargetCreature,
     /// "Regenerate target creature."
     RegenerateTargetCreature,
-    /// "<source name> deals X damage divided evenly, rounded down, among
-    /// any number of targets."
-    NamedSourceDealsVariableDamageDividedEvenlyRoundedDownAmongAnyNumberOfTargets {
+    /// "<source name> deals <amount> damage <recipients>."
+    NamedSourceDealsDamage {
         source_name: String,
-        amount: Variable,
-    },
-    /// "<source name> deals X damage to any target."
-    NamedSourceDealsVariableDamageToAnyTarget {
-        source_name: String,
-        amount: Variable,
-    },
-    /// "<source name> deals N damage to any target."
-    NamedSourceDealsDamageToAnyTarget {
-        source_name: String,
-        amount: u32,
-    },
-    /// "<source name> deals X damage to <recipient> and <recipient>."
-    NamedSourceDealsVariableDamageToDamageRecipients {
-        source_name: String,
-        amount: Variable,
-        recipients: Vec<DamageRecipient>,
+        amount: DamageAmount,
+        recipients: DamageRecipients,
     },
     /// "Prevent all combat damage that would be dealt this turn."
     PreventAllCombatDamageThisTurn,
@@ -321,6 +305,16 @@ pub enum DamageRecipient {
     EachCreatureWithoutKeyword { keyword: Keyword },
     /// "each player"
     EachPlayer,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamageRecipients {
+    /// "to any target"
+    AnyTarget,
+    /// "divided evenly, rounded down, among any number of targets"
+    DividedEvenlyRoundedDownAmongAnyNumberOfTargets,
+    /// "to <recipient> and <recipient>"
+    List(Vec<DamageRecipient>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

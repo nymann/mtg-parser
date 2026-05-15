@@ -50,10 +50,7 @@ sentence_statement = _{
   | destroy_target_permanent
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
   | regenerate_target_creature
-  | named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets
-  | named_source_deals_variable_damage_to_damage_recipients
-  | named_source_deals_damage_to_any_target
-  | named_source_deals_variable_damage_to_any_target
+  | named_source_deals_damage
   | prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
   | prevent_all_combat_damage_this_turn
   | spend_only_color_mana_on_variable
@@ -216,20 +213,23 @@ you_may_choose_new_targets_for_the_copy = {
 spell_type_choice = { spell_type ~ (^"or" ~ spell_type)* }
 spell_type = @{ ^"instant" | ^"sorcery" }
 
-named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets = {
-    proper_name ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"divided"
-  ~ ^"evenly" ~ "," ~ ^"rounded" ~ ^"down" ~ "," ~ ^"among"
-  ~ ^"any" ~ ^"number" ~ ^"of" ~ ^"targets" ~ "."
+named_source_deals_damage = {
+    proper_name ~ ^"deals" ~ named_source_damage_amount ~ ^"damage"
+  ~ named_source_damage_recipients ~ "."
 }
-named_source_deals_variable_damage_to_any_target = {
-    proper_name ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to" ~ ^"any" ~ ^"target" ~ "."
+named_source_damage_amount = { unsigned_number | variable_name }
+named_source_damage_recipients = {
+    named_source_damage_any_target
+  | named_source_damage_divided_evenly_rounded_down_among_any_number_of_targets
+  | named_source_damage_recipient_list
 }
-named_source_deals_damage_to_any_target = {
-    proper_name ~ ^"deals" ~ unsigned_number ~ ^"damage" ~ ^"to" ~ ^"any" ~ ^"target" ~ "."
+named_source_damage_any_target = { ^"to" ~ ^"any" ~ ^"target" }
+named_source_damage_divided_evenly_rounded_down_among_any_number_of_targets = {
+    ^"divided" ~ ^"evenly" ~ "," ~ ^"rounded" ~ ^"down" ~ ","
+  ~ ^"among" ~ ^"any" ~ ^"number" ~ ^"of" ~ ^"targets"
 }
-named_source_deals_variable_damage_to_damage_recipients = {
-    proper_name ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"
-  ~ damage_recipient ~ (^"and" ~ damage_recipient)+ ~ "."
+named_source_damage_recipient_list = {
+    ^"to" ~ damage_recipient ~ (^"and" ~ damage_recipient)+
 }
 prevent_all_combat_damage_this_turn = {
     ^"prevent" ~ ^"all" ~ ^"combat" ~ ^"damage" ~ ^"that"

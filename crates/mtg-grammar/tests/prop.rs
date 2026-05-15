@@ -7,10 +7,11 @@
 
 use mtg_grammar::{
     parse, unparse, ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount,
-    Color, DamageAmount, DamageLifeGainCap, DamageRecipient, EachPlayerAction, EnchantedObject,
-    ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode, PermanentType, PreventionRecipient,
-    PtModifier, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType,
-    Statement, StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
+    Color, DamageAmount, DamageLifeGainCap, DamageRecipient, DamageRecipients, EachPlayerAction,
+    EnchantedObject, ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode, PermanentType,
+    PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SourceObject, SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent,
+    TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -235,32 +236,31 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_mana_cost().prop_map(|mana| {
             Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst { mana }
         }),
-        Just(
-            Statement::NamedSourceDealsVariableDamageDividedEvenlyRoundedDownAmongAnyNumberOfTargets {
-                source_name: "Fireball".to_string(),
-                amount: Variable::X,
-            }
-        ),
-        Just(Statement::NamedSourceDealsVariableDamageToAnyTarget {
+        Just(Statement::NamedSourceDealsDamage {
+            source_name: "Fireball".to_string(),
+            amount: DamageAmount::Variable(Variable::X),
+            recipients: DamageRecipients::DividedEvenlyRoundedDownAmongAnyNumberOfTargets,
+        }),
+        Just(Statement::NamedSourceDealsDamage {
             source_name: "Disintegrate".to_string(),
-            amount: Variable::X,
+            amount: DamageAmount::Variable(Variable::X),
+            recipients: DamageRecipients::AnyTarget,
         }),
-        Just(Statement::NamedSourceDealsDamageToAnyTarget {
+        Just(Statement::NamedSourceDealsDamage {
             source_name: "Lightning Bolt".to_string(),
-            amount: 3,
+            amount: DamageAmount::Number(3),
+            recipients: DamageRecipients::AnyTarget,
         }),
-        Just(
-            Statement::NamedSourceDealsVariableDamageToDamageRecipients {
-                source_name: "Earthquake".to_string(),
-                amount: Variable::X,
-                recipients: vec![
-                    DamageRecipient::EachCreatureWithoutKeyword {
-                        keyword: Keyword::Flying,
-                    },
-                    DamageRecipient::EachPlayer,
-                ],
-            }
-        ),
+        Just(Statement::NamedSourceDealsDamage {
+            source_name: "Earthquake".to_string(),
+            amount: DamageAmount::Variable(Variable::X),
+            recipients: DamageRecipients::List(vec![
+                DamageRecipient::EachCreatureWithoutKeyword {
+                    keyword: Keyword::Flying,
+                },
+                DamageRecipient::EachPlayer,
+            ]),
+        }),
         Just(Statement::PreventAllCombatDamageThisTurn),
         (arb_color(), arb_variable()).prop_map(|(color, variable)| {
             Statement::SpendOnlyColorManaOnVariable { color, variable }
@@ -278,8 +278,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             amount: DamageAmount::Number(amount),
         }),
         prop::collection::vec(arb_simple_keyword(), 2..5).prop_map(Statement::KeywordList),
-        prop::collection::vec(arb_simple_keyword(), 2..5)
-            .prop_map(Statement::SemicolonKeywordList),
+        prop::collection::vec(arb_simple_keyword(), 2..5).prop_map(Statement::SemicolonKeywordList),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
                 permanent_type,
@@ -290,21 +289,18 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 permanent_types: vec![a, b],
             }
         }),
-        arb_noncreature_permanent_type().prop_map(|permanent_type| {
-            Statement::DestroyTargetPermanent { permanent_type }
-        }),
-        prop::collection::vec(arb_permanent_type(), 1..5).prop_map(|permanent_types| {
-            Statement::DestroyAll { permanent_types }
-        }),
+        arb_noncreature_permanent_type()
+            .prop_map(|permanent_type| { Statement::DestroyTargetPermanent { permanent_type } }),
+        prop::collection::vec(arb_permanent_type(), 1..5)
+            .prop_map(|permanent_types| { Statement::DestroyAll { permanent_types } }),
         (arb_permanent_type(), arb_permanent_type()).prop_map(|(controller_of, attach_to)| {
             Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
                 controller_of,
                 attach_to,
             }
         }),
-        arb_basic_land_type().prop_map(|basic_land_type| {
-            Statement::DestroyAllBasicLands { basic_land_type }
-        }),
+        arb_basic_land_type()
+            .prop_map(|basic_land_type| { Statement::DestroyAllBasicLands { basic_land_type } }),
         (arb_permanent_type(), arb_pt_modifier()).prop_map(|(permanent_type, modifier)| {
             Statement::TargetPermanentGetsUntilEndOfTurn {
                 permanent_type,
@@ -331,8 +327,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }
         }),
-        arb_card_count()
-            .prop_map(|count| Statement::TargetPlayerDiscardsCardsAtRandom { count }),
+        arb_card_count().prop_map(|count| Statement::TargetPlayerDiscardsCardsAtRandom { count }),
         arb_card_count().prop_map(|count| {
             Statement::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder { count }
         }),

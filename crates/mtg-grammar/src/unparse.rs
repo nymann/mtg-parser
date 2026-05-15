@@ -4,12 +4,13 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
     CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
-    EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus,
-    OptionalCost, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    SpellType, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    DamageRecipients, EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction,
+    InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TriggerEffect,
+    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -30,45 +31,16 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
         Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
-        Statement::NamedSourceDealsVariableDamageDividedEvenlyRoundedDownAmongAnyNumberOfTargets {
-            source_name,
-            amount,
-        } => {
-            out.push_str(source_name);
-            out.push_str(" deals ");
-            out.push_str(variable_name(*amount));
-            out.push_str(
-                " damage divided evenly, rounded down, among any number of targets.",
-            );
-        }
-        Statement::NamedSourceDealsVariableDamageToAnyTarget {
-            source_name,
-            amount,
-        } => {
-            out.push_str(source_name);
-            out.push_str(" deals ");
-            out.push_str(variable_name(*amount));
-            out.push_str(" damage to any target.");
-        }
-        Statement::NamedSourceDealsDamageToAnyTarget {
-            source_name,
-            amount,
-        } => {
-            out.push_str(source_name);
-            out.push_str(" deals ");
-            write!(out, "{amount}").expect("write to String never fails");
-            out.push_str(" damage to any target.");
-        }
-        Statement::NamedSourceDealsVariableDamageToDamageRecipients {
+        Statement::NamedSourceDealsDamage {
             source_name,
             amount,
             recipients,
         } => {
             out.push_str(source_name);
             out.push_str(" deals ");
-            out.push_str(variable_name(*amount));
-            out.push_str(" damage to ");
-            write_damage_recipients(out, recipients);
+            write_damage_amount(out, *amount);
+            out.push_str(" damage");
+            write_named_source_damage_recipients(out, recipients);
             out.push('.');
         }
         Statement::PreventAllCombatDamageThisTurn => {
@@ -158,7 +130,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" at random.");
         }
         Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw => {
-            out.push_str("If you would draw a card during your draw step, instead you may skip that draw.");
+            out.push_str(
+                "If you would draw a card during your draw step, instead you may skip that draw.",
+            );
         }
         Statement::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder { count } => {
             out.push_str("Look at the top ");
@@ -262,7 +236,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
             keywords,
         } => {
-            out.push_str("If you do, until your next turn, you can't be attacked except by creatures with ");
+            out.push_str(
+                "If you do, until your next turn, you can't be attacked except by creatures with ",
+            );
             write_keyword_and_or_list(out, keywords);
             out.push('.');
         }
@@ -487,6 +463,19 @@ fn write_damage_recipients(out: &mut String, recipients: &[DamageRecipient]) {
             out.push_str(" and ");
         }
         write_damage_recipient(out, *recipient);
+    }
+}
+
+fn write_named_source_damage_recipients(out: &mut String, recipients: &DamageRecipients) {
+    match recipients {
+        DamageRecipients::AnyTarget => out.push_str(" to any target"),
+        DamageRecipients::DividedEvenlyRoundedDownAmongAnyNumberOfTargets => {
+            out.push_str(" divided evenly, rounded down, among any number of targets");
+        }
+        DamageRecipients::List(recipients) => {
+            out.push_str(" to ");
+            write_damage_recipients(out, recipients);
+        }
     }
 }
 

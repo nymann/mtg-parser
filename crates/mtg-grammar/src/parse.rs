@@ -6,12 +6,13 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
     CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
-    EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus,
-    OptionalCost, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    SpellType, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    DamageRecipients, EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction,
+    InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TriggerEffect,
+    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -75,18 +76,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
-        Rule::named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets => {
-            named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets_from_pair(pair)
-        }
-        Rule::named_source_deals_variable_damage_to_any_target => {
-            named_source_deals_variable_damage_to_any_target_from_pair(pair)
-        }
-        Rule::named_source_deals_damage_to_any_target => {
-            named_source_deals_damage_to_any_target_from_pair(pair)
-        }
-        Rule::named_source_deals_variable_damage_to_damage_recipients => {
-            named_source_deals_variable_damage_to_damage_recipients_from_pair(pair)
-        }
+        Rule::named_source_deals_damage => named_source_deals_damage_from_pair(pair),
         Rule::prevent_all_combat_damage_this_turn => Ok(Statement::PreventAllCombatDamageThisTurn),
         Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
         Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
@@ -746,27 +736,7 @@ fn this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair
     )
 }
 
-fn named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets_from_pair(
-    pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
-    let mut inner = pair.into_inner();
-    let source_pair = inner.next().ok_or(ParseError::Internal(
-        "divided variable damage missing source name",
-    ))?;
-    let amount_pair = inner.next().ok_or(ParseError::Internal(
-        "divided variable damage missing amount",
-    ))?;
-    Ok(
-        Statement::NamedSourceDealsVariableDamageDividedEvenlyRoundedDownAmongAnyNumberOfTargets {
-            source_name: source_pair.as_str().to_string(),
-            amount: variable_from_str(amount_pair.as_str())?,
-        },
-    )
-}
-
-fn named_source_deals_variable_damage_to_any_target_from_pair(
-    pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
+fn named_source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let mut inner = pair.into_inner();
     let source_pair = inner
         .next()
@@ -774,52 +744,53 @@ fn named_source_deals_variable_damage_to_any_target_from_pair(
     let amount_pair = inner
         .next()
         .ok_or(ParseError::Internal("named damage missing amount"))?;
-    Ok(Statement::NamedSourceDealsVariableDamageToAnyTarget {
+    let recipients_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("named damage missing recipients"))?;
+    Ok(Statement::NamedSourceDealsDamage {
         source_name: source_pair.as_str().to_string(),
-        amount: variable_from_str(amount_pair.as_str())?,
+        amount: named_source_damage_amount_from_pair(amount_pair)?,
+        recipients: named_source_damage_recipients_from_pair(recipients_pair)?,
     })
 }
 
-fn named_source_deals_damage_to_any_target_from_pair(
-    pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
-    let mut inner = pair.into_inner();
-    let source_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("named damage missing source name"))?;
-    let amount_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("named damage missing amount"))?;
-    let amount = amount_pair
-        .as_str()
-        .parse::<u32>()
-        .map_err(|_| ParseError::Internal("named damage amount"))?;
-    Ok(Statement::NamedSourceDealsDamageToAnyTarget {
-        source_name: source_pair.as_str().to_string(),
-        amount,
-    })
+fn named_source_damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
+    let inner = pair.into_inner().next().ok_or(ParseError::Internal(
+        "named damage amount missing inner rule",
+    ))?;
+    match inner.as_rule() {
+        Rule::unsigned_number => {
+            let amount = inner
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("named damage amount"))?;
+            Ok(DamageAmount::Number(amount))
+        }
+        Rule::variable_name => Ok(DamageAmount::Variable(variable_from_str(inner.as_str())?)),
+        _ => Err(ParseError::Internal("named damage amount")),
+    }
 }
 
-fn named_source_deals_variable_damage_to_damage_recipients_from_pair(
+fn named_source_damage_recipients_from_pair(
     pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
-    let mut inner = pair.into_inner();
-    let source_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("named damage missing source name"))?;
-    let amount_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("named damage missing amount"))?;
-    let recipients = inner
-        .map(damage_recipient_from_pair)
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(
-        Statement::NamedSourceDealsVariableDamageToDamageRecipients {
-            source_name: source_pair.as_str().to_string(),
-            amount: variable_from_str(amount_pair.as_str())?,
-            recipients,
-        },
-    )
+) -> Result<DamageRecipients, ParseError> {
+    let inner = pair.into_inner().next().ok_or(ParseError::Internal(
+        "named damage recipients missing inner rule",
+    ))?;
+    match inner.as_rule() {
+        Rule::named_source_damage_any_target => Ok(DamageRecipients::AnyTarget),
+        Rule::named_source_damage_divided_evenly_rounded_down_among_any_number_of_targets => {
+            Ok(DamageRecipients::DividedEvenlyRoundedDownAmongAnyNumberOfTargets)
+        }
+        Rule::named_source_damage_recipient_list => {
+            let recipients = inner
+                .into_inner()
+                .map(damage_recipient_from_pair)
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(DamageRecipients::List(recipients))
+        }
+        _ => Err(ParseError::Internal("named damage recipients")),
+    }
 }
 
 fn damage_recipient_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient, ParseError> {
