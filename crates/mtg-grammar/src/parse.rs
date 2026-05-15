@@ -134,6 +134,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             target_spell_or_permanent_becomes_color_from_pair(pair)
         }
         Rule::target_permanent_gets_until_eot => target_permanent_gets_until_eot_from_pair(pair),
+        Rule::target_permanent_gains_keyword_until_eot => {
+            target_permanent_gains_keyword_until_eot_from_pair(pair)
+        }
         Rule::target_permanent_gains_keyword_and_gets_eot => {
             target_permanent_gains_keyword_and_gets_eot_from_pair(pair)
         }
@@ -444,6 +447,22 @@ fn target_permanent_gains_keyword_and_gets_eot_from_pair(
             definitions: where_clause_from_pair(where_pair)?,
         },
     )
+}
+
+fn target_permanent_gains_keyword_until_eot_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let pt_pair = inner.next().ok_or(ParseError::Internal(
+        "target permanent gains keyword missing permanent_type",
+    ))?;
+    let keyword_pair = inner.next().ok_or(ParseError::Internal(
+        "target permanent gains keyword missing keyword",
+    ))?;
+    Ok(Statement::TargetPermanentGainsKeywordUntilEndOfTurn {
+        permanent_type: permanent_type_from_pair(pt_pair)?,
+        keyword: keyword_from_inner_pair(keyword_pair)?,
+    })
 }
 
 fn target_permanent_gets_until_eot_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {

@@ -159,6 +159,21 @@ fn lowers_target_permanent_gets_mixed_until_end_of_turn() {
 }
 
 #[test]
+fn lowers_target_permanent_gains_keyword_until_end_of_turn() {
+    assert_eq!(
+        lower(&Statement::TargetPermanentGainsKeywordUntilEndOfTurn {
+            permanent_type: PermanentType::Creature,
+            keyword: Keyword::Flying,
+        })
+        .unwrap(),
+        CardEffect::TargetPermanentGainsKeywordUntilEndOfTurn {
+            permanent_type: PermanentType::Creature,
+            keyword: Keyword::Flying,
+        },
+    );
+}
+
+#[test]
 fn lowers_prevent_all_combat_damage_this_turn() {
     assert_eq!(
         lower(&Statement::PreventAllCombatDamageThisTurn).unwrap(),

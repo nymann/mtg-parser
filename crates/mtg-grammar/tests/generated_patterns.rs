@@ -195,3 +195,5 @@ mod jade_statue;
 mod jayemdae_tome;
 #[path = "generated_patterns/juggernaut.rs"]
 mod juggernaut;
+#[path = "generated_patterns/jump.rs"]
+mod jump;

@@ -237,6 +237,16 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_mixed_pt_modifier(out, *modifier);
             out.push_str(" until end of turn.");
         }
+        Statement::TargetPermanentGainsKeywordUntilEndOfTurn {
+            permanent_type,
+            keyword,
+        } => {
+            out.push_str("Target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" gains ");
+            write_keyword_lowercase(out, *keyword);
+            out.push_str(" until end of turn.");
+        }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             permanent_type,
             keyword,

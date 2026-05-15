@@ -279,6 +279,12 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 modifier,
             }
         }),
+        (arb_permanent_type(), arb_evasion_keyword()).prop_map(|(permanent_type, keyword)| {
+            Statement::TargetPermanentGainsKeywordUntilEndOfTurn {
+                permanent_type,
+                keyword,
+            }
+        }),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }
         }),
