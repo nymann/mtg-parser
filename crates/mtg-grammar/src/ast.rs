@@ -136,6 +136,12 @@ pub enum Statement {
         permanent_type: PermanentType,
         modifier: PtModifier,
     },
+    /// "Target <type> gets <modifier> until end of turn.", where the
+    /// modifier may contain a printed variable.
+    TargetPermanentGetsMixedUntilEndOfTurn {
+        permanent_type: PermanentType,
+        modifier: MixedPtModifier,
+    },
     /// "Target <type> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
     TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {

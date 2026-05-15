@@ -176,3 +176,5 @@ mod guardian_angel;
 mod healing_salve;
 #[path = "generated/helm_of_chatzuk.rs"]
 mod helm_of_chatzuk;
+#[path = "generated/howl_from_beyond.rs"]
+mod howl_from_beyond;

@@ -9,8 +9,8 @@ use mtg_grammar::{
     parse, unparse, ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount,
     Color, DamageAmount, DamageLifeGainCap, DamageRecipient, EachPlayerAction, EnchantedObject,
     ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode, PermanentType, PreventionRecipient,
-    PtModifier, Sign, SignedNumber, SourceObject, SpellType, Statement, StaticAbility,
-    TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
+    PtModifier, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType,
+    Statement, StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -81,6 +81,30 @@ fn arb_pt_modifier() -> impl Strategy<Value = PtModifier> {
 
 fn arb_variable() -> impl Strategy<Value = Variable> {
     prop_oneof![Just(Variable::X), Just(Variable::Y)]
+}
+
+fn arb_signed_variable() -> impl Strategy<Value = SignedVariable> {
+    (
+        prop_oneof![Just(Sign::Plus), Just(Sign::Minus)],
+        arb_variable(),
+    )
+        .prop_map(|(sign, variable)| SignedVariable { sign, variable })
+}
+
+fn arb_signed_pt_component() -> impl Strategy<Value = SignedPtComponent> {
+    prop_oneof![
+        arb_signed_number().prop_map(SignedPtComponent::Number),
+        arb_signed_variable().prop_map(SignedPtComponent::Variable),
+    ]
+}
+
+fn arb_mixed_pt_modifier() -> impl Strategy<Value = mtg_grammar::MixedPtModifier> {
+    (arb_signed_pt_component(), arb_signed_pt_component())
+        .prop_map(|(power, toughness)| mtg_grammar::MixedPtModifier { power, toughness })
+        .prop_filter("mixed P/T modifier contains a variable", |modifier| {
+            matches!(modifier.power, SignedPtComponent::Variable(_))
+                || matches!(modifier.toughness, SignedPtComponent::Variable(_))
+        })
 }
 
 fn arb_damage_life_gain_cap() -> impl Strategy<Value = DamageLifeGainCap> {
@@ -229,6 +253,12 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         }),
         (arb_permanent_type(), arb_pt_modifier()).prop_map(|(permanent_type, modifier)| {
             Statement::TargetPermanentGetsUntilEndOfTurn {
+                permanent_type,
+                modifier,
+            }
+        }),
+        (arb_permanent_type(), arb_mixed_pt_modifier()).prop_map(|(permanent_type, modifier)| {
+            Statement::TargetPermanentGetsMixedUntilEndOfTurn {
                 permanent_type,
                 modifier,
             }

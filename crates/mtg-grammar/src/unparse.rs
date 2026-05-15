@@ -200,6 +200,16 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_pt_modifier(out, *modifier);
             out.push_str(" until end of turn.");
         }
+        Statement::TargetPermanentGetsMixedUntilEndOfTurn {
+            permanent_type,
+            modifier,
+        } => {
+            out.push_str("Target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" gets ");
+            write_mixed_pt_modifier(out, *modifier);
+            out.push_str(" until end of turn.");
+        }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             permanent_type,
             keyword,

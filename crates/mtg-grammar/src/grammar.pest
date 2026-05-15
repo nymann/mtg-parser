@@ -968,7 +968,8 @@ target_spell_or_permanent_becomes_color = {
 }
 
 target_permanent_gets_until_eot = {
-    ^"target" ~ permanent_type ~ ^"gets" ~ pt_modifier
+    // Variable pump spells can print mixed modifiers such as "+X/+0".
+    ^"target" ~ permanent_type ~ ^"gets" ~ mixed_pt_modifier
   ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
 }
 

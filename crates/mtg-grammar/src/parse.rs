@@ -431,10 +431,20 @@ fn target_permanent_gets_until_eot_from_pair(pair: Pair<Rule>) -> Result<Stateme
     let modifier_pair = inner
         .next()
         .ok_or(ParseError::Internal("target gets missing modifier"))?;
-    Ok(Statement::TargetPermanentGetsUntilEndOfTurn {
-        permanent_type: permanent_type_from_pair(pt_pair)?,
-        modifier: pt_modifier_from_pair(modifier_pair)?,
-    })
+    let permanent_type = permanent_type_from_pair(pt_pair)?;
+    let modifier = mixed_pt_modifier_from_pair(modifier_pair)?;
+    match (modifier.power, modifier.toughness) {
+        (SignedPtComponent::Number(power), SignedPtComponent::Number(toughness)) => {
+            Ok(Statement::TargetPermanentGetsUntilEndOfTurn {
+                permanent_type,
+                modifier: PtModifier { power, toughness },
+            })
+        }
+        _ => Ok(Statement::TargetPermanentGetsMixedUntilEndOfTurn {
+            permanent_type,
+            modifier,
+        }),
+    }
 }
 
 fn target_spell_or_permanent_becomes_color_from_pair(

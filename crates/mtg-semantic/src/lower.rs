@@ -140,6 +140,13 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             permanent_type: *permanent_type,
             modifier: *modifier,
         },
+        Statement::TargetPermanentGetsMixedUntilEndOfTurn {
+            permanent_type,
+            modifier,
+        } => CardEffect::TargetPermanentGetsMixedUntilEndOfTurn {
+            permanent_type: *permanent_type,
+            modifier: *modifier,
+        },
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             permanent_type,
             keyword,

@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 150,
+  "passing": 151,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -350,8 +350,7 @@
       "status": "pass"
     },
     "lea/Howl from Beyond": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:22\n  |\n1 | Target creature gets +X/+0 until end of turn.\n  |                      ^---\n  |\n  = expected signed_number"
+      "status": "pass"
     },
     "lea/Howling Mine": {
       "status": "fail",

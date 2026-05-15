@@ -2,7 +2,8 @@
 
 use mtg_grammar::{
     BasicLandType, DamageAmount, ManaCost, ManaSymbol, PermanentType, PreventionRecipient,
-    PtModifier, Sign, SignedNumber, SourceObject, Statement,
+    PtModifier, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement,
+    Variable,
 };
 use mtg_semantic::{lower, CardEffect, ManaValue};
 
@@ -118,6 +119,28 @@ fn lowers_target_permanent_gets_until_end_of_turn() {
                 power: signed(Sign::Plus, 3),
                 toughness: signed(Sign::Plus, 3),
             },
+        },
+    );
+}
+
+#[test]
+fn lowers_target_permanent_gets_mixed_until_end_of_turn() {
+    let modifier = mtg_grammar::MixedPtModifier {
+        power: SignedPtComponent::Variable(SignedVariable {
+            sign: Sign::Plus,
+            variable: Variable::X,
+        }),
+        toughness: SignedPtComponent::Number(signed(Sign::Plus, 0)),
+    };
+    assert_eq!(
+        lower(&Statement::TargetPermanentGetsMixedUntilEndOfTurn {
+            permanent_type: PermanentType::Creature,
+            modifier,
+        })
+        .unwrap(),
+        CardEffect::TargetPermanentGetsMixedUntilEndOfTurn {
+            permanent_type: PermanentType::Creature,
+            modifier,
         },
     );
 }
