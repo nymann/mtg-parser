@@ -349,24 +349,15 @@ impl Statement {
     pub(crate) fn damage_prevention_effect(
         effect: DamagePreventionEffect<PreventionRecipient>,
     ) -> Self {
-        match (
-            effect.amount,
-            effect.kind,
-            effect.recipient,
-            effect.duration,
-        ) {
-            (
-                DamagePreventionAmount::All,
-                Some(DamageKind::CombatDamage),
-                None,
-                DamagePreventionDuration::ThisTurn,
-            ) => Statement::PreventAllCombatDamageThisTurn,
-            _ => effect.into_next_this_turn().map_or(
+        if effect == DamagePreventionEffect::all_combat_this_turn() {
+            Statement::PreventAllCombatDamageThisTurn
+        } else {
+            effect.into_next_this_turn().map_or(
                 Statement::PreventDamageThisTurn { effect },
                 |prevention| Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
                     prevention,
                 },
-            ),
+            )
         }
     }
 }
@@ -390,6 +381,17 @@ impl<R> DamagePreventionEffect<R> {
                 DamagePreventionDuration::ThisTurn,
             ) => Some(DamagePrevention { amount, recipient }),
             _ => None,
+        }
+    }
+}
+
+impl DamagePreventionEffect<PreventionRecipient> {
+    pub(crate) fn all_combat_this_turn() -> Self {
+        Self {
+            amount: DamagePreventionAmount::All,
+            kind: Some(DamageKind::CombatDamage),
+            recipient: None,
+            duration: DamagePreventionDuration::ThisTurn,
         }
     }
 }

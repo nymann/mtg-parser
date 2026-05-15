@@ -1013,7 +1013,7 @@ fn next_prevention_recipient_damage_from_pair(
         Rule::damage_prevention_effect => damage_prevention_effect_from_pair(pair)?,
         Rule::prevent_damage_this_turn
         | Rule::prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
-            damage_prevention_effect_from_prevent_damage_this_turn_pair(pair)?
+            damage_prevention_effect_from_timed_prevention_pair(pair)?
         }
         _ => return Err(ParseError::Internal("prevent next damage rule")),
     };
@@ -1022,7 +1022,7 @@ fn next_prevention_recipient_damage_from_pair(
         .ok_or(ParseError::Internal("prevent next damage shape"))
 }
 
-fn damage_prevention_effect_from_prevent_damage_this_turn_pair(
+fn damage_prevention_effect_from_timed_prevention_pair(
     pair: Pair<Rule>,
 ) -> Result<DamagePreventionEffect<PreventionRecipient>, ParseError> {
     let mut amount = None;
@@ -1064,7 +1064,7 @@ fn damage_prevention_effect_from_pair(
     let inner = only_inner(pair, "damage prevention effect missing inner rule")?;
     match inner.as_rule() {
         Rule::prevent_damage_this_turn => {
-            damage_prevention_effect_from_prevent_damage_this_turn_pair(inner)
+            damage_prevention_effect_from_timed_prevention_pair(inner)
         }
         _ => Err(ParseError::Internal("damage prevention effect")),
     }

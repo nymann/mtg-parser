@@ -39,15 +39,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::PreventDamageThisTurn { effect } => write_damage_prevention_effect(out, *effect),
         Statement::PreventAllCombatDamageThisTurn => {
-            write_damage_prevention_effect(
-                out,
-                DamagePreventionEffect {
-                    amount: DamagePreventionAmount::All,
-                    kind: Some(DamageKind::CombatDamage),
-                    recipient: None,
-                    duration: DamagePreventionDuration::ThisTurn,
-                },
-            );
+            write_damage_prevention_effect(out, DamagePreventionEffect::all_combat_this_turn());
         }
         Statement::SpendOnlyColorManaOnVariable { color, variable } => {
             out.push_str("Spend only ");
@@ -692,7 +684,10 @@ fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
     out.push_str("If you do, ");
     match effect {
         IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
-            write_prevent_next_damage_to_recipient_lowercase(out, prevention)
+            write_damage_prevention_effect_lowercase(
+                out,
+                DamagePreventionEffect::next_this_turn(prevention),
+            );
         }
         IfYouDoEffect::AddMana { mana } => {
             out.push_str("add ");
@@ -717,22 +712,26 @@ fn write_prevent_next_damage_to_recipient(
     write_damage_prevention_effect(out, DamagePreventionEffect::next_this_turn(prevention));
 }
 
-fn write_prevent_next_damage_to_recipient_lowercase(
-    out: &mut String,
-    prevention: DamagePrevention<PreventionRecipient>,
-) {
-    out.push_str("prevent the next ");
-    write_damage_amount(out, prevention.amount);
-    out.push_str(" damage that would be dealt to ");
-    write_prevention_recipient(out, prevention.recipient);
-    out.push_str(" this turn.");
-}
-
 fn write_damage_prevention_effect(
     out: &mut String,
     effect: DamagePreventionEffect<PreventionRecipient>,
 ) {
-    out.push_str("Prevent ");
+    write_damage_prevention_effect_with_prefix(out, effect, "Prevent ");
+}
+
+fn write_damage_prevention_effect_lowercase(
+    out: &mut String,
+    effect: DamagePreventionEffect<PreventionRecipient>,
+) {
+    write_damage_prevention_effect_with_prefix(out, effect, "prevent ");
+}
+
+fn write_damage_prevention_effect_with_prefix(
+    out: &mut String,
+    effect: DamagePreventionEffect<PreventionRecipient>,
+    prefix: &str,
+) {
+    out.push_str(prefix);
     match effect.amount {
         DamagePreventionAmount::All => out.push_str("all "),
         DamagePreventionAmount::Next(amount) => {
