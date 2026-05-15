@@ -202,3 +202,5 @@ mod island_sanctuary;
 mod jade_monolith;
 #[path = "generated/jade_statue.rs"]
 mod jade_statue;
+#[path = "generated/jayemdae_tome.rs"]
+mod jayemdae_tome;

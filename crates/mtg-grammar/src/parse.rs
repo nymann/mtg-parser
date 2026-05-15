@@ -2344,6 +2344,24 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             })
         }
         Rule::look_at_target_players_hand => Ok(ActivatedEffect::LookAtTargetPlayersHand),
+        Rule::activated_draw_cards => {
+            let count_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("activated draw missing count"))?;
+            let count = match count_pair.as_rule() {
+                Rule::activated_draw_one_card => CardCount::Number(1),
+                Rule::activated_draw_counted_cards => {
+                    let draw_count_pair = count_pair
+                        .into_inner()
+                        .next()
+                        .ok_or(ParseError::Internal("activated draw counted missing count"))?;
+                    card_count_from_pair(draw_count_pair)?
+                }
+                _ => return Err(ParseError::Internal("activated draw count")),
+            };
+            Ok(ActivatedEffect::DrawCards { count })
+        }
         Rule::target_player_discards_cards => {
             let count_pair = pair
                 .into_inner()

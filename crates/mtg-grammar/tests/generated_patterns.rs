@@ -191,3 +191,5 @@ mod island_sanctuary;
 mod jade_monolith;
 #[path = "generated_patterns/jade_statue.rs"]
 mod jade_statue;
+#[path = "generated_patterns/jayemdae_tome.rs"]
+mod jayemdae_tome;

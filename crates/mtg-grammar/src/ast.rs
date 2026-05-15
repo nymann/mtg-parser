@@ -584,6 +584,10 @@ pub enum ActivatedEffect {
     },
     /// "Look at target player's hand."
     LookAtTargetPlayersHand,
+    /// "Draw N cards."
+    DrawCards {
+        count: CardCount,
+    },
     /// "Target player discards N cards."
     TargetPlayerDiscardsCards {
         count: CardCount,

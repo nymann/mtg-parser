@@ -789,6 +789,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
         ActivatedEffect::LookAtTargetPlayersHand => {
             out.push_str("Look at target player's hand.");
         }
+        ActivatedEffect::DrawCards { count } => {
+            out.push_str("Draw ");
+            write_card_count_object(out, *count);
+            out.push('.');
+        }
         ActivatedEffect::TargetPlayerDiscardsCards { count } => {
             out.push_str("Target player discards ");
             write_discard_count(out, *count);
@@ -926,6 +931,10 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
 }
 
 fn write_discard_count(out: &mut String, count: CardCount) {
+    write_card_count_object(out, count);
+}
+
+fn write_card_count_object(out: &mut String, count: CardCount) {
     match count {
         CardCount::Number(1) => out.push_str("a card"),
         CardCount::Number(n) => {
