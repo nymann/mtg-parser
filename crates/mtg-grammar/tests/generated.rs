@@ -160,3 +160,5 @@ mod gaea_s_liege;
 mod gauntlet_of_might;
 #[path = "generated/giant_growth.rs"]
 mod giant_growth;
+#[path = "generated/giant_spider.rs"]
+mod giant_spider;

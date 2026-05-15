@@ -1185,6 +1185,7 @@ fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, 
 fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match pair.as_rule() {
         Rule::flying => Ok(Keyword::Flying),
+        Rule::reach => Ok(Keyword::Reach),
         Rule::first_strike => Ok(Keyword::FirstStrike),
         Rule::defender => Ok(Keyword::Defender),
         Rule::banding => Ok(Keyword::Banding),

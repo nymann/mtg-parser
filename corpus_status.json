@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 142,
+  "passing": 143,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -302,8 +302,7 @@
       "status": "pass"
     },
     "lea/Giant Spider": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Reach\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Glasses of Urza": {
       "status": "fail",

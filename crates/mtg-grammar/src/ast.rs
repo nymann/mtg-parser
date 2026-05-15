@@ -557,6 +557,7 @@ pub enum PhysicalAction {
 pub enum Keyword {
     FirstStrike,
     Flying,
+    Reach,
     Defender,
     Banding,
     Trample,

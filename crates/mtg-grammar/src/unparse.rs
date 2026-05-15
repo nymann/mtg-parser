@@ -523,6 +523,7 @@ fn write_keyword(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::FirstStrike => out.push_str("First strike"),
         Keyword::Flying => out.push_str("Flying"),
+        Keyword::Reach => out.push_str("Reach"),
         Keyword::Defender => out.push_str("Defender"),
         Keyword::Banding => out.push_str("Banding"),
         Keyword::Trample => out.push_str("Trample"),
@@ -1301,6 +1302,7 @@ fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::FirstStrike => out.push_str("first strike"),
         Keyword::Flying => out.push_str("flying"),
+        Keyword::Reach => out.push_str("reach"),
         Keyword::Defender => out.push_str("defender"),
         Keyword::Banding => out.push_str("banding"),
         Keyword::Trample => out.push_str("trample"),
