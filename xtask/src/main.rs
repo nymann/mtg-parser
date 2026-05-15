@@ -12,6 +12,7 @@ mod flow;
 mod grammar_fix;
 mod next_card;
 mod paths;
+mod rules_split;
 mod testrun;
 mod tui;
 
@@ -31,6 +32,9 @@ Commands:
               [--max-grammar-left N]  tracked set has at most N actionable failures.
   refresh-corpus [--set CODE] Force re-fetch a set from Scryfall, bypassing the cache.
                               Without --set, refreshes every set tracked by `corpus`.
+  rules-split                 Parse resources/comprehensive_rules.txt and emit a
+                              browsable tree under resources/rules/. Run `just rules`
+                              first to fetch the source document.
   grammar-fix [--set CODE]    Orchestrated loop: next-card → agent → tier-1/2 →
               [--max-iterations N]  corpus diff → commit. Defaults: --set lea,
               [--dry-run] [--allow-dirty]  --max-iterations 0 (unbounded). --dry-run builds the
@@ -85,6 +89,7 @@ fn main() -> ExitCode {
         Some("corpus-add-set") => corpus_cmd::add_set(&args[1..]),
         Some("corpus-advance") => corpus_cmd::advance(&args[1..]),
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),
+        Some("rules-split") => rules_split::run(&args[1..]),
         Some("grammar-fix") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => grammar_fix::run(&args[1..]),
             Ok(Ui::Tui) => match grammar_fix::Options::parse(&args[1..]) {

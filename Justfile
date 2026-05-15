@@ -1,5 +1,51 @@
 set shell := ["sh", "-cu"]
 
+# Default WotC URL. Pinned per published version — update by passing url=...
+# Find new versions at https://magic.wizards.com/en/rules
+rules_url := "https://media.wizards.com/2026/downloads/MagicCompRules%2020260417.txt"
+
+# One-time bootstrap for new contributors: download the comprehensive rules
+# and split them into resources/rules/. Idempotent — re-running re-splits
+# without re-downloading. Override the URL with
+#   just rules url=https://.../MagicCompRules%20YYYYMMDD.txt
+rules url=rules_url:
+	mkdir -p resources
+	if [ ! -s resources/comprehensive_rules.txt ]; then \
+		echo "fetching {{url}}"; \
+		curl --fail --silent --show-error --location "{{url}}" -o resources/comprehensive_rules.txt; \
+	else \
+		echo "resources/comprehensive_rules.txt already present (use 'just rules-refresh' to re-download)"; \
+	fi
+	cargo xtask rules-split
+
+# Force re-download of the rules text, then re-split.
+rules-refresh url=rules_url:
+	rm -f resources/comprehensive_rules.txt
+	just rules url="{{url}}"
+
+# Index resources/rules/ with qmd (BM25 + vector search) so the grammar-fix
+# orchestrator can retrieve relevant rules sections into its prompts.
+# Requires qmd on PATH:  npm install -g @tobilu/qmd
+# Idempotent — re-running picks up new/changed rules files.
+rules-index:
+	@command -v qmd >/dev/null 2>&1 || { echo "qmd not installed. Install with: npm install -g @tobilu/qmd" >&2; exit 1; }
+	@[ -d resources/rules ] || { echo "resources/rules/ missing. Run 'just rules' first." >&2; exit 1; }
+	if ! qmd collection show mtg-rules >/dev/null 2>&1; then \
+		echo "adding qmd collection mtg-rules"; \
+		qmd collection add resources/rules --name mtg-rules; \
+		qmd context add qmd://mtg-rules "Magic: The Gathering Comprehensive Rules, split per-section and per-glossary-entry. Canonical source for keyword definitions, damage/replacement/prevention shapes, and game vocabulary. The mtg-parser grammar should mirror this wording."; \
+		qmd collection exclude mtg-rules; \
+	fi
+	qmd update
+	qmd embed
+
+# Drop the qmd collection and rebuild from scratch. Use when the split
+# structure changed in a way `qmd update` can't reconcile (e.g. renames).
+rules-index-refresh:
+	@command -v qmd >/dev/null 2>&1 || { echo "qmd not installed. Install with: npm install -g @tobilu/qmd" >&2; exit 1; }
+	qmd collection remove mtg-rules 2>/dev/null || true
+	just rules-index
+
 corpus-summary:
 	@jq '{total, passing, failing: (.total - .passing), grammar_left: ([.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text") | not))] | length), empty_oracle: ([.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text")))] | length)}' corpus_status.json
 

@@ -3,3 +3,6 @@
 .scryfall-cache/
 *.swp
 .DS_Store
+/resources/comprehensive_rules.txt
+/resources/rules/
+/resources/rules.tmp/
