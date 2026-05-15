@@ -232,7 +232,9 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_mana_cost().prop_map(Statement::ManaCost),
         arb_mana_cost().prop_map(|mana| Statement::AddMana { mana }),
         Just(Statement::CounterTargetSpell),
-        Just(Statement::DestroyTargetCreature),
+        Just(Statement::DestroyTargetPermanents {
+            permanent_types: vec![PermanentType::Creature],
+        }),
         arb_mana_cost().prop_map(|mana| {
             Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst { mana }
         }),
@@ -285,12 +287,15 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             }
         }),
         (arb_permanent_type(), arb_permanent_type()).prop_map(|(a, b)| {
-            Statement::DestroyTargetPermanentChoice {
+            Statement::DestroyTargetPermanents {
                 permanent_types: vec![a, b],
             }
         }),
-        arb_noncreature_permanent_type()
-            .prop_map(|permanent_type| { Statement::DestroyTargetPermanent { permanent_type } }),
+        arb_noncreature_permanent_type().prop_map(|permanent_type| {
+            Statement::DestroyTargetPermanents {
+                permanent_types: vec![permanent_type],
+            }
+        }),
         prop::collection::vec(arb_permanent_type(), 1..5)
             .prop_map(|permanent_types| { Statement::DestroyAll { permanent_types } }),
         (arb_permanent_type(), arb_permanent_type()).prop_map(|(controller_of, attach_to)| {

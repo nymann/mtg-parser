@@ -68,7 +68,9 @@ fn rejects_internal_whitespace_in_mana_cost() {
 fn parses_destroy_target_creature() {
     assert_eq!(
         parse("Destroy target creature.").unwrap(),
-        Statement::DestroyTargetCreature,
+        Statement::DestroyTargetPermanents {
+            permanent_types: vec![PermanentType::Creature],
+        },
     );
 }
 
@@ -76,11 +78,15 @@ fn parses_destroy_target_creature() {
 fn destroy_is_case_insensitive() {
     assert_eq!(
         parse("destroy target creature.").unwrap(),
-        Statement::DestroyTargetCreature,
+        Statement::DestroyTargetPermanents {
+            permanent_types: vec![PermanentType::Creature],
+        },
     );
     assert_eq!(
         parse("DESTROY TARGET CREATURE.").unwrap(),
-        Statement::DestroyTargetCreature,
+        Statement::DestroyTargetPermanents {
+            permanent_types: vec![PermanentType::Creature],
+        },
     );
 }
 
@@ -104,7 +110,9 @@ fn unparses_mana_cost_in_scryfall_form() {
 #[test]
 fn unparses_destroy_in_canonical_form() {
     assert_eq!(
-        unparse(&Statement::DestroyTargetCreature),
+        unparse(&Statement::DestroyTargetPermanents {
+            permanent_types: vec![PermanentType::Creature],
+        }),
         "Destroy target creature.",
     );
 }

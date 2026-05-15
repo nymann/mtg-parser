@@ -25,20 +25,28 @@ use crate::refactor_hotspot::{self, IterationOutcome};
 const DEFAULT_STOP_AFTER: u32 = 3;
 const DEFAULT_MAX_REFACTOR_ITERATIONS: u32 = 50;
 const DEFAULT_REPAIR_ATTEMPTS: u8 = 1;
+const AUTO_REFACTOR_THEMES: &[&str] = &[
+    "damage",
+    "destroy",
+    "prevention",
+    "triggered-abilities",
+    "keyword-abilities",
+    "unparse-templates",
+];
 
 const HELP: &str = "\
 cargo xtask grind [--set CODE]
                   [--stop-after N] [--max-refactor-iterations N]
                   [--max-card-iterations N] [--repair-attempts N]
-                  [--theme THEME] [--target PATH]
+                  [--theme THEME] [--target PATH] [--fixed-refactor-target]
                   [--agent codex|claude] [--ui console|tui]
                   [--allow-dirty] [--dry-run]
 
-Autonomous TDD-style meta-loop. Phase 1 runs refactor-hotspot one iteration
-at a time until the no-op streak hits --stop-after (default 3) or
---max-refactor-iterations (default 50) is reached. Phase 2 then runs
-add-card on the cleaner foundation. Gate failures route to a repair agent
-before giving up.
+Autonomous TDD-style meta-loop. Phase 1 automatically picks a narrow
+effect-frame refactor theme, runs refactor-hotspot until that theme reaches
+--stop-after consecutive no-ops, then picks the next theme. Explicit --theme
+or --target keeps the old fixed-target behavior. Phase 2 then runs add-card on
+the cleaner foundation. Gate failures route to a repair agent before giving up.
 ";
 
 pub fn run(args: &[String]) -> ExitCode {
@@ -74,6 +82,7 @@ pub struct Options {
     pub agent: AgentProvider,
     pub theme: Option<String>,
     pub target: Option<String>,
+    pub fixed_refactor_target: bool,
     pub allow_dirty: bool,
     pub dry_run: bool,
 }
@@ -88,6 +97,7 @@ impl Options {
         let mut agent = AgentProvider::Codex;
         let mut theme = None::<String>;
         let mut target = None::<String>;
+        let mut fixed_refactor_target = false;
         let mut allow_dirty = false;
         let mut dry_run = false;
 
@@ -165,6 +175,7 @@ impl Options {
                 s if s.starts_with("--target=") => {
                     target = Some(s["--target=".len()..].to_string());
                 }
+                "--fixed-refactor-target" => fixed_refactor_target = true,
                 "--allow-dirty" => allow_dirty = true,
                 "--dry-run" => dry_run = true,
                 // --ui is consumed by main.rs before we get here; tolerate it.
@@ -192,6 +203,7 @@ impl Options {
             agent,
             theme,
             target,
+            fixed_refactor_target,
             allow_dirty,
             dry_run,
         })
@@ -220,24 +232,45 @@ fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
     sink.emit(FlowEvent::Note {
         level: NoteLevel::Info,
         text: format!(
-            "grind: refactor phase — stop after {} consecutive no-ops (ceiling {})",
+            "grind: refactor phase — stop each target after {} consecutive no-ops (ceiling {})",
             opts.stop_after, opts.max_refactor_iterations
         ),
     });
 
-    // allow_dirty=true for the inner refactor opts because grind already
-    // checked the precondition at the top. Subsequent iterations will
-    // legitimately leave behind committed (or restored-after-repair)
-    // state that the inner check would reject.
-    let refactor_opts = refactor_hotspot::Options::for_grind(
-        opts.theme.as_deref(),
-        opts.target.clone(),
-        opts.agent,
-        true,
-    )?;
-
-    let mut no_op_streak = 0u32;
+    let fixed_mode = opts.fixed_refactor_target || opts.theme.is_some() || opts.target.is_some();
+    let mut target_no_op_streak = 0u32;
+    let mut current_theme = opts.theme.clone();
+    let mut exhausted_themes = Vec::<String>::new();
     for iteration in 1..=opts.max_refactor_iterations {
+        if !fixed_mode && (current_theme.is_none() || target_no_op_streak >= opts.stop_after) {
+            if exhausted_themes.len() >= AUTO_REFACTOR_THEMES.len() {
+                sink.emit(FlowEvent::Note {
+                    level: NoteLevel::Info,
+                    text: "grind: refactor phase complete — all automatic targets are quiet"
+                        .to_string(),
+                });
+                return Ok(());
+            }
+            current_theme = Some(select_next_refactor_theme(
+                opts,
+                sink,
+                iteration,
+                &exhausted_themes,
+            )?);
+            target_no_op_streak = 0;
+        }
+
+        // allow_dirty=true for the inner refactor opts because grind already
+        // checked the precondition at the top. Subsequent iterations will
+        // legitimately leave behind committed (or restored-after-repair)
+        // state that the inner check would reject.
+        let refactor_opts = refactor_hotspot::Options::for_grind(
+            current_theme.as_deref(),
+            opts.target.clone(),
+            opts.agent,
+            true,
+        )?;
+
         let outcome = refactor_hotspot::run_single_iteration(&refactor_opts, sink, iteration)?;
         match outcome {
             IterationOutcome::Committed {
@@ -247,7 +280,7 @@ fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
                 grammar_rules,
                 duration_secs,
             } => {
-                no_op_streak = 0;
+                target_no_op_streak = 0;
                 sink.emit(FlowEvent::Note {
                     level: NoteLevel::Info,
                     text: format!(
@@ -256,23 +289,27 @@ fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
                 });
             }
             IterationOutcome::NoChanges => {
-                no_op_streak += 1;
+                target_no_op_streak += 1;
                 sink.emit(FlowEvent::Note {
                     level: NoteLevel::Info,
                     text: format!(
-                        "grind: no-op {}/{} (iteration {})",
-                        no_op_streak, opts.stop_after, iteration
+                        "grind: target no-op {}/{} (iteration {})",
+                        target_no_op_streak, opts.stop_after, iteration
                     ),
                 });
-                if no_op_streak >= opts.stop_after {
+                if fixed_mode && target_no_op_streak >= opts.stop_after {
                     sink.emit(FlowEvent::Note {
                         level: NoteLevel::Info,
                         text: format!(
                             "grind: refactor phase complete — {} consecutive no-ops after {} iterations",
-                            no_op_streak, iteration
+                            target_no_op_streak, iteration
                         ),
                     });
                     return Ok(());
+                }
+                if !fixed_mode && target_no_op_streak >= opts.stop_after {
+                    mark_theme_exhausted(&mut exhausted_themes, current_theme.as_deref(), sink);
+                    current_theme = None;
                 }
             }
             IterationOutcome::GateFailed(error) => {
@@ -286,16 +323,20 @@ fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
                     // iteration starts clean, count this as a no-op so the
                     // loop still terminates.
                     discard_working_changes(sink)?;
-                    no_op_streak += 1;
+                    target_no_op_streak += 1;
                     sink.emit(FlowEvent::Note {
                         level: NoteLevel::Warn,
                         text: format!(
                             "grind: repair exhausted, treating as no-op {}/{}",
-                            no_op_streak, opts.stop_after
+                            target_no_op_streak, opts.stop_after
                         ),
                     });
-                    if no_op_streak >= opts.stop_after {
+                    if fixed_mode && target_no_op_streak >= opts.stop_after {
                         return Ok(());
+                    }
+                    if !fixed_mode && target_no_op_streak >= opts.stop_after {
+                        mark_theme_exhausted(&mut exhausted_themes, current_theme.as_deref(), sink);
+                        current_theme = None;
                     }
                 }
             }
@@ -310,6 +351,225 @@ fn run_refactor_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<()> {
         ),
     });
     Ok(())
+}
+
+fn select_next_refactor_theme(
+    opts: &Options,
+    sink: &mut dyn FlowSink,
+    iteration: u32,
+    exhausted_themes: &[String],
+) -> Result<String> {
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: format!("grind: selecting next refactor target for iteration {iteration}"),
+    });
+
+    if opts.dry_run {
+        let theme = fallback_theme(iteration, exhausted_themes);
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Info,
+            text: format!("grind: dry-run selected fallback refactor theme `{theme}`"),
+        });
+        return Ok(theme);
+    }
+
+    let log_dir = create_log_dir("target-selection", iteration)?;
+    let prompt = build_target_selection_prompt(iteration, exhausted_themes)?;
+    std::fs::write(log_dir.join("prompt.md"), &prompt)
+        .with_context(|| format!("write {}", log_dir.join("prompt.md").display()))?;
+
+    let transcript_path = log_dir.join("transcript.ndjson");
+    let outcome = refactor_hotspot::invoke_agent(opts.agent, &prompt, &transcript_path, sink)?;
+    std::fs::write(log_dir.join("response.md"), &outcome.assistant_text)
+        .with_context(|| format!("write {}", log_dir.join("response.md").display()))?;
+
+    let theme = if outcome.success {
+        parse_theme_choice(&outcome.assistant_text)
+            .filter(|theme| !exhausted_themes.iter().any(|done| done == theme))
+            .unwrap_or_else(|| fallback_theme(iteration, exhausted_themes))
+    } else {
+        fallback_theme(iteration, exhausted_themes)
+    };
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: format!("grind: selected refactor theme `{theme}`"),
+    });
+    Ok(theme)
+}
+
+fn build_target_selection_prompt(iteration: u32, exhausted_themes: &[String]) -> Result<String> {
+    let git_status = command_stdout("git", &["status", "--short"])
+        .unwrap_or_else(|_| "(git status unavailable)\n".to_string());
+    let recent_commits = command_stdout("git", &["log", "--oneline", "-n", "12"])
+        .unwrap_or_else(|_| "(git log unavailable)\n".to_string());
+    let diff_stat = command_stdout("git", &["diff", "--stat"])
+        .unwrap_or_else(|_| "(git diff unavailable)\n".to_string());
+    let grammar_stats = grammar_surface_stats()?;
+    let exhausted = if exhausted_themes.is_empty() {
+        "(none)\n".to_string()
+    } else {
+        exhausted_themes
+            .iter()
+            .map(|theme| format!("- `{theme}`"))
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n"
+    };
+
+    Ok(format!(
+        "\
+You are selecting the next autonomous grammar refactor target for `mtg-parser`.
+This is iteration {iteration} of the outer grind loop.
+
+Pick one narrow effect-frame theme for the next `refactor-hotspot` run. Do not
+choose broad `grammar-core` unless every narrower theme is exhausted.
+
+## Allowed Themes
+
+- `damage` — damage amounts, sources, recipients, damage-linked life gain.
+- `destroy` — destroy/tap/sacrifice/attach target/all/list action frames.
+- `prevention` — prevent/replacement effect amount and recipient frames.
+- `keyword-abilities` — keyword ability variants and keyword data axes.
+- `triggered-abilities` — event + optional condition + effect-list factoring.
+- `unparse-templates` — reusable rendering/template slots.
+- `parser-boilerplate` — parser mechanics only, no grammar/AST shape change.
+
+Do not choose an exhausted theme.
+
+## Exhausted Themes
+
+{exhausted}
+
+## Preference Rules
+
+1. Prefer a theme where repeated sentence-shaped rules can become one
+   phenomenon-shaped rule plus data axes.
+2. Prefer themes that reduce grammar, AST, parse, and unparse coupling together.
+3. Avoid tiny common-substring deduplication unless it is part of a real frame.
+4. If the recent commits already worked one theme and it is still yielding
+   meaningful commits, you may continue it. If it is producing only small helper
+   shuffles, switch.
+5. Return exactly one line at the end: `theme: <allowed-theme>`.
+
+## Current Grammar Surface
+
+```text
+{grammar_stats}```
+
+## Git Status
+
+```text
+{git_status}```
+
+## Current Diff Stat
+
+```text
+{diff_stat}```
+
+## Recent Commits
+
+```text
+{recent_commits}```
+"
+    ))
+}
+
+fn parse_theme_choice(text: &str) -> Option<String> {
+    const THEMES: &[&str] = &[
+        "damage",
+        "destroy",
+        "prevention",
+        "keyword-abilities",
+        "triggered-abilities",
+        "unparse-templates",
+        "parser-boilerplate",
+        "grammar-core",
+    ];
+    for line in text.lines().rev() {
+        let lower = line.trim().to_ascii_lowercase();
+        let value = lower
+            .strip_prefix("theme:")
+            .map(str::trim)
+            .unwrap_or(lower.trim());
+        for theme in THEMES {
+            if value == *theme {
+                return Some((*theme).to_string());
+            }
+        }
+    }
+    None
+}
+
+fn fallback_theme(iteration: u32, exhausted_themes: &[String]) -> String {
+    let start = (iteration.saturating_sub(1)) as usize;
+    for offset in 0..AUTO_REFACTOR_THEMES.len() {
+        let theme = AUTO_REFACTOR_THEMES[(start + offset) % AUTO_REFACTOR_THEMES.len()];
+        if !exhausted_themes.iter().any(|done| done == theme) {
+            return theme.to_string();
+        }
+    }
+    AUTO_REFACTOR_THEMES[0].to_string()
+}
+
+fn mark_theme_exhausted(
+    exhausted_themes: &mut Vec<String>,
+    theme: Option<&str>,
+    sink: &mut dyn FlowSink,
+) {
+    let Some(theme) = theme else {
+        return;
+    };
+    if !exhausted_themes.iter().any(|done| done == theme) {
+        exhausted_themes.push(theme.to_string());
+    }
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: format!("grind: target `{theme}` is quiet; selecting another target"),
+    });
+}
+
+fn grammar_surface_stats() -> Result<String> {
+    let root = repo_root();
+    let files = [
+        "crates/mtg-grammar/src/grammar.pest",
+        "crates/mtg-grammar/src/ast.rs",
+        "crates/mtg-grammar/src/parse.rs",
+        "crates/mtg-grammar/src/unparse.rs",
+    ];
+    let mut out = String::new();
+    for file in files {
+        let path = root.join(file);
+        let text = std::fs::read_to_string(&path).with_context(|| format!("read {file}"))?;
+        let loc = text.lines().count();
+        let count = if file.ends_with("grammar.pest") {
+            text.lines()
+                .filter(|line| {
+                    let trimmed = line.trim_start();
+                    trimmed
+                        .split_once('=')
+                        .map(|(name, _)| {
+                            !trimmed.starts_with("//")
+                                && !name.trim().is_empty()
+                                && name
+                                    .trim()
+                                    .chars()
+                                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+                        })
+                        .unwrap_or(false)
+                })
+                .count()
+        } else {
+            text.lines()
+                .filter(|line| {
+                    line.trim_start().starts_with("pub enum ")
+                        || line.trim_start().starts_with("enum ")
+                        || line.trim_start().starts_with("fn ")
+                })
+                .count()
+        };
+        out.push_str(&format!("{file:<42} loc={loc:<5} surface-count={count}\n"));
+    }
+    Ok(out)
 }
 
 fn run_add_card_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<ExitCode> {
@@ -635,5 +895,17 @@ mod tests {
     fn rejects_invalid_agent() {
         let err = Options::parse(&s(&["--agent", "gemini"])).expect_err("should reject");
         assert!(err.to_string().contains("codex"));
+    }
+
+    #[test]
+    fn parses_theme_choice_from_final_line() {
+        let text = "I would continue the destroy frame.\n\ntheme: destroy\n";
+        assert_eq!(parse_theme_choice(text).as_deref(), Some("destroy"));
+    }
+
+    #[test]
+    fn fallback_theme_skips_exhausted_themes() {
+        let exhausted = vec!["damage".to_string(), "destroy".to_string()];
+        assert_eq!(fallback_theme(1, &exhausted), "prevention");
     }
 }

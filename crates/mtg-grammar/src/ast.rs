@@ -11,7 +11,6 @@ pub enum Statement {
     ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst {
         mana: ManaCost,
     },
-    DestroyTargetCreature,
     /// "Regenerate target creature."
     RegenerateTargetCreature,
     /// "<source name> deals <amount> damage <recipients>."
@@ -47,13 +46,9 @@ pub enum Statement {
     IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
         permanent_type: PermanentType,
     },
-    /// "Destroy target <permanent_type> or <permanent_type>."
-    DestroyTargetPermanentChoice {
+    /// "Destroy target <permanent_type> [or <permanent_type>]."
+    DestroyTargetPermanents {
         permanent_types: Vec<PermanentType>,
-    },
-    /// "Destroy target <permanent_type>."
-    DestroyTargetPermanent {
-        permanent_type: PermanentType,
     },
     /// "That <permanent_type>'s controller may attach this Aura to a/an
     /// <permanent_type> of their choice."
@@ -292,14 +287,8 @@ impl Statement {
         }
     }
 
-    pub(crate) fn destroy_target_permanent_choice(permanent_types: Vec<PermanentType>) -> Self {
-        match permanent_types.as_slice() {
-            [PermanentType::Creature] => Statement::DestroyTargetCreature,
-            [permanent_type] => Statement::DestroyTargetPermanent {
-                permanent_type: *permanent_type,
-            },
-            _ => Statement::DestroyTargetPermanentChoice { permanent_types },
-        }
+    pub(crate) fn destroy_target_permanents(permanent_types: Vec<PermanentType>) -> Self {
+        Statement::DestroyTargetPermanents { permanent_types }
     }
 
     pub(crate) fn target_permanent_until_end_of_turn(

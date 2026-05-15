@@ -198,7 +198,7 @@ destroy_all = {
 permanent_type_plural_list = {
     permanent_type_plural ~ (("," ~ permanent_type_plural)* ~ ","? ~ ^"and" ~ permanent_type_plural)?
 }
-destroy_target_permanent = { ^"destroy" ~ ^"target" ~ permanent_type_choice ~ "." }
+destroy_target_permanent = { ^"destroy" ~ target_permanent_choice ~ "." }
 counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
 
@@ -892,7 +892,8 @@ add_mana_of_any_one_color = {
 }
 add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"color" ~ "." }
 add_mana = { ^"add" ~ mana_cost ~ "." }
-tap_target_permanent_choice = { ^"tap" ~ ^"target" ~ permanent_type_choice ~ "." }
+tap_target_permanent_choice = { ^"tap" ~ target_permanent_choice ~ "." }
+target_permanent_choice = { ^"target" ~ permanent_type_choice }
 permanent_type_choice = { permanent_type ~ ((("," ~ permanent_type)* ~ ","? ~ ^"or") ~ permanent_type)? }
 activated_draw_cards = {
     ^"draw" ~ (activated_draw_one_card | activated_draw_counted_cards) ~ "."

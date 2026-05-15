@@ -29,9 +29,6 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_mana_cost(out, mana);
             out.push_str(" more to cast for each target beyond the first.");
         }
-        Statement::DestroyTargetCreature => {
-            write_destroy_target_permanent_choice(out, &[PermanentType::Creature]);
-        }
         Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
         Statement::NamedSourceDealsDamage {
             source_name,
@@ -86,11 +83,8 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 ", it can't be regenerated this turn, and if it would die this turn, exile it instead.",
             );
         }
-        Statement::DestroyTargetPermanentChoice { permanent_types } => {
+        Statement::DestroyTargetPermanents { permanent_types } => {
             write_destroy_target_permanent_choice(out, permanent_types);
-        }
-        Statement::DestroyTargetPermanent { permanent_type } => {
-            write_destroy_target_permanent_choice(out, &[*permanent_type]);
         }
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of,

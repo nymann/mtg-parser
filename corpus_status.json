@@ -882,7 +882,7 @@
     },
     "lea/Volcanic Eruption": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Destroy X target Mountains. Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way.\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:9\n  |\n1 | Destroy X target Mountains. Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way.\n  |         ^---\n  |\n  = expected target_permanent_choice"
     },
     "lea/Wall of Air": {
       "status": "pass"

@@ -79,17 +79,21 @@ fn mixed_cost_total_is_correct() {
 
 #[test]
 fn non_normalized_statement_lowers_to_syntactic_wrapper() {
-    let stmt = Statement::DestroyTargetCreature;
+    let stmt = Statement::DestroyTargetPermanents {
+        permanent_types: vec![PermanentType::Creature],
+    };
     assert_eq!(
         lower(&stmt).unwrap(),
-        CardEffect::Syntactic(Statement::DestroyTargetCreature),
+        CardEffect::Syntactic(Statement::DestroyTargetPermanents {
+            permanent_types: vec![PermanentType::Creature],
+        }),
     );
 }
 
 #[test]
 fn syntactic_wrapper_preserves_statement_payload() {
-    let stmt = Statement::DestroyTargetPermanent {
-        permanent_type: PermanentType::Land,
+    let stmt = Statement::DestroyTargetPermanents {
+        permanent_types: vec![PermanentType::Land],
     };
     assert_eq!(lower(&stmt).unwrap(), CardEffect::Syntactic(stmt));
 }
@@ -97,14 +101,18 @@ fn syntactic_wrapper_preserves_statement_payload() {
 #[test]
 fn compound_lowers_children_in_source_order() {
     let stmt = Statement::Compound(vec![
-        Statement::DestroyTargetCreature,
+        Statement::DestroyTargetPermanents {
+            permanent_types: vec![PermanentType::Creature],
+        },
         mc(vec![ManaSymbol::Generic(1), ManaSymbol::Red]),
     ]);
 
     assert_eq!(
         lower(&stmt).unwrap(),
         CardEffect::Compound(vec![
-            CardEffect::Syntactic(Statement::DestroyTargetCreature),
+            CardEffect::Syntactic(Statement::DestroyTargetPermanents {
+                permanent_types: vec![PermanentType::Creature],
+            }),
             CardEffect::ManaCost(ManaValue {
                 generic: 1,
                 red: 1,
