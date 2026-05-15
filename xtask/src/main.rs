@@ -11,6 +11,7 @@ mod ast_coverage;
 mod console_sink;
 mod corpus_cmd;
 mod flow;
+mod grammar_audit;
 mod grind;
 mod next_card;
 mod paths;
@@ -35,6 +36,10 @@ Commands:
                               Parse generated regression tests, report exercised AST
                               variants, and flag variants with unparse arms but no parser
                               construction when requested.
+  grammar-audit --diff RANGE --oracle-text TEXT
+                              Audit grammar.pest additions for sentence-shaped
+                              rule drift. Report-only; emits Markdown by default
+                              or JSON with --json.
   corpus-add-set CODE         Add a set to corpus_sets.json, refresh it, then run corpus.
   corpus-advance              Add the next paper core/expansion set once the current newest
               [--max-grammar-left N]  tracked set has at most N actionable failures.
@@ -119,6 +124,7 @@ fn main() -> ExitCode {
         Some("next-card") => next_card::run(&args[1..]),
         Some("corpus") => corpus_cmd::run(&args[1..]),
         Some("ast-coverage") => ast_coverage::run(&args[1..]),
+        Some("grammar-audit") => grammar_audit::run(&args[1..]),
         Some("corpus-add-set") => corpus_cmd::add_set(&args[1..]),
         Some("corpus-advance") => corpus_cmd::advance(&args[1..]),
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),

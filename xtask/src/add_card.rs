@@ -28,6 +28,7 @@ use crate::console_sink::ConsoleSink;
 use crate::flow::{
     AgentProvider, FlowEvent, FlowSink, IterationOutcomeSummary, NoteLevel, SessionEndReason,
 };
+use crate::grammar_audit;
 use crate::paths::{
     add_card_log_root, ast_rs_path, corpus_status_path, generated_pattern_tests_dir,
     generated_pattern_tests_manifest, generated_tests_dir, generated_tests_manifest,
@@ -37,7 +38,7 @@ use crate::paths::{
 /// 0 means unbounded; positive values cap the loop.
 const DEFAULT_MAX_ITERATIONS: u32 = 0;
 const DEFAULT_SUPERVISOR_ATTEMPTS: u8 = 1;
-const TOTAL_STEPS: u8 = 12;
+const TOTAL_STEPS: u8 = 13;
 
 pub fn run(args: &[String]) -> ExitCode {
     let opts = match Options::parse(args) {
@@ -432,6 +433,7 @@ fn run_one_iteration(
     });
     let transcript_path = log_dir.join("transcript.ndjson");
     let mut agent_ran = false;
+    let mut generalization_report = None::<String>;
     let pattern_prompt = if focused_before.success() {
         None
     } else {
@@ -468,6 +470,17 @@ fn run_one_iteration(
         agent_ran = true;
         let agent_outcome = invoke_agent(opts.agent, &pattern_prompt, &transcript_path, sink)?;
         std::fs::write(log_dir.join("response.md"), &agent_outcome.assistant_text)?;
+        generalization_report = extract_generalization_report(&agent_outcome.assistant_text);
+        match &generalization_report {
+            Some(report) => std::fs::write(log_dir.join("generalization_report.txt"), report)?,
+            None => {
+                std::fs::write(log_dir.join("generalization_report.txt"), "missing\n")?;
+                sink.emit(FlowEvent::Note {
+                    level: NoteLevel::Warn,
+                    text: "agent response did not include GENERALIZATION_PATH report block".into(),
+                });
+            }
+        }
         sink.emit(FlowEvent::StepFinished {
             index: 8,
             ok: agent_outcome.success,
@@ -531,15 +544,48 @@ fn run_one_iteration(
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
 
-    // Step 10 — tier 1 + tier 2.
+    // Step 10 — report-only grammar drift audit. This deliberately
+    // never blocks phase 1; it writes artifacts for calibration before
+    // the heavier downstream gates run.
     sink.emit(FlowEvent::StepStarted {
         index: 10,
+        total: TOTAL_STEPS,
+        label: "grammar audit (report-only)".into(),
+    });
+    let audit_report = grammar_audit::audit_worktree(&normalized)?;
+    let audit_json = serde_json::to_string_pretty(&audit_report)?;
+    std::fs::write(log_dir.join("grammar_audit.json"), audit_json)?;
+    std::fs::write(
+        log_dir.join("grammar_audit.md"),
+        grammar_audit::report_markdown(&audit_report),
+    )?;
+    let audit_summary = grammar_audit_summary(&audit_report);
+    sink.emit(FlowEvent::StepFinished {
+        index: 10,
+        ok: true,
+        summary: Some(audit_summary.clone()),
+    });
+    if audit_report
+        .findings
+        .iter()
+        .any(|f| f.severity == grammar_audit::Severity::BlockCandidate)
+    {
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Warn,
+            text: "grammar audit found block-candidate drift signals; continuing report-only"
+                .into(),
+        });
+    }
+
+    // Step 11 — tier 1 + tier 2.
+    sink.emit(FlowEvent::StepStarted {
+        index: 11,
         total: TOTAL_STEPS,
         label: "cargo xtask test --tier 2".into(),
     });
     let mut tests_ok = run_xtask(&["test", "--tier", "2"])?;
     sink.emit(FlowEvent::StepFinished {
-        index: 10,
+        index: 11,
         ok: tests_ok,
         summary: None,
     });
@@ -564,13 +610,13 @@ fn run_one_iteration(
             });
             if focused_after_repair.success() {
                 sink.emit(FlowEvent::StepStarted {
-                    index: 10,
+                    index: 11,
                     total: TOTAL_STEPS,
                     label: "cargo xtask test --tier 2 after downstream repair".into(),
                 });
                 tests_ok = run_xtask(&["test", "--tier", "2"])?;
                 sink.emit(FlowEvent::StepFinished {
-                    index: 10,
+                    index: 11,
                     ok: tests_ok,
                     summary: None,
                 });
@@ -611,15 +657,15 @@ fn run_one_iteration(
             return Ok(IterationOutcome::SurfaceToHuman(reason));
         }
     }
-    // Step 11 — corpus regression gate.
+    // Step 12 — corpus regression gate.
     sink.emit(FlowEvent::StepStarted {
-        index: 11,
+        index: 12,
         total: TOTAL_STEPS,
         label: "cargo xtask corpus (regression gate)".into(),
     });
     let corpus_ok = run_xtask(&["corpus"])?;
     sink.emit(FlowEvent::StepFinished {
-        index: 11,
+        index: 12,
         ok: corpus_ok,
         summary: None,
     });
@@ -634,21 +680,27 @@ fn run_one_iteration(
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
 
-    // Step 12 — commit.
+    // Step 13 — commit.
     let new_pass_count = read_corpus_passing(&corpus_status_path()).unwrap_or(baseline_pass_count);
     let total = read_corpus_total(&corpus_status_path()).unwrap_or(0);
     let new_passes = new_pass_count.saturating_sub(baseline_pass_count);
-    let commit_msg = commit_message(&card, new_passes, new_pass_count, total);
+    let commit_msg = commit_message(
+        &card,
+        new_passes,
+        new_pass_count,
+        total,
+        generalization_report.as_deref(),
+    );
     std::fs::write(log_dir.join("commit_message.txt"), &commit_msg)?;
     sink.emit(FlowEvent::StepStarted {
-        index: 12,
+        index: 13,
         total: TOTAL_STEPS,
         label: "git commit".into(),
     });
     match git_commit(&commit_msg).context("git commit")? {
         CommitOutcome::Committed => {
             sink.emit(FlowEvent::StepFinished {
-                index: 12,
+                index: 13,
                 ok: true,
                 summary: Some(format!(
                     "+{new_passes} pass · status {new_pass_count}/{total}"
@@ -658,7 +710,7 @@ fn run_one_iteration(
         CommitOutcome::NoChanges => {
             let reason = "no changes to commit after successful tests and corpus gate".to_string();
             sink.emit(FlowEvent::StepFinished {
-                index: 12,
+                index: 13,
                 ok: true,
                 summary: Some("no changes to commit".into()),
             });
@@ -1190,6 +1242,47 @@ fn count_grammar_rules() -> usize {
     text.lines().filter(|l| is_pest_rule_declaration(l)).count()
 }
 
+fn grammar_audit_summary(report: &grammar_audit::AuditReport) -> String {
+    let blocks = report
+        .findings
+        .iter()
+        .filter(|f| f.severity == grammar_audit::Severity::BlockCandidate)
+        .count();
+    let warns = report
+        .findings
+        .iter()
+        .filter(|f| f.severity == grammar_audit::Severity::Warn)
+        .count();
+    let infos = report
+        .findings
+        .iter()
+        .filter(|f| f.severity == grammar_audit::Severity::Info)
+        .count();
+    format!(
+        "{} new rules · {blocks} block-candidate · {warns} warn · {infos} info",
+        report.new_rule_count
+    )
+}
+
+fn extract_generalization_report(text: &str) -> Option<String> {
+    let mut lines = text.lines();
+    while let Some(line) = lines.next() {
+        if !line.starts_with("GENERALIZATION_PATH:") {
+            continue;
+        }
+        let mut block = vec![line.to_string()];
+        for expected in ["NEW_PEST_RULES:", "GENERALIZED_RULES:", "WHY_NEW_RULES:"] {
+            let next = lines.next()?;
+            if !next.starts_with(expected) {
+                return None;
+            }
+            block.push(next.to_string());
+        }
+        return Some(block.join("\n"));
+    }
+    None
+}
+
 fn is_pest_rule_declaration(line: &str) -> bool {
     let trimmed = line.trim_start();
     if trimmed.is_empty() || trimmed.starts_with("//") {
@@ -1293,8 +1386,9 @@ fn build_pattern_prompt(
              3. Generalize an existing grammar/AST/parser/unparser rule to cover this card's phenomenon if a near-neighbour rule exists. Add a new rule only when no existing rule can be widened along a single axis (verb, subject, recipient, quantity, polarity). Touch semantic files only because the focused failure points there.\n\
              4. Run the focused generated test command(s) shown above until they pass.\n\
              5. Do not run `cargo xtask corpus`; the orchestrator owns corpus regression checks.\n\
-             6. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n",
+             6. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n\n",
         );
+        prompt.push_str(GENERALIZATION_REPORT_BLOCK);
         return Ok(prompt);
     }
     prompt.push_str(
@@ -1305,8 +1399,9 @@ fn build_pattern_prompt(
          3. Generalize an existing grammar/AST/parser/unparser rule to cover this card's phenomenon if a near-neighbour rule exists. Add a new rule only when no existing rule can be widened along a single axis. Touch semantic files only if the focused failure points there.\n\
          4. Run the focused generated test command(s) shown above until they pass.\n\
          5. Do not run `cargo xtask corpus`; the orchestrator owns corpus regression checks.\n\
-         6. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n",
+         6. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n\n",
     );
+    prompt.push_str(GENERALIZATION_REPORT_BLOCK);
     Ok(prompt)
 }
 
@@ -1648,6 +1743,23 @@ You are the add-card downstream repair agent. The card-specific grammar repair h
 passed focused validation, but a later deterministic gate exposed required follow-up
 wiring. Your job is to make the existing change pass the downstream gate without
 weakening the gate.";
+
+const GENERALIZATION_REPORT_BLOCK: &str = "\
+## Required Final Report Block
+
+End your final response with this exact parseable block:
+
+```text
+GENERALIZATION_PATH: <a|b|c|d>
+NEW_PEST_RULES: <comma-separated names, or \"none\">
+GENERALIZED_RULES: <comma-separated names, or \"none\">
+WHY_NEW_RULES: <free text, or \"n/a\">
+```
+
+Use `a` when an existing rule already covered it, `b` when you widened a
+near-neighbour rule, `c` when you only added vocabulary to an existing closed
+set, and `d` when you added a new rule or AST shape.
+";
 
 const PROMPT_INTRO: &str = "\
 You are extending the mtg-parser grammar to handle one specific
@@ -2266,8 +2378,9 @@ pub(crate) fn commit_message(
     new_passes: usize,
     pass_count: usize,
     total: usize,
+    generalization_report: Option<&str>,
 ) -> String {
-    format!(
+    let mut message = format!(
         "grammar: support card {name}\n\n\
          Card: {name} ({set})\n\
          New passes: {new_passes}\n\
@@ -2277,7 +2390,18 @@ pub(crate) fn commit_message(
         new_passes = new_passes,
         pass_count = pass_count,
         total = total,
-    )
+    );
+    match generalization_report {
+        Some(report) => {
+            message.push('\n');
+            message.push_str(report.trim());
+            message.push('\n');
+        }
+        None => {
+            message.push_str("\nGENERALIZATION_REPORT: missing\n");
+        }
+    }
+    message
 }
 
 #[cfg(test)]
@@ -2365,17 +2489,26 @@ mod tests {
             mana_cost: "{3}{U}{U}".into(),
             layout: mtg_scryfall::Layout::Normal,
         };
-        let m = commit_message(&card, 1, 1, 290);
+        let m = commit_message(&card, 1, 1, 290, Some("GENERALIZATION_PATH: a\nNEW_PEST_RULES: none\nGENERALIZED_RULES: none\nWHY_NEW_RULES: n/a"));
         assert!(m.starts_with("grammar: support card Air Elemental\n"));
         assert!(m.contains("Card: Air Elemental (lea)"));
         assert!(m.contains("New passes: 1"));
         assert!(m.contains("Status: 1/290"));
+        assert!(m.contains("GENERALIZATION_PATH: a"));
     }
 
     #[test]
     fn git_commit_args_skip_duplicate_mutating_hook() {
         let args = git_commit_args("subject\n\nbody");
         assert_eq!(args, vec!["commit", "--no-verify", "-m", "subject\n\nbody"]);
+    }
+
+    #[test]
+    fn extracts_generalization_report_block() {
+        let text = "done\n\nGENERALIZATION_PATH: b\nNEW_PEST_RULES: none\nGENERALIZED_RULES: damage_event\nWHY_NEW_RULES: n/a\n";
+        let report = extract_generalization_report(text).unwrap();
+        assert!(report.starts_with("GENERALIZATION_PATH: b"));
+        assert!(report.contains("GENERALIZED_RULES: damage_event"));
     }
 
     #[test]
