@@ -5,7 +5,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::agent_events;
 use crate::flow::AgentProvider;
 use crate::paths::grammar_fix_log_root;
-use crate::tui::state::{AppState, FocusPane, HistoryEntry, TimelineKind, TimelineRow};
+use crate::tui::state::{AppState, FocusPane, HistoryEntry, Iteration, TimelineKind, TimelineRow};
 
 pub enum Action {
     None,
@@ -78,13 +78,18 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
         }
         (KeyCode::Char('G'), _) => {
             // Bottom + re-enable autoscroll so new events stay in view.
+            state.scroll = state.output_bottom_scroll();
             state.autoscroll = true;
             Action::None
         }
 
         (KeyCode::Char('p'), _) => {
-            // Toggle autoscroll. If we're turning it on, snap to bottom.
-            state.autoscroll = !state.autoscroll;
+            if state.autoscroll {
+                state.pause_output();
+            } else {
+                state.scroll = state.output_bottom_scroll();
+                state.autoscroll = true;
+            }
             Action::None
         }
         (KeyCode::Char('c'), m) if m.is_empty() => {
@@ -93,7 +98,9 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
         }
         (KeyCode::Char('v'), _) | (KeyCode::Char('V'), _) => {
             state.autoscroll = false;
-            state.visual.start(state.scroll);
+            state
+                .visual
+                .start(state.scroll.min(state.output_line_count.saturating_sub(1)));
             Action::None
         }
         (KeyCode::Char('/'), _) => {
@@ -245,6 +252,12 @@ fn load_history_transcript(state: &mut AppState, entry: &HistoryEntry) {
     state.iterations.clear();
     state.session_end = None;
     state.autoscroll = true;
+    state.iterations.push(Iteration {
+        index: entry.iteration_index,
+        max_iterations: 0,
+        card: Some(entry.card.clone()),
+        ..Iteration::default()
+    });
     state.events.push(TimelineRow {
         iteration_index: entry.iteration_index,
         delta: 0,
@@ -257,18 +270,34 @@ fn load_history_transcript(state: &mut AppState, entry: &HistoryEntry) {
         let Ok(raw) = serde_json::from_str::<serde_json::Value>(line) else {
             continue;
         };
-        for parsed in agent_events::parse(AgentProvider::Claude, &raw) {
+        let provider = infer_history_provider(&raw);
+        for parsed in agent_events::parse(provider, &raw) {
             state.events.push(TimelineRow {
                 iteration_index: entry.iteration_index,
                 delta: 0,
-                kind: TimelineKind::Agent {
-                    provider: AgentProvider::Claude,
-                    parsed,
-                },
+                kind: TimelineKind::Agent { provider, parsed },
             });
         }
     }
     state.scroll = 0;
+}
+
+fn infer_history_provider(raw: &serde_json::Value) -> AgentProvider {
+    let kind = raw
+        .get("type")
+        .or_else(|| raw.get("event"))
+        .or_else(|| raw.get("msg_type"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if kind.contains('.')
+        || raw.get("item").is_some()
+        || raw.get("event").is_some()
+        || raw.get("msg_type").is_some()
+    {
+        AgentProvider::Codex
+    } else {
+        AgentProvider::Claude
+    }
 }
 
 fn scroll_focused(state: &mut AppState, down: bool, amount: u16) {
@@ -314,29 +343,23 @@ fn load_history_entries() -> Vec<HistoryEntry> {
     let mut entries = dirs
         .into_iter()
         .enumerate()
-        .map(|(i, (path, transcript))| {
+        .filter_map(|(i, (path, transcript))| {
             let iteration_index = (i + 1) as u32;
-            let card_name = history_card_name(&path).unwrap_or_else(|| {
-                path.file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_else(|| path.display().to_string())
-            });
-            HistoryEntry {
+            let card = history_card(&path)?;
+            let card_name = card.name.clone();
+            Some(HistoryEntry {
                 name: format!("iteration {iteration_index} - {card_name}"),
                 iteration_index,
+                card,
                 path: transcript,
-            }
+            })
         })
         .collect::<Vec<_>>();
     entries.reverse();
     entries
 }
 
-fn history_card_name(path: &std::path::Path) -> Option<String> {
+fn history_card(path: &std::path::Path) -> Option<mtg_scryfall::Card> {
     let text = std::fs::read_to_string(path.join("card.json")).ok()?;
-    let value: serde_json::Value = serde_json::from_str(&text).ok()?;
-    value
-        .get("name")
-        .and_then(|v| v.as_str())
-        .map(str::to_string)
+    serde_json::from_str(&text).ok()
 }

@@ -135,7 +135,7 @@ fn run_event_loop(
 
         // 2. Render.
         terminal.autoresize()?;
-        terminal.draw(|f| view::render(f, &state))?;
+        terminal.draw(|f| view::render(f, &mut state))?;
 
         // 3. Poll input. Short timeout so we redraw on a regular cadence
         //    (clock ticks for running step timers etc.).

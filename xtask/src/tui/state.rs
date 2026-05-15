@@ -851,6 +851,7 @@ pub struct HistoryState {
 pub struct HistoryEntry {
     pub name: String,
     pub iteration_index: u32,
+    pub card: Card,
     pub path: std::path::PathBuf,
 }
 

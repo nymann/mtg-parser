@@ -30,7 +30,7 @@ const C_TEXT: Color = Color::LightYellow;
 const C_FILE: Color = Color::LightBlue;
 const C_CMD: Color = Color::LightRed;
 
-pub fn render(f: &mut Frame<'_>, state: &AppState) {
+pub fn render(f: &mut Frame<'_>, state: &mut AppState) {
     let area = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -261,7 +261,7 @@ fn format_secs(s: u64) -> String {
 // main area
 // ---------------------------------------------------------------------------
 
-fn render_main(f: &mut Frame<'_>, area: Rect, state: &AppState) {
+fn render_main(f: &mut Frame<'_>, area: Rect, state: &mut AppState) {
     let left_width = responsive_left_width(area.width);
     let cols = Layout::default()
         .direction(Direction::Horizontal)
@@ -464,7 +464,7 @@ fn step_line(index: u8, total: u8, step: &StepState) -> Line<'static> {
 // output pane
 // ---------------------------------------------------------------------------
 
-fn render_output(f: &mut Frame<'_>, area: Rect, state: &AppState) {
+fn render_output(f: &mut Frame<'_>, area: Rect, state: &mut AppState) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(C_FAINT))
@@ -477,6 +477,7 @@ fn render_output(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let lines = render_event_lines(state, inner.width);
     let total_lines = lines.len() as u16;
     let viewport_height = inner.height;
+    state.remember_output_view(lines.len(), viewport_height);
     let scroll = if state.autoscroll {
         total_lines.saturating_sub(viewport_height)
     } else {

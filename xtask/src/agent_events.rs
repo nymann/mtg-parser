@@ -215,9 +215,8 @@ fn parse_codex_item(ev: &serde_json::Value, started: bool) -> Vec<ParsedAgentEve
         "command_execution" if started => {
             let command = item
                 .get("command")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
+                .and_then(command_string)
+                .unwrap_or_default();
             vec![ParsedAgentEvent::ToolUse {
                 name: "command".to_string(),
                 target: if command.is_empty() {
@@ -365,7 +364,7 @@ fn tool_target(input: &serde_json::Value) -> ToolUseTarget {
     if let Some(p) = input.get("file_path").and_then(|v| v.as_str()) {
         return ToolUseTarget::File(p.to_string());
     }
-    if let Some(c) = input.get("command").and_then(|v| v.as_str()) {
+    if let Some(c) = input.get("command").and_then(command_string) {
         let first = c.lines().next().unwrap_or("");
         return ToolUseTarget::Command(first.to_string());
     }
@@ -376,6 +375,31 @@ fn tool_target(input: &serde_json::Value) -> ToolUseTarget {
         return ToolUseTarget::Description(d.to_string());
     }
     ToolUseTarget::None
+}
+
+fn command_string(value: &serde_json::Value) -> Option<String> {
+    if let Some(command) = value.as_str() {
+        return Some(command.to_string());
+    }
+    let args = value.as_array()?;
+    let rendered = args
+        .iter()
+        .filter_map(|arg| arg.as_str())
+        .map(shell_quote_if_needed)
+        .collect::<Vec<_>>()
+        .join(" ");
+    (!rendered.is_empty()).then_some(rendered)
+}
+
+fn shell_quote_if_needed(arg: &str) -> String {
+    if arg
+        .chars()
+        .all(|ch| ch.is_ascii_alphanumeric() || "_-./:=+".contains(ch))
+    {
+        arg.to_string()
+    } else {
+        format!("'{}'", arg.replace('\'', "'\\''"))
+    }
 }
 
 fn tool_result_first_line(item: &serde_json::Value) -> String {
@@ -527,6 +551,26 @@ mod tests {
             &out[0],
             ParsedAgentEvent::ToolResult { first_line, is_error: false }
                 if first_line == "first line"
+        ));
+    }
+
+    #[test]
+    fn parses_codex_command_array_as_tool_use() {
+        let v: serde_json::Value = serde_json::from_str(
+            r#"{
+                "type":"item.started",
+                "item":{
+                    "type":"command_execution",
+                    "command":["zsh","-lc","cargo test -p xtask"]
+                }
+            }"#,
+        )
+        .unwrap();
+        let out = parse(AgentProvider::Codex, &v);
+        assert!(matches!(
+            &out[0],
+            ParsedAgentEvent::ToolUse { target: ToolUseTarget::Command(command), .. }
+                if command == "zsh -lc 'cargo test -p xtask'"
         ));
     }
 
