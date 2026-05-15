@@ -14,6 +14,7 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::CastRestriction(restriction) => CardEffect::CastRestriction(*restriction),
         Statement::CounterTargetSpell => CardEffect::CounterTargetSpell,
         Statement::DestroyTargetCreature => CardEffect::DestroyTargetCreature,
+        Statement::RegenerateTargetCreature => CardEffect::RegenerateTargetCreature,
         Statement::DestroyAll { permanent_type } => CardEffect::DestroyAll {
             permanent_type: *permanent_type,
         },

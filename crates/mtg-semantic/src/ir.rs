@@ -20,6 +20,8 @@ pub enum CardEffect {
     CounterTargetSpell,
     /// "Destroy target creature."
     DestroyTargetCreature,
+    /// "Regenerate target creature."
+    RegenerateTargetCreature,
     /// "Destroy all <permanent_type>s."
     DestroyAll { permanent_type: PermanentType },
     /// A single keyword ability such as `Flying` or `Enchant artifact`.

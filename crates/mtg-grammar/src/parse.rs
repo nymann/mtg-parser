@@ -63,6 +63,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
         Rule::counter_target_spell => Ok(Statement::CounterTargetSpell),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
+        Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::add_mana => add_mana_from_pair(pair),

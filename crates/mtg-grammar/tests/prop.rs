@@ -66,6 +66,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_mana_cost().prop_map(|mana| Statement::AddMana { mana }),
         Just(Statement::CounterTargetSpell),
         Just(Statement::DestroyTargetCreature),
+        Just(Statement::RegenerateTargetCreature),
         Just(Statement::AntePlayRestriction),
         (1u32..=10).prop_map(|amount| Statement::IfYouDoGainLife { amount }),
         (arb_player_casts_colored_spell_pay_mana_trigger(), 1u32..=10,).prop_map(

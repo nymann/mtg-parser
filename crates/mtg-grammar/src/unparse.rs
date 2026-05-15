@@ -22,6 +22,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::CastRestriction(restriction) => write_cast_restriction(out, *restriction),
         Statement::CounterTargetSpell => out.push_str("Counter target spell."),
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
+        Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
         Statement::DestroyAll { permanent_type } => {
             out.push_str("Destroy all ");
             out.push_str(permanent_type_plural_name(*permanent_type));

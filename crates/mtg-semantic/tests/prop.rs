@@ -70,6 +70,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_mana_cost().prop_map(|mana| Statement::AddMana { mana }),
         Just(Statement::CounterTargetSpell),
         Just(Statement::DestroyTargetCreature),
+        Just(Statement::RegenerateTargetCreature),
         Just(Statement::AntePlayRestriction),
         Just(Statement::YouOwnTargetCardInZone { zone: Zone::Ante }),
         Just(Statement::ExchangeThatCardWithTopCardOfYourLibrary),

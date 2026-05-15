@@ -42,6 +42,7 @@ sentence_statement = _{
   | counter_target_spell
   | destroy_all
   | destroy
+  | regenerate_target_creature
   | draw_cards
   | add_mana
   | until_eot_you_may_pay_cost_at_timing
@@ -110,6 +111,7 @@ tap_symbol  = ${ "{" ~ "T" ~ "}" }
 destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }
 destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural ~ "." }
 counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }
+regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
 
 draw_cards  = { ^"target" ~ ^"player" ~ ^"draws" ~ draw_count ~ ^"cards" ~ "." }
 draw_count  = _{ number_word | variable_name }

@@ -20,6 +20,14 @@ fn lowers_destroy_target_creature() {
 }
 
 #[test]
+fn lowers_regenerate_target_creature() {
+    assert_eq!(
+        lower(&Statement::RegenerateTargetCreature).unwrap(),
+        CardEffect::RegenerateTargetCreature,
+    );
+}
+
+#[test]
 fn lowers_counter_target_spell() {
     assert_eq!(
         lower(&Statement::CounterTargetSpell).unwrap(),

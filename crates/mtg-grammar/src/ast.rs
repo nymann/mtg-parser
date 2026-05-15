@@ -8,6 +8,8 @@ pub enum Statement {
     /// "Counter target spell."
     CounterTargetSpell,
     DestroyTargetCreature,
+    /// "Regenerate target creature."
+    RegenerateTargetCreature,
     /// "Destroy all <permanent_type>s."
     DestroyAll {
         permanent_type: PermanentType,
