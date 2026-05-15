@@ -86,6 +86,29 @@ fn lowers_add_mana() {
 }
 
 #[test]
+fn lowers_target_player_activates_mana_ability_of_each_permanent_they_control() {
+    assert_eq!(
+        lower(
+            &Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
+                permanent_type: PermanentType::Land,
+            }
+        )
+        .unwrap(),
+        CardEffect::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
+            permanent_type: PermanentType::Land,
+        },
+    );
+}
+
+#[test]
+fn lowers_then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way() {
+    assert_eq!(
+        lower(&Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay).unwrap(),
+        CardEffect::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay,
+    );
+}
+
+#[test]
 fn lowers_pure_generic_mana_cost() {
     assert_eq!(
         lower(&mc(vec![ManaSymbol::Generic(2)])).unwrap(),

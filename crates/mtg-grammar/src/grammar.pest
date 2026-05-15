@@ -48,6 +48,8 @@ sentence_statement = _{
   | spend_only_color_mana_on_variable
   | you_gain_life_equal_damage_dealt_capped
   | if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn
+  | target_player_activates_mana_ability_of_each_permanent_they_control
+  | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
   | draw_cards
   | add_mana
   | until_eot_you_may_pay_cost_at_timing
@@ -166,6 +168,17 @@ draw_count  = _{ number_word | variable_name }
 number_word = @{
     ^"one" | ^"two" | ^"three" | ^"four" | ^"five"
   | ^"six" | ^"seven" | ^"eight" | ^"nine" | ^"ten"
+}
+
+target_player_activates_mana_ability_of_each_permanent_they_control = {
+    ^"target" ~ ^"player" ~ ^"activates" ~ article ~ ^"mana" ~ ^"ability"
+  ~ ^"of" ~ ^"each" ~ permanent_type ~ ^"they" ~ ^"control" ~ "."
+}
+
+then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way = {
+    ^"then" ~ ^"that" ~ ^"player" ~ ^"loses" ~ ^"all" ~ ^"unspent"
+  ~ ^"mana" ~ ^"and" ~ ^"you" ~ ^"add" ~ ^"the" ~ ^"mana"
+  ~ ^"lost" ~ ^"this" ~ ^"way" ~ "."
 }
 
 ante_play_restriction = {

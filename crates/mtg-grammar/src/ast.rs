@@ -41,6 +41,14 @@ pub enum Statement {
     TargetPlayerDrawsCards {
         count: CardCount,
     },
+    /// "Target player activates a mana ability of each <permanent_type>
+    /// they control."
+    TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
+        permanent_type: PermanentType,
+    },
+    /// "Then that player loses all unspent mana and you add the mana lost
+    /// this way."
+    ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay,
     /// "Add <mana>."
     AddMana {
         mana: ManaCost,

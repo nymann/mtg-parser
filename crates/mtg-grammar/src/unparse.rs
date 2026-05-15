@@ -72,6 +72,18 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_card_count(out, *count);
             out.push_str(" cards.");
         }
+        Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
+            permanent_type,
+        } => {
+            out.push_str("Target player activates a mana ability of each ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" they control.");
+        }
+        Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay => {
+            out.push_str(
+                "Then that player loses all unspent mana and you add the mana lost this way.",
+            );
+        }
         Statement::AddMana { mana } => {
             out.push_str("Add ");
             write_mana_cost(out, mana);

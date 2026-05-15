@@ -107,3 +107,5 @@ mod disrupting_scepter;
 mod dragon_whelp;
 #[path = "generated_patterns/drain_life.rs"]
 mod drain_life;
+#[path = "generated_patterns/drain_power.rs"]
+mod drain_power;

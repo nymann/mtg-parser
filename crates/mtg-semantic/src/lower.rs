@@ -48,6 +48,14 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }
+        Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
+            permanent_type,
+        } => CardEffect::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
+            permanent_type: *permanent_type,
+        },
+        Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay => {
+            CardEffect::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay
+        }
         Statement::AddMana { mana } => CardEffect::AddMana { mana: mana.clone() },
         Statement::AntePlayRestriction => CardEffect::AntePlayRestriction,
         Statement::YouOwnTargetCardInZone { zone } => {

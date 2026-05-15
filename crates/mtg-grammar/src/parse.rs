@@ -79,6 +79,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::destroy_target_permanent_choice => destroy_target_permanent_choice_from_pair(pair),
         Rule::destroy_all => destroy_all_from_pair(pair),
+        Rule::target_player_activates_mana_ability_of_each_permanent_they_control => {
+            target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(pair)
+        }
+        Rule::then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way => {
+            Ok(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay)
+        }
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::add_mana => add_mana_from_pair(pair),
         Rule::until_eot_you_may_pay_cost_at_timing => {
@@ -557,6 +563,19 @@ fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     Ok(Statement::TargetPlayerDrawsCards {
         count: card_count_from_pair(count_pair)?,
     })
+}
+
+fn target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "target player activates mana ability missing permanent_type",
+    ))?;
+    Ok(
+        Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
+            permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+        },
+    )
 }
 
 fn card_count_from_pair(count_pair: Pair<Rule>) -> Result<CardCount, ParseError> {

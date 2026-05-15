@@ -126,6 +126,10 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 permanent_types: vec![a, b],
             }
         }),
+        arb_permanent_type().prop_map(|permanent_type| {
+            Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }
+        }),
+        Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::ActivateOnlyDuringYourTurn),
         (1u32..=10).prop_map(|threshold| {
