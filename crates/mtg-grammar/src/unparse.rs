@@ -94,6 +94,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(permanent_type_plural_name(*permanent_type));
             out.push('.');
         }
+        Statement::DestroyAllBasicLands { basic_land_type } => {
+            out.push_str("Destroy all ");
+            out.push_str(basic_land_type_plural_name(*basic_land_type));
+            out.push('.');
+        }
         Statement::Keyword(kw) => write_keyword(out, *kw),
         Statement::TargetPlayerDrawsCards { count } => {
             out.push_str("Target player draws ");

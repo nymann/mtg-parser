@@ -41,6 +41,7 @@ sentence_statement = _{
   | exchange_that_card_with_top_card_of_your_library
   | imperative_action_sequence
   | counter_target_spell
+  | destroy_all_basic_lands
   | destroy_all
   | destroy_target_permanent_choice
   | destroy
@@ -139,6 +140,7 @@ this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first = {
 }
 
 destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }
+destroy_all_basic_lands = { ^"destroy" ~ ^"all" ~ basic_land_type_plural ~ "." }
 destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural ~ "." }
 destroy_target_permanent_choice = { ^"destroy" ~ ^"target" ~ permanent_type ~ (^"or" ~ permanent_type)+ ~ "." }
 counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }

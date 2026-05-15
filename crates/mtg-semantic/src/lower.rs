@@ -67,6 +67,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::DestroyAll { permanent_type } => CardEffect::DestroyAll {
             permanent_type: *permanent_type,
         },
+        Statement::DestroyAllBasicLands { basic_land_type } => CardEffect::DestroyAllBasicLands {
+            basic_land_type: *basic_land_type,
+        },
         Statement::Keyword(kw) => CardEffect::Keyword(*kw),
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }

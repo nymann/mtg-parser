@@ -131,3 +131,5 @@ mod fastbond;
 mod fear;
 #[path = "generated_patterns/fireball.rs"]
 mod fireball;
+#[path = "generated_patterns/flashfires.rs"]
+mod flashfires;

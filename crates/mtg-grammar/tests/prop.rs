@@ -6,8 +6,8 @@
 // budget thanks to the trivial parser/unparser.
 
 use mtg_grammar::{
-    parse, unparse, ActivatedAbility, ActivatedCost, ActivatedEffect, CardCount, Color,
-    DamageLifeGainCap, DamageRecipient, EachPlayerAction, EnchantedObject, ImperativeAction,
+    parse, unparse, ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount,
+    Color, DamageLifeGainCap, DamageRecipient, EachPlayerAction, EnchantedObject, ImperativeAction,
     Keyword, ManaCost, ManaSymbol, PermanentType, SourceObject, Statement, StaticAbility,
     TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
 };
@@ -51,6 +51,16 @@ fn arb_permanent_type() -> impl Strategy<Value = PermanentType> {
         Just(PermanentType::Enchantment),
         Just(PermanentType::Land),
         Just(PermanentType::Planeswalker),
+    ]
+}
+
+fn arb_basic_land_type() -> impl Strategy<Value = BasicLandType> {
+    prop_oneof![
+        Just(BasicLandType::Plains),
+        Just(BasicLandType::Island),
+        Just(BasicLandType::Swamp),
+        Just(BasicLandType::Mountain),
+        Just(BasicLandType::Forest),
     ]
 }
 
@@ -172,6 +182,9 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             Statement::DestroyTargetPermanentChoice {
                 permanent_types: vec![a, b],
             }
+        }),
+        arb_basic_land_type().prop_map(|basic_land_type| {
+            Statement::DestroyAllBasicLands { basic_land_type }
         }),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }

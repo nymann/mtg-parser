@@ -87,6 +87,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             )
         }
         Rule::destroy_target_permanent_choice => destroy_target_permanent_choice_from_pair(pair),
+        Rule::destroy_all_basic_lands => destroy_all_basic_lands_from_pair(pair),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::target_player_activates_mana_ability_of_each_permanent_they_control => {
             target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(pair)
@@ -505,6 +506,16 @@ fn destroy_all_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         .expect("destroy_all always contains a permanent_type_plural");
     Ok(Statement::DestroyAll {
         permanent_type: permanent_type_from_plural_pair(pt)?,
+    })
+}
+
+fn destroy_all_basic_lands_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let land_type = pair
+        .into_inner()
+        .next()
+        .expect("destroy_all_basic_lands always contains a basic_land_type_plural");
+    Ok(Statement::DestroyAllBasicLands {
+        basic_land_type: basic_land_type_from_plural_pair(land_type)?,
     })
 }
 

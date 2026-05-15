@@ -53,6 +53,10 @@ pub enum Statement {
     DestroyAll {
         permanent_type: PermanentType,
     },
+    /// "Destroy all <basic_land_type>s."
+    DestroyAllBasicLands {
+        basic_land_type: BasicLandType,
+    },
     Keyword(Keyword),
     TargetPlayerDrawsCards {
         count: CardCount,

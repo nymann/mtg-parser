@@ -1,8 +1,8 @@
 use mtg_grammar::{
-    ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Color,
-    DamageLifeGainCap, DamageRecipient, EachPlayerAction, ImperativeAction, Keyword, ManaCost,
-    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier,
-    SourceObject, StaticAbility, TriggeredAbility, Variable, VariableDefinition, Zone,
+    ActionTiming, ActivatedAbility, BalanceSameWayAction, BasicLandType, CardCount,
+    CastRestriction, Color, DamageLifeGainCap, DamageRecipient, EachPlayerAction, ImperativeAction,
+    Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
+    PtModifier, SourceObject, StaticAbility, TriggeredAbility, Variable, VariableDefinition, Zone,
 };
 use serde::{Deserialize, Serialize};
 
@@ -52,6 +52,8 @@ pub enum CardEffect {
     DestroyTargetPermanentChoice { permanent_types: Vec<PermanentType> },
     /// "Destroy all <permanent_type>s."
     DestroyAll { permanent_type: PermanentType },
+    /// "Destroy all <basic_land_type>s."
+    DestroyAllBasicLands { basic_land_type: BasicLandType },
     /// A single keyword ability such as `Flying` or `Enchant artifact`.
     Keyword(Keyword),
     /// "Target player draws N cards."

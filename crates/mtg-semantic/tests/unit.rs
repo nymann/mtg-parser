@@ -1,6 +1,6 @@
 // Tier 1 lowering unit tests. Hand-written AST → expected IR.
 
-use mtg_grammar::{ManaCost, ManaSymbol, PermanentType, SourceObject, Statement};
+use mtg_grammar::{BasicLandType, ManaCost, ManaSymbol, PermanentType, SourceObject, Statement};
 use mtg_semantic::{lower, CardEffect, ManaValue};
 
 fn mc(symbols: Vec<ManaSymbol>) -> Statement {
@@ -28,6 +28,19 @@ fn lowers_destroy_target_permanent_choice() {
         })
         .unwrap(),
         CardEffect::DestroyTargetPermanentChoice { permanent_types },
+    );
+}
+
+#[test]
+fn lowers_destroy_all_basic_lands() {
+    assert_eq!(
+        lower(&Statement::DestroyAllBasicLands {
+            basic_land_type: BasicLandType::Plains,
+        })
+        .unwrap(),
+        CardEffect::DestroyAllBasicLands {
+            basic_land_type: BasicLandType::Plains,
+        },
     );
 }
 
