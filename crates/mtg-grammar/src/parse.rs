@@ -1035,6 +1035,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::source_is_dealt_damage => {
                 event = Some(source_is_dealt_damage_from_pair(child)?);
             }
+            Rule::source_deals_damage_to_an_opponent => {
+                event = Some(source_deals_damage_to_an_opponent_from_pair(child)?);
+            }
             Rule::permanent_put_into_graveyard_from_battlefield => {
                 event = Some(permanent_put_into_graveyard_from_battlefield_from_pair(
                     child,
@@ -1162,6 +1165,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::that_player_draws_an_additional_card => {
                 effects.push(TriggerEffect::ThatPlayerDrawsAnAdditionalCard);
             }
+            Rule::that_player_discards_card_at_random => {
+                effects.push(TriggerEffect::ThatPlayerDiscardsCardAtRandom);
+            }
             Rule::its_controller_adds_an_additional_mana => {
                 effects.push(its_controller_adds_an_additional_mana_from_pair(child)?);
             }
@@ -1272,6 +1278,17 @@ fn source_is_dealt_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, Pa
         .next()
         .ok_or(ParseError::Internal("source dealt damage missing source"))?;
     Ok(TriggerEvent::SourceIsDealtDamage {
+        source: source_object_from_pair(source_pair)?,
+    })
+}
+
+fn source_deals_damage_to_an_opponent_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEvent, ParseError> {
+    let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "source deals damage to opponent missing source",
+    ))?;
+    Ok(TriggerEvent::SourceDealsDamageToAnOpponent {
         source: source_object_from_pair(source_pair)?,
     })
 }

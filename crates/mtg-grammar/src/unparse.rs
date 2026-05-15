@@ -1107,6 +1107,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::PlayerCastsColoredSpell { .. }
         | TriggerEvent::BasicLandTypeIsTappedForMana { .. }
         | TriggerEvent::SourceIsDealtDamage { .. }
+        | TriggerEvent::SourceDealsDamageToAnOpponent { .. }
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
@@ -1218,6 +1219,10 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             write_creature_type(out, excluded_type);
             out.push_str(" creature");
         }
+        TriggerEvent::SourceDealsDamageToAnOpponent { source } => {
+            write_source_object(out, source);
+            out.push_str(" deals damage to an opponent");
+        }
     }
 }
 
@@ -1315,6 +1320,9 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
         }
         TriggerEffect::ThatPlayerDrawsAnAdditionalCard => {
             out.push_str("that player draws an additional card.");
+        }
+        TriggerEffect::ThatPlayerDiscardsCardAtRandom => {
+            out.push_str("that player discards a card at random.");
         }
         TriggerEffect::ItsControllerAddsAdditionalMana { mana } => {
             out.push_str("its controller adds an additional ");

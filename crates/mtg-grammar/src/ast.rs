@@ -378,6 +378,8 @@ pub enum TriggerEvent {
         source: SourceObject,
         excluded_type: CreatureType,
     },
+    /// "this <source> deals damage to an opponent"
+    SourceDealsDamageToAnOpponent { source: SourceObject },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -438,6 +440,8 @@ pub enum TriggerEffect {
     },
     /// "that player draws an additional card"
     ThatPlayerDrawsAnAdditionalCard,
+    /// "that player discards a card at random"
+    ThatPlayerDiscardsCardAtRandom,
     /// "this <source> deals damage equal to that <permanent_type>'s
     /// toughness to the <permanent_type>'s controller"
     SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {

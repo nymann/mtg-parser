@@ -171,3 +171,5 @@ mod howl_from_beyond;
 mod howling_mine;
 #[path = "generated_patterns/hurricane.rs"]
 mod hurricane;
+#[path = "generated_patterns/hypnotic_specter.rs"]
+mod hypnotic_specter;
