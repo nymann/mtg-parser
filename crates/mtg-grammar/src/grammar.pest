@@ -18,13 +18,30 @@ WHITESPACE = _{ " " }
 
 card_text = { SOI ~ abilities ~ EOI }
 
-abilities = _{ statement ~ ("\n" ~ statement)* }
+// Card text is a list of printed lines (paragraphs) separated by '\n'.
+// Each line is either a single "phrase" ability (no terminating period,
+// e.g. `Flying`, `Enchant creature`) or a chain of one or more
+// "sentence" abilities (each ending in a period, e.g. two triggered
+// abilities printed in a single line as on Animate Dead).
+abilities = _{ line ~ ("\n" ~ line)* }
+line      = _{ sentence_chain | phrase_statement }
 
-statement = _{
-    mana_cost
-  | destroy
+// `+` plus implicit whitespace handles same-line chaining (Animate
+// Dead's two triggers on one printed line, e.g.
+// `... to it. When this Aura leaves ...`). Phrase statements like
+// `Flying` or `{R}` aren't in this chain, which is what stops
+// `parse("{2} {R}")` from silently accepting two mana costs.
+sentence_chain     = _{ sentence_statement+ }
+sentence_statement = _{
+    destroy
   | draw_cards
-  | static_ability
+  | static_as_long_as
+  | static_enchanted_gets
+  | triggered_ability
+}
+
+phrase_statement = _{
+    mana_cost
   | keyword_ability
 }
 
@@ -45,7 +62,20 @@ number_word = @{
 keyword_ability = { keyword }
 keyword         = _{ enchant | flying }
 flying          = @{ ^"flying" }
-enchant         = { ^"enchant" ~ permanent_type }
+
+// `Enchant <object>`. Order the longer alternatives first so PEG's
+// first-match doesn't stop at the bare permanent type.
+enchant = {
+    ^"enchant"
+  ~ (enchant_put_onto_battlefield | enchant_card_in_zone | enchant_permanent)
+}
+enchant_permanent    = { permanent_type }
+enchant_card_in_zone = { permanent_type ~ ^"card" ~ ^"in" ~ article ~ zone }
+enchant_put_onto_battlefield = {
+    permanent_type ~ ^"put" ~ ^"onto" ~ ^"the" ~ ^"battlefield"
+  ~ ^"with" ~ ^"this" ~ ^"aura"
+}
+zone = @{ ^"graveyard" }
 
 // Card types that appear as keyword arguments or in type lines.
 // Atomic so each alternative is matched as a single word.
@@ -57,10 +87,18 @@ permanent_type = @{
   | ^"planeswalker"
 }
 
-// "As long as <cond>, <effect>." — one static ability of the
-// conditional-continuous-effect family.
-static_ability = {
+// Static abilities. Two surface shapes today:
+//   - "As long as <cond>, <effect>." — conditional continuous effect.
+//   - "Enchanted <type> gets <pt_modifier>." — unconditional P/T
+//     modifier on the enchanted permanent (e.g. Animate Dead).
+static_ability = _{ static_as_long_as | static_enchanted_gets }
+
+static_as_long_as = {
     ^"as" ~ ^"long" ~ ^"as" ~ condition ~ "," ~ continuous_effect ~ "."
+}
+
+static_enchanted_gets = {
+    ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier ~ "."
 }
 
 condition      = _{ enchanted_isnt }
@@ -73,6 +111,59 @@ becomes_pt_from_mv = {
     ^"it's" ~ article ~ permanent_type+
   ~ ^"with" ~ ^"power" ~ ^"and" ~ ^"toughness"
   ~ ^"each" ~ ^"equal" ~ ^"to" ~ ^"its" ~ ^"mana" ~ ^"value"
+}
+
+// "+1/+1", "-1/-0", "+0/-2" — sign is always explicit on both sides.
+pt_modifier   = ${ signed_number ~ "/" ~ signed_number }
+signed_number = @{ ("+" | "-") ~ ASCII_DIGIT+ }
+
+// "When <event>, [if <cond>,] <effect>+"
+// Each trigger_effect rule below carries its own terminator (a closing
+// "." or a closing quote that absorbs a period). Effects are then just
+// space-separated within the trigger; no ". " separator is needed at
+// this layer.
+triggered_ability = {
+    ^"when" ~ trigger_event ~ ","
+  ~ (^"if" ~ intervening_if ~ ",")?
+  ~ trigger_effect+
+}
+
+trigger_event = _{ aura_leaves_battlefield | aura_enters }
+aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
+aura_leaves_battlefield = { ^"this" ~ ^"aura" ~ ^"leaves" ~ ^"the" ~ ^"battlefield" }
+
+intervening_if         = _{ its_on_the_battlefield }
+its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
+
+trigger_effect = _{
+    loses_and_gains_keyword
+  | return_enchanted_card_and_attach
+  | that_creatures_controller_sacrifices_it
+}
+
+that_creatures_controller_sacrifices_it = {
+    ^"that" ~ ^"creature's" ~ ^"controller" ~ ^"sacrifices" ~ ^"it" ~ "."
+}
+
+// `it loses "<keyword>" and gains "<keyword>."`. The quoted strings are
+// themselves keyword abilities — recursive parsing keeps them in the
+// AST as full `Keyword` nodes rather than opaque text. Magic prints
+// the closing period of the second quoted keyword INSIDE its quotes
+// (e.g. `gains "enchant ... with this Aura."`), so this effect ends
+// at the second closing quote — no period is emitted afterwards.
+loses_and_gains_keyword = {
+    ^"it" ~ ^"loses" ~ quoted_keyword
+  ~ ^"and" ~ ^"gains" ~ quoted_keyword_with_inner_period
+}
+quoted_keyword                   = _{ "\"" ~ keyword ~ "\"" }
+quoted_keyword_with_inner_period = _{ "\"" ~ keyword ~ "." ~ "\"" }
+
+// "Return enchanted <type> card to the battlefield under your control
+// and attach this Aura to it."
+return_enchanted_card_and_attach = {
+    ^"return" ~ ^"enchanted" ~ permanent_type ~ ^"card"
+  ~ ^"to" ~ ^"the" ~ ^"battlefield" ~ ^"under" ~ ^"your" ~ ^"control"
+  ~ ^"and" ~ ^"attach" ~ ^"this" ~ ^"aura" ~ ^"to" ~ ^"it" ~ "."
 }
 
 // Silent: the indefinite article ("a" / "an") is recoverable from

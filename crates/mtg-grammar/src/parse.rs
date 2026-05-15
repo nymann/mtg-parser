@@ -3,8 +3,9 @@ use pest::Parser;
 use pest_derive::Parser;
 
 use crate::ast::{
-    Condition, ContinuousEffect, Keyword, ManaCost, ManaSymbol, PermanentType, Statement,
-    StaticAbility,
+    Condition, ContinuousEffect, EnchantObject, InterveningIf, Keyword, ManaCost, ManaSymbol,
+    PermanentType, PtModifier, Sign, SignedNumber, Statement, StaticAbility, TriggerEffect,
+    TriggerEvent, TriggeredAbility, Zone,
 };
 
 #[derive(Parser)]
@@ -48,7 +49,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
-        Rule::static_ability => Ok(Statement::StaticAbility(static_ability_from_pair(pair)?)),
+        Rule::static_as_long_as | Rule::static_enchanted_gets => {
+            Ok(Statement::StaticAbility(static_ability_from_pair(pair)?))
+        }
+        Rule::triggered_ability => Ok(Statement::TriggeredAbility(
+            triggered_ability_from_pair(pair)?,
+        )),
         _ => Err(ParseError::Internal("statement")),
     }
 }
@@ -86,28 +92,197 @@ fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match inner.as_rule() {
         Rule::flying => Ok(Keyword::Flying),
         Rule::enchant => {
-            let pt = inner
+            let object = inner
                 .into_inner()
                 .next()
-                .expect("enchant always contains a permanent_type");
-            Ok(Keyword::Enchant(permanent_type_from_pair(pt)?))
+                .expect("enchant always contains an enchant_object alternative");
+            Ok(Keyword::Enchant(enchant_object_from_pair(object)?))
         }
         _ => Err(ParseError::Internal("keyword")),
     }
 }
 
-fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseError> {
-    let mut inner = pair.into_inner();
-    let cond_pair = inner
-        .next()
-        .expect("static_ability begins with a condition");
-    let effect_pair = inner
-        .next()
-        .expect("static_ability has an effect after the condition");
-    Ok(StaticAbility {
-        condition: condition_from_pair(cond_pair)?,
-        effect: continuous_effect_from_pair(effect_pair)?,
+fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, ParseError> {
+    let mut event: Option<TriggerEvent> = None;
+    let mut intervening_if: Option<InterveningIf> = None;
+    let mut effects: Vec<TriggerEffect> = Vec::new();
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::aura_enters => event = Some(TriggerEvent::ThisAuraEnters),
+            Rule::aura_leaves_battlefield => {
+                event = Some(TriggerEvent::ThisAuraLeavesTheBattlefield);
+            }
+            Rule::its_on_the_battlefield => {
+                intervening_if = Some(InterveningIf::ItsOnTheBattlefield);
+            }
+            Rule::that_creatures_controller_sacrifices_it => {
+                effects.push(TriggerEffect::ThatCreaturesControllerSacrificesIt);
+            }
+            Rule::loses_and_gains_keyword => {
+                effects.push(loses_and_gains_keyword_from_pair(child)?);
+            }
+            Rule::return_enchanted_card_and_attach => {
+                effects.push(return_enchanted_card_and_attach_from_pair(child)?);
+            }
+            _ => return Err(ParseError::Internal("triggered_ability child")),
+        }
+    }
+    let event = event.ok_or(ParseError::Internal("triggered_ability missing event"))?;
+    if effects.is_empty() {
+        return Err(ParseError::Internal("triggered_ability missing effect"));
+    }
+    Ok(TriggeredAbility {
+        event,
+        intervening_if,
+        effects,
     })
+}
+
+fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let loses_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("loses_and_gains missing loses keyword"))?;
+    let gains_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("loses_and_gains missing gains keyword"))?;
+    Ok(TriggerEffect::LosesAndGainsKeyword {
+        loses: keyword_from_inner_pair(loses_pair)?,
+        gains: keyword_from_inner_pair(gains_pair)?,
+    })
+}
+
+fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
+    match pair.as_rule() {
+        Rule::flying => Ok(Keyword::Flying),
+        Rule::enchant => {
+            let object = pair
+                .into_inner()
+                .next()
+                .expect("enchant always contains an enchant_object alternative");
+            Ok(Keyword::Enchant(enchant_object_from_pair(object)?))
+        }
+        _ => Err(ParseError::Internal("quoted keyword")),
+    }
+}
+
+fn return_enchanted_card_and_attach_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let pt = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("return_enchanted missing card_type"))?;
+    Ok(TriggerEffect::ReturnEnchantedCardAndAttach {
+        card_type: permanent_type_from_pair(pt)?,
+    })
+}
+
+fn enchant_object_from_pair(pair: Pair<Rule>) -> Result<EnchantObject, ParseError> {
+    match pair.as_rule() {
+        Rule::enchant_permanent => {
+            let pt = pair
+                .into_inner()
+                .next()
+                .expect("enchant_permanent wraps a permanent_type");
+            Ok(EnchantObject::Permanent(permanent_type_from_pair(pt)?))
+        }
+        Rule::enchant_card_in_zone => {
+            let mut inner = pair.into_inner();
+            let card_type = inner
+                .next()
+                .expect("enchant_card_in_zone names the card type first");
+            let zone = inner
+                .next()
+                .expect("enchant_card_in_zone names the zone after the article");
+            Ok(EnchantObject::CardInZone {
+                card_type: permanent_type_from_pair(card_type)?,
+                zone: zone_from_pair(zone)?,
+            })
+        }
+        Rule::enchant_put_onto_battlefield => {
+            let pt = pair
+                .into_inner()
+                .next()
+                .expect("enchant_put_onto_battlefield names the card type first");
+            Ok(EnchantObject::PutOntoBattlefieldByThisAura {
+                card_type: permanent_type_from_pair(pt)?,
+            })
+        }
+        _ => Err(ParseError::Internal("enchant_object")),
+    }
+}
+
+fn zone_from_pair(pair: Pair<Rule>) -> Result<Zone, ParseError> {
+    if pair.as_rule() != Rule::zone {
+        return Err(ParseError::Internal("zone"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "graveyard" => Ok(Zone::Graveyard),
+        _ => Err(ParseError::Internal("zone variant")),
+    }
+}
+
+fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseError> {
+    match pair.as_rule() {
+        Rule::static_as_long_as => {
+            let mut inner = pair.into_inner();
+            let cond_pair = inner
+                .next()
+                .expect("static_as_long_as begins with a condition");
+            let effect_pair = inner
+                .next()
+                .expect("static_as_long_as has an effect after the condition");
+            Ok(StaticAbility::Conditional {
+                condition: condition_from_pair(cond_pair)?,
+                effect: continuous_effect_from_pair(effect_pair)?,
+            })
+        }
+        Rule::static_enchanted_gets => {
+            let mut inner = pair.into_inner();
+            let pt_pair = inner
+                .next()
+                .expect("static_enchanted_gets begins with the enchanted permanent type");
+            let modifier_pair = inner
+                .next()
+                .expect("static_enchanted_gets has a pt_modifier");
+            Ok(StaticAbility::EnchantedGets {
+                permanent_type: permanent_type_from_pair(pt_pair)?,
+                modifier: pt_modifier_from_pair(modifier_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("static_ability variant")),
+    }
+}
+
+fn pt_modifier_from_pair(pair: Pair<Rule>) -> Result<PtModifier, ParseError> {
+    if pair.as_rule() != Rule::pt_modifier {
+        return Err(ParseError::Internal("pt_modifier"));
+    }
+    let mut inner = pair.into_inner();
+    let power_pair = inner.next().expect("pt_modifier has power first");
+    let toughness_pair = inner.next().expect("pt_modifier has toughness second");
+    Ok(PtModifier {
+        power: signed_number_from_pair(power_pair)?,
+        toughness: signed_number_from_pair(toughness_pair)?,
+    })
+}
+
+fn signed_number_from_pair(pair: Pair<Rule>) -> Result<SignedNumber, ParseError> {
+    if pair.as_rule() != Rule::signed_number {
+        return Err(ParseError::Internal("signed_number"));
+    }
+    let s = pair.as_str();
+    let (sign_char, rest) = s.split_at(1);
+    let sign = match sign_char {
+        "+" => Sign::Plus,
+        "-" => Sign::Minus,
+        _ => return Err(ParseError::Internal("signed_number sign")),
+    };
+    let magnitude = rest
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("signed_number magnitude"))?;
+    Ok(SignedNumber { sign, magnitude })
 }
 
 fn condition_from_pair(pair: Pair<Rule>) -> Result<Condition, ParseError> {

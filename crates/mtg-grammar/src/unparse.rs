@@ -1,8 +1,9 @@
 use std::fmt::Write;
 
 use crate::ast::{
-    Condition, ContinuousEffect, Keyword, ManaCost, ManaSymbol, PermanentType, Statement,
-    StaticAbility,
+    Condition, ContinuousEffect, EnchantObject, InterveningIf, Keyword, ManaCost, ManaSymbol,
+    PermanentType, PtModifier, Sign, SignedNumber, Statement, StaticAbility, TriggerEffect,
+    TriggerEvent, TriggeredAbility, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -17,10 +18,15 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
         Statement::Keyword(kw) => write_keyword(out, *kw),
         Statement::TargetPlayerDrawsCards { count } => {
-            write!(out, "Target player draws {} cards.", u32_to_number_word(*count))
-                .expect("write to String never fails");
+            write!(
+                out,
+                "Target player draws {} cards.",
+                u32_to_number_word(*count)
+            )
+            .expect("write to String never fails");
         }
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
+        Statement::TriggeredAbility(ta) => write_triggered_ability(out, ta),
         Statement::Compound(stmts) => {
             for (i, s) in stmts.iter().enumerate() {
                 if i > 0 {
@@ -51,10 +57,39 @@ fn u32_to_number_word(n: u32) -> &'static str {
 fn write_keyword(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::Flying => out.push_str("Flying"),
-        Keyword::Enchant(pt) => {
+        Keyword::Enchant(object) => {
             out.push_str("Enchant ");
-            out.push_str(permanent_type_name(pt));
+            write_enchant_object(out, object);
         }
+    }
+}
+
+fn write_enchant_object(out: &mut String, object: EnchantObject) {
+    match object {
+        EnchantObject::Permanent(pt) => out.push_str(permanent_type_name(pt)),
+        EnchantObject::CardInZone { card_type, zone } => {
+            out.push_str(permanent_type_name(card_type));
+            out.push_str(" card in ");
+            out.push_str(zone_article(zone));
+            out.push(' ');
+            out.push_str(zone_name(zone));
+        }
+        EnchantObject::PutOntoBattlefieldByThisAura { card_type } => {
+            out.push_str(permanent_type_name(card_type));
+            out.push_str(" put onto the battlefield with this Aura");
+        }
+    }
+}
+
+fn zone_name(zone: Zone) -> &'static str {
+    match zone {
+        Zone::Graveyard => "graveyard",
+    }
+}
+
+fn zone_article(zone: Zone) -> &'static str {
+    match zone {
+        Zone::Graveyard => "a",
     }
 }
 
@@ -77,11 +112,104 @@ fn write_mana_symbol(out: &mut String, sym: ManaSymbol) {
 }
 
 fn write_static_ability(out: &mut String, sa: &StaticAbility) {
-    out.push_str("As long as ");
-    write_condition(out, &sa.condition);
+    match sa {
+        StaticAbility::Conditional { condition, effect } => {
+            out.push_str("As long as ");
+            write_condition(out, condition);
+            out.push_str(", ");
+            write_continuous_effect(out, effect);
+            out.push('.');
+        }
+        StaticAbility::EnchantedGets {
+            permanent_type,
+            modifier,
+        } => {
+            out.push_str("Enchanted ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" gets ");
+            write_pt_modifier(out, *modifier);
+            out.push('.');
+        }
+    }
+}
+
+fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
+    out.push_str("When ");
+    write_trigger_event(out, ta.event);
     out.push_str(", ");
-    write_continuous_effect(out, &sa.effect);
-    out.push('.');
+    if let Some(iif) = ta.intervening_if {
+        out.push_str("if ");
+        write_intervening_if(out, iif);
+        out.push_str(", ");
+    }
+    for (i, eff) in ta.effects.iter().enumerate() {
+        if i > 0 {
+            out.push(' ');
+        }
+        write_trigger_effect(out, eff);
+    }
+}
+
+fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
+    match ev {
+        TriggerEvent::ThisAuraEnters => out.push_str("this Aura enters"),
+        TriggerEvent::ThisAuraLeavesTheBattlefield => {
+            out.push_str("this Aura leaves the battlefield");
+        }
+    }
+}
+
+fn write_intervening_if(out: &mut String, iif: InterveningIf) {
+    match iif {
+        InterveningIf::ItsOnTheBattlefield => out.push_str("it's on the battlefield"),
+    }
+}
+
+fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
+    match eff {
+        TriggerEffect::ThatCreaturesControllerSacrificesIt => {
+            out.push_str("that creature's controller sacrifices it.");
+        }
+        TriggerEffect::LosesAndGainsKeyword { loses, gains } => {
+            out.push_str("it loses \"");
+            write_keyword_lowercase(out, *loses);
+            out.push_str("\" and gains \"");
+            write_keyword_lowercase(out, *gains);
+            out.push_str(".\"");
+        }
+        TriggerEffect::ReturnEnchantedCardAndAttach { card_type } => {
+            out.push_str("Return enchanted ");
+            out.push_str(permanent_type_name(*card_type));
+            out.push_str(" card to the battlefield under your control and attach this Aura to it.");
+        }
+    }
+}
+
+/// `write_keyword` capitalizes the first letter ("Flying", "Enchant ...").
+/// Inside the quoted text of a loses-and-gains effect the quoted
+/// keyword is printed lowercase, which is what we emit here.
+fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
+    match kw {
+        Keyword::Flying => out.push_str("flying"),
+        Keyword::Enchant(object) => {
+            out.push_str("enchant ");
+            write_enchant_object(out, object);
+        }
+    }
+}
+
+fn write_pt_modifier(out: &mut String, m: PtModifier) {
+    write_signed_number(out, m.power);
+    out.push('/');
+    write_signed_number(out, m.toughness);
+}
+
+fn write_signed_number(out: &mut String, n: SignedNumber) {
+    out.push(match n.sign {
+        Sign::Plus => '+',
+        Sign::Minus => '-',
+    });
+    write!(out, "{}", n.magnitude).expect("write to String never fails");
 }
 
 fn write_condition(out: &mut String, cond: &Condition) {

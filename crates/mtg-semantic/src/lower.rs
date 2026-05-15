@@ -17,11 +17,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }
         Statement::StaticAbility(sa) => CardEffect::StaticAbility(sa.clone()),
+        Statement::TriggeredAbility(ta) => CardEffect::TriggeredAbility(ta.clone()),
         Statement::Compound(stmts) => {
-            let lowered = stmts
-                .iter()
-                .map(lower)
-                .collect::<Result<Vec<_>, _>>()?;
+            let lowered = stmts.iter().map(lower).collect::<Result<Vec<_>, _>>()?;
             CardEffect::Compound(lowered)
         }
     })

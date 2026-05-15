@@ -1,4 +1,4 @@
-use mtg_grammar::{Keyword, StaticAbility};
+use mtg_grammar::{Keyword, StaticAbility, TriggeredAbility};
 use serde::{Deserialize, Serialize};
 
 /// Semantic IR for one Oracle-text effect. The grammar's syntactic
@@ -19,6 +19,10 @@ pub enum CardEffect {
     /// grammar-side AST is reused verbatim until the IR grows real
     /// reference-resolution work to do here.
     StaticAbility(StaticAbility),
+    /// A triggered ability ("When <event>, ..."). Reused from the
+    /// grammar AST until the IR needs to resolve `this Aura`,
+    /// `that creature` and similar references.
+    TriggeredAbility(TriggeredAbility),
     /// Two or more lowered effects, in source order — the lowering of
     /// a multi-ability card.
     Compound(Vec<CardEffect>),

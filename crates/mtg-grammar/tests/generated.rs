@@ -8,3 +8,5 @@ mod air_elemental;
 mod ancestral_recall;
 #[path = "generated/animate_artifact.rs"]
 mod animate_artifact;
+#[path = "generated/animate_dead.rs"]
+mod animate_dead;
