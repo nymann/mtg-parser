@@ -224,7 +224,7 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
                 "{}→{}",
                 s.baseline_grammar_rules, s.current_grammar_rules
             )),
-            delta_span(s.grammar_delta(), " rules"),
+            delta_span(s.grammar_delta(), /*lower_is_better=*/ true, " rules"),
         ],
         Alignment::Center,
     );
@@ -240,7 +240,7 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
                 s.current_corpus_passing,
                 s.current_corpus_total
             )),
-            delta_span(s.corpus_delta(), " passes"),
+            delta_span(s.corpus_delta(), /*lower_is_better=*/ false, " passes"),
         ],
         Alignment::Center,
     );
@@ -338,18 +338,11 @@ fn complexity_segment_spans(
     let baseline = series.first().copied().unwrap_or(0) as i64;
     let current = series.last().copied().unwrap_or(0) as i64;
     let raw_delta = current - baseline;
-    // For "lower is better" metrics, flip the sign so the delta_span
-    // colors a reduction green and a growth red.
-    let display_delta = if lower_is_better {
-        -raw_delta
-    } else {
-        raw_delta
-    };
     vec![
         label_span(label),
         Span::styled(spark, Style::default().fg(spark_color)),
         Span::raw(format!(" {value_text}")),
-        delta_span(display_delta, &format!(" {delta_suffix}")),
+        delta_span(raw_delta, lower_is_better, &format!(" {delta_suffix}")),
     ]
 }
 
@@ -407,13 +400,33 @@ fn render_bar_segment(
     );
 }
 
-fn delta_span(delta: i64, suffix: &str) -> Span<'static> {
-    let (txt, color) = match delta.cmp(&0) {
-        std::cmp::Ordering::Greater => (format!(" +{delta}{suffix}"), C_GOOD),
-        std::cmp::Ordering::Less => (format!(" {delta}{suffix}"), C_BAD),
-        std::cmp::Ordering::Equal => (format!(" +0{suffix}"), C_FAINT),
+/// Render a signed delta. The printed number always reflects the true
+/// direction of change; `lower_is_better` only decides the color, so a
+/// reduction in a "lower is better" metric reads as e.g. `-68` in green.
+fn delta_span(delta: i64, lower_is_better: bool, suffix: &str) -> Span<'static> {
+    let color = match delta.cmp(&0) {
+        std::cmp::Ordering::Equal => C_FAINT,
+        std::cmp::Ordering::Greater => {
+            if lower_is_better {
+                C_BAD
+            } else {
+                C_GOOD
+            }
+        }
+        std::cmp::Ordering::Less => {
+            if lower_is_better {
+                C_GOOD
+            } else {
+                C_BAD
+            }
+        }
     };
-    Span::styled(txt, Style::default().fg(color))
+    // Negative values already carry their '-'; add '+' for the rest.
+    let sign = if delta > 0 { "+" } else { "" };
+    Span::styled(
+        format!(" {sign}{delta}{suffix}"),
+        Style::default().fg(color),
+    )
 }
 
 fn format_secs(s: u64) -> String {
