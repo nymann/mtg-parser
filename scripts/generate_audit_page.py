@@ -47,6 +47,12 @@ def churn_at(ref: str, path: str) -> int:
     return sum(1 for name in names if name == path)
 
 
+def commit_index() -> dict[str, int]:
+    """Map every commit's 7-char sha to its 1-based chronological index."""
+    out = git("log", "--reverse", "--format=%H")
+    return {sha[:7]: i + 1 for i, sha in enumerate(out.splitlines())}
+
+
 def history(path: str) -> list[dict[str, int | str]]:
     """Cumulative LOC per commit that touched `path`, oldest first."""
     out = git("log", "--follow", "--reverse", "--format=__C__ %H %at", "--numstat", "--", path)
@@ -92,6 +98,7 @@ def parse_refs(raw: str) -> list[dict[str, str]]:
 
 
 def collect(refs: list[dict[str, str]]) -> list[dict[str, object]]:
+    idx_map = commit_index()
     rows = []
     for display, path, group in FILES:
         points = []
@@ -105,13 +112,16 @@ def collect(refs: list[dict[str, str]]) -> list[dict[str, object]]:
                     "loc": loc_at(ref["ref"], path),
                 }
             )
+        hist = history(path)
+        for point in hist:
+            point["idx"] = idx_map.get(point["sha"], 0)  # type: ignore[index]
         rows.append(
             {
                 "file": display,
                 "path": path,
                 "group": group,
                 "points": points,
-                "history": history(path),
+                "history": hist,
             }
         )
     return rows
@@ -139,17 +149,19 @@ def render(refs: list[dict[str, str]], rows: list[dict[str, object]]) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)}</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
   <style>
     :root {{
       --bg: #f6f7f9; --panel: #fff; --ink: #16181d; --muted: #5b6472;
-      --grid: #d8dde6; --border: #e3e7ee;
-      --c0: #6b7280; --c1: #2563eb; --c2: #dc2626; --c3: #059669; --c4: #7c3aed;
+      --border: #e3e7ee;
     }}
     * {{ box-sizing: border-box; }}
     body {{ margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
     main {{ max-width: 1180px; margin: 0 auto; padding: 28px; }}
-    h1 {{ margin: 0 0 6px; font-size: 28px; letter-spacing: 0; }}
-    h2 {{ margin: 0 0 14px; font-size: 18px; letter-spacing: 0; }}
+    h1 {{ margin: 0 0 6px; font-size: 28px; }}
+    h2 {{ margin: 0 0 14px; font-size: 18px; }}
     p {{ margin: 0; color: var(--muted); }}
     section, .metric {{ background: var(--panel); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }}
     section {{ padding: 18px; margin-top: 16px; }}
@@ -158,21 +170,17 @@ def render(refs: list[dict[str, str]], rows: list[dict[str, object]]) -> str:
     .metric {{ padding: 14px 16px; }}
     .metric strong {{ display: block; font-size: 24px; line-height: 1.1; }}
     .metric span {{ display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }}
-    .legend {{ display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 10px 0 4px; color: var(--muted); font-size: 12px; }}
-    .legend span {{ display: inline-flex; align-items: center; gap: 6px; }}
-    .dot {{ width: 10px; height: 10px; border-radius: 999px; display: inline-block; }}
-    svg {{ width: 100%; height: auto; display: block; overflow: visible; }}
-    .axis {{ stroke: #8b95a5; stroke-width: 1; }}
-    .grid {{ stroke: var(--grid); stroke-width: 1; stroke-dasharray: 2 4; }}
-    .label {{ fill: var(--muted); font-size: 12px; }}
-    .file-label {{ fill: var(--ink); font-size: 11px; }}
+    .chart-wrap {{ position: relative; height: 480px; }}
+    .chart-wrap.tall {{ height: 520px; }}
+    .chart-wrap.short {{ height: 360px; }}
     .note {{ margin-top: 10px; font-size: 13px; }}
+    .hint {{ font-size: 12px; color: var(--muted); margin-bottom: 8px; }}
     table {{ width: 100%; border-collapse: collapse; margin-top: 10px; font-variant-numeric: tabular-nums; }}
     th, td {{ padding: 8px 10px; border-bottom: 1px solid #e8ebf0; text-align: right; white-space: nowrap; }}
     th:first-child, td:first-child {{ text-align: left; white-space: normal; }}
     th {{ color: var(--muted); font-weight: 600; font-size: 12px; }}
     .neg {{ color: #047857; font-weight: 600; }} .pos {{ color: #b91c1c; font-weight: 600; }} .zero {{ color: var(--muted); }}
-    @media (max-width: 780px) {{ main {{ padding: 18px; }} .summary {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} th, td {{ padding: 7px 6px; font-size: 12px; }} }}
+    @media (max-width: 780px) {{ main {{ padding: 18px; }} .summary {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} .chart-wrap {{ height: 360px; }} th, td {{ padding: 7px 6px; font-size: 12px; }} }}
   </style>
 </head>
 <body>
@@ -190,18 +198,18 @@ def render(refs: list[dict[str, str]], rows: list[dict[str, object]]) -> str:
   </div>
   <section>
     <h2>Churn vs LOC Hotspot Movement</h2>
-    <div class="legend" id="legend"></div>
-    <svg id="scatter" viewBox="0 0 1080 520" role="img" aria-label="Scatter plot of churn versus file LOC"></svg>
+    <div class="hint">Hover for details. Click legend entries to toggle. Scroll to zoom, drag to pan.</div>
+    <div class="chart-wrap"><canvas id="scatter"></canvas></div>
     <p class="note">A lower point means less code in that hotspot. A point further right means the file was touched more often in the sampled history.</p>
   </section>
   <section>
     <h2>Lines of Code Delta by File</h2>
-    <svg id="bars" viewBox="0 0 1080 430" role="img" aria-label="Bar chart of LOC deltas"></svg>
+    <div class="chart-wrap short"><canvas id="bars"></canvas></div>
   </section>
   <section>
     <h2>LOC Over Time (per commit)</h2>
-    <div class="legend" id="series-legend"></div>
-    <svg id="series" viewBox="0 0 1080 520" role="img" aria-label="Per-file LOC over commit history"></svg>
+    <div class="hint">X-axis is the chronological commit number across the whole repo. Hover, toggle files in the legend, scroll to zoom, drag to pan.</div>
+    <div class="chart-wrap tall"><canvas id="series"></canvas></div>
     <p class="note">Each line is a file's LOC at every commit that touched it. Dashed lines are linear regressions over each file's full history — a flat or downward trend means the cleanup is winning.</p>
   </section>
   <section>
@@ -212,74 +220,10 @@ def render(refs: list[dict[str, str]], rows: list[dict[str, object]]) -> str:
 <script id="audit-data" type="application/json">{payload}</script>
 <script>
 const data = JSON.parse(document.getElementById("audit-data").textContent);
-const colors = ["var(--c0)", "var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
-function add(svg, name, attrs = {{}}, text = null) {{
-  const el = document.createElementNS("http://www.w3.org/2000/svg", name);
-  for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, value);
-  if (text !== null) el.textContent = text;
-  svg.appendChild(el);
-  return el;
-}}
-function point(row, idx) {{ return row.points[idx]; }}
-function drawLegend() {{
-  const legend = document.getElementById("legend");
-  data.refs.forEach((ref, idx) => {{
-    const span = document.createElement("span");
-    span.innerHTML = `<i class="dot" style="background:${{colors[idx % colors.length]}}"></i>${{ref.label}} (${{ref.sha}})`;
-    legend.appendChild(span);
-  }});
-}}
-function drawScatter() {{
-  const svg = document.getElementById("scatter");
-  const W = 1080, H = 520, L = 78, R = 32, T = 28, B = 62;
-  const maxChurn = Math.max(140, ...data.rows.flatMap(r => r.points.map(p => p.churn))) + 5;
-  const maxLoc = Math.max(4000, ...data.rows.flatMap(r => r.points.map(p => p.loc)));
-  const x = churn => L + (churn / maxChurn) * (W - L - R);
-  const y = loc => T + (1 - loc / maxLoc) * (H - T - B);
-  [1000, 2000, 3000, 4000].forEach(loc => {{
-    add(svg, "line", {{ class: "grid", x1: L, x2: W - R, y1: y(loc), y2: y(loc) }});
-    add(svg, "text", {{ class: "label", x: 18, y: y(loc) + 4 }}, String(loc));
-  }});
-  [40, 80, 120].forEach(churn => {{
-    add(svg, "line", {{ class: "grid", x1: x(churn), x2: x(churn), y1: T, y2: H - B }});
-    add(svg, "text", {{ class: "label", x: x(churn) - 8, y: H - B + 24 }}, String(churn));
-  }});
-  add(svg, "line", {{ class: "axis", x1: L, x2: W - R, y1: H - B, y2: H - B }});
-  add(svg, "line", {{ class: "axis", x1: L, x2: L, y1: T, y2: H - B }});
-  add(svg, "text", {{ class: "label", x: W / 2, y: H - 16, "text-anchor": "middle" }}, "churn: touches in last 200 commits");
-  add(svg, "text", {{ class: "label", x: 20, y: 22 }}, "LOC");
-  data.rows.forEach(row => {{
-    row.points.forEach((p, idx) => {{
-      const jitter = (idx - (data.refs.length - 1) / 2) * 6;
-      add(svg, "circle", {{ cx: x(p.churn) + jitter, cy: y(p.loc) + jitter, r: row.group === "grammar" ? 8 : 6, fill: colors[idx % colors.length], "fill-opacity": "0.25", stroke: colors[idx % colors.length], "stroke-width": 2 }});
-    }});
-  }});
-  data.rows.forEach(row => {{
-    const p = row.points[row.points.length - 1];
-    const anchor = p.churn > 110 ? "end" : "start";
-    const dx = p.churn > 110 ? -15 : 15;
-    add(svg, "text", {{ class: "file-label", x: x(p.churn) + dx, y: y(p.loc) + 4, "text-anchor": anchor }}, row.file);
-  }});
-}}
-function drawBars() {{
-  const svg = document.getElementById("bars");
-  const W = 1080, H = 430, L = 220, T = 24, B = 35, rowH = 38;
-  const deltas = data.rows.map(r => point(r, data.refs.length - 1).loc - point(r, 0).loc);
-  const minDelta = Math.min(-10, ...deltas);
-  const maxDelta = Math.max(10, ...deltas);
-  const zero = L + (Math.abs(minDelta) / (maxDelta - minDelta)) * 760;
-  const scale = 760 / (maxDelta - minDelta);
-  add(svg, "line", {{ class: "axis", x1: zero, x2: zero, y1: T, y2: H - B }});
-  data.rows.forEach((row, i) => {{
-    const y = T + i * rowH + 8;
-    const delta = point(row, data.refs.length - 1).loc - point(row, 0).loc;
-    const w = Math.abs(delta) * scale;
-    add(svg, "text", {{ class: "file-label", x: 0, y: y + 16 }}, row.file);
-    add(svg, "rect", {{ x: delta < 0 ? zero - w : zero, y, width: Math.max(w, 1), height: 18, rx: 2, fill: delta <= 0 ? "#059669" : "#dc2626", "fill-opacity": "0.72" }});
-    add(svg, "text", {{ class: "label", x: delta < 0 ? zero - w - 8 : zero + w + 8, y: y + 14, "text-anchor": delta < 0 ? "end" : "start" }}, `${{delta > 0 ? "+" : ""}}${{delta}}`);
-  }});
-}}
 const filePalette = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2", "#db2777", "#65a30d", "#475569"];
+const refPalette = ["#6b7280", "#2563eb", "#dc2626", "#059669", "#7c3aed"];
+const zoomOpts = {{ zoom: {{ wheel: {{ enabled: true }}, pinch: {{ enabled: true }}, mode: "xy" }}, pan: {{ enabled: true, mode: "xy" }} }};
+
 function linreg(xs, ys) {{
   const n = xs.length;
   if (n < 2) return null;
@@ -288,67 +232,134 @@ function linreg(xs, ys) {{
   let num = 0, den = 0;
   for (let i = 0; i < n; i++) {{ num += (xs[i] - mx) * (ys[i] - my); den += (xs[i] - mx) ** 2; }}
   if (den === 0) return null;
-  const slope = num / den;
-  return {{ slope, intercept: my - slope * mx }};
+  return {{ slope: num / den, intercept: my - (num / den) * mx }};
 }}
-function drawSeries() {{
-  const svg = document.getElementById("series");
-  const W = 1080, H = 520, L = 78, R = 32, T = 28, B = 56;
-  const all = data.rows.flatMap(r => r.history);
-  if (all.length === 0) return;
-  const minTs = Math.min(...all.map(p => p.ts));
-  const maxTs = Math.max(...all.map(p => p.ts));
-  const maxLoc = Math.max(100, ...all.map(p => p.loc));
-  const x = ts => L + ((ts - minTs) / (maxTs - minTs || 1)) * (W - L - R);
-  const y = loc => T + (1 - loc / maxLoc) * (H - T - B);
-  const ticks = 5;
-  for (let i = 0; i <= ticks; i++) {{
-    const loc = Math.round((maxLoc / ticks) * i);
-    add(svg, "line", {{ class: "grid", x1: L, x2: W - R, y1: y(loc), y2: y(loc) }});
-    add(svg, "text", {{ class: "label", x: 18, y: y(loc) + 4 }}, String(loc));
-  }}
-  const months = 6;
-  for (let i = 0; i <= months; i++) {{
-    const ts = minTs + ((maxTs - minTs) / months) * i;
-    add(svg, "line", {{ class: "grid", x1: x(ts), x2: x(ts), y1: T, y2: H - B }});
-    const d = new Date(ts * 1000);
-    const label = `${{d.getFullYear()}}-${{String(d.getMonth() + 1).padStart(2, "0")}}`;
-    add(svg, "text", {{ class: "label", x: x(ts), y: H - B + 20, "text-anchor": "middle" }}, label);
-  }}
-  add(svg, "line", {{ class: "axis", x1: L, x2: W - R, y1: H - B, y2: H - B }});
-  add(svg, "line", {{ class: "axis", x1: L, x2: L, y1: T, y2: H - B }});
-  add(svg, "text", {{ class: "label", x: 20, y: 22 }}, "LOC");
-  const legend = document.getElementById("series-legend");
-  data.rows.forEach((row, i) => {{
-    const color = filePalette[i % filePalette.length];
-    if (row.history.length === 0) return;
-    const path = row.history.map((p, idx) => `${{idx === 0 ? "M" : "L"}} ${{x(p.ts).toFixed(1)}} ${{y(p.loc).toFixed(1)}}`).join(" ");
-    add(svg, "path", {{ d: path, fill: "none", stroke: color, "stroke-width": 1.6, "stroke-opacity": 0.85 }});
-    const reg = linreg(row.history.map(p => p.ts), row.history.map(p => p.loc));
-    if (reg) {{
-      const x1 = row.history[0].ts, x2 = row.history[row.history.length - 1].ts;
-      const y1 = reg.slope * x1 + reg.intercept;
-      const y2 = reg.slope * x2 + reg.intercept;
-      add(svg, "line", {{ x1: x(x1), x2: x(x2), y1: y(y1), y2: y(y2), stroke: color, "stroke-width": 1.2, "stroke-dasharray": "4 4", "stroke-opacity": 0.65 }});
-    }}
-    const span = document.createElement("span");
-    span.innerHTML = `<i class="dot" style="background:${{color}}"></i>${{row.file}}`;
-    legend.appendChild(span);
+
+function buildScatter() {{
+  const datasets = data.refs.map((ref, idx) => ({{
+    label: `${{ref.label}} (${{ref.sha}})`,
+    data: data.rows.map(row => ({{ x: row.points[idx].churn, y: row.points[idx].loc, file: row.file }})),
+    backgroundColor: refPalette[idx % refPalette.length] + "55",
+    borderColor: refPalette[idx % refPalette.length],
+    borderWidth: 2,
+    pointRadius: 7,
+    pointHoverRadius: 10,
+  }}));
+  new Chart(document.getElementById("scatter"), {{
+    type: "scatter",
+    data: {{ datasets }},
+    options: {{
+      maintainAspectRatio: false,
+      scales: {{
+        x: {{ title: {{ display: true, text: "Churn (touches in last 200 commits)" }}, beginAtZero: true }},
+        y: {{ title: {{ display: true, text: "LOC" }}, beginAtZero: true }},
+      }},
+      plugins: {{
+        tooltip: {{ callbacks: {{ label: ctx => `${{ctx.raw.file}} — churn ${{ctx.parsed.x}}, LOC ${{ctx.parsed.y}}` }} }},
+        zoom: zoomOpts,
+      }},
+    }},
   }});
 }}
+
+function buildBars() {{
+  const lastIdx = data.refs.length - 1;
+  const deltas = data.rows.map(r => r.points[lastIdx].loc - r.points[0].loc);
+  new Chart(document.getElementById("bars"), {{
+    type: "bar",
+    data: {{
+      labels: data.rows.map(r => r.file),
+      datasets: [{{
+        label: "LOC delta",
+        data: deltas,
+        backgroundColor: deltas.map(d => d <= 0 ? "rgba(5,150,105,0.72)" : "rgba(220,38,38,0.72)"),
+        borderColor: deltas.map(d => d <= 0 ? "#059669" : "#dc2626"),
+        borderWidth: 1,
+      }}],
+    }},
+    options: {{
+      indexAxis: "y",
+      maintainAspectRatio: false,
+      plugins: {{
+        legend: {{ display: false }},
+        tooltip: {{ callbacks: {{ label: ctx => `${{ctx.parsed.x > 0 ? "+" : ""}}${{ctx.parsed.x}} LOC` }} }},
+      }},
+      scales: {{
+        x: {{ title: {{ display: true, text: `LOC change: ${{data.refs[0].label}} → ${{data.refs[lastIdx].label}}` }} }},
+      }},
+    }},
+  }});
+}}
+
+function buildSeries() {{
+  const datasets = [];
+  data.rows.forEach((row, i) => {{
+    if (row.history.length === 0) return;
+    const color = filePalette[i % filePalette.length];
+    datasets.push({{
+      label: row.file,
+      data: row.history.map(p => ({{ x: p.idx, y: p.loc, sha: p.sha }})),
+      borderColor: color,
+      backgroundColor: color,
+      borderWidth: 1.6,
+      pointRadius: 2,
+      pointHoverRadius: 5,
+      tension: 0,
+    }});
+    const xs = row.history.map(p => p.idx);
+    const ys = row.history.map(p => p.loc);
+    const reg = linreg(xs, ys);
+    if (reg) {{
+      const x1 = xs[0], x2 = xs[xs.length - 1];
+      datasets.push({{
+        label: `${{row.file}} trend`,
+        data: [{{ x: x1, y: reg.slope * x1 + reg.intercept }}, {{ x: x2, y: reg.slope * x2 + reg.intercept }}],
+        borderColor: color,
+        backgroundColor: color,
+        borderDash: [6, 6],
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0,
+      }});
+    }}
+  }});
+  new Chart(document.getElementById("series"), {{
+    type: "line",
+    data: {{ datasets }},
+    options: {{
+      maintainAspectRatio: false,
+      interaction: {{ mode: "nearest", axis: "x", intersect: false }},
+      scales: {{
+        x: {{ type: "linear", title: {{ display: true, text: "Commit number (chronological)" }}, ticks: {{ precision: 0 }} }},
+        y: {{ title: {{ display: true, text: "LOC" }}, beginAtZero: true }},
+      }},
+      plugins: {{
+        tooltip: {{ callbacks: {{ label: ctx => ctx.raw.sha
+          ? `${{ctx.dataset.label}}: ${{ctx.parsed.y}} LOC @ ${{ctx.raw.sha}} (commit #${{ctx.parsed.x}})`
+          : `${{ctx.dataset.label}}: ${{Math.round(ctx.parsed.y)}} LOC` }} }},
+        zoom: zoomOpts,
+      }},
+    }},
+  }});
+}}
+
 function fillTable() {{
   const head = document.getElementById("head");
   head.innerHTML = `<tr><th>File</th>${{data.refs.map(r => `<th>${{r.label}}<br>churn / LOC</th>`).join("")}}<th>LOC delta</th></tr>`;
   const rows = document.getElementById("rows");
   data.rows.forEach(row => {{
-    const delta = point(row, data.refs.length - 1).loc - point(row, 0).loc;
+    const delta = row.points[data.refs.length - 1].loc - row.points[0].loc;
     const cls = delta < 0 ? "neg" : delta > 0 ? "pos" : "zero";
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${{row.file}}</td>${{row.points.map(p => `<td>${{p.churn}} / ${{p.loc}}</td>`).join("")}}<td class="${{cls}}">${{delta > 0 ? "+" : ""}}${{delta}}</td>`;
     rows.appendChild(tr);
   }});
 }}
-drawLegend(); drawScatter(); drawBars(); drawSeries(); fillTable();
+
+buildScatter();
+buildBars();
+buildSeries();
+fillTable();
 </script>
 </body>
 </html>

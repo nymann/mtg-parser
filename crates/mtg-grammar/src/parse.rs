@@ -90,7 +90,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first => {
             this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair(pair)
         }
-        Rule::destroy => Ok(Statement::DestroyTargetCreature),
+        Rule::destroy_target_permanent_effect => destroy_target_permanent_effect_from_pair(pair),
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
         Rule::named_source_deals_damage => named_source_deals_damage_from_pair(pair),
         Rule::prevent_all_combat_damage_this_turn => Ok(Statement::PreventAllCombatDamageThisTurn),
@@ -110,7 +110,6 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 pair,
             )
         }
-        Rule::destroy_target_permanent_choice => destroy_target_permanent_choice_from_pair(pair),
         Rule::destroy_target_permanent => destroy_target_permanent_from_pair(pair),
         Rule::that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice => {
             that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice_from_pair(
@@ -686,12 +685,13 @@ fn destroy_all_basic_lands_from_pair(pair: Pair<Rule>) -> Result<Statement, Pars
     })
 }
 
-fn destroy_target_permanent_choice_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let permanent_types = pair
+fn destroy_target_permanent_effect_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let target_pair = only_inner(pair, "destroy_target_permanent_effect missing target types")?;
+    let permanent_types = target_pair
         .into_inner()
         .map(permanent_type_from_pair)
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(Statement::DestroyTargetPermanentChoice { permanent_types })
+    Ok(Statement::destroy_target_permanent_types(permanent_types))
 }
 
 fn destroy_target_permanent_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {

@@ -45,9 +45,7 @@ sentence_statement = _{
   | counter_target_spell
   | destroy_all_basic_lands
   | destroy_all
-  | destroy_target_permanent_choice
-  | destroy
-  | destroy_target_permanent
+  | destroy_target_permanent_effect
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
   | regenerate_target_creature
   | named_source_deals_damage
@@ -192,13 +190,13 @@ this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first = {
   ~ ^"first" ~ "."
 }
 
-destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }
 destroy_all_basic_lands = { ^"destroy" ~ ^"all" ~ basic_land_type_plural ~ "." }
 destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural_list ~ "." }
 permanent_type_plural_list = {
     permanent_type_plural ~ (("," ~ permanent_type_plural)* ~ ","? ~ ^"and" ~ permanent_type_plural)?
 }
-destroy_target_permanent_choice = { ^"destroy" ~ ^"target" ~ permanent_type ~ (^"or" ~ permanent_type)+ ~ "." }
+destroy_target_permanent_effect = { ^"destroy" ~ ^"target" ~ target_permanent_types ~ "." }
+target_permanent_types = { permanent_type ~ (^"or" ~ permanent_type)* }
 counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
 

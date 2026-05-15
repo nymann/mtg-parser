@@ -29,7 +29,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_mana_cost(out, mana);
             out.push_str(" more to cast for each target beyond the first.");
         }
-        Statement::DestroyTargetCreature => out.push_str("Destroy target creature."),
+        Statement::DestroyTargetCreature => {
+            write_destroy_target_permanent_types(out, &[PermanentType::Creature]);
+        }
         Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
         Statement::NamedSourceDealsDamage {
             source_name,
@@ -85,14 +87,10 @@ fn write_statement(out: &mut String, statement: &Statement) {
             );
         }
         Statement::DestroyTargetPermanentChoice { permanent_types } => {
-            out.push_str("Destroy target ");
-            write_permanent_type_choice(out, permanent_types);
-            out.push('.');
+            write_destroy_target_permanent_types(out, permanent_types);
         }
         Statement::DestroyTargetPermanent { permanent_type } => {
-            out.push_str("Destroy target ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push('.');
+            write_destroy_target_permanent_types(out, &[*permanent_type]);
         }
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of,
@@ -2062,6 +2060,12 @@ fn write_permanent_type_choice(out: &mut String, permanent_types: &[PermanentTyp
         }
         out.push_str(permanent_type_name(*permanent_type));
     }
+}
+
+fn write_destroy_target_permanent_types(out: &mut String, permanent_types: &[PermanentType]) {
+    out.push_str("Destroy target ");
+    write_permanent_type_choice(out, permanent_types);
+    out.push('.');
 }
 
 fn write_permanent_type_plural_list(out: &mut String, permanent_types: &[PermanentType]) {

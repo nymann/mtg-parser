@@ -272,6 +272,18 @@ pub enum Statement {
     Compound(Vec<Statement>),
 }
 
+impl Statement {
+    pub(crate) fn destroy_target_permanent_types(permanent_types: Vec<PermanentType>) -> Self {
+        match permanent_types.as_slice() {
+            [PermanentType::Creature] => Statement::DestroyTargetCreature,
+            [permanent_type] => Statement::DestroyTargetPermanent {
+                permanent_type: *permanent_type,
+            },
+            _ => Statement::DestroyTargetPermanentChoice { permanent_types },
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ModalMode {
     /// "Counter target <color> spell."
