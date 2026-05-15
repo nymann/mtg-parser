@@ -1301,213 +1301,12 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
     let mut effects: Vec<TriggerEffect> = Vec::new();
     for child in pair.into_inner() {
         match child.as_rule() {
-            Rule::aura_enters => event = Some(TriggerEvent::ThisAuraEnters),
-            Rule::aura_leaves_battlefield => {
-                event = Some(TriggerEvent::ThisAuraLeavesTheBattlefield);
+            Rule::triggered_event_clause => event = Some(trigger_event_from_pair(child)?),
+            Rule::triggered_intervening_if_clause => {
+                intervening_if = Some(triggered_intervening_if_from_pair(child)?);
             }
-            Rule::permanent_enters => {
-                event = Some(permanent_enters_from_pair(child)?);
-            }
-            Rule::player_casts_colored_spell => {
-                event = Some(player_casts_colored_spell_from_pair(child)?);
-            }
-            Rule::player_taps_permanent_for_mana => {
-                event = Some(player_taps_permanent_for_mana_from_pair(child)?);
-            }
-            Rule::basic_land_type_is_tapped_for_mana => {
-                event = Some(basic_land_type_is_tapped_for_mana_from_pair(child)?);
-            }
-            Rule::basic_land_type_controller_becomes_status => {
-                event = Some(basic_land_type_controller_becomes_status_from_pair(child)?);
-            }
-            Rule::you_play_permanent => {
-                event = Some(you_play_permanent_from_pair(child)?);
-            }
-            Rule::enchanted_permanent_dies => {
-                event = Some(enchanted_permanent_dies_from_pair(child)?);
-            }
-            Rule::enchanted_object_becomes_status => {
-                event = Some(enchanted_object_becomes_status_from_pair(child)?);
-            }
-            Rule::beginning_of_the_next_end_step => {
-                event = Some(TriggerEvent::BeginningOfTheNextEndStep);
-            }
-            Rule::beginning_of_chosen_players_upkeep => {
-                event = Some(TriggerEvent::BeginningOfChosenPlayersUpkeep);
-            }
-            Rule::beginning_of_each_players_upkeep => {
-                event = Some(TriggerEvent::BeginningOfEachPlayersUpkeep);
-            }
-            Rule::beginning_of_each_players_draw_step => {
-                event = Some(TriggerEvent::BeginningOfEachPlayersDrawStep);
-            }
-            Rule::beginning_of_your_draw_step => {
-                event = Some(TriggerEvent::BeginningOfYourDrawStep);
-            }
-            Rule::beginning_of_your_upkeep => {
-                event = Some(TriggerEvent::BeginningOfYourUpkeep);
-            }
-            Rule::source_put_into_graveyard_from_battlefield => {
-                event = Some(source_put_into_graveyard_from_battlefield_from_pair(child)?);
-            }
-            Rule::source_is_dealt_damage => {
-                event = Some(source_is_dealt_damage_from_pair(child)?);
-            }
-            Rule::you_are_dealt_damage => {
-                event = Some(TriggerEvent::YouAreDealtDamage);
-            }
-            Rule::source_deals_damage_to_an_opponent => {
-                event = Some(source_deals_damage_to_an_opponent_from_pair(child)?);
-            }
-            Rule::permanent_put_into_graveyard_from_battlefield => {
-                event = Some(permanent_put_into_graveyard_from_battlefield_from_pair(
-                    child,
-                )?);
-            }
-            Rule::beginning_of_upkeep_of_enchanted_permanent_controller => {
-                event =
-                    Some(beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(child)?);
-            }
-            Rule::end_of_combat => {
-                event = Some(TriggerEvent::EndOfCombat);
-            }
-            Rule::source_blocks_or_becomes_blocked_by_non_creature_type_creature => {
-                event = Some(
-                    source_blocks_or_becomes_blocked_by_non_creature_type_creature_from_pair(
-                        child,
-                    )?,
-                );
-            }
-            Rule::its_on_the_battlefield => {
-                intervening_if = Some(InterveningIf::ItsOnTheBattlefield);
-            }
-            Rule::source_attacked_or_blocked_this_combat => {
-                let source_pair =
-                    only_inner(child, "attacked-or-blocked condition missing source")?;
-                intervening_if = Some(InterveningIf::SourceAttackedOrBlockedThisCombat {
-                    source: source_object_from_pair(source_pair)?,
-                });
-            }
-            Rule::source_object_is_status => {
-                let mut inner = child.into_inner();
-                let source_pair = inner.next().ok_or(ParseError::Internal(
-                    "source-status condition missing source",
-                ))?;
-                let status_pair = inner.next().ok_or(ParseError::Internal(
-                    "source-status condition missing status",
-                ))?;
-                intervening_if = Some(InterveningIf::SourceIsStatus {
-                    source: source_object_from_pair(source_pair)?,
-                    status: object_status_from_pair(status_pair)?,
-                });
-            }
-            Rule::this_card_in_your_graveyard_with_cards_above_it => {
-                intervening_if = Some(this_card_in_your_graveyard_with_cards_above_it_from_pair(
-                    child,
-                )?);
-            }
-            Rule::enchanted_has_keyword => {
-                let mut inner = child.into_inner();
-                let object_pair = inner.next().ok_or(ParseError::Internal(
-                    "enchanted-has condition missing object",
-                ))?;
-                let keyword_pair = inner.next().ok_or(ParseError::Internal(
-                    "enchanted-has condition missing keyword",
-                ))?;
-                intervening_if = Some(InterveningIf::EnchantedHasKeyword {
-                    object: enchanted_object_from_pair(object_pair)?,
-                    keyword: keyword_from_inner_pair(keyword_pair)?,
-                });
-            }
-            Rule::it_wasnt_first_permanent_you_played_this_turn => {
-                let permanent_type_pair = child.into_inner().next().ok_or(ParseError::Internal(
-                    "first-play condition missing permanent_type",
-                ))?;
-                intervening_if = Some(InterveningIf::ItWasntFirstPermanentYouPlayedThisTurn {
-                    permanent_type: permanent_type_from_pair(permanent_type_pair)?,
-                });
-            }
-            Rule::destroy_that_creature_if_it_attacked_this_turn => {
-                effects.push(TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn);
-            }
-            Rule::destroy_it => {
-                effects.push(TriggerEffect::DestroyIt);
-            }
-            Rule::destroy_that_creature_at_end_of_combat => {
-                effects.push(TriggerEffect::DestroyThatCreatureAtEndOfCombat);
-            }
-            Rule::that_creatures_controller_sacrifices_it => {
-                effects.push(TriggerEffect::ThatCreaturesControllerSacrificesIt);
-            }
-            Rule::loses_and_gains_keyword => {
-                effects.push(loses_and_gains_keyword_from_pair(child)?);
-            }
-            Rule::return_enchanted_card_and_attach => {
-                effects.push(return_enchanted_card_and_attach_from_pair(child)?);
-            }
-            Rule::sacrifice_source_unless_you_pay => {
-                effects.push(sacrifice_source_unless_you_pay_from_pair(child)?);
-            }
-            Rule::sacrifice_permanent_other_than_source => {
-                effects.push(sacrifice_permanent_other_than_source_from_pair(child)?);
-            }
-            Rule::sacrifice_that_many_nontoken_permanents => {
-                effects.push(TriggerEffect::SacrificeThatManyNontokenPermanents);
-            }
-            Rule::you_lose_the_game => {
-                effects.push(TriggerEffect::YouLoseTheGame);
-            }
-            Rule::you_gain_life => {
-                effects.push(you_gain_life_from_pair(child)?);
-            }
-            Rule::you_may_pay_mana => {
-                effects.push(you_may_pay_mana_from_pair(child)?);
-            }
-            Rule::you_may_put_this_card_onto_the_battlefield => {
-                effects.push(TriggerEffect::YouMayPutThisCardOntoTheBattlefield);
-            }
-            Rule::if_you_do_gain_life | Rule::if_you_do_gain_life_fragment => {
-                effects.push(TriggerEffect::IfYouDoGainLife {
-                    amount: if_you_do_gain_life_amount_from_pair(child)?,
-                });
-            }
-            Rule::unless_you_pay_mana_do_actions => {
-                effects.push(unless_you_pay_mana_do_actions_from_pair(child)?);
-            }
-            Rule::delayed_remove_all_named_counters_from_linked_land => {
-                effects.push(delayed_remove_all_named_counters_from_linked_land_from_pair(child)?);
-            }
-            Rule::put_that_many_named_counters_on_source => {
-                effects.push(put_that_many_named_counters_on_source_from_pair(child)?);
-            }
-            Rule::you_may_remove_named_counter_from_source => {
-                effects.push(you_may_remove_named_counter_from_source_from_pair(child)?);
-            }
-            Rule::source_deals_damage => {
-                effects.push(source_deals_damage_from_pair(child)?);
-            }
-            Rule::that_player_draws_an_additional_card => {
-                effects.push(TriggerEffect::ThatPlayerDrawsAnAdditionalCard);
-            }
-            Rule::that_player_discards_card_at_random => {
-                effects.push(TriggerEffect::ThatPlayerDiscardsCardAtRandom);
-            }
-            Rule::that_player_adds_mana_of_any_type_that_permanent_produced => {
-                effects.push(
-                    that_player_adds_mana_of_any_type_that_permanent_produced_from_pair(child)?,
-                );
-            }
-            Rule::its_controller_adds_an_additional_mana => {
-                effects.push(its_controller_adds_an_additional_mana_from_pair(child)?);
-            }
-            Rule::source_gains_static_ability => {
-                effects.push(source_gains_static_ability_from_pair(child)?);
-            }
-            Rule::remove_pt_counter_from_it => {
-                effects.push(remove_pt_counter_from_it_from_pair(child)?);
-            }
-            Rule::put_pt_counter_on_it => {
-                effects.push(put_pt_counter_on_it_from_pair(child)?);
+            Rule::trigger_effect_sequence | Rule::trigger_effect_fragment_sequence => {
+                effects.extend(trigger_effect_sequence_from_pair(child)?);
             }
             _ => return Err(ParseError::Internal("triggered_ability child")),
         }
@@ -1521,6 +1320,183 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
         intervening_if,
         effects,
     })
+}
+
+fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let event_pair = only_inner(pair, "triggered_event_clause missing event")?;
+    match event_pair.as_rule() {
+        Rule::aura_enters => Ok(TriggerEvent::ThisAuraEnters),
+        Rule::aura_leaves_battlefield => Ok(TriggerEvent::ThisAuraLeavesTheBattlefield),
+        Rule::permanent_enters => permanent_enters_from_pair(event_pair),
+        Rule::player_casts_colored_spell => player_casts_colored_spell_from_pair(event_pair),
+        Rule::player_taps_permanent_for_mana => {
+            player_taps_permanent_for_mana_from_pair(event_pair)
+        }
+        Rule::basic_land_type_is_tapped_for_mana => {
+            basic_land_type_is_tapped_for_mana_from_pair(event_pair)
+        }
+        Rule::basic_land_type_controller_becomes_status => {
+            basic_land_type_controller_becomes_status_from_pair(event_pair)
+        }
+        Rule::you_play_permanent => you_play_permanent_from_pair(event_pair),
+        Rule::enchanted_permanent_dies => enchanted_permanent_dies_from_pair(event_pair),
+        Rule::enchanted_object_becomes_status => {
+            enchanted_object_becomes_status_from_pair(event_pair)
+        }
+        Rule::beginning_of_the_next_end_step => Ok(TriggerEvent::BeginningOfTheNextEndStep),
+        Rule::beginning_of_chosen_players_upkeep => {
+            Ok(TriggerEvent::BeginningOfChosenPlayersUpkeep)
+        }
+        Rule::beginning_of_each_players_upkeep => Ok(TriggerEvent::BeginningOfEachPlayersUpkeep),
+        Rule::beginning_of_each_players_draw_step => {
+            Ok(TriggerEvent::BeginningOfEachPlayersDrawStep)
+        }
+        Rule::beginning_of_your_draw_step => Ok(TriggerEvent::BeginningOfYourDrawStep),
+        Rule::beginning_of_your_upkeep => Ok(TriggerEvent::BeginningOfYourUpkeep),
+        Rule::source_put_into_graveyard_from_battlefield => {
+            source_put_into_graveyard_from_battlefield_from_pair(event_pair)
+        }
+        Rule::source_is_dealt_damage => source_is_dealt_damage_from_pair(event_pair),
+        Rule::you_are_dealt_damage => Ok(TriggerEvent::YouAreDealtDamage),
+        Rule::source_deals_damage_to_an_opponent => {
+            source_deals_damage_to_an_opponent_from_pair(event_pair)
+        }
+        Rule::permanent_put_into_graveyard_from_battlefield => {
+            permanent_put_into_graveyard_from_battlefield_from_pair(event_pair)
+        }
+        Rule::beginning_of_upkeep_of_enchanted_permanent_controller => {
+            beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(event_pair)
+        }
+        Rule::end_of_combat => Ok(TriggerEvent::EndOfCombat),
+        Rule::source_blocks_or_becomes_blocked_by_non_creature_type_creature => {
+            source_blocks_or_becomes_blocked_by_non_creature_type_creature_from_pair(event_pair)
+        }
+        _ => Err(ParseError::Internal("trigger event")),
+    }
+}
+
+fn triggered_intervening_if_from_pair(pair: Pair<Rule>) -> Result<InterveningIf, ParseError> {
+    let condition_pair = only_inner(pair, "triggered_intervening_if_clause missing condition")?;
+    match condition_pair.as_rule() {
+        Rule::its_on_the_battlefield => Ok(InterveningIf::ItsOnTheBattlefield),
+        Rule::source_attacked_or_blocked_this_combat => {
+            let source_pair = only_inner(
+                condition_pair,
+                "attacked-or-blocked condition missing source",
+            )?;
+            Ok(InterveningIf::SourceAttackedOrBlockedThisCombat {
+                source: source_object_from_pair(source_pair)?,
+            })
+        }
+        Rule::source_object_is_status => {
+            let mut inner = condition_pair.into_inner();
+            let source_pair = inner.next().ok_or(ParseError::Internal(
+                "source-status condition missing source",
+            ))?;
+            let status_pair = inner.next().ok_or(ParseError::Internal(
+                "source-status condition missing status",
+            ))?;
+            Ok(InterveningIf::SourceIsStatus {
+                source: source_object_from_pair(source_pair)?,
+                status: object_status_from_pair(status_pair)?,
+            })
+        }
+        Rule::this_card_in_your_graveyard_with_cards_above_it => {
+            this_card_in_your_graveyard_with_cards_above_it_from_pair(condition_pair)
+        }
+        Rule::enchanted_has_keyword => {
+            let mut inner = condition_pair.into_inner();
+            let object_pair = inner.next().ok_or(ParseError::Internal(
+                "enchanted-has condition missing object",
+            ))?;
+            let keyword_pair = inner.next().ok_or(ParseError::Internal(
+                "enchanted-has condition missing keyword",
+            ))?;
+            Ok(InterveningIf::EnchantedHasKeyword {
+                object: enchanted_object_from_pair(object_pair)?,
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
+        Rule::it_wasnt_first_permanent_you_played_this_turn => {
+            let permanent_type_pair =
+                condition_pair
+                    .into_inner()
+                    .next()
+                    .ok_or(ParseError::Internal(
+                        "first-play condition missing permanent_type",
+                    ))?;
+            Ok(InterveningIf::ItWasntFirstPermanentYouPlayedThisTurn {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("intervening-if condition")),
+    }
+}
+
+fn trigger_effect_sequence_from_pair(pair: Pair<Rule>) -> Result<Vec<TriggerEffect>, ParseError> {
+    pair.into_inner().map(trigger_effect_from_pair).collect()
+}
+
+fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    match pair.as_rule() {
+        Rule::destroy_that_creature_if_it_attacked_this_turn => {
+            Ok(TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn)
+        }
+        Rule::destroy_it => Ok(TriggerEffect::DestroyIt),
+        Rule::destroy_that_creature_at_end_of_combat => {
+            Ok(TriggerEffect::DestroyThatCreatureAtEndOfCombat)
+        }
+        Rule::that_creatures_controller_sacrifices_it => {
+            Ok(TriggerEffect::ThatCreaturesControllerSacrificesIt)
+        }
+        Rule::loses_and_gains_keyword => loses_and_gains_keyword_from_pair(pair),
+        Rule::return_enchanted_card_and_attach => return_enchanted_card_and_attach_from_pair(pair),
+        Rule::sacrifice_source_unless_you_pay => sacrifice_source_unless_you_pay_from_pair(pair),
+        Rule::sacrifice_permanent_other_than_source => {
+            sacrifice_permanent_other_than_source_from_pair(pair)
+        }
+        Rule::sacrifice_that_many_nontoken_permanents => {
+            Ok(TriggerEffect::SacrificeThatManyNontokenPermanents)
+        }
+        Rule::you_lose_the_game => Ok(TriggerEffect::YouLoseTheGame),
+        Rule::you_gain_life => you_gain_life_from_pair(pair),
+        Rule::you_may_pay_mana => you_may_pay_mana_from_pair(pair),
+        Rule::you_may_put_this_card_onto_the_battlefield => {
+            Ok(TriggerEffect::YouMayPutThisCardOntoTheBattlefield)
+        }
+        Rule::if_you_do_gain_life | Rule::if_you_do_gain_life_fragment => {
+            Ok(TriggerEffect::IfYouDoGainLife {
+                amount: if_you_do_gain_life_amount_from_pair(pair)?,
+            })
+        }
+        Rule::unless_you_pay_mana_do_actions => unless_you_pay_mana_do_actions_from_pair(pair),
+        Rule::delayed_remove_all_named_counters_from_linked_land => {
+            delayed_remove_all_named_counters_from_linked_land_from_pair(pair)
+        }
+        Rule::put_that_many_named_counters_on_source => {
+            put_that_many_named_counters_on_source_from_pair(pair)
+        }
+        Rule::you_may_remove_named_counter_from_source => {
+            you_may_remove_named_counter_from_source_from_pair(pair)
+        }
+        Rule::source_deals_damage => source_deals_damage_from_pair(pair),
+        Rule::that_player_draws_an_additional_card => {
+            Ok(TriggerEffect::ThatPlayerDrawsAnAdditionalCard)
+        }
+        Rule::that_player_discards_card_at_random => {
+            Ok(TriggerEffect::ThatPlayerDiscardsCardAtRandom)
+        }
+        Rule::that_player_adds_mana_of_any_type_that_permanent_produced => {
+            that_player_adds_mana_of_any_type_that_permanent_produced_from_pair(pair)
+        }
+        Rule::its_controller_adds_an_additional_mana => {
+            its_controller_adds_an_additional_mana_from_pair(pair)
+        }
+        Rule::source_gains_static_ability => source_gains_static_ability_from_pair(pair),
+        Rule::remove_pt_counter_from_it => remove_pt_counter_from_it_from_pair(pair),
+        Rule::put_pt_counter_on_it => put_pt_counter_on_it_from_pair(pair),
+        _ => Err(ParseError::Internal("trigger effect")),
+    }
 }
 
 fn this_card_in_your_graveyard_with_cards_above_it_from_pair(

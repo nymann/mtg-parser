@@ -1111,15 +1111,20 @@ counter_name = @{ ASCII_ALPHA+ }
 // space-separated within the trigger; no ". " separator is needed at
 // this layer.
 triggered_ability = {
-    trigger_word ~ trigger_event ~ ","
-  ~ (^"if" ~ intervening_if ~ ",")?
-  ~ trigger_effect ~ (^"and"? ~ trigger_effect)*
+    trigger_word ~ triggered_event_clause ~ ","
+  ~ triggered_intervening_if_clause?
+  ~ trigger_effect_sequence
 }
 
 triggered_ability_fragment = {
-    trigger_word ~ trigger_event ~ ","
-  ~ you_may_pay_mana ~ if_you_do_gain_life_fragment ~ !"."
+    trigger_word ~ triggered_event_clause ~ ","
+  ~ trigger_effect_fragment_sequence ~ !"."
 }
+
+triggered_event_clause = { trigger_event }
+triggered_intervening_if_clause = { ^"if" ~ intervening_if ~ "," }
+trigger_effect_sequence = { trigger_effect ~ (^"and"? ~ trigger_effect)* }
+trigger_effect_fragment_sequence = { you_may_pay_mana ~ if_you_do_gain_life_fragment }
 
 // "Whenever" is listed first because "When" is its prefix.
 trigger_word = _{ ^"whenever" | ^"when" | ^"at" }

@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"019e2c00-e8de-7be0-9331-50ca7b7e28ff"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"theme: triggered-abilities"}}
+{"type":"turn.completed","usage":{"input_tokens":24967,"cached_input_tokens":21888,"output_tokens":136,"reasoning_output_tokens":125}}

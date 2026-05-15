@@ -1482,7 +1482,11 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         write_intervening_if(out, iif);
         out.push_str(", ");
     }
-    for (i, eff) in ta.effects.iter().enumerate() {
+    write_trigger_effect_sequence(out, &ta.effects);
+}
+
+fn write_trigger_effect_sequence(out: &mut String, effects: &[TriggerEffect]) {
+    for (i, eff) in effects.iter().enumerate() {
         if i > 0 {
             if matches!(eff, TriggerEffect::SourceGainsStaticAbility { .. }) {
                 out.push_str(" and ");
@@ -1490,7 +1494,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
                 out.push(' ');
             }
         }
-        write_trigger_effect(out, eff, i + 1 == ta.effects.len());
+        write_trigger_effect(out, eff, i + 1 == effects.len());
     }
 }
 

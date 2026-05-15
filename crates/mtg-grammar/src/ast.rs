@@ -604,6 +604,10 @@ pub enum OptionalCost {
 }
 
 /// "When/Whenever <event>, [if <intervening-if>,] <effect>[. <effect>]*."
+///
+/// Triggered abilities are stored in the same order as printed: the
+/// triggering event, an optional intervening-if condition, then the
+/// effect sequence.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TriggeredAbility {
     pub event: TriggerEvent,
