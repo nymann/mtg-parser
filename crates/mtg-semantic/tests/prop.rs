@@ -12,8 +12,9 @@
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount, Color,
     DamageLifeGainCap, DamageRecipient, EachPlayerAction, EnchantedObject, ImperativeAction,
-    Keyword, ManaCost, ManaSymbol, PermanentType, SourceObject, SpellType, Statement,
-    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
+    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber, SourceObject,
+    SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
+    Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -70,6 +71,16 @@ fn arb_basic_land_type() -> impl Strategy<Value = BasicLandType> {
         Just(BasicLandType::Mountain),
         Just(BasicLandType::Forest),
     ]
+}
+
+fn arb_signed_number() -> impl Strategy<Value = SignedNumber> {
+    (prop_oneof![Just(Sign::Plus), Just(Sign::Minus)], 0u32..=10)
+        .prop_map(|(sign, magnitude)| SignedNumber { sign, magnitude })
+}
+
+fn arb_pt_modifier() -> impl Strategy<Value = PtModifier> {
+    (arb_signed_number(), arb_signed_number())
+        .prop_map(|(power, toughness)| PtModifier { power, toughness })
 }
 
 fn arb_variable() -> impl Strategy<Value = Variable> {
@@ -194,6 +205,12 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         }),
         arb_basic_land_type().prop_map(|basic_land_type| {
             Statement::DestroyAllBasicLands { basic_land_type }
+        }),
+        (arb_permanent_type(), arb_pt_modifier()).prop_map(|(permanent_type, modifier)| {
+            Statement::TargetPermanentGetsUntilEndOfTurn {
+                permanent_type,
+                modifier,
+            }
         }),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }

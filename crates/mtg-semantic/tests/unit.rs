@@ -1,6 +1,9 @@
 // Tier 1 lowering unit tests. Hand-written AST → expected IR.
 
-use mtg_grammar::{BasicLandType, ManaCost, ManaSymbol, PermanentType, SourceObject, Statement};
+use mtg_grammar::{
+    BasicLandType, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber,
+    SourceObject, Statement,
+};
 use mtg_semantic::{lower, CardEffect, ManaValue};
 
 fn mc(symbols: Vec<ManaSymbol>) -> Statement {
@@ -9,6 +12,10 @@ fn mc(symbols: Vec<ManaSymbol>) -> Statement {
 
 fn mana(symbols: Vec<ManaSymbol>) -> ManaCost {
     ManaCost { symbols }
+}
+
+fn signed(sign: Sign, magnitude: u32) -> SignedNumber {
+    SignedNumber { sign, magnitude }
 }
 
 #[test]
@@ -57,6 +64,27 @@ fn lowers_counter_target_spell() {
     assert_eq!(
         lower(&Statement::CounterTargetSpell).unwrap(),
         CardEffect::CounterTargetSpell,
+    );
+}
+
+#[test]
+fn lowers_target_permanent_gets_until_end_of_turn() {
+    assert_eq!(
+        lower(&Statement::TargetPermanentGetsUntilEndOfTurn {
+            permanent_type: PermanentType::Creature,
+            modifier: PtModifier {
+                power: signed(Sign::Plus, 3),
+                toughness: signed(Sign::Plus, 3),
+            },
+        })
+        .unwrap(),
+        CardEffect::TargetPermanentGetsUntilEndOfTurn {
+            permanent_type: PermanentType::Creature,
+            modifier: PtModifier {
+                power: signed(Sign::Plus, 3),
+                toughness: signed(Sign::Plus, 3),
+            },
+        },
     );
 }
 

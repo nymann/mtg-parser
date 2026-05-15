@@ -65,6 +65,7 @@ sentence_statement = _{
   | if_you_do_add_mana
   | if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step
   | target_spell_or_permanent_becomes_color
+  | target_permanent_gets_until_eot
   | target_permanent_gains_keyword_and_gets_eot
   | each_player_performs_action
   | remove_target_creature_defending_player_controls_from_combat
@@ -899,6 +900,11 @@ target_permanent_gains_keyword_and_gets_eot = {
 
 target_spell_or_permanent_becomes_color = {
     ^"target" ~ ^"spell" ~ ^"or" ~ ^"permanent" ~ ^"becomes" ~ color_word ~ "."
+}
+
+target_permanent_gets_until_eot = {
+    ^"target" ~ permanent_type ~ ^"gets" ~ pt_modifier
+  ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
 }
 
 source_enters_with_pt_counters = {

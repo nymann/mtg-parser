@@ -117,6 +117,11 @@ pub enum Statement {
     TargetSpellOrPermanentBecomesColor {
         color: Color,
     },
+    /// "Target <type> gets <modifier> until end of turn."
+    TargetPermanentGetsUntilEndOfTurn {
+        permanent_type: PermanentType,
+        modifier: PtModifier,
+    },
     /// "Target <type> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
     TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {

@@ -147,3 +147,5 @@ mod fungusaur;
 mod gaea_s_liege;
 #[path = "generated_patterns/gauntlet_of_might.rs"]
 mod gauntlet_of_might;
+#[path = "generated_patterns/giant_growth.rs"]
+mod giant_growth;

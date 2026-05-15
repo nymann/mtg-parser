@@ -117,6 +117,13 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::TargetSpellOrPermanentBecomesColor { color } => {
             CardEffect::TargetSpellOrPermanentBecomesColor { color: *color }
         }
+        Statement::TargetPermanentGetsUntilEndOfTurn {
+            permanent_type,
+            modifier,
+        } => CardEffect::TargetPermanentGetsUntilEndOfTurn {
+            permanent_type: *permanent_type,
+            modifier: *modifier,
+        },
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             permanent_type,
             keyword,
