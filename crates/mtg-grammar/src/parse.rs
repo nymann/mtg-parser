@@ -1392,6 +1392,11 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                     status: object_status_from_pair(status_pair)?,
                 });
             }
+            Rule::this_card_in_your_graveyard_with_cards_above_it => {
+                intervening_if = Some(this_card_in_your_graveyard_with_cards_above_it_from_pair(
+                    child,
+                )?);
+            }
             Rule::enchanted_has_keyword => {
                 let mut inner = child.into_inner();
                 let object_pair = inner.next().ok_or(ParseError::Internal(
@@ -1448,6 +1453,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::you_may_pay_mana => {
                 effects.push(you_may_pay_mana_from_pair(child)?);
+            }
+            Rule::you_may_put_this_card_onto_the_battlefield => {
+                effects.push(TriggerEffect::YouMayPutThisCardOntoTheBattlefield);
             }
             Rule::if_you_do_gain_life | Rule::if_you_do_gain_life_fragment => {
                 effects.push(TriggerEffect::IfYouDoGainLife {
@@ -1531,6 +1539,28 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
         event,
         intervening_if,
         effects,
+    })
+}
+
+fn this_card_in_your_graveyard_with_cards_above_it_from_pair(
+    pair: Pair<Rule>,
+) -> Result<InterveningIf, ParseError> {
+    let mut inner = pair.into_inner();
+    let zone_pair = inner.next().ok_or(ParseError::Internal(
+        "this-card graveyard condition missing zone",
+    ))?;
+    let count_pair = inner.next().ok_or(ParseError::Internal(
+        "this-card graveyard condition missing count",
+    ))?;
+    let card_type_pair = inner.next().ok_or(ParseError::Internal(
+        "this-card graveyard condition missing card type",
+    ))?;
+    let count =
+        number_word_to_u32(count_pair.as_str()).ok_or(ParseError::Internal("number_word"))?;
+    Ok(InterveningIf::ThisCardInYourZoneWithCardsAboveIt {
+        zone: zone_from_pair(zone_pair)?,
+        count,
+        card_type: permanent_type_from_pair(card_type_pair)?,
     })
 }
 

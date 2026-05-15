@@ -1559,6 +1559,19 @@ fn write_intervening_if(out: &mut String, iif: InterveningIf) {
             out.push_str(" is ");
             out.push_str(object_status_name(status));
         }
+        InterveningIf::ThisCardInYourZoneWithCardsAboveIt {
+            zone,
+            count,
+            card_type,
+        } => {
+            out.push_str("this card is in your ");
+            out.push_str(zone_name(zone));
+            out.push_str(" with ");
+            out.push_str(u32_to_number_word(count));
+            out.push_str(" or more ");
+            out.push_str(permanent_type_name(card_type));
+            out.push_str(" cards above it");
+        }
     }
 }
 
@@ -1755,6 +1768,9 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str("you may pay ");
             write_mana_cost(out, cost);
             out.push('.');
+        }
+        TriggerEffect::YouMayPutThisCardOntoTheBattlefield => {
+            out.push_str("you may put this card onto the battlefield.");
         }
         TriggerEffect::IfYouDoGainLife { amount } => {
             write!(out, "If you do, you gain {amount} life.")

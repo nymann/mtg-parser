@@ -1159,8 +1159,13 @@ beginning_of_upkeep_of_enchanted_permanent_controller = {
   ~ ^"enchanted" ~ permanent_type ~ "'s" ~ ^"controller"
 }
 
-intervening_if         = _{ its_on_the_battlefield | enchanted_has_keyword | it_wasnt_first_permanent_you_played_this_turn | source_attacked_or_blocked_this_combat | source_object_is_status }
+intervening_if         = _{ this_card_in_your_graveyard_with_cards_above_it | its_on_the_battlefield | enchanted_has_keyword | it_wasnt_first_permanent_you_played_this_turn | source_attacked_or_blocked_this_combat | source_object_is_status }
 its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
+this_card_in_your_graveyard_with_cards_above_it = {
+    ^"this" ~ ^"card" ~ ^"is" ~ ^"in" ~ ^"your" ~ zone
+  ~ ^"with" ~ number_word ~ ^"or" ~ ^"more" ~ permanent_type ~ ^"cards"
+  ~ ^"above" ~ ^"it"
+}
 enchanted_has_keyword = { ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword }
 it_wasnt_first_permanent_you_played_this_turn = {
     ^"it" ~ ^"wasn't" ~ ^"the" ~ ^"first" ~ permanent_type
@@ -1185,6 +1190,7 @@ trigger_effect = _{
   | loses_and_gains_keyword
   | return_enchanted_card_and_attach
   | unless_you_pay_mana_do_actions
+  | you_may_put_this_card_onto_the_battlefield
   | you_may_pay_mana
   | if_you_do_gain_life
   | sacrifice_source_unless_you_pay
@@ -1314,6 +1320,10 @@ you_lose_the_game = { ^"you" ~ ^"lose" ~ ^"the" ~ ^"game" ~ "." }
 you_gain_life = { ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "." }
 
 you_may_pay_mana = { ^"you" ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
+you_may_put_this_card_onto_the_battlefield = {
+    ^"you" ~ ^"may" ~ ^"put" ~ ^"this" ~ ^"card" ~ ^"onto"
+  ~ ^"the" ~ ^"battlefield" ~ "."
+}
 if_you_do_gain_life_fragment = {
     ^"if" ~ ^"you" ~ ^"do" ~ "," ~ ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life"
 }

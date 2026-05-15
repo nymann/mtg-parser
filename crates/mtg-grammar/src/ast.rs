@@ -498,6 +498,12 @@ pub enum InterveningIf {
         source: SourceObject,
         status: ObjectStatus,
     },
+    /// "if this card is in your <zone> with N or more <type> cards above it"
+    ThisCardInYourZoneWithCardsAboveIt {
+        zone: Zone,
+        count: u32,
+        card_type: PermanentType,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -614,6 +620,8 @@ pub enum TriggerEffect {
     YouGainLife { amount: u32 },
     /// "you may pay <mana_cost>"
     YouMayPayMana { cost: ManaCost },
+    /// "you may put this card onto the battlefield"
+    YouMayPutThisCardOntoTheBattlefield,
     /// "If you do, you gain N life."
     IfYouDoGainLife { amount: u32 },
     /// "unless you pay <mana_cost>, <action>[ and <action>]*"

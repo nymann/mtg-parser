@@ -243,3 +243,5 @@ mod mesa_pegasus;
 mod mind_twist;
 #[path = "generated_patterns/natural_selection.rs"]
 mod natural_selection;
+#[path = "generated_patterns/nether_shadow.rs"]
+mod nether_shadow;
