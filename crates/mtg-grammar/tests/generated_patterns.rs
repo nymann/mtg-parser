@@ -187,3 +187,5 @@ mod invisibility;
 mod ironclaw_orcs;
 #[path = "generated_patterns/island_sanctuary.rs"]
 mod island_sanctuary;
+#[path = "generated_patterns/jade_monolith.rs"]
+mod jade_monolith;

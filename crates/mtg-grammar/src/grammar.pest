@@ -723,6 +723,7 @@ activated_effect = _{
   | activated_source_gets_until_eot
   | activated_enchanted_gets_until_eot
   | prevent_all_but_damage_from_unblocked_creature
+  | next_damage_from_source_to_target_permanent_is_dealt_to_you_instead
   | prevent_next_damage_from_colored_source
   | prevent_next_damage_to_you_this_turn
   | put_up_to_variable_pt_counters_on_source
@@ -783,6 +784,13 @@ prevent_all_but_damage_from_unblocked_creature = {
   ~ ^"of" ~ ^"your" ~ ^"choice" ~ ^"would" ~ ^"deal" ~ ^"combat" ~ ^"damage"
   ~ ^"to" ~ ^"you" ~ ^"this" ~ ^"turn" ~ "," ~ ^"prevent"
   ~ ^"all" ~ ^"but" ~ unsigned_number ~ ^"of" ~ ^"that" ~ ^"damage" ~ "."
+}
+next_damage_from_source_to_target_permanent_is_dealt_to_you_instead = {
+    ^"the" ~ ^"next" ~ ^"time" ~ article ~ ^"source"
+  ~ ^"of" ~ ^"your" ~ ^"choice" ~ ^"would" ~ ^"deal" ~ ^"damage"
+  ~ ^"to" ~ ^"target" ~ permanent_type ~ ^"this" ~ ^"turn" ~ ","
+  ~ ^"that" ~ ^"source" ~ ^"deals" ~ ^"that" ~ ^"damage"
+  ~ ^"to" ~ ^"you" ~ ^"instead" ~ "."
 }
 prevent_next_damage_to_you_this_turn = {
     ^"prevent" ~ ^"the" ~ ^"next" ~ unsigned_number ~ ^"damage"

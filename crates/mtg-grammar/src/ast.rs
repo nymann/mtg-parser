@@ -620,6 +620,12 @@ pub enum ActivatedEffect {
     PreventAllButDamageFromUnblockedCreature {
         amount: u32,
     },
+    /// "The next time a source of your choice would deal damage to
+    /// target <permanent_type> this turn, that source deals that damage
+    /// to you instead."
+    NextDamageFromSourceToTargetPermanentIsDealtToYouInstead {
+        permanent_type: PermanentType,
+    },
     /// "Prevent the next N damage that would be dealt to you this turn."
     PreventNextDamageToYouThisTurn {
         amount: u32,

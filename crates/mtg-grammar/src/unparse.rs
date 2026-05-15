@@ -846,6 +846,13 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             )
             .expect("writing to String cannot fail");
         }
+        ActivatedEffect::NextDamageFromSourceToTargetPermanentIsDealtToYouInstead {
+            permanent_type,
+        } => {
+            out.push_str("The next time a source of your choice would deal damage to target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" this turn, that source deals that damage to you instead.");
+        }
         ActivatedEffect::PreventNextDamageToYouThisTurn { amount } => {
             write!(
                 out,

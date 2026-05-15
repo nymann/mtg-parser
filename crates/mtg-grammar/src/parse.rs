@@ -2433,6 +2433,16 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 .map_err(|_| ParseError::Internal("prevent all but damage amount"))?;
             Ok(ActivatedEffect::PreventAllButDamageFromUnblockedCreature { amount })
         }
+        Rule::next_damage_from_source_to_target_permanent_is_dealt_to_you_instead => {
+            let permanent_type_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "damage redirection missing permanent_type",
+            ))?;
+            Ok(
+                ActivatedEffect::NextDamageFromSourceToTargetPermanentIsDealtToYouInstead {
+                    permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                },
+            )
+        }
         Rule::prevent_next_damage_to_you_this_turn => {
             let amount_pair = pair
                 .into_inner()
