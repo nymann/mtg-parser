@@ -162,16 +162,21 @@ modal_choice = { choose_one ~ ("\n" ~ modal_mode)* }
 choose_one    = { ^"choose" ~ ^"one" ~ "—" }
 modal_mode    = { "•" ~ modal_effect }
 modal_effect  = _{
-    counter_target_colored_spell
-  | destroy_target_colored_permanent
+    colored_target_effect
   | target_player_gains_life
   | prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
 }
-counter_target_colored_spell = {
-    ^"counter" ~ ^"target" ~ color_word ~ ^"spell" ~ "."
+colored_target_effect = { colored_target_action ~ "." }
+colored_target_action = _{
+    counter_target_colored_spell_action
+  | destroy_target_colored_permanent_action
 }
-destroy_target_colored_permanent = {
-    ^"destroy" ~ ^"target" ~ color_word ~ ^"permanent" ~ "."
+counter_target_colored_spell = { counter_target_colored_spell_action ~ "." }
+counter_target_colored_spell_action = {
+    ^"counter" ~ ^"target" ~ color_word ~ ^"spell"
+}
+destroy_target_colored_permanent_action = {
+    ^"destroy" ~ ^"target" ~ color_word ~ ^"permanent"
 }
 
 mana_cost   = ${ mana_symbol+ }

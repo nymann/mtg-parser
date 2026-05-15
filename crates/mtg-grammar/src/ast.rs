@@ -352,6 +352,14 @@ pub(crate) enum TargetPermanentEndOfTurnEffect {
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ColoredTargetEffect {
+    /// "Counter target <color> spell."
+    CounterSpell { color: Color },
+    /// "Destroy target <color> permanent."
+    DestroyPermanent { color: Color },
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ModalMode {
     /// "Counter target <color> spell."

@@ -2,13 +2,13 @@ use std::fmt::Write;
 
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
-    BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
-    CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
-    DamageRecipients, EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction,
-    InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
+    ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap,
+    DamageRecipient, DamageRecipients, EachPlayerAction, EnchantObject, EnchantedObject,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
+    MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
     Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -410,20 +410,31 @@ fn write_modal_choice(out: &mut String, modes: &[ModalMode]) {
 fn write_modal_mode(out: &mut String, mode: ModalMode) {
     match mode {
         ModalMode::CounterTargetColoredSpell { color } => {
-            out.push_str("Counter target ");
-            out.push_str(color_name(color));
-            out.push_str(" spell.");
+            write_colored_target_effect(out, ColoredTargetEffect::CounterSpell { color });
         }
         ModalMode::DestroyTargetColoredPermanent { color } => {
-            out.push_str("Destroy target ");
-            out.push_str(color_name(color));
-            out.push_str(" permanent.");
+            write_colored_target_effect(out, ColoredTargetEffect::DestroyPermanent { color });
         }
         ModalMode::TargetPlayerGainsLife { amount } => {
             write!(out, "Target player gains {amount} life.").expect("write to String never fails");
         }
         ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient } => {
             write_prevent_next_damage_to_recipient(out, amount, recipient);
+        }
+    }
+}
+
+fn write_colored_target_effect(out: &mut String, effect: ColoredTargetEffect) {
+    match effect {
+        ColoredTargetEffect::CounterSpell { color } => {
+            out.push_str("Counter target ");
+            out.push_str(color_name(color));
+            out.push_str(" spell.");
+        }
+        ColoredTargetEffect::DestroyPermanent { color } => {
+            out.push_str("Destroy target ");
+            out.push_str(color_name(color));
+            out.push_str(" permanent.");
         }
     }
 }
@@ -873,9 +884,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push('.');
         }
         ActivatedEffect::CounterTargetColoredSpell { color } => {
-            out.push_str("Counter target ");
-            out.push_str(color_name(*color));
-            out.push_str(" spell.");
+            write_colored_target_effect(out, ColoredTargetEffect::CounterSpell { color: *color });
         }
         ActivatedEffect::DestroyTargetPermanents { permanent_types } => {
             write_destroy_target_permanent_choice(out, permanent_types);

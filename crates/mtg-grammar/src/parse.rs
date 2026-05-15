@@ -4,12 +4,12 @@ use pest_derive::Parser;
 
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
-    BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
-    CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
-    DamageRecipients, DestroyAllTarget, EachPlayerAction, EnchantObject, EnchantedObject,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
+    ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap,
+    DamageRecipient, DamageRecipients, DestroyAllTarget, EachPlayerAction, EnchantObject,
+    EnchantedObject, ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost,
+    ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
     Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -279,24 +279,14 @@ fn modal_mode_from_pair(pair: Pair<Rule>) -> Result<ModalMode, ParseError> {
         .next()
         .ok_or(ParseError::Internal("modal_mode missing effect"))?;
     match effect.as_rule() {
-        Rule::counter_target_colored_spell => {
-            let color = effect
-                .into_inner()
-                .next()
-                .ok_or(ParseError::Internal("counter mode missing color"))?;
-            Ok(ModalMode::CounterTargetColoredSpell {
-                color: color_from_pair(color)?,
-            })
-        }
-        Rule::destroy_target_colored_permanent => {
-            let color = effect
-                .into_inner()
-                .next()
-                .ok_or(ParseError::Internal("destroy mode missing color"))?;
-            Ok(ModalMode::DestroyTargetColoredPermanent {
-                color: color_from_pair(color)?,
-            })
-        }
+        Rule::colored_target_effect => match colored_target_effect_from_pair(effect)? {
+            ColoredTargetEffect::CounterSpell { color } => {
+                Ok(ModalMode::CounterTargetColoredSpell { color })
+            }
+            ColoredTargetEffect::DestroyPermanent { color } => {
+                Ok(ModalMode::DestroyTargetColoredPermanent { color })
+            }
+        },
         Rule::target_player_gains_life => Ok(ModalMode::TargetPlayerGainsLife {
             amount: target_player_gains_life_amount_from_pair(effect)?,
         }),
@@ -310,6 +300,25 @@ fn modal_mode_from_pair(pair: Pair<Rule>) -> Result<ModalMode, ParseError> {
             )
         }
         _ => Err(ParseError::Internal("modal_effect")),
+    }
+}
+
+fn colored_target_effect_from_pair(pair: Pair<Rule>) -> Result<ColoredTargetEffect, ParseError> {
+    let action_pair = only_inner(pair, "colored_target_effect missing action")?;
+    colored_target_action_from_pair(action_pair)
+}
+
+fn colored_target_action_from_pair(pair: Pair<Rule>) -> Result<ColoredTargetEffect, ParseError> {
+    let color_pair = only_inner(pair.clone(), "colored target action missing color")?;
+    let color = color_from_pair(color_pair)?;
+    match pair.as_rule() {
+        Rule::counter_target_colored_spell_action => {
+            Ok(ColoredTargetEffect::CounterSpell { color })
+        }
+        Rule::destroy_target_colored_permanent_action => {
+            Ok(ColoredTargetEffect::DestroyPermanent { color })
+        }
+        _ => Err(ParseError::Internal("colored_target_action")),
     }
 }
 
@@ -2792,13 +2801,15 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             )?))
         }
         Rule::counter_target_colored_spell => {
-            let color_pair = pair
-                .into_inner()
-                .next()
-                .ok_or(ParseError::Internal("counter colored spell missing color"))?;
-            Ok(ActivatedEffect::CounterTargetColoredSpell {
-                color: color_from_pair(color_pair)?,
-            })
+            let action_pair = only_inner(pair, "counter colored spell missing action")?;
+            match colored_target_action_from_pair(action_pair)? {
+                ColoredTargetEffect::CounterSpell { color } => {
+                    Ok(ActivatedEffect::CounterTargetColoredSpell { color })
+                }
+                ColoredTargetEffect::DestroyPermanent { .. } => {
+                    Err(ParseError::Internal("activated colored target effect"))
+                }
+            }
         }
         Rule::destroy_target_permanent => {
             let choice_pair = only_inner(pair, "destroy target missing permanent_type_choice")?;
