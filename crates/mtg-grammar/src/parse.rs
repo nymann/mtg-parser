@@ -1185,8 +1185,8 @@ fn if_you_do_effect_from_inner_pair(pair: Pair<Rule>) -> Result<IfYouDoEffect, P
             amount: if_you_do_gain_life_amount_from_pair(pair)?,
         }),
         Rule::prevent_damage_this_turn => {
-            let prevention = next_prevention_recipient_damage_from_pair(pair)?;
-            Ok(IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention })
+            let effect = damage_prevention_effect_from_timed_prevention_pair(pair)?;
+            Ok(IfYouDoEffect::PreventDamageThisTurn { effect })
         }
         _ => Err(ParseError::Internal("if_you_do effect")),
     }

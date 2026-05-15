@@ -154,6 +154,11 @@ pub enum Statement {
         #[serde(flatten)]
         prevention: DamagePrevention<PreventionRecipient>,
     },
+    /// "If you do, prevent <amount> [combat] damage that would be dealt [to <recipient>] this turn."
+    IfYouDoPreventDamageThisTurn {
+        #[serde(flatten)]
+        effect: DamagePreventionEffect<PreventionRecipient>,
+    },
     /// "If you do, add <mana>."
     IfYouDoAddMana {
         mana: ManaCost,
@@ -341,11 +346,14 @@ impl Statement {
 
     pub(crate) fn if_you_do(effect: IfYouDoEffect) -> Self {
         match effect {
-            IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
-                Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                    prevention,
-                }
-            }
+            IfYouDoEffect::PreventDamageThisTurn { effect } => effect.into_next_this_turn().map_or(
+                Statement::IfYouDoPreventDamageThisTurn { effect },
+                |prevention| {
+                    Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                        prevention,
+                    }
+                },
+            ),
             IfYouDoEffect::AddMana { mana } => Statement::IfYouDoAddMana { mana },
             IfYouDoEffect::Untap { source } => Statement::IfYouDoUntap { source },
             IfYouDoEffect::UntapReferencedPermanent { permanent_type } => {
@@ -418,8 +426,8 @@ impl DamagePreventionEffect<PreventionRecipient> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) enum IfYouDoEffect {
-    PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-        prevention: DamagePrevention<PreventionRecipient>,
+    PreventDamageThisTurn {
+        effect: DamagePreventionEffect<PreventionRecipient>,
     },
     AddMana {
         mana: ManaCost,

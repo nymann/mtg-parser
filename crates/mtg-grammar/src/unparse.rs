@@ -205,9 +205,15 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
             write_if_you_do_effect(
                 out,
-                IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                    prevention: *prevention,
+                IfYouDoEffect::PreventDamageThisTurn {
+                    effect: DamagePreventionEffect::next_this_turn(*prevention),
                 },
+            );
+        }
+        Statement::IfYouDoPreventDamageThisTurn { effect } => {
+            write_if_you_do_effect(
+                out,
+                IfYouDoEffect::PreventDamageThisTurn { effect: *effect },
             );
         }
         Statement::IfYouDoAddMana { mana } => {
@@ -685,11 +691,8 @@ fn write_optional_cost(out: &mut String, cost: &OptionalCost) {
 
 fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
     write_if_you_do(out, |out| match effect {
-        IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
-            write_damage_prevention_effect_lowercase(
-                out,
-                DamagePreventionEffect::next_this_turn(prevention),
-            );
+        IfYouDoEffect::PreventDamageThisTurn { effect } => {
+            write_damage_prevention_effect_lowercase(out, effect);
         }
         IfYouDoEffect::AddMana { mana } => write_add_mana_sentence(out, &mana, SentenceCase::Lower),
         IfYouDoEffect::Untap { source } => write_untap_sentence(out, source, SentenceCase::Lower),

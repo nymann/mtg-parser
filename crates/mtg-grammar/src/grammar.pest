@@ -230,7 +230,7 @@ damage_prevention_effect = {
     prevent_damage_this_turn
 }
 prevent_damage_this_turn = {
-    damage_prevention_replacement_effect ~ this_turn_period
+    damage_prevention_replacement_effect ~ damage_prevention_duration
 }
 // Comprehensive Rules 614/615 split: a prevention effect replaces a
 // damage event; amount, kind, recipient, and duration are data axes.
@@ -250,6 +250,7 @@ damage_prevention_event = _{
     ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"
 }
 damage_prevention_recipient = { ^"to" ~ prevention_recipient }
+damage_prevention_duration = _{ this_turn_period }
 this_turn_period = _{ ^"this" ~ ^"turn" ~ "." }
 damage_prevention_amount = _{ damage_amount_expression }
 prevention_recipient = _{ any_target_prevention_recipient | that_permanent_or_player_prevention_recipient }
@@ -1006,7 +1007,7 @@ redirect_that_damage_to_you = {
 }
 activated_damage_prevention_effect = {
     damage_prevention_replacement_event ~ activated_damage_prevention_recipient_clause
-  ~ this_turn_period
+  ~ damage_prevention_duration
 }
 put_up_to_variable_pt_counters_on_source = {
     ^"put" ~ ^"up" ~ ^"to" ~ variable_name ~ pt_counters
