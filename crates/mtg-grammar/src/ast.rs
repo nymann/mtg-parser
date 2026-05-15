@@ -1037,6 +1037,9 @@ pub enum StaticAbility {
     },
     /// "This <permanent_type> doesn't untap during your untap step."
     SourceDoesntUntapDuringYourUntapStep { source: SourceObject },
+    /// "Creatures with power N or greater don't untap during their
+    /// controllers' untap steps."
+    CreaturesWithPowerOrGreaterDontUntapDuringTheirControllersUntapSteps { power: u32 },
     /// "This <permanent_type> can't block creatures with power N or greater."
     SourceCantBlockCreaturesWithPowerOrGreater { source: SourceObject, power: u32 },
     /// "<source name>'s power and toughness are each equal to the number

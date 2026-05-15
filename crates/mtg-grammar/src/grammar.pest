@@ -125,6 +125,7 @@ sentence_statement = _{
   | static_source_attacks_each_combat_if_able
   | static_source_cant_be_blocked_by_creature_type
   | static_source_doesnt_untap_during_your_untap_step
+  | static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
   | static_source_cant_block_creatures_with_power_or_greater
   | static_named_source_pt_equal_to_non_creature_type_creatures_you_control
   | static_effect_doesnt_remove_this_aura
@@ -574,6 +575,7 @@ static_ability = _{
   | static_you_may_have_source_enter_as_copy
   | static_source_attacks_each_combat_if_able
   | static_source_cant_be_blocked_by_creature_type
+  | static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
   | static_source_cant_block_creatures_with_power_or_greater
   | static_named_source_pt_equal_to_non_creature_type_creatures_you_control
   | static_effect_doesnt_remove_this_aura
@@ -725,6 +727,12 @@ static_that_permanent_is_basic_land_type_while_has_named_counter = {
 static_source_doesnt_untap_during_your_untap_step = {
     source_object ~ ^"doesn't" ~ ^"untap" ~ ^"during" ~ ^"your"
   ~ ^"untap" ~ ^"step" ~ "."
+}
+
+static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps = {
+    ^"creatures" ~ ^"with" ~ ^"power" ~ unsigned_number ~ ^"or" ~ ^"greater"
+  ~ ^"don't" ~ ^"untap" ~ ^"during" ~ ^"their" ~ ^"controllers'"
+  ~ ^"untap" ~ ^"steps" ~ "."
 }
 
 static_source_cant_block_creatures_with_power_or_greater = {

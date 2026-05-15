@@ -235,3 +235,5 @@ mod mana_short;
 mod mana_vault;
 #[path = "generated_patterns/manabarbs.rs"]
 mod manabarbs;
+#[path = "generated_patterns/meekstone.rs"]
+mod meekstone;

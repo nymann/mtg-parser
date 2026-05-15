@@ -216,6 +216,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_source_attacks_each_combat_if_able
         | Rule::static_source_cant_be_blocked_by_creature_type
         | Rule::static_source_doesnt_untap_during_your_untap_step
+        | Rule::static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
         | Rule::static_source_cant_block_creatures_with_power_or_greater
         | Rule::static_named_source_pt_equal_to_non_creature_type_creatures_you_control
         | Rule::static_basic_lands_are_basic_lands
@@ -2530,6 +2531,21 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::SourceDoesntUntapDuringYourUntapStep {
                 source: source_object_from_pair(source_pair)?,
             })
+        }
+        Rule::static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps => {
+            let power_pair = pair
+                .into_inner()
+                .next()
+                .expect("static untap restriction names power threshold");
+            let power = power_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("static untap restriction power"))?;
+            Ok(
+                StaticAbility::CreaturesWithPowerOrGreaterDontUntapDuringTheirControllersUntapSteps {
+                    power,
+                },
+            )
         }
         Rule::static_source_cant_block_creatures_with_power_or_greater => {
             let mut inner = pair.into_inner();

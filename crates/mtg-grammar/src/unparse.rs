@@ -1255,6 +1255,15 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_source_object_capitalized(out, *source);
             out.push_str(" doesn't untap during your untap step.");
         }
+        StaticAbility::CreaturesWithPowerOrGreaterDontUntapDuringTheirControllersUntapSteps {
+            power,
+        } => {
+            write!(
+                out,
+                "Creatures with power {power} or greater don't untap during their controllers' untap steps."
+            )
+            .expect("writing to String cannot fail");
+        }
         StaticAbility::SourceCantBlockCreaturesWithPowerOrGreater { source, power } => {
             write_source_object_capitalized(out, *source);
             write!(
