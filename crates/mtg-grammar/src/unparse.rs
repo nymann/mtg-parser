@@ -6,19 +6,19 @@ use crate::ast::{
     ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
     ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
-    DamageAssignment, DamageKind, DamageLifeGainCap, DamagePreventionAmount,
-    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
-    DamageRecipients, DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject,
-    EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController,
-    LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
-    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, RegenerateRecipient, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TriggerCondition,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
+    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
+    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
+    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer,
+    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
+    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
+    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -47,6 +47,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::NamedSourceDealsDamage { event } => {
             write_named_damage_event(out, event);
         }
+        Statement::DamageEffect(effect) => write_activated_damage_effect(out, effect),
         Statement::PreventDamageThisTurn {
             effect,
             definitions,
@@ -63,9 +64,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_source_object(out, *source);
             out.push_str(" enters, you lose life equal to your life total.");
         }
-        Statement::YouGainLifeEqualToDamageDealtCapped { caps } => {
-            out.push_str("You gain life equal to the damage dealt, but not more life than ");
-            write_damage_life_gain_caps(out, caps);
+        Statement::YouGainLifeEqualToDamage { reference } => {
+            out.push_str("You gain life equal to the ");
+            write_damage_life_gain_reference(out, reference);
             out.push('.');
         }
         Statement::IfYouCantYouLoseTheGame => {
@@ -455,6 +456,7 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
     matches!(
         statement,
         Statement::PlayerPaymentFailure { .. }
+            | Statement::YouGainLifeEqualToDamage { .. }
             | Statement::ForEachAttackingCreatureChooseLabelBlockingRestriction { .. }
     )
 }
@@ -512,6 +514,18 @@ fn write_damage_life_gain_caps(out: &mut String, caps: &[DamageLifeGainCap]) {
             }
         }
         write_damage_life_gain_cap(out, *cap);
+    }
+}
+
+fn write_damage_life_gain_reference(out: &mut String, reference: &DamageLifeGainReference) {
+    match reference {
+        DamageLifeGainReference::DamageDealtCapped { caps } => {
+            out.push_str("damage dealt, but not more life than ");
+            write_damage_life_gain_caps(out, caps);
+        }
+        DamageLifeGainReference::DamagePreventedThisWay => {
+            out.push_str("damage prevented this way");
+        }
     }
 }
 

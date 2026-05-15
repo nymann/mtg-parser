@@ -7,11 +7,12 @@
 //! steps or reordering them in `add_card.rs` does not require any
 //! change here.
 
-use std::io::{Stdout, Write};
-use std::process::{Command, Stdio};
+use std::io::{Read, Seek, SeekFrom, Stdout, Write};
+use std::path::{Path, PathBuf};
+use std::process::{Child, Command, Stdio};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use anyhow::{Context, Result};
 use crossterm::{
@@ -33,6 +34,13 @@ mod view;
 
 pub use state::AppState;
 
+const HOT_RELOAD_EXIT_CODE: u8 = 75;
+
+enum ViewerExit {
+    Quit,
+    Reload,
+}
+
 /// Sink that pushes events into a channel for the TUI to consume.
 pub struct TuiSink {
     tx: Sender<FlowEvent>,
@@ -46,9 +54,26 @@ impl FlowSink for TuiSink {
     }
 }
 
+struct EventLogSink {
+    file: std::fs::File,
+}
+
+impl FlowSink for EventLogSink {
+    fn emit(&mut self, event: FlowEvent) {
+        if serde_json::to_writer(&mut self.file, &event).is_ok() {
+            let _ = writeln!(self.file);
+            let _ = self.file.flush();
+        }
+    }
+}
+
 /// Run add-card with the TUI as its output surface.
 pub fn run_add_card(opts: add_card::Options) -> Result<std::process::ExitCode> {
     run_workflow(move |sink| add_card::run_with_sink(opts, sink))
+}
+
+pub fn run_add_card_hot_reload(opts: add_card::Options) -> Result<std::process::ExitCode> {
+    run_workflow_hot_reload("add-card", move |sink| add_card::run_with_sink(opts, sink))
 }
 
 /// Run refactor-hotspot with the TUI as its output surface.
@@ -56,11 +81,34 @@ pub fn run_refactor_hotspot(opts: refactor_hotspot::Options) -> Result<std::proc
     run_workflow(move |sink| refactor_hotspot::run_with_sink(opts, sink))
 }
 
+pub fn run_refactor_hotspot_hot_reload(
+    opts: refactor_hotspot::Options,
+) -> Result<std::process::ExitCode> {
+    run_workflow_hot_reload("refactor-hotspot", move |sink| {
+        refactor_hotspot::run_with_sink(opts, sink)
+    })
+}
+
 /// Run grind with the TUI as its output surface. The two inner workflows
 /// (refactor-hotspot, then add-card) reuse the same FlowEvent stream;
 /// the TUI re-renders as the SessionStarted events from each phase land.
 pub fn run_grind(opts: grind::Options) -> Result<std::process::ExitCode> {
     run_workflow(move |sink| grind::run_with_sink(opts, sink))
+}
+
+pub fn run_grind_hot_reload(opts: grind::Options) -> Result<std::process::ExitCode> {
+    run_workflow_hot_reload("grind", move |sink| grind::run_with_sink(opts, sink))
+}
+
+pub fn run_viewer(event_log: PathBuf) -> Result<std::process::ExitCode> {
+    let mut terminal = setup_terminal().context("set up terminal")?;
+    terminal.clear()?;
+    let result = run_event_loop_from_log(&mut terminal, &event_log);
+    teardown_terminal(&mut terminal).ok();
+    Ok(match result? {
+        ViewerExit::Quit => std::process::ExitCode::SUCCESS,
+        ViewerExit::Reload => std::process::ExitCode::from(HOT_RELOAD_EXIT_CODE),
+    })
 }
 
 fn run_workflow<F>(orchestrator: F) -> Result<std::process::ExitCode>
@@ -106,6 +154,83 @@ where
     }
 }
 
+fn run_workflow_hot_reload<F>(
+    workflow: &'static str,
+    orchestrator: F,
+) -> Result<std::process::ExitCode>
+where
+    F: FnOnce(&mut dyn FlowSink) -> Result<std::process::ExitCode> + Send + 'static,
+{
+    let event_log = hot_reload_event_log_path(workflow);
+    if let Some(parent) = event_log.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let file = std::fs::File::create(&event_log)
+        .with_context(|| format!("create TUI hot-reload event log {}", event_log.display()))?;
+
+    let orchestrator_handle = thread::spawn(move || -> Result<std::process::ExitCode> {
+        let mut sink: Box<dyn FlowSink> = Box::new(EventLogSink { file });
+        match orchestrator(sink.as_mut()) {
+            Ok(code) => Ok(code),
+            Err(err) => {
+                let reason = format!("{err:#}");
+                sink.emit(FlowEvent::Note {
+                    level: NoteLevel::Error,
+                    text: format!("startup failed: {reason}"),
+                });
+                sink.emit(FlowEvent::SessionFinished {
+                    reason: crate::flow::SessionEndReason::SurfacedToHuman(reason),
+                });
+                Ok(std::process::ExitCode::FAILURE)
+            }
+        }
+    });
+
+    let mut child = spawn_hot_reload_viewer(&event_log)?;
+    loop {
+        let status = child.wait()?;
+        if status.code() == Some(HOT_RELOAD_EXIT_CODE as i32) {
+            child = spawn_hot_reload_viewer(&event_log)?;
+            continue;
+        }
+        break;
+    }
+
+    orchestrator_handle
+        .join()
+        .map_err(|_| anyhow::anyhow!("orchestrator thread panicked"))?
+}
+
+fn hot_reload_event_log_path(workflow: &str) -> PathBuf {
+    std::env::temp_dir().join(format!(
+        "mtg-parser-{workflow}-tui-{}.ndjson",
+        std::process::id()
+    ))
+}
+
+fn spawn_hot_reload_viewer(event_log: &Path) -> Result<Child> {
+    Command::new("cargo")
+        .args(["run", "-q", "-p", "xtask", "--", "tui-view", "--event-log"])
+        .arg(event_log)
+        .spawn()
+        .context("spawn hot-reload TUI viewer")
+}
+
+fn tui_source_mtime() -> Result<SystemTime> {
+    let dir = crate::paths::repo_root().join("xtask/src/tui");
+    let mut newest = SystemTime::UNIX_EPOCH;
+    for entry in std::fs::read_dir(&dir).with_context(|| format!("read {}", dir.display()))? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+            continue;
+        }
+        let modified = entry.metadata()?.modified()?;
+        newest = newest.max(modified);
+    }
+    Ok(newest)
+}
+
 fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
@@ -131,6 +256,7 @@ fn run_event_loop(
 ) -> Result<()> {
     let mut state = AppState::new();
     let poll_timeout = Duration::from_millis(50);
+    let mut last_area = terminal.size()?;
 
     loop {
         // 1. Drain any pending events from the orchestrator.
@@ -157,6 +283,11 @@ fn run_event_loop(
 
         // 2. Render.
         terminal.autoresize()?;
+        let area = terminal.size()?;
+        if area != last_area {
+            terminal.clear()?;
+            last_area = area;
+        }
         terminal.draw(|f| view::render(f, &mut state))?;
 
         // 3. Poll input. Short timeout so we redraw on a regular cadence
@@ -166,6 +297,7 @@ fn run_event_loop(
                 Event::Key(key) => match input::handle(key, &mut state) {
                     input::Action::Quit => break,
                     input::Action::Copy(target) => copy_target_to_clipboard(&mut state, target),
+                    input::Action::OpenCard => open_active_card(&mut state),
                     input::Action::None => {}
                 },
                 Event::Resize(_, _) => {
@@ -175,6 +307,7 @@ fn run_event_loop(
                 Event::Mouse(mouse) => match input::handle_mouse(mouse, &mut state) {
                     input::Action::Quit => break,
                     input::Action::Copy(target) => copy_target_to_clipboard(&mut state, target),
+                    input::Action::OpenCard => open_active_card(&mut state),
                     input::Action::None => {}
                 },
                 _ => {}
@@ -182,6 +315,151 @@ fn run_event_loop(
         }
     }
     Ok(())
+}
+
+fn run_event_loop_from_log(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    event_log: &Path,
+) -> Result<ViewerExit> {
+    let mut state = AppState::new();
+    let mut reader = EventLogReader::new(event_log.to_path_buf());
+    let poll_timeout = Duration::from_millis(50);
+    let mut last_area = terminal.size()?;
+    let mut last_ui_mtime = tui_source_mtime()?;
+
+    loop {
+        let current_mtime = tui_source_mtime()?;
+        if current_mtime > last_ui_mtime {
+            return Ok(ViewerExit::Reload);
+        }
+        last_ui_mtime = current_mtime;
+
+        for ev in reader.read_available()? {
+            let hard_redraw = matches!(ev, FlowEvent::IterationStarted { .. });
+            state.apply(ev);
+            if hard_redraw {
+                terminal.autoresize()?;
+                terminal.clear()?;
+            }
+        }
+
+        terminal.autoresize()?;
+        let area = terminal.size()?;
+        if area != last_area {
+            terminal.clear()?;
+            last_area = area;
+        }
+        terminal.draw(|f| view::render(f, &mut state))?;
+
+        if event::poll(poll_timeout)? {
+            match event::read()? {
+                Event::Key(key) => match input::handle(key, &mut state) {
+                    input::Action::Quit => return Ok(ViewerExit::Quit),
+                    input::Action::Copy(target) => copy_target_to_clipboard(&mut state, target),
+                    input::Action::OpenCard => open_active_card(&mut state),
+                    input::Action::None => {}
+                },
+                Event::Resize(_, _) => {
+                    terminal.autoresize()?;
+                    terminal.clear()?;
+                }
+                Event::Mouse(mouse) => match input::handle_mouse(mouse, &mut state) {
+                    input::Action::Quit => return Ok(ViewerExit::Quit),
+                    input::Action::Copy(target) => copy_target_to_clipboard(&mut state, target),
+                    input::Action::OpenCard => open_active_card(&mut state),
+                    input::Action::None => {}
+                },
+                _ => {}
+            }
+        }
+    }
+}
+
+struct EventLogReader {
+    path: PathBuf,
+    offset: u64,
+    partial: String,
+}
+
+impl EventLogReader {
+    fn new(path: PathBuf) -> Self {
+        Self {
+            path,
+            offset: 0,
+            partial: String::new(),
+        }
+    }
+
+    fn read_available(&mut self) -> Result<Vec<FlowEvent>> {
+        let mut file = match std::fs::File::open(&self.path) {
+            Ok(file) => file,
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(err) => return Err(err.into()),
+        };
+        file.seek(SeekFrom::Start(self.offset))?;
+        let mut chunk = String::new();
+        file.read_to_string(&mut chunk)?;
+        self.offset += chunk.len() as u64;
+        if chunk.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        self.partial.push_str(&chunk);
+        let complete = self.partial.ends_with('\n');
+        let mut lines = self.partial.lines().map(str::to_string).collect::<Vec<_>>();
+        if !complete {
+            self.partial = lines.pop().unwrap_or_default();
+        } else {
+            self.partial.clear();
+        }
+
+        let mut events = Vec::new();
+        for line in lines {
+            if line.trim().is_empty() {
+                continue;
+            }
+            events.push(serde_json::from_str(&line)?);
+        }
+        Ok(events)
+    }
+}
+
+fn open_active_card(state: &mut AppState) {
+    let Some(card) = state.active_iteration().and_then(|iter| iter.card.as_ref()) else {
+        return;
+    };
+    let url = view::scryfall_card_url(&card.name);
+    let result = open_url(&url);
+    match result {
+        Ok(()) => state.push_ui_note(format!("opened {}", card.name)),
+        Err(err) => state.events.push(state::TimelineRow {
+            iteration_index: state.iterations.len() as u32,
+            delta: 0,
+            kind: state::TimelineKind::Note {
+                level: NoteLevel::Warn,
+                text: format!("open failed: {err}; {url}"),
+            },
+        }),
+    }
+}
+
+fn open_url(url: &str) -> Result<()> {
+    let candidates: &[(&str, &[&str])] = if cfg!(target_os = "macos") {
+        &[("open", &[])]
+    } else if cfg!(target_os = "linux") {
+        &[("xdg-open", &[])]
+    } else {
+        &[]
+    };
+    for (program, args) in candidates {
+        let status = Command::new(program).args(*args).arg(url).status();
+        match status {
+            Ok(status) if status.success() => return Ok(()),
+            Ok(status) => anyhow::bail!("{program} exited with {status}"),
+            Err(err) => anyhow::bail!("{program}: {err}"),
+        }
+    }
+    anyhow::bail!("no browser opener configured for this platform")
 }
 
 fn copy_target_to_clipboard(state: &mut AppState, target: input::CopyTarget) {

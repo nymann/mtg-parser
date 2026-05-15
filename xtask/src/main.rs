@@ -113,6 +113,17 @@ fn parse_ui(args: &[String]) -> Result<Ui, String> {
     Ok(Ui::Console)
 }
 
+fn ui_hot_reload(args: &[String]) -> bool {
+    args.iter().any(|arg| arg == "--ui-hot-reload")
+}
+
+fn without_ui_hot_reload(args: &[String]) -> Vec<String> {
+    args.iter()
+        .filter(|arg| arg.as_str() != "--ui-hot-reload")
+        .cloned()
+        .collect()
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
@@ -130,19 +141,12 @@ fn main() -> ExitCode {
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),
         Some("rules-split") => rules_split::run(&args[1..]),
         Some("rules-context") => rules_context::run_cli(&args[1..]),
-        Some("refactor-hotspot") => match parse_ui(&args[1..]) {
-            Ok(Ui::Console) => refactor_hotspot::run(&args[1..]),
-            Ok(Ui::Tui) => match refactor_hotspot::Options::parse(&args[1..]) {
-                Ok(opts) => match tui::run_refactor_hotspot(opts) {
-                    Ok(code) => code,
-                    Err(e) => {
-                        eprintln!("tui error: {e:#}");
-                        ExitCode::FAILURE
-                    }
-                },
+        Some("tui-view") => match parse_tui_view_args(&args[1..]) {
+            Ok(event_log) => match tui::run_viewer(event_log) {
+                Ok(code) => code,
                 Err(e) => {
-                    eprintln!("{e}");
-                    ExitCode::from(2)
+                    eprintln!("tui error: {e:#}");
+                    ExitCode::FAILURE
                 }
             },
             Err(e) => {
@@ -150,10 +154,40 @@ fn main() -> ExitCode {
                 ExitCode::from(2)
             }
         },
+        Some("refactor-hotspot") => match parse_ui(&args[1..]) {
+            Ok(Ui::Console) => refactor_hotspot::run(&args[1..]),
+            Ok(Ui::Tui) => {
+                match refactor_hotspot::Options::parse(&without_ui_hot_reload(&args[1..])) {
+                    Ok(opts) => match if ui_hot_reload(&args[1..]) {
+                        tui::run_refactor_hotspot_hot_reload(opts)
+                    } else {
+                        tui::run_refactor_hotspot(opts)
+                    } {
+                        Ok(code) => code,
+                        Err(e) => {
+                            eprintln!("tui error: {e:#}");
+                            ExitCode::FAILURE
+                        }
+                    },
+                    Err(e) => {
+                        eprintln!("{e}");
+                        ExitCode::from(2)
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("{e}");
+                ExitCode::from(2)
+            }
+        },
         Some("grind") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => grind::run(&args[1..]),
-            Ok(Ui::Tui) => match grind::Options::parse(&args[1..]) {
-                Ok(opts) => match tui::run_grind(opts) {
+            Ok(Ui::Tui) => match grind::Options::parse(&without_ui_hot_reload(&args[1..])) {
+                Ok(opts) => match if ui_hot_reload(&args[1..]) {
+                    tui::run_grind_hot_reload(opts)
+                } else {
+                    tui::run_grind(opts)
+                } {
                     Ok(code) => code,
                     Err(e) => {
                         eprintln!("tui error: {e:#}");
@@ -172,8 +206,12 @@ fn main() -> ExitCode {
         },
         Some("add-card") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => add_card::run(&args[1..]),
-            Ok(Ui::Tui) => match add_card::Options::parse(&args[1..]) {
-                Ok(opts) => match tui::run_add_card(opts) {
+            Ok(Ui::Tui) => match add_card::Options::parse(&without_ui_hot_reload(&args[1..])) {
+                Ok(opts) => match if ui_hot_reload(&args[1..]) {
+                    tui::run_add_card_hot_reload(opts)
+                } else {
+                    tui::run_add_card(opts)
+                } {
                     Ok(code) => code,
                     Err(e) => {
                         eprintln!("tui error: {e:#}");
@@ -195,4 +233,19 @@ fn main() -> ExitCode {
             ExitCode::from(2)
         }
     }
+}
+
+fn parse_tui_view_args(args: &[String]) -> Result<std::path::PathBuf, String> {
+    let mut event_log = None;
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--event-log" => event_log = iter.next().map(std::path::PathBuf::from),
+            s if s.starts_with("--event-log=") => {
+                event_log = Some(std::path::PathBuf::from(&s["--event-log=".len()..]));
+            }
+            other => return Err(format!("unknown argument: {other}")),
+        }
+    }
+    event_log.ok_or_else(|| "--event-log requires a value".to_string())
 }

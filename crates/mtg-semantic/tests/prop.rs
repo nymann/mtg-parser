@@ -11,13 +11,14 @@
 
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount, Color,
-    DamageAmount, DamageEvent, DamageKind, DamageLifeGainCap, DamagePreventionAmount,
-    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
-    DamageRecipients, DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, Keyword,
-    ManaCost, ManaSymbol, ModalMode, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
-    PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, TapAllPermanentsActor,
-    TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
+    DamageAmount, DamageEvent, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
+    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
+    DamagePreventionEvent, DamageRecipient, DamageRecipients, DestroyTarget, EachPlayerAction,
+    EnchantedObject, ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode, PayManaAmount,
+    PayManaPlayer, PaymentFailureEffect, PermanentType, PreventionRecipient, PtModifier, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, TapAllPermanentsActor, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
+    Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -327,8 +328,14 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 source: SourceObject::This(permanent_type),
             }
         }),
-        prop::collection::vec(arb_damage_life_gain_cap(), 2..5)
-            .prop_map(|caps| Statement::YouGainLifeEqualToDamageDealtCapped { caps }),
+        prop::collection::vec(arb_damage_life_gain_cap(), 2..5).prop_map(|caps| {
+            Statement::YouGainLifeEqualToDamage {
+                reference: DamageLifeGainReference::DamageDealtCapped { caps },
+            }
+        }),
+        Just(Statement::YouGainLifeEqualToDamage {
+            reference: DamageLifeGainReference::DamagePreventedThisWay,
+        }),
         Just(Statement::IfYouCantYouLoseTheGame),
         (1u32..=10).prop_map(|amount| Statement::IfYouCantSourceDealsDamageToYou {
             source: SourceObject::This(PermanentType::Creature),

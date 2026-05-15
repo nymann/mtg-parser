@@ -609,14 +609,13 @@ fn field(label: &str, value: &str, value_color: Color) -> Line<'static> {
 }
 
 fn card_name_field(name: &str) -> Line<'static> {
-    let url = scryfall_card_url(name);
     Line::from(vec![
         Span::styled(
             format!("{label:<11} ", label = "Name"),
             Style::default().fg(C_FAINT),
         ),
         Span::styled(
-            terminal_link(name, &url),
+            name.to_string(),
             Style::default()
                 .fg(C_TITLE)
                 .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
@@ -624,11 +623,7 @@ fn card_name_field(name: &str) -> Line<'static> {
     ])
 }
 
-fn terminal_link(label: &str, url: &str) -> String {
-    format!("\x1b]8;;{url}\x1b\\{label}\x1b]8;;\x1b\\")
-}
-
-fn scryfall_card_url(name: &str) -> String {
+pub(super) fn scryfall_card_url(name: &str) -> String {
     format!(
         "https://scryfall.com/search?q=%21%22{}%22",
         url_encode_component(name)
@@ -1222,8 +1217,10 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         Span::raw(" scroll  "),
         key_span("p"),
         Span::raw(" pause  "),
-        key_span("g/G"),
-        Span::raw(" top/bottom"),
+        key_span("gg/G"),
+        Span::raw(" line/bottom  "),
+        key_span("45gg"),
+        Span::raw(" goto"),
     ];
     let copy = if state.visual.active {
         vec![
@@ -1259,6 +1256,8 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         vec![
             key_span("c"),
             Span::raw(" copy  "),
+            key_span("o"),
+            Span::raw(" open  "),
             key_span("/"),
             Span::raw(" search  "),
             key_span("f"),

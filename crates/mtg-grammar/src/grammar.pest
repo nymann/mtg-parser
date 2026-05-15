@@ -48,10 +48,11 @@ sentence_statement = _{
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
   | regenerate_target_creature
   | damage_event_statement
+  | next_damage_event_effect
   | damage_prevention_effect
   | spend_only_color_mana_on_variable
   | as_source_enters_you_lose_life_equal_to_your_life_total
-  | you_gain_life_equal_damage_dealt_capped
+  | you_gain_life_equal_damage
   | you_dont_lose_game_for_having_zero_or_less_life
   | if_you_would_gain_life_draw_that_many_cards_instead
   | if_you_cant_you_lose_the_game
@@ -338,11 +339,19 @@ if_you_cant_you_lose_the_game = {
   ~ ^"the" ~ ^"game" ~ "."
 }
 
+you_gain_life_equal_damage = {
+    you_gain_life_equal_damage_dealt_capped
+  | you_gain_life_equal_damage_prevented_this_way
+}
 you_gain_life_equal_damage_dealt_capped = {
     ^"you" ~ ^"gain" ~ ^"life" ~ ^"equal" ~ ^"to" ~ ^"the"
   ~ ^"damage" ~ ^"dealt" ~ "," ~ ^"but" ~ ^"not" ~ ^"more"
   ~ ^"life" ~ ^"than" ~ damage_life_gain_cap
   ~ ("," ~ damage_life_gain_cap)* ~ ","? ~ ^"or" ~ damage_life_gain_cap ~ "."
+}
+you_gain_life_equal_damage_prevented_this_way = {
+    ^"you" ~ ^"gain" ~ ^"life" ~ ^"equal" ~ ^"to" ~ ^"the"
+  ~ ^"damage" ~ ^"prevented" ~ ^"this" ~ ^"way" ~ "."
 }
 
 damage_life_gain_cap = _{

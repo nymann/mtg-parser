@@ -20,6 +20,9 @@ pub enum Statement {
         #[serde(flatten)]
         event: NamedDamageEvent,
     },
+    /// Damage prevention/replacement effects, with source, recipient,
+    /// and event timing captured as axes.
+    DamageEffect(ActivatedDamageEffect),
     /// Damage prevention effect whose replacement event is "prevent
     /// <amount> [combat] damage that would be dealt" or "prevent
     /// <amount> of that damage".
@@ -37,9 +40,9 @@ pub enum Statement {
     AsSourceEntersYouLoseLifeEqualToYourLifeTotal {
         source: SourceObject,
     },
-    /// "You gain life equal to the damage dealt, but not more life than ..."
-    YouGainLifeEqualToDamageDealtCapped {
-        caps: Vec<DamageLifeGainCap>,
+    /// "You gain life equal to the damage <reference>."
+    YouGainLifeEqualToDamage {
+        reference: DamageLifeGainReference,
     },
     /// "If you can't, you lose the game."
     IfYouCantYouLoseTheGame,
@@ -488,6 +491,14 @@ pub enum DamageLifeGainCap {
     PlaneswalkerLoyaltyBeforeDamageDealt,
     /// "the creature's toughness"
     CreatureToughness,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamageLifeGainReference {
+    /// "the damage dealt, but not more life than ..."
+    DamageDealtCapped { caps: Vec<DamageLifeGainCap> },
+    /// "the damage prevented this way"
+    DamagePreventedThisWay,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -287,3 +287,5 @@ mod regeneration;
 mod regrowth;
 #[path = "generated_patterns/resurrection.rs"]
 mod resurrection;
+#[path = "generated_patterns/reverse_damage.rs"]
+mod reverse_damage;

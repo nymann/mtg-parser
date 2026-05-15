@@ -11,6 +11,7 @@ pub enum Action {
     None,
     Quit,
     Copy(CopyTarget),
+    OpenCard,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -110,6 +111,10 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
                 state.autoscroll = true;
             }
             Action::None
+        }
+        (KeyCode::Char('o'), m) if m.is_empty() => {
+            state.normal.clear();
+            Action::OpenCard
         }
         (KeyCode::Char('c'), m) if m.is_empty() => {
             state.normal.clear();
@@ -410,18 +415,6 @@ fn keep_output_cursor_visible(state: &mut AppState) {
     state.scroll = state.scroll.min(bottom_scroll);
 }
 
-fn jump_to_step(state: &mut AppState, step: u8) {
-    if let Some(pos) = state.events.iter().position(|row| {
-        matches!(
-            row.kind,
-            crate::tui::state::TimelineKind::StepHeader { index, .. } if index == step
-        )
-    }) {
-        state.scroll = pos as u16;
-        state.autoscroll = false;
-    }
-}
-
 fn load_history_entries() -> Vec<HistoryEntry> {
     let mut dirs = Vec::new();
     let Ok(read_dir) = std::fs::read_dir(add_card_log_root()) else {
@@ -513,7 +506,55 @@ mod tests {
 
         assert!(matches!(action, Action::None));
         assert!(!state.autoscroll);
-        assert_eq!(state.scroll, 79);
+        assert_eq!(state.output_cursor, 98);
+        assert_eq!(state.scroll, 80);
+    }
+
+    #[test]
+    fn normal_j_moves_cursor_one_line_without_wrapping() {
+        let mut state = AppState::new();
+        state.remember_output_view(100, 20);
+        state.autoscroll = false;
+        state.scroll = 80;
+        state.output_cursor = 99;
+
+        let action = handle(key(KeyCode::Char('j')), &mut state);
+
+        assert!(matches!(action, Action::None));
+        assert_eq!(state.output_cursor, 99);
+        assert_eq!(state.scroll, 80);
+    }
+
+    #[test]
+    fn normal_k_moves_cursor_one_line() {
+        let mut state = AppState::new();
+        state.remember_output_view(100, 20);
+        state.autoscroll = false;
+        state.scroll = 80;
+        state.output_cursor = 99;
+
+        let action = handle(key(KeyCode::Char('k')), &mut state);
+
+        assert!(matches!(action, Action::None));
+        assert_eq!(state.output_cursor, 98);
+        assert_eq!(state.scroll, 80);
+    }
+
+    #[test]
+    fn normal_count_gg_jumps_to_one_based_line() {
+        let mut state = AppState::new();
+        state.remember_output_view(100, 20);
+        state.autoscroll = true;
+
+        handle(key(KeyCode::Char('4')), &mut state);
+        handle(key(KeyCode::Char('5')), &mut state);
+        handle(key(KeyCode::Char('g')), &mut state);
+        let action = handle(key(KeyCode::Char('g')), &mut state);
+
+        assert!(matches!(action, Action::None));
+        assert!(!state.autoscroll);
+        assert_eq!(state.output_cursor, 44);
+        assert_eq!(state.scroll, 44);
     }
 
     #[test]
@@ -528,8 +569,8 @@ mod tests {
         assert!(matches!(action, Action::None));
         assert!(!state.autoscroll);
         assert!(state.visual.active);
-        assert_eq!(state.visual.anchor, 80);
-        assert_eq!(state.visual.cursor, 80);
+        assert_eq!(state.visual.anchor, 99);
+        assert_eq!(state.visual.cursor, 99);
     }
 
     #[test]

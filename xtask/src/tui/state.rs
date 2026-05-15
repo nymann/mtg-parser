@@ -323,6 +323,15 @@ impl AppState {
                 total,
                 label,
             } => {
+                let starts_next_iteration = index == 1
+                    && self
+                        .iterations
+                        .last()
+                        .is_some_and(|iter| iter.outcome.is_some());
+                if starts_next_iteration {
+                    self.iterations.push(Iteration::pending());
+                }
+
                 if let Some(iter) = self.iterations.last_mut() {
                     iter.set_step(
                         index,

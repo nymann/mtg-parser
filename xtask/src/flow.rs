@@ -8,8 +8,9 @@
 //! shape of the data attached to an event changes).
 
 use mtg_scryfall::Card;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FlowEvent {
     /// Emitted once at the start of a run with configuration + baseline
     /// state.
@@ -68,7 +69,7 @@ pub enum FlowEvent {
     SessionFinished { reason: SessionEndReason },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum IterationOutcomeSummary {
     Committed {
         new_passes: usize,
@@ -84,7 +85,7 @@ pub enum IterationOutcomeSummary {
     // SessionEndReason instead — they're not per-iteration.
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SessionEndReason {
     AllPass,
     DryRunStop,
@@ -97,7 +98,7 @@ pub enum SessionEndReason {
     SurfacedToHuman(#[allow(dead_code)] String),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[allow(dead_code)] // Info / Error are used by future sinks (TUI status line).
 pub enum NoteLevel {
     Info,
@@ -105,7 +106,7 @@ pub enum NoteLevel {
     Error,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AgentProvider {
     Codex,
     Claude,

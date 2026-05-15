@@ -9,18 +9,19 @@ use crate::ast::{
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
     ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
     DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
-    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
-    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
-    PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
+    DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
+    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
+    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TriggerCondition,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -107,13 +108,16 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::destroy => destroy_from_pair(pair),
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
         Rule::damage_event_statement => damage_event_statement_from_pair(pair),
+        Rule::next_damage_event_effect => Ok(Statement::DamageEffect(
+            next_damage_event_effect_from_pair(pair)?,
+        )),
         Rule::damage_prevention_effect => damage_prevention_effect_statement_from_pair(pair),
         Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
         Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
             as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(pair)
         }
-        Rule::you_gain_life_equal_damage_dealt_capped => {
-            you_gain_life_equal_damage_dealt_capped_from_pair(pair)
+        Rule::you_gain_life_equal_damage => {
+            you_gain_life_equal_damage_from_pair(pair)
         }
         Rule::if_you_cant_you_lose_the_game => Ok(Statement::IfYouCantYouLoseTheGame),
         Rule::if_you_cant_source_deals_damage_to_you => {
@@ -924,14 +928,22 @@ fn spend_only_color_mana_on_variable_from_pair(pair: Pair<Rule>) -> Result<State
     })
 }
 
-fn you_gain_life_equal_damage_dealt_capped_from_pair(
-    pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
-    let caps = pair
-        .into_inner()
-        .map(damage_life_gain_cap_from_pair)
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(Statement::YouGainLifeEqualToDamageDealtCapped { caps })
+fn you_gain_life_equal_damage_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let inner = only_inner(pair, "life gain damage reference missing inner rule")?;
+    let reference = match inner.as_rule() {
+        Rule::you_gain_life_equal_damage_dealt_capped => {
+            let caps = inner
+                .into_inner()
+                .map(damage_life_gain_cap_from_pair)
+                .collect::<Result<Vec<_>, _>>()?;
+            DamageLifeGainReference::DamageDealtCapped { caps }
+        }
+        Rule::you_gain_life_equal_damage_prevented_this_way => {
+            DamageLifeGainReference::DamagePreventedThisWay
+        }
+        _ => return Err(ParseError::Internal("life gain damage reference")),
+    };
+    Ok(Statement::YouGainLifeEqualToDamage { reference })
 }
 
 fn damage_life_gain_cap_from_pair(pair: Pair<Rule>) -> Result<DamageLifeGainCap, ParseError> {
