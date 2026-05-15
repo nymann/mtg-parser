@@ -3,9 +3,9 @@ use pest::Parser;
 use pest_derive::Parser;
 
 use crate::ast::{
-    Condition, ContinuousEffect, EnchantObject, InterveningIf, Keyword, ManaCost, ManaSymbol,
-    PermanentType, PtModifier, Sign, SignedNumber, Statement, StaticAbility, TriggerEffect,
-    TriggerEvent, TriggeredAbility, Zone,
+    Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject, InterveningIf,
+    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber, Statement,
+    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Zone,
 };
 
 #[derive(Parser)]
@@ -49,7 +49,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
-        Rule::static_as_long_as | Rule::static_enchanted_gets => {
+        Rule::static_as_long_as
+        | Rule::static_enchanted_gets
+        | Rule::static_enchanted_can_attack_as_though => {
             Ok(Statement::StaticAbility(static_ability_from_pair(pair)?))
         }
         Rule::triggered_ability => Ok(Statement::TriggeredAbility(triggered_ability_from_pair(
@@ -91,6 +93,7 @@ fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         .expect("keyword_ability always contains a keyword");
     match inner.as_rule() {
         Rule::flying => Ok(Keyword::Flying),
+        Rule::defender => Ok(Keyword::Defender),
         Rule::enchant => {
             let object = inner
                 .into_inner()
@@ -155,6 +158,7 @@ fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, 
 fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match pair.as_rule() {
         Rule::flying => Ok(Keyword::Flying),
+        Rule::defender => Ok(Keyword::Defender),
         Rule::enchant => {
             let object = pair
                 .into_inner()
@@ -186,6 +190,13 @@ fn enchant_object_from_pair(pair: Pair<Rule>) -> Result<EnchantObject, ParseErro
                 .next()
                 .expect("enchant_permanent wraps a permanent_type");
             Ok(EnchantObject::Permanent(permanent_type_from_pair(pt)?))
+        }
+        Rule::enchant_creature_type => {
+            let ct = pair
+                .into_inner()
+                .next()
+                .expect("enchant_creature_type wraps a creature_type");
+            Ok(EnchantObject::CreatureType(creature_type_from_pair(ct)?))
         }
         Rule::enchant_card_in_zone => {
             let mut inner = pair.into_inner();
@@ -251,7 +262,30 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 modifier: pt_modifier_from_pair(modifier_pair)?,
             })
         }
+        Rule::static_enchanted_can_attack_as_though => {
+            let mut inner = pair.into_inner();
+            let object_pair = inner
+                .next()
+                .expect("static_enchanted_can_attack begins with enchanted object");
+            let keyword_pair = inner
+                .next()
+                .expect("static_enchanted_can_attack names ignored keyword");
+            Ok(StaticAbility::EnchantedCanAttackAsThoughItDidntHave {
+                object: enchanted_object_from_pair(object_pair)?,
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
         _ => Err(ParseError::Internal("static_ability variant")),
+    }
+}
+
+fn enchanted_object_from_pair(pair: Pair<Rule>) -> Result<EnchantedObject, ParseError> {
+    match pair.as_rule() {
+        Rule::permanent_type => Ok(EnchantedObject::Permanent(permanent_type_from_pair(pair)?)),
+        Rule::creature_type => Ok(EnchantedObject::CreatureType(creature_type_from_pair(
+            pair,
+        )?)),
+        _ => Err(ParseError::Internal("enchanted_object")),
     }
 }
 
@@ -328,6 +362,16 @@ fn permanent_type_from_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseErro
         "land" => Ok(PermanentType::Land),
         "planeswalker" => Ok(PermanentType::Planeswalker),
         _ => Err(ParseError::Internal("permanent_type variant")),
+    }
+}
+
+fn creature_type_from_pair(pair: Pair<Rule>) -> Result<CreatureType, ParseError> {
+    if pair.as_rule() != Rule::creature_type {
+        return Err(ParseError::Internal("creature_type"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "wall" => Ok(CreatureType::Wall),
+        _ => Err(ParseError::Internal("creature_type variant")),
     }
 }
 

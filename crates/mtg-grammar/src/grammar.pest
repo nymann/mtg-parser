@@ -37,6 +37,7 @@ sentence_statement = _{
   | draw_cards
   | static_as_long_as
   | static_enchanted_gets
+  | static_enchanted_can_attack_as_though
   | triggered_ability
 }
 
@@ -60,16 +61,18 @@ number_word = @{
 }
 
 keyword_ability = { keyword }
-keyword         = _{ enchant | flying }
+keyword         = _{ enchant | flying | defender }
 flying          = @{ ^"flying" }
+defender        = @{ ^"defender" }
 
 // `Enchant <object>`. Order the longer alternatives first so PEG's
 // first-match doesn't stop at the bare permanent type.
 enchant = {
     ^"enchant"
-  ~ (enchant_put_onto_battlefield | enchant_card_in_zone | enchant_permanent)
+  ~ (enchant_put_onto_battlefield | enchant_card_in_zone | enchant_permanent | enchant_creature_type)
 }
 enchant_permanent    = { permanent_type }
+enchant_creature_type = { creature_type }
 enchant_card_in_zone = { permanent_type ~ ^"card" ~ ^"in" ~ article ~ zone }
 enchant_put_onto_battlefield = {
     permanent_type ~ ^"put" ~ ^"onto" ~ ^"the" ~ ^"battlefield"
@@ -87,11 +90,16 @@ permanent_type = @{
   | ^"planeswalker"
 }
 
-// Static abilities. Two surface shapes today:
+// Creature subtypes that appear as Aura targets or enchanted objects.
+creature_type = @{ ^"wall" }
+
+// Static abilities. Three surface shapes today:
 //   - "As long as <cond>, <effect>." — conditional continuous effect.
 //   - "Enchanted <type> gets <pt_modifier>." — unconditional P/T
 //     modifier on the enchanted permanent (e.g. Animate Dead).
-static_ability = _{ static_as_long_as | static_enchanted_gets }
+//   - "Enchanted <object> can attack as though it didn't have
+//     <keyword>." — permission effect that ignores an attack restriction.
+static_ability = _{ static_as_long_as | static_enchanted_gets | static_enchanted_can_attack_as_though }
 
 static_as_long_as = {
     ^"as" ~ ^"long" ~ ^"as" ~ condition ~ "," ~ continuous_effect ~ "."
@@ -100,6 +108,13 @@ static_as_long_as = {
 static_enchanted_gets = {
     ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier ~ "."
 }
+
+static_enchanted_can_attack_as_though = {
+    ^"enchanted" ~ enchanted_object ~ ^"can" ~ ^"attack"
+  ~ ^"as" ~ ^"though" ~ ^"it" ~ ^"didn't" ~ ^"have" ~ keyword ~ "."
+}
+
+enchanted_object = _{ permanent_type | creature_type }
 
 condition      = _{ enchanted_isnt }
 enchanted_isnt = {

@@ -10,3 +10,5 @@ mod ancestral_recall;
 mod animate_artifact;
 #[path = "generated/animate_dead.rs"]
 mod animate_dead;
+#[path = "generated/animate_wall.rs"]
+mod animate_wall;

@@ -57,6 +57,7 @@ pub enum TriggerEffect {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Keyword {
     Flying,
+    Defender,
     Enchant(EnchantObject),
 }
 
@@ -68,6 +69,7 @@ pub enum Keyword {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EnchantObject {
     Permanent(PermanentType),
+    CreatureType(CreatureType),
     CardInZone {
         card_type: PermanentType,
         zone: Zone,
@@ -92,6 +94,11 @@ pub enum PermanentType {
     Planeswalker,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CreatureType {
+    Wall,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ManaCost {
     pub symbols: Vec<ManaSymbol>,
@@ -108,9 +115,10 @@ pub enum ManaSymbol {
     Colorless,
 }
 
-/// A static ability printed on a permanent. Two surface shapes today:
-/// the conditional "As long as <cond>, <effect>." form and the
-/// unconditional "Enchanted <type> gets <modifier>." P/T modifier form.
+/// A static ability printed on a permanent. This covers conditional
+/// continuous effects, unconditional P/T modifiers on enchanted
+/// objects, and permission effects that let an enchanted object attack
+/// through a keyword restriction such as defender.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StaticAbility {
     /// "As long as <cond>, <effect>." — continuous effect gated on a
@@ -125,6 +133,19 @@ pub enum StaticAbility {
         permanent_type: PermanentType,
         modifier: PtModifier,
     },
+    /// "Enchanted <object> can attack as though it didn't have
+    /// <keyword>." — permission effect that ignores an attacking
+    /// restriction such as defender.
+    EnchantedCanAttackAsThoughItDidntHave {
+        object: EnchantedObject,
+        keyword: Keyword,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EnchantedObject {
+    Permanent(PermanentType),
+    CreatureType(CreatureType),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

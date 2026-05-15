@@ -1,9 +1,9 @@
 use std::fmt::Write;
 
 use crate::ast::{
-    Condition, ContinuousEffect, EnchantObject, InterveningIf, Keyword, ManaCost, ManaSymbol,
-    PermanentType, PtModifier, Sign, SignedNumber, Statement, StaticAbility, TriggerEffect,
-    TriggerEvent, TriggeredAbility, Zone,
+    Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject, InterveningIf,
+    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber, Statement,
+    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -57,6 +57,7 @@ fn u32_to_number_word(n: u32) -> &'static str {
 fn write_keyword(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::Flying => out.push_str("Flying"),
+        Keyword::Defender => out.push_str("Defender"),
         Keyword::Enchant(object) => {
             out.push_str("Enchant ");
             write_enchant_object(out, object);
@@ -67,6 +68,7 @@ fn write_keyword(out: &mut String, kw: Keyword) {
 fn write_enchant_object(out: &mut String, object: EnchantObject) {
     match object {
         EnchantObject::Permanent(pt) => out.push_str(permanent_type_name(pt)),
+        EnchantObject::CreatureType(ct) => out.push_str(creature_type_name(ct)),
         EnchantObject::CardInZone { card_type, zone } => {
             out.push_str(permanent_type_name(card_type));
             out.push_str(" card in ");
@@ -130,6 +132,13 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_pt_modifier(out, *modifier);
             out.push('.');
         }
+        StaticAbility::EnchantedCanAttackAsThoughItDidntHave { object, keyword } => {
+            out.push_str("Enchanted ");
+            write_enchanted_object(out, *object);
+            out.push_str(" can attack as though it didn't have ");
+            write_keyword_lowercase(out, *keyword);
+            out.push('.');
+        }
     }
 }
 
@@ -191,10 +200,18 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
 fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::Flying => out.push_str("flying"),
+        Keyword::Defender => out.push_str("defender"),
         Keyword::Enchant(object) => {
             out.push_str("enchant ");
             write_enchant_object(out, object);
         }
+    }
+}
+
+fn write_enchanted_object(out: &mut String, object: EnchantedObject) {
+    match object {
+        EnchantedObject::Permanent(pt) => out.push_str(permanent_type_name(pt)),
+        EnchantedObject::CreatureType(ct) => out.push_str(creature_type_name(ct)),
     }
 }
 
@@ -252,6 +269,12 @@ fn permanent_type_name(pt: PermanentType) -> &'static str {
         PermanentType::Enchantment => "enchantment",
         PermanentType::Land => "land",
         PermanentType::Planeswalker => "planeswalker",
+    }
+}
+
+fn creature_type_name(ct: CreatureType) -> &'static str {
+    match ct {
+        CreatureType::Wall => "Wall",
     }
 }
 

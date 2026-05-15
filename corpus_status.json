@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 11,
+  "passing": 16,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -17,8 +17,7 @@
       "status": "pass"
     },
     "lea/Animate Wall": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:9\n  |\n1 | Enchant Wall\n  |         ^---\n  |\n  = expected permanent_type"
+      "status": "pass"
     },
     "lea/Ankh of Mishra": {
       "status": "fail",
@@ -78,7 +77,7 @@
     },
     "lea/Black Ward": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from black. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from black. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Blaze of Glory": {
       "status": "fail",
@@ -94,7 +93,7 @@
     },
     "lea/Blue Ward": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from blue. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from blue. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Bog Wraith": {
       "status": "fail",
@@ -106,7 +105,7 @@
     },
     "lea/Burrowing": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has mountainwalk.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has mountainwalk.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Camouflage": {
       "status": "fail",
@@ -162,7 +161,7 @@
     },
     "lea/Consecrate Land": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted land has indestructible and can't be enchanted by other Auras.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted land has indestructible and can't be enchanted by other Auras.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Conservator": {
       "status": "fail",
@@ -174,7 +173,7 @@
     },
     "lea/Control Magic": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted creature.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted creature.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Conversion": {
       "status": "fail",
@@ -210,7 +209,7 @@
     },
     "lea/Cursed Land": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted land's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted land's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Cyclopean Tomb": {
       "status": "fail",
@@ -306,7 +305,7 @@
     },
     "lea/Evil Presence": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted land is a Swamp.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted land is a Swamp.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/False Orders": {
       "status": "fail",
@@ -314,7 +313,7 @@
     },
     "lea/Farmstead": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted land has \"At the beginning of your upkeep, you may pay {W}{W}. If you do, you gain 1 life.\"\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted land has \"At the beginning of your upkeep, you may pay {W}{W}. If you do, you gain 1 life.\"\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Fastbond": {
       "status": "fail",
@@ -322,11 +321,11 @@
     },
     "lea/Fear": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has fear.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has fear.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Feedback": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Fire Elemental": {
       "status": "fail",
@@ -346,7 +345,7 @@
     },
     "lea/Flight": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has flying.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has flying.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Fog": {
       "status": "fail",
@@ -418,7 +417,7 @@
     },
     "lea/Green Ward": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from green. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from green. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Grizzly Bears": {
       "status": "fail",
@@ -481,11 +480,11 @@
     },
     "lea/Instill Energy": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature can attack as though it had haste.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature can attack as though it had haste.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Invisibility": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature can't be blocked except by Walls.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature can't be blocked except by Walls.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Iron Star": {
       "status": "fail",
@@ -549,7 +548,7 @@
     },
     "lea/Lance": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has first strike.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has first strike.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Ley Druid": {
       "status": "fail",
@@ -589,7 +588,7 @@
     },
     "lea/Living Wall": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 2:4\n  |\n2 | {1}: Regenerate this creature.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
     },
     "lea/Llanowar Elves": {
       "status": "fail",
@@ -605,7 +604,7 @@
     },
     "lea/Lure": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | All creatures able to block enchanted creature do so.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | All creatures able to block enchanted creature do so.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Magical Hack": {
       "status": "fail",
@@ -692,7 +691,7 @@
     },
     "lea/Nightmare": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | Nightmare's power and toughness are each equal to the number of Swamps you control.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | Nightmare's power and toughness are each equal to the number of Swamps you control.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Northern Paladin": {
       "status": "fail",
@@ -728,11 +727,11 @@
     },
     "lea/Phantasmal Forces": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of your upkeep, sacrifice this creature unless you pay {U}.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of your upkeep, sacrifice this creature unless you pay {U}.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Phantasmal Terrain": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | As this Aura enters, choose a basic land type.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | As this Aura enters, choose a basic land type.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Phantom Monster": {
       "status": "pass"
@@ -755,7 +754,7 @@
     },
     "lea/Power Leak": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Power Sink": {
       "status": "fail",
@@ -795,7 +794,7 @@
     },
     "lea/Red Ward": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from red. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from red. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Regeneration": {
       "status": "fail",
@@ -877,7 +876,7 @@
     },
     "lea/Serra Angel": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | Vigilance\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | Vigilance\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Shanodin Dryads": {
       "status": "fail",
@@ -929,7 +928,7 @@
     },
     "lea/Steal Artifact": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted artifact.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | You control enchanted artifact.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Stone Giant": {
       "status": "fail",
@@ -1056,43 +1055,39 @@
     },
     "lea/Wall of Air": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender, flying\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 1:9\n  |\n1 | Defender, flying\n  |         ^---\n  |\n  = expected EOI"
     },
     "lea/Wall of Bone": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 2:4\n  |\n2 | {B}: Regenerate this creature.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
     },
     "lea/Wall of Brambles": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 2:4\n  |\n2 | {G}: Regenerate this creature.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
     },
     "lea/Wall of Fire": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 2:4\n  |\n2 | {R}: This creature gets +1/+0 until end of turn.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
     },
     "lea/Wall of Ice": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Wall of Stone": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Wall of Swords": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Wall of Water": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+      "error": "parse: parse error:  --> 2:4\n  |\n2 | {U}: This creature gets +1/+0 until end of turn.\n  |    ^---\n  |\n  = expected EOI or mana_symbol"
     },
     "lea/Wall of Wood": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Defender\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Wanderlust": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted creature's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted creature's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/War Mammoth": {
       "status": "fail",
@@ -1100,7 +1095,7 @@
     },
     "lea/Warp Artifact": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted artifact's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, or triggered_ability"
+      "error": "parse: parse error:  --> 2:1\n  |\n2 | At the beginning of the upkeep of enchanted artifact's controller, this Aura deals 1 damage to that player.\n  | ^---\n  |\n  = expected mana_symbol, destroy, draw_cards, keyword_ability, static_as_long_as, static_enchanted_gets, static_enchanted_can_attack_as_though, or triggered_ability"
     },
     "lea/Water Elemental": {
       "status": "fail",
@@ -1111,7 +1106,7 @@
     },
     "lea/Web": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature gets +0/+2 and has reach.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature gets +0/+2 and has reach.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Wheel of Fortune": {
       "status": "fail",
@@ -1123,7 +1118,7 @@
     },
     "lea/White Ward": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from white. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type"
+      "error": "parse: parse error:  --> 2:8\n  |\n2 | Enchanted creature has protection from white. This effect doesn't remove this Aura.\n  |        ^---\n  |\n  = expected permanent_type or creature_type"
     },
     "lea/Wild Growth": {
       "status": "fail",
