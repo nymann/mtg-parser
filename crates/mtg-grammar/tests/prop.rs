@@ -7,15 +7,15 @@
 
 use mtg_grammar::{
     parse, unparse, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
-    ActivatedDamageRecipient, ActivatedEffect, BasicLandType, CardCount, Color, DamageAmount,
-    DamageAssignment, DamageEvent, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
-    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
-    DamagePreventionEvent, DamageRecipient, DamageRecipients, DestroyTarget, EachPlayerAction,
-    EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol, ModalMode,
-    PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentType, PreventionRecipient,
-    PtModifier, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType,
-    Statement, StaticAbility, TapAllPermanentsActor, TargetPermanentSelector, TriggerEffect,
-    TriggerEvent, TriggeredAbility, Variable,
+    ActivatedDamageRecipient, ActivatedEffect, ActivationPermission, BasicLandType, CardCount,
+    Color, CounterAmount, DamageAmount, DamageAssignment, DamageEvent, DamageKind,
+    DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
+    DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
+    ManaCost, ManaSymbol, ModalMode, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
+    PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, TapAllPermanentsActor,
+    TargetPermanentSelector, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -41,6 +41,13 @@ fn arb_card_count() -> impl Strategy<Value = CardCount> {
     prop_oneof![
         (1u32..=10).prop_map(CardCount::Number),
         arb_variable().prop_map(CardCount::Variable),
+    ]
+}
+
+fn arb_counter_amount() -> impl Strategy<Value = CounterAmount> {
+    prop_oneof![
+        (1u32..=10).prop_map(CounterAmount::Number),
+        arb_variable().prop_map(CounterAmount::Variable),
     ]
 }
 
@@ -346,6 +353,15 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         (arb_color(), arb_variable()).prop_map(|(color, variable)| {
             Statement::SpendOnlyColorManaOnVariable { color, variable }
         }),
+        (arb_damage_amount(), arb_permanent_type(), arb_pt_modifier()).prop_map(
+            |(amount, permanent_type, counter)| {
+                Statement::ForEachDamagePreventedByRemovingCounter {
+                    amount,
+                    source: SourceObject::This(permanent_type),
+                    counter,
+                }
+            }
+        ),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::AsSourceEntersYouLoseLifeEqualToYourLifeTotal {
                 source: SourceObject::This(permanent_type),
@@ -442,6 +458,49 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power, toughness }
         }),
         Just(Statement::IfFaceDownSpellCreatureWouldAssignOrDealDamageOrTapTurnFaceUpInstead),
+        (
+            arb_permanent_type(),
+            arb_counter_amount(),
+            arb_pt_modifier()
+        )
+            .prop_map(|(permanent_type, amount, counter)| {
+                Statement::ThisPermanentEntersWithCounters {
+                    source: SourceObject::This(permanent_type),
+                    amount,
+                    counter,
+                }
+            }),
+        (arb_counter_amount(), any::<bool>(), arb_pt_modifier()).prop_map(
+            |(amount, up_to, counter)| {
+                Statement::ActivatedAbility(ActivatedAbility {
+                    costs: vec![ActivatedCost::Mana(ManaCost {
+                        symbols: vec![ManaSymbol::Red],
+                    })],
+                    effect: ActivatedEffect::PutCountersOnSource {
+                        amount,
+                        up_to,
+                        counter,
+                        source: SourceObject::This(PermanentType::Creature),
+                    },
+                })
+            }
+        ),
+        (arb_counter_amount(), arb_pt_modifier()).prop_map(|(amount, counter)| {
+            Statement::ActivatedAbilityWithActivationPermission {
+                ability: ActivatedAbility {
+                    costs: vec![ActivatedCost::Mana(ManaCost {
+                        symbols: vec![ManaSymbol::Red, ManaSymbol::Red, ManaSymbol::Red],
+                    })],
+                    effect: ActivatedEffect::PutCountersOnSource {
+                        amount,
+                        up_to: false,
+                        counter,
+                        source: SourceObject::This(PermanentType::Creature),
+                    },
+                },
+                permission: ActivationPermission::ActivateOnlyDuringYourUpkeep,
+            }
+        }),
         (1u32..=10).prop_map(|threshold| {
             Statement::IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
                 threshold,

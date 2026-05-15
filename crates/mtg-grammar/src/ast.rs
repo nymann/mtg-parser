@@ -31,6 +31,14 @@ pub enum Statement {
         effect: DamagePreventionEffect<PreventionRecipient>,
         definitions: Vec<VariableDefinition>,
     },
+    /// "For each N damage that would be dealt to this <source>, if it
+    /// has a <pt_modifier> counter on it, remove a <pt_modifier> counter
+    /// from it and prevent that N damage."
+    ForEachDamagePreventedByRemovingCounter {
+        amount: DamageAmount,
+        source: SourceObject,
+        counter: PtModifier,
+    },
     /// "Spend only <color> mana on X."
     SpendOnlyColorManaOnVariable {
         color: Color,
@@ -242,7 +250,7 @@ pub enum Statement {
     /// "This <permanent_type> enters with N <pt_modifier> counters on it."
     ThisPermanentEntersWithCounters {
         source: SourceObject,
-        amount: u32,
+        amount: CounterAmount,
         counter: PtModifier,
     },
     /// "This ability can't cause the total number of <pt_modifier>
@@ -545,6 +553,12 @@ pub enum DamageAmount {
     Variable(Variable),
     ThatPermanentsToughness(PermanentType),
     NumberOfBasicLandsTheyControl(BasicLandType),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CounterAmount {
+    Number(u32),
+    Variable(Variable),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1038,6 +1052,8 @@ pub struct ActivatedAbility {
 pub enum ActivationPermission {
     /// "Only this <source>'s owner may activate this ability."
     OnlySourcesOwner { source: SourceObject },
+    /// "Activate only during your upkeep."
+    ActivateOnlyDuringYourUpkeep,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1140,9 +1156,10 @@ pub enum ActivatedEffect {
     /// Activated damage prevention/replacement effects, with amount,
     /// source, recipient, and event timing captured as axes.
     DamageEffect(ActivatedDamageEffect),
-    /// "Put up to X <pt_modifier> counters on this <source>."
-    PutUpToVariableCountersOnSource {
-        amount: Variable,
+    /// "Put [up to] N <pt_modifier> counter(s) on this <source>."
+    PutCountersOnSource {
+        amount: CounterAmount,
+        up_to: bool,
         counter: PtModifier,
         source: SourceObject,
     },

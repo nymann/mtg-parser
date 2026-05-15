@@ -5,21 +5,21 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, CombatRole,
-    Condition, ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType,
-    DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
-    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
-    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
-    PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TriggerCondition,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    Condition, ContinuousEffect, CopyException, CounterAmount, CounterUnlessCost, CreatureStatus,
+    CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
+    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
+    DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
+    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
+    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TriggerCondition, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -53,6 +53,23 @@ fn write_statement(out: &mut String, statement: &Statement) {
             effect,
             definitions,
         } => write_damage_prevention_effect_statement(out, *effect, definitions),
+        Statement::ForEachDamagePreventedByRemovingCounter {
+            amount,
+            source,
+            counter,
+        } => {
+            out.push_str("For each ");
+            write_damage_amount(out, *amount);
+            out.push_str(" damage that would be dealt to ");
+            write_source_object(out, *source);
+            out.push_str(", if it has a ");
+            write_pt_modifier(out, *counter);
+            out.push_str(" counter on it, remove a ");
+            write_pt_modifier(out, *counter);
+            out.push_str(" counter from it and prevent that ");
+            write_damage_amount(out, *amount);
+            out.push_str(" damage.");
+        }
         Statement::SpendOnlyColorManaOnVariable { color, variable } => {
             out.push_str("Spend only ");
             out.push_str(color_name(*color));
@@ -360,7 +377,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
         } => {
             write_source_object_capitalized(out, *source);
             out.push_str(" enters with ");
-            out.push_str(u32_to_number_word(*amount));
+            write_counter_amount(out, *amount);
             out.push(' ');
             write_pt_modifier(out, *counter);
             out.push_str(" counters on it.");
@@ -1173,6 +1190,9 @@ fn write_activation_permission(out: &mut String, permission: ActivationPermissio
             write_source_object_possessive_without_apostrophe(out, source);
             out.push_str(" owner may activate this ability.");
         }
+        ActivationPermission::ActivateOnlyDuringYourUpkeep => {
+            out.push_str("Activate only during your upkeep.");
+        }
     }
 }
 
@@ -1320,16 +1340,27 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(" until end of combat.");
         }
         ActivatedEffect::DamageEffect(effect) => write_activated_damage_effect(out, effect),
-        ActivatedEffect::PutUpToVariableCountersOnSource {
+        ActivatedEffect::PutCountersOnSource {
             amount,
+            up_to,
             counter,
             source,
         } => {
-            out.push_str("Put up to ");
-            out.push_str(variable_name(*amount));
+            out.push_str("Put ");
+            if *up_to {
+                out.push_str("up to ");
+            }
+            match *amount {
+                CounterAmount::Number(1) if !*up_to => out.push('a'),
+                _ => write_counter_amount(out, *amount),
+            }
             out.push(' ');
             write_pt_modifier(out, *counter);
-            out.push_str(" counters on ");
+            if matches!(*amount, CounterAmount::Number(1)) && !*up_to {
+                out.push_str(" counter on ");
+            } else {
+                out.push_str(" counters on ");
+            }
             write_source_object(out, *source);
             out.push('.');
         }
@@ -2189,6 +2220,13 @@ fn write_trigger_effect(
             write_source_object(out, *source);
             out.push('.');
         }
+    }
+}
+
+fn write_counter_amount(out: &mut String, amount: CounterAmount) {
+    match amount {
+        CounterAmount::Number(n) => out.push_str(u32_to_number_word(n)),
+        CounterAmount::Variable(variable) => out.push_str(variable_name(variable)),
     }
 }
 

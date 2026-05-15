@@ -50,6 +50,7 @@ sentence_statement = _{
   | damage_event_statement
   | next_damage_event_effect
   | damage_prevention_effect
+  | for_each_damage_prevented_by_removing_pt_counter
   | spend_only_color_mana_on_variable
   | as_source_enters_you_lose_life_equal_to_your_life_total
   | you_gain_life_equal_damage
@@ -975,7 +976,11 @@ enchanted_object = _{ permanent_type | creature_type }
 // more effects after it. The cost pieces are kept explicit because tap
 // symbols are costs but not mana symbols.
 activated_ability_with_activation_permission = {
-    activated_ability ~ only_sources_owner_may_activate_this_ability
+    activated_ability ~ activation_permission
+}
+activation_permission = _{
+    only_sources_owner_may_activate_this_ability
+  | activate_only_during_your_upkeep
 }
 activated_ability = { activated_cost ~ ":" ~ activated_effect }
 // Multiple non-mana activated costs are printed comma-separated.
@@ -1004,7 +1009,7 @@ activated_effect = _{
   | activated_source_gets_until_eot
   | activated_enchanted_gets_until_eot
   | activated_damage_effect
-  | put_up_to_variable_pt_counters_on_source
+  | put_pt_counters_on_source
   | put_named_counter_on_target_non_basic_land
   | choose_creature_card_in_hand_payable_by_mana_spent_on_variable
   | choose_target_non_creature_type_creature_active_player_controlled_continuously
@@ -1112,7 +1117,11 @@ activated_damage_redirection_recipient = _{
     activated_damage_recipient
   | source_object_damage_recipient
 }
-activated_damage_prevention_recipient = _{ you_damage_recipient | any_target_prevention_recipient }
+activated_damage_prevention_recipient = _{
+    you_damage_recipient
+  | any_target_prevention_recipient
+  | source_object_damage_recipient
+}
 activated_damage_prevention_recipient_clause = { ^"to" ~ activated_damage_prevention_recipient }
 target_permanent_damage_recipient = { ^"target" ~ permanent_type }
 source_object_damage_recipient = { source_object }
@@ -1140,10 +1149,18 @@ activated_damage_prevention_effect = {
     damage_prevention_replacement_event ~ activated_damage_prevention_recipient_clause
   ~ damage_prevention_duration
 }
-put_up_to_variable_pt_counters_on_source = {
-    ^"put" ~ ^"up" ~ ^"to" ~ variable_name ~ pt_counters
+put_pt_counters_on_source = {
+    ^"put" ~ pt_counter_put_amount ~ (pt_counters | pt_counter)
   ~ ^"on" ~ source_object ~ "."
 }
+pt_counter_put_amount = {
+    put_up_to_counter_amount
+  | put_exact_counter_amount
+  | put_single_counter_amount
+}
+put_up_to_counter_amount = { ^"up" ~ ^"to" ~ counter_amount }
+put_exact_counter_amount = { counter_amount }
+put_single_counter_amount = { article }
 put_named_counter_on_target_non_basic_land = {
     ^"put" ~ article ~ named_counter ~ ^"on" ~ ^"target" ~ non_basic_land_type ~ permanent_type ~ "."
 }
@@ -1486,8 +1503,18 @@ target_permanent_gains_keyword_and_gets_eot_effect = {
 }
 
 source_enters_with_pt_counters = {
-    source_object ~ ^"enters" ~ ^"with" ~ number_word ~ pt_counters
+    source_object ~ ^"enters" ~ ^"with" ~ counter_amount ~ pt_counters
   ~ ^"on" ~ ^"it" ~ "."
+}
+counter_amount = _{ variable_name | number_word }
+
+for_each_damage_prevented_by_removing_pt_counter = {
+    ^"for" ~ ^"each" ~ damage_amount_expression ~ ^"damage" ~ ^"that"
+  ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"to" ~ source_object ~ ","
+  ~ ^"if" ~ ^"it" ~ ^"has" ~ article ~ pt_counter ~ ^"on" ~ ^"it"
+  ~ "," ~ ^"remove" ~ article ~ pt_counter ~ ^"from" ~ ^"it"
+  ~ ^"and" ~ ^"prevent" ~ ^"that" ~ damage_amount_expression
+  ~ ^"damage" ~ "."
 }
 
 this_ability_cant_cause_total_pt_counters_greater_than = {

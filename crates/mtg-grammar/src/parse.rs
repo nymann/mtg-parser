@@ -7,9 +7,9 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, CombatRole,
-    Condition, ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType,
-    DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
-    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    Condition, ContinuousEffect, CopyException, CounterAmount, CounterUnlessCost, CreatureStatus,
+    CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind,
+    DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
     IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
@@ -112,6 +112,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             next_damage_event_effect_from_pair(pair)?,
         )),
         Rule::damage_prevention_effect => damage_prevention_effect_statement_from_pair(pair),
+        Rule::for_each_damage_prevented_by_removing_pt_counter => {
+            for_each_damage_prevented_by_removing_pt_counter_from_pair(pair)
+        }
         Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
         Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
             as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(pair)
@@ -687,12 +690,78 @@ fn source_enters_with_pt_counters_from_pair(pair: Pair<Rule>) -> Result<Statemen
     let counter_pair = inner
         .next()
         .ok_or(ParseError::Internal("enters counters missing counter"))?;
-    let amount =
-        number_word_to_u32(amount_pair.as_str()).ok_or(ParseError::Internal("number_word"))?;
     Ok(Statement::ThisPermanentEntersWithCounters {
         source: source_object_from_pair(source_pair)?,
-        amount,
+        amount: counter_amount_from_pair(amount_pair)?,
         counter: pt_modifier_from_counter_pair(counter_pair)?,
+    })
+}
+
+fn counter_amount_from_pair(pair: Pair<Rule>) -> Result<CounterAmount, ParseError> {
+    match pair.as_rule() {
+        Rule::number_word => {
+            let amount =
+                number_word_to_u32(pair.as_str()).ok_or(ParseError::Internal("number_word"))?;
+            Ok(CounterAmount::Number(amount))
+        }
+        Rule::variable_name => Ok(CounterAmount::Variable(variable_from_str(pair.as_str())?)),
+        _ => Err(ParseError::Internal("counter amount")),
+    }
+}
+
+fn for_each_damage_prevented_by_removing_pt_counter_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut amount = None;
+    let mut source = None;
+    let mut has_counter = None;
+    let mut removed_counter = None;
+    let mut prevented_amount = None;
+
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::unsigned_number | Rule::variable_name => {
+                let parsed = damage_amount_from_pair(child)?;
+                if amount.is_none() {
+                    amount = Some(parsed);
+                } else {
+                    prevented_amount = Some(parsed);
+                }
+            }
+            Rule::source_object => source = Some(source_object_from_pair(child)?),
+            Rule::pt_counter => {
+                let parsed = pt_modifier_from_counter_pair(child)?;
+                if has_counter.is_none() {
+                    has_counter = Some(parsed);
+                } else {
+                    removed_counter = Some(parsed);
+                }
+            }
+            _ => return Err(ParseError::Internal("counter prevention child")),
+        }
+    }
+
+    let amount = amount.ok_or(ParseError::Internal("counter prevention missing amount"))?;
+    let prevented_amount = prevented_amount.ok_or(ParseError::Internal(
+        "counter prevention missing prevented amount",
+    ))?;
+    if amount != prevented_amount {
+        return Err(ParseError::Internal("counter prevention amount mismatch"));
+    }
+    let counter = has_counter.ok_or(ParseError::Internal(
+        "counter prevention missing condition counter",
+    ))?;
+    let removed_counter = removed_counter.ok_or(ParseError::Internal(
+        "counter prevention missing removed counter",
+    ))?;
+    if counter != removed_counter {
+        return Err(ParseError::Internal("counter prevention counter mismatch"));
+    }
+
+    Ok(Statement::ForEachDamagePreventedByRemovingCounter {
+        amount,
+        source: source.ok_or(ParseError::Internal("counter prevention missing source"))?,
+        counter,
     })
 }
 
@@ -3528,6 +3597,9 @@ fn activation_permission_from_pair(pair: Pair<Rule>) -> Result<ActivationPermiss
                 source: source_object_from_possessive_pair(source_pair)?,
             })
         }
+        Rule::activate_only_during_your_upkeep => {
+            Ok(ActivationPermission::ActivateOnlyDuringYourUpkeep)
+        }
         _ => Err(ParseError::Internal("activation permission")),
     }
 }
@@ -3758,19 +3830,21 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
         | Rule::activated_damage_prevention_effect => Ok(ActivatedEffect::DamageEffect(
             activated_damage_effect_from_pair(pair)?,
         )),
-        Rule::put_up_to_variable_pt_counters_on_source => {
+        Rule::put_pt_counters_on_source => {
             let mut inner = pair.into_inner();
             let amount_pair = inner
                 .next()
-                .ok_or(ParseError::Internal("put counters missing variable amount"))?;
+                .ok_or(ParseError::Internal("put counters missing amount"))?;
             let counter_pair = inner
                 .next()
                 .ok_or(ParseError::Internal("put counters missing counter"))?;
             let source_pair = inner
                 .next()
                 .ok_or(ParseError::Internal("put counters missing source"))?;
-            Ok(ActivatedEffect::PutUpToVariableCountersOnSource {
-                amount: variable_from_str(amount_pair.as_str())?,
+            let (amount, up_to) = pt_counter_put_amount_from_pair(amount_pair)?;
+            Ok(ActivatedEffect::PutCountersOnSource {
+                amount,
+                up_to,
                 counter: pt_modifier_from_counter_pair(counter_pair)?,
                 source: source_object_from_pair(source_pair)?,
             })
@@ -3842,6 +3916,22 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             physical_action_from_pair(pair)?,
         )),
         _ => Err(ParseError::Internal("activated_effect")),
+    }
+}
+
+fn pt_counter_put_amount_from_pair(pair: Pair<Rule>) -> Result<(CounterAmount, bool), ParseError> {
+    let inner = only_inner(pair, "put counters missing amount axis")?;
+    match inner.as_rule() {
+        Rule::put_up_to_counter_amount => {
+            let amount_pair = only_inner(inner, "put up to counters missing amount")?;
+            Ok((counter_amount_from_pair(amount_pair)?, true))
+        }
+        Rule::put_exact_counter_amount => {
+            let amount_pair = only_inner(inner, "put counters missing exact amount")?;
+            Ok((counter_amount_from_pair(amount_pair)?, false))
+        }
+        Rule::put_single_counter_amount => Ok((CounterAmount::Number(1), false)),
+        _ => Err(ParseError::Internal("put counters amount")),
     }
 }
 
