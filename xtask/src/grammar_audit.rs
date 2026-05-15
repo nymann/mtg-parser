@@ -197,7 +197,22 @@ pub fn audit_grammar_diff(diff: &str, current_grammar: &str, oracle_text: &str) 
         }
 
         if let Some(best) = neighbours.first() {
-            if best.similarity >= 0.86 {
+            if rules
+                .get(&name)
+                .is_some_and(|rule| is_quantity_like_rule(rule))
+                && best.similarity >= 0.86
+            {
+                findings.push(Finding {
+                    severity: Severity::BlockCandidate,
+                    kind: "rhs_quantity_duplication".into(),
+                    rule: Some(name.clone()),
+                    message: format!(
+                        "quantity-like RHS duplicates existing rule `{}`; consider reusing or extracting a shared amount/quantity rule instead of adding a parallel rule",
+                        best.name
+                    ),
+                    neighbours: neighbours.clone(),
+                });
+            } else if best.similarity >= 0.86 {
                 findings.push(Finding {
                     severity: Severity::BlockCandidate,
                     kind: "rhs_skeleton_similarity".into(),
@@ -595,6 +610,18 @@ fn skeleton_similarity(a: &[String], b: &[String]) -> f32 {
     lcs.max(axis)
 }
 
+fn is_quantity_like_rule(rule: &GrammarRule) -> bool {
+    let atoms = rhs_atoms(&rule.rhs);
+    let ids: BTreeSet<&str> = atoms
+        .iter()
+        .filter_map(|atom| atom.strip_prefix("id:"))
+        .filter(|id| *id != "_")
+        .collect();
+    ids.contains("variable_name")
+        && (ids.contains("number_word") || ids.contains("unsigned_number"))
+        && ids.len() <= 2
+}
+
 fn lcs_len(a: &[String], b: &[String]) -> usize {
     let mut prev = vec![0usize; b.len() + 1];
     let mut curr = vec![0usize; b.len() + 1];
@@ -692,5 +719,22 @@ foo_damage_target = { ^\"foo\" ~ target_creature ~ ^\"deals\" ~ number_word ~ ^\
             .unwrap();
         assert_eq!(rule.best_neighbours[0].name, "bar_damage_target");
         assert!(rule.best_neighbours[0].similarity > 0.85);
+    }
+
+    #[test]
+    fn flags_duplicate_quantity_like_rule_actionably() {
+        let diff = "\
++counter_amount = _{ number_word | variable_name }
+";
+        let grammar = "\
+draw_count = _{ number_word | variable_name }
+counter_amount = _{ number_word | variable_name }
+";
+        let report = audit_grammar_diff(diff, grammar, "Put X counters on this creature.");
+        assert!(report.findings.iter().any(|f| {
+            f.severity == Severity::BlockCandidate
+                && f.kind == "rhs_quantity_duplication"
+                && f.message.contains("shared amount/quantity rule")
+        }));
     }
 }

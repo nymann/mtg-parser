@@ -17,6 +17,7 @@ use std::process::{Command, ExitCode, Stdio};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail, Context, Result};
+use serde::Serialize;
 
 use mtg_corpus::{
     card_key, load as load_corpus_report, normalize_oracle_text, CardOutcome, NextCard,
@@ -1896,6 +1897,21 @@ struct AgentOutcome {
     assistant_blocks: usize,
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum DownstreamRepairReason {
+    SemanticPropCompile,
+    InfraCompile,
+    OldCardRegression,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct DownstreamRepairClassification {
+    reason: DownstreamRepairReason,
+    evidence: String,
+}
+
 fn invoke_downstream_repair(
     opts: &Options,
     sink: &mut dyn FlowSink,
@@ -1921,6 +1937,22 @@ fn invoke_downstream_repair(
 
     let tier2_output = command_output_allow_failure("cargo", &["xtask", "test", "--tier", "2"])?;
     std::fs::write(log_dir.join("tier2_failure.txt"), &tier2_output)?;
+    let classification = classify_downstream_repair_reason(&tier2_output);
+    std::fs::write(
+        log_dir.join("repair_reason.json"),
+        serde_json::to_string_pretty(&classification)?,
+    )?;
+    std::fs::write(
+        log_dir.join("repair_reason.txt"),
+        format!("{:?}: {}\n", classification.reason, classification.evidence),
+    )?;
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: format!(
+            "downstream repair classified as {:?}: {}",
+            classification.reason, classification.evidence
+        ),
+    });
     let prompt = build_downstream_repair_prompt(card, normalized, &tier2_output)?;
     std::fs::write(log_dir.join("prompt.md"), &prompt)?;
 
@@ -1952,6 +1984,62 @@ fn invoke_downstream_repair(
     }
 
     Ok(true)
+}
+
+fn classify_downstream_repair_reason(output: &str) -> DownstreamRepairClassification {
+    if output.contains("could not compile `mtg-semantic`")
+        || (output.contains("mtg-semantic") && output.contains("tests/prop.rs"))
+    {
+        return DownstreamRepairClassification {
+            reason: DownstreamRepairReason::SemanticPropCompile,
+            evidence: first_matching_line(
+                output,
+                &["could not compile `mtg-semantic`", "mtg-semantic"],
+            )
+            .unwrap_or("mtg-semantic tier-2 failure")
+            .to_string(),
+        };
+    }
+
+    if output.contains("could not compile `xtask`") || output.contains("xtask/src/") {
+        return DownstreamRepairClassification {
+            reason: DownstreamRepairReason::InfraCompile,
+            evidence: first_matching_line(
+                output,
+                &["could not compile `xtask`", "xtask/src/", "error["],
+            )
+            .unwrap_or("xtask or infrastructure compile failure")
+            .to_string(),
+        };
+    }
+
+    if output.contains("round_trip ... FAILED")
+        || (output.contains("test result: FAILED") && output.contains("parse: Pest"))
+    {
+        return DownstreamRepairClassification {
+            reason: DownstreamRepairReason::OldCardRegression,
+            evidence: first_matching_line(output, &["round_trip ... FAILED", "parse: Pest"])
+                .unwrap_or("tier-2 round-trip regression")
+                .to_string(),
+        };
+    }
+
+    DownstreamRepairClassification {
+        reason: DownstreamRepairReason::Unknown,
+        evidence: first_non_empty_line(output)
+            .unwrap_or("no tier-2 output")
+            .to_string(),
+    }
+}
+
+fn first_matching_line<'a>(text: &'a str, needles: &[&str]) -> Option<&'a str> {
+    text.lines()
+        .map(str::trim)
+        .find(|line| needles.iter().any(|needle| line.contains(needle)))
+}
+
+fn first_non_empty_line(text: &str) -> Option<&str> {
+    text.lines().map(str::trim).find(|line| !line.is_empty())
 }
 
 fn invoke_supervisor(
@@ -2199,6 +2287,22 @@ fn collect_assistant_text(
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_ascii_lowercase();
+            if kind == "item.completed" {
+                if let Some(item) = parsed.get("item") {
+                    let item_type = item
+                        .get("type")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_ascii_lowercase();
+                    if matches!(item_type.as_str(), "agent_message" | "assistant_message") {
+                        if let Some(text) = item.get("text").and_then(|v| v.as_str()) {
+                            assistant_text.push(text.to_string());
+                            *assistant_blocks += 1;
+                        }
+                    }
+                }
+                return;
+            }
             if !(kind.contains("assistant") || kind.contains("message") || kind.contains("text")) {
                 return;
             }
@@ -2509,6 +2613,46 @@ mod tests {
         let report = extract_generalization_report(text).unwrap();
         assert!(report.starts_with("GENERALIZATION_PATH: b"));
         assert!(report.contains("GENERALIZED_RULES: damage_event"));
+    }
+
+    #[test]
+    fn collects_codex_nested_agent_message_text() {
+        let raw: serde_json::Value = serde_json::from_str(
+            r#"{
+                "type": "item.completed",
+                "item": {
+                    "type": "agent_message",
+                    "text": "done\n\nGENERALIZATION_PATH: d\nNEW_PEST_RULES: foo\nGENERALIZED_RULES: bar\nWHY_NEW_RULES: needed"
+                }
+            }"#,
+        )
+        .unwrap();
+        let mut text = Vec::new();
+        let mut blocks = 0;
+        collect_assistant_text(AgentProvider::Codex, &raw, &mut text, &mut blocks);
+        assert_eq!(blocks, 1);
+        assert!(text.join("\n").contains("GENERALIZATION_PATH: d"));
+    }
+
+    #[test]
+    fn classifies_downstream_repair_reasons() {
+        let semantic = "error[E0599]\nerror: could not compile `mtg-semantic` (test \"prop\")";
+        assert_eq!(
+            classify_downstream_repair_reason(semantic).reason,
+            DownstreamRepairReason::SemanticPropCompile
+        );
+
+        let infra = "error[E0433]: cannot find `CopyTarget` in `input`\n--> xtask/src/tui/mod.rs:467:16\nerror: could not compile `xtask`";
+        assert_eq!(
+            classify_downstream_repair_reason(infra).reason,
+            DownstreamRepairReason::InfraCompile
+        );
+
+        let old_card = "test clockwork_beast::round_trip ... FAILED\nparse: Pest(Error { variant: ParsingError })";
+        assert_eq!(
+            classify_downstream_repair_reason(old_card).reason,
+            DownstreamRepairReason::OldCardRegression
+        );
     }
 
     #[test]
