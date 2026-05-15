@@ -130,10 +130,15 @@ fn u32_to_number_word(n: u32) -> &'static str {
 
 fn write_keyword(out: &mut String, kw: Keyword) {
     match kw {
+        Keyword::FirstStrike => out.push_str("First strike"),
         Keyword::Flying => out.push_str("Flying"),
         Keyword::Defender => out.push_str("Defender"),
         Keyword::Banding => out.push_str("Banding"),
         Keyword::Trample => out.push_str("Trample"),
+        Keyword::Protection(color) => {
+            out.push_str("Protection from ");
+            out.push_str(color_name(color));
+        }
         Keyword::Enchant(object) => {
             out.push_str("Enchant ");
             write_enchant_object(out, object);
@@ -381,10 +386,15 @@ fn write_source_object_capitalized(out: &mut String, source: SourceObject) {
 /// keyword is printed lowercase, which is what we emit here.
 fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
     match kw {
+        Keyword::FirstStrike => out.push_str("first strike"),
         Keyword::Flying => out.push_str("flying"),
         Keyword::Defender => out.push_str("defender"),
         Keyword::Banding => out.push_str("banding"),
         Keyword::Trample => out.push_str("trample"),
+        Keyword::Protection(color) => {
+            out.push_str("protection from ");
+            out.push_str(color_name(color));
+        }
         Keyword::Enchant(object) => {
             out.push_str("enchant ");
             write_enchant_object(out, object);
@@ -541,6 +551,16 @@ fn color_name_capitalized(color: Color) -> &'static str {
         Color::Black => "Black",
         Color::Red => "Red",
         Color::Green => "Green",
+    }
+}
+
+fn color_name(color: Color) -> &'static str {
+    match color {
+        Color::White => "white",
+        Color::Blue => "blue",
+        Color::Black => "black",
+        Color::Red => "red",
+        Color::Green => "green",
     }
 }
 

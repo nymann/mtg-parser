@@ -220,9 +220,17 @@ fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         .expect("keyword_ability always contains a keyword");
     match inner.as_rule() {
         Rule::flying => Ok(Keyword::Flying),
+        Rule::first_strike => Ok(Keyword::FirstStrike),
         Rule::defender => Ok(Keyword::Defender),
         Rule::banding => Ok(Keyword::Banding),
         Rule::trample => Ok(Keyword::Trample),
+        Rule::protection => {
+            let color = inner
+                .into_inner()
+                .next()
+                .expect("protection always names a color");
+            Ok(Keyword::Protection(color_from_pair(color)?))
+        }
         Rule::enchant => {
             let object = inner
                 .into_inner()
@@ -310,9 +318,17 @@ fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, 
 fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match pair.as_rule() {
         Rule::flying => Ok(Keyword::Flying),
+        Rule::first_strike => Ok(Keyword::FirstStrike),
         Rule::defender => Ok(Keyword::Defender),
         Rule::banding => Ok(Keyword::Banding),
         Rule::trample => Ok(Keyword::Trample),
+        Rule::protection => {
+            let color = pair
+                .into_inner()
+                .next()
+                .expect("protection always names a color");
+            Ok(Keyword::Protection(color_from_pair(color)?))
+        }
         Rule::enchant => {
             let object = pair
                 .into_inner()

@@ -19,3 +19,5 @@ mod benalish_hero;
 mod berserk;
 #[path = "generated_patterns/birds_of_paradise.rs"]
 mod birds_of_paradise;
+#[path = "generated_patterns/black_knight.rs"]
+mod black_knight;

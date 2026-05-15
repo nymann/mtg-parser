@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 36,
+  "passing": 39,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -55,8 +55,7 @@
       "status": "pass"
     },
     "lea/Black Knight": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | First strike\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Black Lotus": {
       "status": "fail",
@@ -290,8 +289,7 @@
       "error": "parse: parse error:  --> 1:1\n  |\n1 | Earthquake deals X damage to each creature without flying and each player.\n  | ^---\n  |\n  = expected card_text"
     },
     "lea/Elvish Archers": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | First strike\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Evil Presence": {
       "status": "fail",
@@ -518,7 +516,7 @@
     },
     "lea/Jump": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:23\n  |\n1 | Target creature gains flying until end of turn.\n  |                       ^---\n  |\n  = expected enchant"
+      "error": "parse: parse error:  --> 1:23\n  |\n1 | Target creature gains flying until end of turn.\n  |                       ^---\n  |\n  = expected first_strike, protection, or enchant"
     },
     "lea/Karma": {
       "status": "fail",
@@ -1093,8 +1091,7 @@
       "error": "parse: parse error:  --> 1:1\n  |\n1 | Each player discards their hand, then draws seven cards.\n  | ^---\n  |\n  = expected card_text"
     },
     "lea/White Knight": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | First strike\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/White Ward": {
       "status": "fail",

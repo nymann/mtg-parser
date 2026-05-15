@@ -142,10 +142,12 @@ pub enum ActivatedEffect {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Keyword {
+    FirstStrike,
     Flying,
     Defender,
     Banding,
     Trample,
+    Protection(Color),
     Enchant(EnchantObject),
 }
 
