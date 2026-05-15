@@ -103,6 +103,7 @@ fn write_keyword(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::Flying => out.push_str("Flying"),
         Keyword::Defender => out.push_str("Defender"),
+        Keyword::Banding => out.push_str("Banding"),
         Keyword::Enchant(object) => {
             out.push_str("Enchant ");
             write_enchant_object(out, object);
@@ -342,6 +343,7 @@ fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
     match kw {
         Keyword::Flying => out.push_str("flying"),
         Keyword::Defender => out.push_str("defender"),
+        Keyword::Banding => out.push_str("banding"),
         Keyword::Enchant(object) => {
             out.push_str("enchant ");
             write_enchant_object(out, object);

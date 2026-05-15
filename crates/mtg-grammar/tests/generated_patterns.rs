@@ -13,3 +13,5 @@ mod bad_moon;
 mod balance;
 #[path = "generated_patterns/basalt_monolith.rs"]
 mod basalt_monolith;
+#[path = "generated_patterns/benalish_hero.rs"]
+mod benalish_hero;

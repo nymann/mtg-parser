@@ -160,6 +160,7 @@ fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match inner.as_rule() {
         Rule::flying => Ok(Keyword::Flying),
         Rule::defender => Ok(Keyword::Defender),
+        Rule::banding => Ok(Keyword::Banding),
         Rule::enchant => {
             let object = inner
                 .into_inner()
@@ -242,6 +243,7 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match pair.as_rule() {
         Rule::flying => Ok(Keyword::Flying),
         Rule::defender => Ok(Keyword::Defender),
+        Rule::banding => Ok(Keyword::Banding),
         Rule::enchant => {
             let object = pair
                 .into_inner()

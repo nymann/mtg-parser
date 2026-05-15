@@ -117,6 +117,7 @@ pub enum ActivatedEffect {
 pub enum Keyword {
     Flying,
     Defender,
+    Banding,
     Enchant(EnchantObject),
 }
 

@@ -91,9 +91,10 @@ discard_cards_action = { ^"discard" ~ ^"cards" }
 sacrifice_permanents_action = { ^"sacrifice" ~ permanent_type_plural }
 
 keyword_ability = { keyword }
-keyword         = _{ enchant | flying | defender }
+keyword         = _{ enchant | flying | defender | banding }
 flying          = @{ ^"flying" }
 defender        = @{ ^"defender" }
+banding         = @{ ^"banding" }
 
 // `Enchant <object>`. Order the longer alternatives first so PEG's
 // first-match doesn't stop at the bare permanent type.

@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 31,
+  "passing": 33,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -46,8 +46,7 @@
       "error": "empty oracle text (vanilla card)"
     },
     "lea/Benalish Hero": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Banding\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Berserk": {
       "status": "fail",
@@ -965,8 +964,7 @@
       "error": "parse: parse error:  --> 1:12\n  |\n1 | Whenever a player casts a black spell, you may pay {1}. If you do, you gain 1 life.\n  |            ^---\n  |\n  = expected permanent_type"
     },
     "lea/Timber Wolves": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Banding\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Time Vault": {
       "status": "fail",
