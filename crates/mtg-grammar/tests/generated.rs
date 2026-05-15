@@ -178,3 +178,5 @@ mod healing_salve;
 mod helm_of_chatzuk;
 #[path = "generated/howl_from_beyond.rs"]
 mod howl_from_beyond;
+#[path = "generated/howling_mine.rs"]
+mod howling_mine;

@@ -872,6 +872,7 @@ trigger_event = _{
   | enchanted_permanent_dies
   | source_blocks_or_becomes_blocked_by_non_creature_type_creature
   | end_of_combat
+  | beginning_of_each_players_draw_step
   | beginning_of_each_players_upkeep
   | beginning_of_your_upkeep
   | beginning_of_upkeep_of_enchanted_permanent_controller
@@ -914,6 +915,9 @@ beginning_of_chosen_players_upkeep = {
 beginning_of_each_players_upkeep = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"each" ~ ^"player's" ~ ^"upkeep"
 }
+beginning_of_each_players_draw_step = {
+    ^"the" ~ ^"beginning" ~ ^"of" ~ ^"each" ~ ^"player's" ~ ^"draw" ~ ^"step"
+}
 beginning_of_your_upkeep = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"your" ~ ^"upkeep"
 }
@@ -922,7 +926,7 @@ beginning_of_upkeep_of_enchanted_permanent_controller = {
   ~ ^"enchanted" ~ permanent_type ~ "'s" ~ ^"controller"
 }
 
-intervening_if         = _{ its_on_the_battlefield | enchanted_has_keyword | it_wasnt_first_permanent_you_played_this_turn | source_attacked_or_blocked_this_combat }
+intervening_if         = _{ its_on_the_battlefield | enchanted_has_keyword | it_wasnt_first_permanent_you_played_this_turn | source_attacked_or_blocked_this_combat | source_object_is_status }
 its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
 enchanted_has_keyword = { ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword }
 it_wasnt_first_permanent_you_played_this_turn = {
@@ -932,6 +936,8 @@ it_wasnt_first_permanent_you_played_this_turn = {
 source_attacked_or_blocked_this_combat = {
     source_object ~ ^"attacked" ~ ^"or" ~ ^"blocked" ~ ^"this" ~ ^"combat"
 }
+source_object_is_status = { source_object ~ ^"is" ~ object_status }
+object_status = @{ ^"tapped" | ^"untapped" }
 
 trigger_effect = _{
     destroy_that_creature_if_it_attacked_this_turn
@@ -952,6 +958,7 @@ trigger_effect = _{
   | source_deals_damage_to_that_player
   | source_deals_damage_to_that_permanents_controller
   | source_deals_damage_to_that_permanent
+  | that_player_draws_an_additional_card
   | its_controller_adds_an_additional_mana
   | source_gains_static_ability
   | that_creatures_controller_sacrifices_it
@@ -1064,6 +1071,9 @@ source_deals_damage_to_that_permanent = {
 source_deals_variable_damage_to_that_player = {
     source_object ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"
   ~ ^"that" ~ ^"player" ~ "," ~ where_clause ~ "."
+}
+that_player_draws_an_additional_card = {
+    ^"that" ~ ^"player" ~ ^"draws" ~ article ~ ^"additional" ~ ^"card" ~ "."
 }
 its_controller_adds_an_additional_mana = {
     ^"its" ~ ^"controller" ~ ^"adds" ~ article ~ ^"additional" ~ mana_symbol ~ "."

@@ -7,11 +7,11 @@ use crate::ast::{
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
     CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
     EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus,
+    OptionalCost, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -1015,6 +1015,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::beginning_of_each_players_upkeep => {
                 event = Some(TriggerEvent::BeginningOfEachPlayersUpkeep);
             }
+            Rule::beginning_of_each_players_draw_step => {
+                event = Some(TriggerEvent::BeginningOfEachPlayersDrawStep);
+            }
             Rule::beginning_of_your_upkeep => {
                 event = Some(TriggerEvent::BeginningOfYourUpkeep);
             }
@@ -1053,6 +1056,19 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                 ))?;
                 intervening_if = Some(InterveningIf::SourceAttackedOrBlockedThisCombat {
                     source: source_object_from_pair(source_pair)?,
+                });
+            }
+            Rule::source_object_is_status => {
+                let mut inner = child.into_inner();
+                let source_pair = inner
+                    .next()
+                    .ok_or(ParseError::Internal("source-status condition missing source"))?;
+                let status_pair = inner
+                    .next()
+                    .ok_or(ParseError::Internal("source-status condition missing status"))?;
+                intervening_if = Some(InterveningIf::SourceIsStatus {
+                    source: source_object_from_pair(source_pair)?,
+                    status: object_status_from_pair(status_pair)?,
                 });
             }
             Rule::enchanted_has_keyword => {
@@ -1134,6 +1150,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                 effects.push(source_deals_variable_damage_to_that_player_from_pair(
                     child,
                 )?);
+            }
+            Rule::that_player_draws_an_additional_card => {
+                effects.push(TriggerEffect::ThatPlayerDrawsAnAdditionalCard);
             }
             Rule::its_controller_adds_an_additional_mana => {
                 effects.push(its_controller_adds_an_additional_mana_from_pair(child)?);
@@ -2752,6 +2771,17 @@ fn creature_status_from_pair(pair: Pair<Rule>) -> Result<CreatureStatus, ParseEr
         "tapped" => Ok(CreatureStatus::Tapped),
         "untapped" => Ok(CreatureStatus::Untapped),
         _ => Err(ParseError::Internal("creature_status variant")),
+    }
+}
+
+fn object_status_from_pair(pair: Pair<Rule>) -> Result<ObjectStatus, ParseError> {
+    if pair.as_rule() != Rule::object_status {
+        return Err(ParseError::Internal("object_status"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "tapped" => Ok(ObjectStatus::Tapped),
+        "untapped" => Ok(ObjectStatus::Untapped),
+        _ => Err(ParseError::Internal("object_status variant")),
     }
 }
 

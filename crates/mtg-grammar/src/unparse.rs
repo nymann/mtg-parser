@@ -5,11 +5,11 @@ use crate::ast::{
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
     CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap, DamageRecipient,
     EachPlayerAction, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus,
+    OptionalCost, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -1106,6 +1106,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
+        | TriggerEvent::BeginningOfEachPlayersDrawStep
         | TriggerEvent::BeginningOfEachPlayersUpkeep
         | TriggerEvent::BeginningOfYourUpkeep
         | TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController { .. }
@@ -1176,6 +1177,9 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::BeginningOfEachPlayersUpkeep => {
             out.push_str("the beginning of each player's upkeep");
         }
+        TriggerEvent::BeginningOfEachPlayersDrawStep => {
+            out.push_str("the beginning of each player's draw step");
+        }
         TriggerEvent::BeginningOfYourUpkeep => {
             out.push_str("the beginning of your upkeep");
         }
@@ -1230,6 +1234,11 @@ fn write_intervening_if(out: &mut String, iif: InterveningIf) {
         InterveningIf::SourceAttackedOrBlockedThisCombat { source } => {
             write_source_object(out, source);
             out.push_str(" attacked or blocked this combat");
+        }
+        InterveningIf::SourceIsStatus { source, status } => {
+            write_source_object(out, source);
+            out.push_str(" is ");
+            out.push_str(object_status_name(status));
         }
     }
 }
@@ -1299,6 +1308,9 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str(" damage to that player, where ");
             write_variable_definitions(out, definitions);
             out.push('.');
+        }
+        TriggerEffect::ThatPlayerDrawsAnAdditionalCard => {
+            out.push_str("that player draws an additional card.");
         }
         TriggerEffect::ItsControllerAddsAdditionalMana { mana } => {
             out.push_str("its controller adds an additional ");
@@ -1659,6 +1671,13 @@ fn creature_status_name_capitalized(status: CreatureStatus) -> &'static str {
     match status {
         CreatureStatus::Tapped => "Tapped",
         CreatureStatus::Untapped => "Untapped",
+    }
+}
+
+fn object_status_name(status: ObjectStatus) -> &'static str {
+    match status {
+        ObjectStatus::Tapped => "tapped",
+        ObjectStatus::Untapped => "untapped",
     }
 }
 

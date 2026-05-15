@@ -355,6 +355,8 @@ pub enum TriggerEvent {
     BeginningOfChosenPlayersUpkeep,
     /// "the beginning of each player's upkeep"
     BeginningOfEachPlayersUpkeep,
+    /// "the beginning of each player's draw step"
+    BeginningOfEachPlayersDrawStep,
     /// "the beginning of your upkeep"
     BeginningOfYourUpkeep,
     /// "this <source> is put into a graveyard from the battlefield"
@@ -389,6 +391,11 @@ pub enum InterveningIf {
     ItWasntFirstPermanentYouPlayedThisTurn { permanent_type: PermanentType },
     /// "if this <source> attacked or blocked this combat"
     SourceAttackedOrBlockedThisCombat { source: SourceObject },
+    /// "if this <source> is <status>"
+    SourceIsStatus {
+        source: SourceObject,
+        status: ObjectStatus,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -427,6 +434,8 @@ pub enum TriggerEffect {
         amount: Variable,
         definitions: Vec<VariableDefinition>,
     },
+    /// "that player draws an additional card"
+    ThatPlayerDrawsAnAdditionalCard,
     /// "this <source> deals damage equal to that <permanent_type>'s
     /// toughness to the <permanent_type>'s controller"
     SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {
@@ -483,6 +492,12 @@ pub enum SourceObject {
     This(PermanentType),
     /// "this Aura"
     ThisAura,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ObjectStatus {
+    Tapped,
+    Untapped,
 }
 
 /// "<cost>: <effect>." — an activated ability with explicit printed
