@@ -236,6 +236,9 @@ impl AppState {
                 let _ = elapsed_secs; // computed locally via delta
                 let delta = self.delta_since_last();
                 for parsed in agent_events::parse(provider, &raw) {
+                    if self.is_duplicate_agent_done(provider, &parsed) {
+                        continue;
+                    }
                     self.events.push(TimelineRow {
                         iteration_index: self.iterations.len() as u32,
                         delta,
@@ -296,6 +299,31 @@ impl AppState {
         if let Some(iter) = self.iterations.last_mut() {
             iter.last_event_at = Some(Instant::now());
         }
+    }
+
+    fn is_duplicate_agent_done(&self, provider: AgentProvider, parsed: &ParsedAgentEvent) -> bool {
+        let ParsedAgentEvent::Done {
+            subtype,
+            num_turns,
+            total_cost_usd,
+        } = parsed
+        else {
+            return false;
+        };
+        matches!(
+            self.events.last().map(|row| &row.kind),
+            Some(TimelineKind::Agent {
+                provider: last_provider,
+                parsed: ParsedAgentEvent::Done {
+                    subtype: last_subtype,
+                    num_turns: last_num_turns,
+                    total_cost_usd: last_total_cost_usd,
+                },
+            }) if *last_provider == provider
+                && last_subtype == subtype
+                && last_num_turns == num_turns
+                && (*last_total_cost_usd - *total_cost_usd).abs() < f64::EPSILON
+        )
     }
 }
 
@@ -695,6 +723,38 @@ mod tests {
         assert_eq!(iter.steps[4].status, StepStatus::Running);
         assert_eq!(iter.steps[4].label, "step 5");
         assert_eq!(iter.steps[8].status, StepStatus::Pending);
+    }
+
+    #[test]
+    fn duplicate_adjacent_agent_done_events_are_suppressed() {
+        let mut state = AppState::new();
+        let raw: serde_json::Value =
+            serde_json::from_str(r#"{"type":"turn.completed","status":"success"}"#).unwrap();
+        state.apply(FlowEvent::AgentEvent {
+            provider: crate::flow::AgentProvider::Codex,
+            raw: raw.clone(),
+            elapsed_secs: 1,
+        });
+        state.apply(FlowEvent::AgentEvent {
+            provider: crate::flow::AgentProvider::Codex,
+            raw,
+            elapsed_secs: 2,
+        });
+
+        assert_eq!(
+            state
+                .events
+                .iter()
+                .filter(|row| matches!(
+                    row.kind,
+                    TimelineKind::Agent {
+                        parsed: ParsedAgentEvent::Done { .. },
+                        ..
+                    }
+                ))
+                .count(),
+            1
+        );
     }
 }
 
