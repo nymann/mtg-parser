@@ -1303,6 +1303,7 @@ fn activated_cost_from_pair(pair: Pair<Rule>) -> Result<Vec<ActivatedCost>, Pars
     let costs = pair
         .into_inner()
         .map(|child| match child.as_rule() {
+            Rule::mana_cost => Ok(ActivatedCost::Mana(mana_cost_from_pair(child))),
             Rule::mana_symbol => Ok(ActivatedCost::Mana(ManaCost {
                 symbols: vec![mana_symbol_from_pair(child)],
             })),
@@ -1353,6 +1354,15 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             Ok(ActivatedEffect::Untap(source_object_from_pair(
                 source_pair,
             )?))
+        }
+        Rule::counter_target_colored_spell => {
+            let color_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("counter colored spell missing color"))?;
+            Ok(ActivatedEffect::CounterTargetColoredSpell {
+                color: color_from_pair(color_pair)?,
+            })
         }
         Rule::activated_enchanted_gets_until_eot => {
             let mut inner = pair.into_inner();

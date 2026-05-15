@@ -306,6 +306,10 @@ pub enum ActivatedEffect {
     },
     /// "Untap this <permanent_type>."
     Untap(SourceObject),
+    /// "Counter target <color> spell."
+    CounterTargetColoredSpell {
+        color: Color,
+    },
     /// "Enchanted <type> gets <modifier> until end of turn."
     EnchantedGetsUntilEndOfTurn {
         permanent_type: PermanentType,

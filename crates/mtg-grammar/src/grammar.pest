@@ -416,11 +416,12 @@ enchanted_object = _{ permanent_type | creature_type }
 activated_ability = { activated_cost ~ ":" ~ activated_effect }
 // Multiple non-mana activated costs are printed comma-separated.
 activated_cost = { activated_cost_component ~ ("," ~ activated_cost_component)* }
-activated_cost_component = _{ sacrifice_source | variable_mana_symbol | mana_symbol | tap_symbol }
+activated_cost_component = _{ sacrifice_source | variable_mana_symbol | mana_cost | tap_symbol }
 activated_effect = _{
     add_mana_of_any_one_color
   | add_one_mana_of_any_color
   | add_mana
+  | counter_target_colored_spell
   | untap_source
   | activated_enchanted_gets_until_eot
   | prevent_next_damage_from_colored_source

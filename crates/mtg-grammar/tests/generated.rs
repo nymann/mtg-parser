@@ -96,3 +96,5 @@ mod cyclopean_tomb;
 mod dark_ritual;
 #[path = "generated/darkpact.rs"]
 mod darkpact;
+#[path = "generated/deathgrip.rs"]
+mod deathgrip;
