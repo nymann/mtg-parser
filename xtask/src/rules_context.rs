@@ -218,7 +218,8 @@ fn truncate_lines(text: &str, max: usize) -> String {
 }
 
 fn qmd_search_one(query: &str) -> Result<Vec<QmdHit>, String> {
-    let output = Command::new("qmd")
+    ensure_qmd_paths()?;
+    let output = qmd_command()
         .args([
             "search",
             query,
@@ -244,6 +245,31 @@ fn qmd_search_one(query: &str) -> Result<Vec<QmdHit>, String> {
     let hits: Vec<QmdHit> =
         serde_json::from_str(&stdout).map_err(|e| format!("parse qmd JSON: {e}"))?;
     Ok(hits)
+}
+
+fn qmd_index_path() -> PathBuf {
+    repo_root().join("target/qmd-index/index.sqlite")
+}
+
+fn qmd_config_home() -> PathBuf {
+    repo_root().join("target/qmd-config")
+}
+
+fn ensure_qmd_paths() -> Result<(), String> {
+    let index = qmd_index_path();
+    let index_dir = index
+        .parent()
+        .ok_or_else(|| format!("qmd index path has no parent: {}", index.display()))?;
+    std::fs::create_dir_all(index_dir).map_err(|e| format!("create qmd index dir: {e}"))?;
+    std::fs::create_dir_all(qmd_config_home()).map_err(|e| format!("create qmd config dir: {e}"))?;
+    Ok(())
+}
+
+fn qmd_command() -> Command {
+    let mut command = Command::new("qmd");
+    command.env("INDEX_PATH", qmd_index_path());
+    command.env("XDG_CONFIG_HOME", qmd_config_home());
+    command
 }
 
 /// BM25 is brittle around apostrophe-s, terminal punctuation, and
