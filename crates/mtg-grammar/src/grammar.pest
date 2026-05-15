@@ -44,6 +44,7 @@ sentence_statement = _{
   | destroy_target_permanent_choice
   | destroy
   | regenerate_target_creature
+  | named_source_deals_variable_damage_to_damage_recipients
   | named_source_deals_variable_damage_to_any_target
   | spend_only_color_mana_on_variable
   | you_gain_life_equal_damage_dealt_capped
@@ -129,6 +130,13 @@ regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
 named_source_deals_variable_damage_to_any_target = {
     proper_name ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to" ~ ^"any" ~ ^"target" ~ "."
 }
+named_source_deals_variable_damage_to_damage_recipients = {
+    proper_name ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"
+  ~ damage_recipient ~ (^"and" ~ damage_recipient)+ ~ "."
+}
+damage_recipient = { each_creature_without_keyword | each_player_damage_recipient }
+each_creature_without_keyword = { ^"each" ~ ^"creature" ~ ^"without" ~ keyword }
+each_player_damage_recipient = { ^"each" ~ ^"player" }
 proper_name = @{ upper_alpha ~ (ASCII_ALPHANUMERIC | "'" | "-")* ~ (WHITESPACE ~ upper_alpha ~ (ASCII_ALPHANUMERIC | "'" | "-")*)* }
 upper_alpha = _{ 'A'..'Z' }
 

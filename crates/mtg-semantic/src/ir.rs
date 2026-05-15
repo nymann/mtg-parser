@@ -1,8 +1,8 @@
 use mtg_grammar::{
     ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Color,
-    DamageLifeGainCap, EachPlayerAction, ImperativeAction, Keyword, ManaCost, MixedPtModifier,
-    ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, SourceObject,
-    StaticAbility, TriggeredAbility, Variable, VariableDefinition, Zone,
+    DamageLifeGainCap, DamageRecipient, EachPlayerAction, ImperativeAction, Keyword, ManaCost,
+    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier,
+    SourceObject, StaticAbility, TriggeredAbility, Variable, VariableDefinition, Zone,
 };
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +26,12 @@ pub enum CardEffect {
     NamedSourceDealsVariableDamageToAnyTarget {
         source_name: String,
         amount: Variable,
+    },
+    /// "<source name> deals X damage to <recipient> and <recipient>."
+    NamedSourceDealsVariableDamageToDamageRecipients {
+        source_name: String,
+        amount: Variable,
+        recipients: Vec<DamageRecipient>,
     },
     /// "Spend only <color> mana on X."
     SpendOnlyColorManaOnVariable { color: Color, variable: Variable },

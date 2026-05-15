@@ -3,8 +3,8 @@ use std::fmt::Write;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
-    CreatureStatus, CreatureType, DamageLifeGainCap, EachPlayerAction, EnchantObject,
-    EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
+    CreatureStatus, CreatureType, DamageLifeGainCap, DamageRecipient, EachPlayerAction,
+    EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
     MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
     Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
     Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
@@ -32,6 +32,18 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" deals ");
             out.push_str(variable_name(*amount));
             out.push_str(" damage to any target.");
+        }
+        Statement::NamedSourceDealsVariableDamageToDamageRecipients {
+            source_name,
+            amount,
+            recipients,
+        } => {
+            out.push_str(source_name);
+            out.push_str(" deals ");
+            out.push_str(variable_name(*amount));
+            out.push_str(" damage to ");
+            write_damage_recipients(out, recipients);
+            out.push('.');
         }
         Statement::SpendOnlyColorManaOnVariable { color, variable } => {
             out.push_str("Spend only ");
@@ -272,6 +284,25 @@ fn write_damage_life_gain_cap(out: &mut String, cap: DamageLifeGainCap) {
         DamageLifeGainCap::CreatureToughness => {
             out.push_str("the creature's toughness");
         }
+    }
+}
+
+fn write_damage_recipients(out: &mut String, recipients: &[DamageRecipient]) {
+    for (idx, recipient) in recipients.iter().enumerate() {
+        if idx > 0 {
+            out.push_str(" and ");
+        }
+        write_damage_recipient(out, *recipient);
+    }
+}
+
+fn write_damage_recipient(out: &mut String, recipient: DamageRecipient) {
+    match recipient {
+        DamageRecipient::EachCreatureWithoutKeyword { keyword } => {
+            out.push_str("each creature without ");
+            write_keyword(out, keyword);
+        }
+        DamageRecipient::EachPlayer => out.push_str("each player"),
     }
 }
 

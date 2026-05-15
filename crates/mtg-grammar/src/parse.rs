@@ -5,8 +5,8 @@ use pest_derive::Parser;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CopyException,
-    CreatureStatus, CreatureType, DamageLifeGainCap, EachPlayerAction, EnchantObject,
-    EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
+    CreatureStatus, CreatureType, DamageLifeGainCap, DamageRecipient, EachPlayerAction,
+    EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
     MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
     Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
     Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
@@ -67,6 +67,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
         Rule::named_source_deals_variable_damage_to_any_target => {
             named_source_deals_variable_damage_to_any_target_from_pair(pair)
+        }
+        Rule::named_source_deals_variable_damage_to_damage_recipients => {
+            named_source_deals_variable_damage_to_damage_recipients_from_pair(pair)
         }
         Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
         Rule::you_gain_life_equal_damage_dealt_capped => {
@@ -507,6 +510,47 @@ fn named_source_deals_variable_damage_to_any_target_from_pair(
     })
 }
 
+fn named_source_deals_variable_damage_to_damage_recipients_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("named damage missing source name"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("named damage missing amount"))?;
+    let recipients = inner
+        .map(damage_recipient_from_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(
+        Statement::NamedSourceDealsVariableDamageToDamageRecipients {
+            source_name: source_pair.as_str().to_string(),
+            amount: variable_from_str(amount_pair.as_str())?,
+            recipients,
+        },
+    )
+}
+
+fn damage_recipient_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient, ParseError> {
+    let inner = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("damage recipient missing inner rule"))?;
+    match inner.as_rule() {
+        Rule::each_creature_without_keyword => {
+            let keyword_pair = inner.into_inner().next().ok_or(ParseError::Internal(
+                "creature damage recipient missing keyword",
+            ))?;
+            Ok(DamageRecipient::EachCreatureWithoutKeyword {
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
+        Rule::each_player_damage_recipient => Ok(DamageRecipient::EachPlayer),
+        _ => Err(ParseError::Internal("damage recipient")),
+    }
+}
+
 fn spend_only_color_mana_on_variable_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let mut inner = pair.into_inner();
     let color_pair = inner
@@ -691,31 +735,7 @@ fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         .into_inner()
         .next()
         .expect("keyword_ability always contains a keyword");
-    match inner.as_rule() {
-        Rule::flying => Ok(Keyword::Flying),
-        Rule::first_strike => Ok(Keyword::FirstStrike),
-        Rule::defender => Ok(Keyword::Defender),
-        Rule::banding => Ok(Keyword::Banding),
-        Rule::trample => Ok(Keyword::Trample),
-        Rule::mountainwalk => Ok(Keyword::Mountainwalk),
-        Rule::swampwalk => Ok(Keyword::Swampwalk),
-        Rule::indestructible => Ok(Keyword::Indestructible),
-        Rule::protection => {
-            let color = inner
-                .into_inner()
-                .next()
-                .expect("protection always names a color");
-            Ok(Keyword::Protection(color_from_pair(color)?))
-        }
-        Rule::enchant => {
-            let object = inner
-                .into_inner()
-                .next()
-                .expect("enchant always contains an enchant_object alternative");
-            Ok(Keyword::Enchant(enchant_object_from_pair(object)?))
-        }
-        _ => Err(ParseError::Internal("keyword")),
-    }
+    keyword_from_inner_pair(inner)
 }
 
 fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, ParseError> {

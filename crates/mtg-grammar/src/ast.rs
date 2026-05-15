@@ -15,6 +15,12 @@ pub enum Statement {
         source_name: String,
         amount: Variable,
     },
+    /// "<source name> deals X damage to <recipient> and <recipient>."
+    NamedSourceDealsVariableDamageToDamageRecipients {
+        source_name: String,
+        amount: Variable,
+        recipients: Vec<DamageRecipient>,
+    },
     /// "Spend only <color> mana on X."
     SpendOnlyColorManaOnVariable {
         color: Color,
@@ -164,6 +170,14 @@ pub enum DamageLifeGainCap {
     PlaneswalkerLoyaltyBeforeDamageDealt,
     /// "the creature's toughness"
     CreatureToughness,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamageRecipient {
+    /// "each creature without <keyword>"
+    EachCreatureWithoutKeyword { keyword: Keyword },
+    /// "each player"
+    EachPlayer,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

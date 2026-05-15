@@ -7,8 +7,9 @@
 
 use mtg_grammar::{
     parse, unparse, ActivatedAbility, ActivatedCost, ActivatedEffect, CardCount, Color,
-    DamageLifeGainCap, EachPlayerAction, ImperativeAction, ManaCost, ManaSymbol, PermanentType,
-    SourceObject, Statement, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
+    DamageLifeGainCap, DamageRecipient, EachPlayerAction, ImperativeAction, Keyword, ManaCost,
+    ManaSymbol, PermanentType, SourceObject, Statement, TriggerEffect, TriggerEvent,
+    TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -107,6 +108,18 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             source_name: "Disintegrate".to_string(),
             amount: Variable::X,
         }),
+        Just(
+            Statement::NamedSourceDealsVariableDamageToDamageRecipients {
+                source_name: "Earthquake".to_string(),
+                amount: Variable::X,
+                recipients: vec![
+                    DamageRecipient::EachCreatureWithoutKeyword {
+                        keyword: Keyword::Flying,
+                    },
+                    DamageRecipient::EachPlayer,
+                ],
+            }
+        ),
         (arb_color(), arb_variable()).prop_map(|(color, variable)| {
             Statement::SpendOnlyColorManaOnVariable { color, variable }
         }),

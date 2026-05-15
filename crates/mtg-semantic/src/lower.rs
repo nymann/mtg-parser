@@ -22,6 +22,15 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             source_name: source_name.clone(),
             amount: *amount,
         },
+        Statement::NamedSourceDealsVariableDamageToDamageRecipients {
+            source_name,
+            amount,
+            recipients,
+        } => CardEffect::NamedSourceDealsVariableDamageToDamageRecipients {
+            source_name: source_name.clone(),
+            amount: *amount,
+            recipients: recipients.clone(),
+        },
         Statement::SpendOnlyColorManaOnVariable { color, variable } => {
             CardEffect::SpendOnlyColorManaOnVariable {
                 color: *color,

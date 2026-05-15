@@ -128,3 +128,5 @@ mod dwarven_demolition_team;
 mod dwarven_warriors;
 #[path = "generated/earthbind.rs"]
 mod earthbind;
+#[path = "generated/earthquake.rs"]
+mod earthquake;
