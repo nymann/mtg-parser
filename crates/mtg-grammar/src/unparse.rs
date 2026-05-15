@@ -1031,23 +1031,28 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             permanent_type,
             modifier,
         } => {
-            out.push_str("Enchanted ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str(" gets ");
-            write_pt_modifier(out, *modifier);
-            out.push_str(" until end of turn.");
+            write_until_end_of_turn_sentence(
+                out,
+                |out| {
+                    out.push_str("Enchanted ");
+                    out.push_str(permanent_type_name(*permanent_type));
+                },
+                |out| write_gets_pt_modifier_clause(out, *modifier),
+            );
         }
         ActivatedEffect::SourceGetsUntilEndOfTurn { source, modifier } => {
-            write_source_object_capitalized(out, *source);
-            out.push_str(" gets ");
-            write_pt_modifier(out, *modifier);
-            out.push_str(" until end of turn.");
+            write_until_end_of_turn_sentence(
+                out,
+                |out| write_source_object_capitalized(out, *source),
+                |out| write_gets_pt_modifier_clause(out, *modifier),
+            );
         }
         ActivatedEffect::SourceGainsKeywordUntilEndOfTurn { source, keyword } => {
-            write_source_object_capitalized(out, *source);
-            out.push_str(" gains ");
-            write_keyword_lowercase(out, *keyword);
-            out.push_str(" until end of turn.");
+            write_until_end_of_turn_sentence(
+                out,
+                |out| write_source_object_capitalized(out, *source),
+                |out| write_gains_keyword_clause(out, *keyword),
+            );
         }
         ActivatedEffect::SourceBecomesCreatureUntilEndOfCombat {
             source,
@@ -2259,27 +2264,23 @@ fn write_target_permanent_until_end_of_turn(
     permanent_type: PermanentType,
     effect: &TargetPermanentEndOfTurnEffect,
 ) {
-    out.push_str("Target ");
-    out.push_str(permanent_type_name(permanent_type));
+    write_target_permanent_subject(out, permanent_type);
     out.push(' ');
     match effect {
         TargetPermanentEndOfTurnEffect::Gets(modifier) => {
-            out.push_str("gets ");
-            write_mixed_pt_modifier(out, *modifier);
-            out.push_str(" until end of turn.");
+            write_gets_mixed_pt_modifier_clause(out, *modifier);
+            write_until_end_of_turn(out);
         }
         TargetPermanentEndOfTurnEffect::GainsKeyword(keyword) => {
-            out.push_str("gains ");
-            write_keyword_lowercase(out, *keyword);
-            out.push_str(" until end of turn.");
+            write_gains_keyword_clause(out, *keyword);
+            write_until_end_of_turn(out);
         }
         TargetPermanentEndOfTurnEffect::GainsKeywordAndGets {
             keyword,
             modifier,
             definitions,
         } => {
-            out.push_str("gains ");
-            write_keyword_lowercase(out, *keyword);
+            write_gains_keyword_clause(out, *keyword);
             out.push_str(" and gets ");
             write_mixed_pt_modifier(out, *modifier);
             out.push_str(" until end of turn, where ");
@@ -2287,6 +2288,41 @@ fn write_target_permanent_until_end_of_turn(
             out.push('.');
         }
     }
+}
+
+fn write_target_permanent_subject(out: &mut String, permanent_type: PermanentType) {
+    out.push_str("Target ");
+    out.push_str(permanent_type_name(permanent_type));
+}
+
+fn write_until_end_of_turn_sentence(
+    out: &mut String,
+    write_subject: impl FnOnce(&mut String),
+    write_effect: impl FnOnce(&mut String),
+) {
+    write_subject(out);
+    out.push(' ');
+    write_effect(out);
+    write_until_end_of_turn(out);
+}
+
+fn write_until_end_of_turn(out: &mut String) {
+    out.push_str(" until end of turn.");
+}
+
+fn write_gets_pt_modifier_clause(out: &mut String, modifier: PtModifier) {
+    out.push_str("gets ");
+    write_pt_modifier(out, modifier);
+}
+
+fn write_gets_mixed_pt_modifier_clause(out: &mut String, modifier: MixedPtModifier) {
+    out.push_str("gets ");
+    write_mixed_pt_modifier(out, modifier);
+}
+
+fn write_gains_keyword_clause(out: &mut String, keyword: Keyword) {
+    out.push_str("gains ");
+    write_keyword_lowercase(out, keyword);
 }
 
 fn write_permanent_type_plural_list(out: &mut String, permanent_types: &[PermanentType]) {
