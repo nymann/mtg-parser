@@ -70,8 +70,13 @@ fn render_title_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         ])
         .split(area);
 
+    let workflow = state
+        .session
+        .as_ref()
+        .map(|s| s.workflow.as_str())
+        .unwrap_or("workflow");
     let mut left = vec![Span::styled(
-        "add-card",
+        workflow.to_string(),
         Style::default().fg(C_TITLE).add_modifier(Modifier::BOLD),
     )];
     let mut center = Vec::new();
@@ -87,6 +92,12 @@ fn render_title_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
                 " ({}/{})",
                 card.set_code, card.collector_number
             )));
+        } else if let Some(title) = &iter.title {
+            left.push(Span::raw(" · "));
+            left.push(Span::styled(
+                title.clone(),
+                Style::default().fg(C_TITLE).add_modifier(Modifier::BOLD),
+            ));
         }
         center.push(Span::styled(
             format!(
@@ -113,7 +124,7 @@ fn render_title_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         left.push(Span::raw("  "));
         left.push(Span::styled(
             format!(
-                "set={} max-iter={}",
+                "target={} max-iter={}",
                 s.set,
                 format_max_iterations(s.max_iterations)
             ),
@@ -169,7 +180,11 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         f,
         cols[0],
         vec![
-            label_span("cards"),
+            label_span(if s.workflow == "add-card" {
+                "cards"
+            } else {
+                "iters"
+            }),
             Span::raw(format!("{cards_done} done · {cards_active} active")),
         ],
         Alignment::Left,
@@ -178,7 +193,11 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         f,
         cols[1],
         vec![
-            label_span("avg/card"),
+            label_span(if s.workflow == "add-card" {
+                "avg/card"
+            } else {
+                "avg/iter"
+            }),
             Span::raw(avg.map(|s| format!("{s}s")).unwrap_or_else(|| "—".into())),
         ],
         Alignment::Center,
@@ -297,77 +316,111 @@ fn render_card_panel(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(C_FAINT))
-        .title(copy_title("card", 'c', state.copy_mode))
+        .title(copy_title(
+            if state.session.as_ref().map(|s| s.workflow.as_str()) == Some("add-card") {
+                "card"
+            } else {
+                "target"
+            },
+            'c',
+            state.copy_mode,
+        ))
         .title_style(Style::default().fg(C_DIM).add_modifier(Modifier::BOLD));
 
-    let lines: Vec<Line> = match state.active_iteration().and_then(|i| i.card.as_ref()) {
-        None => match &state.session_end {
-            Some(SessionEndReason::SurfacedToHuman(reason)) => {
-                let mut lines = vec![Line::from(Span::styled(
-                    "  startup failed",
-                    Style::default().fg(C_BAD).add_modifier(Modifier::BOLD),
-                ))];
-                lines.push(Line::from(""));
-                for line in reason.lines() {
-                    lines.push(Line::from(vec![
-                        Span::styled("  │ ", Style::default().fg(C_BAD)),
-                        Span::styled(line.to_string(), Style::default().fg(C_BAD)),
-                    ]));
-                }
-                lines
-            }
-            _ => vec![Line::from(Span::styled(
-                "  (finding next failing card…)",
-                Style::default().fg(C_FAINT),
-            ))],
-        },
-        Some(card) => {
-            let iter = state.active_iteration().unwrap();
+    let lines: Vec<Line> = if let Some(iter) = state.active_iteration() {
+        if let Some(title) = &iter.title {
             let mut v = Vec::new();
-            v.push(field("Name", &card.name, C_TITLE));
-            v.push(field("Set", &card.set_code, C_DIM));
-            v.push(field("Collector #", &card.collector_number, C_DIM));
-            v.push(field("Layout", &format!("{:?}", card.layout), C_DIM));
-            v.push(field(
-                "Mana cost",
-                if card.mana_cost.is_empty() {
-                    "—"
-                } else {
-                    card.mana_cost.as_str()
-                },
-                C_INFO,
-            ));
-            v.push(Line::from(""));
-            v.push(Line::from(Span::styled(
-                "Oracle text",
-                Style::default().fg(C_FAINT),
-            )));
-            for line in iter
-                .normalized
-                .as_deref()
-                .unwrap_or(&card.oracle_text)
-                .lines()
-            {
-                v.push(Line::from(vec![
-                    Span::styled("  │ ", Style::default().fg(C_FAINT)),
-                    Span::raw(line.to_string()),
-                ]));
-            }
-            if let Some(err) = &iter.round_trip_error {
+            v.push(field("Target", title, C_TITLE));
+            if let Some(detail) = &iter.detail {
                 v.push(Line::from(""));
                 v.push(Line::from(Span::styled(
-                    "Round-trip",
+                    "Context",
                     Style::default().fg(C_FAINT),
                 )));
-                for line in err.lines() {
+                for line in detail.lines() {
                     v.push(Line::from(vec![
-                        Span::styled("  │ ", Style::default().fg(C_BAD)),
-                        Span::styled(line.to_string(), Style::default().fg(C_BAD)),
+                        Span::styled("  │ ", Style::default().fg(C_FAINT)),
+                        Span::raw(line.to_string()),
                     ]));
                 }
             }
             v
+        } else {
+            match iter.card.as_ref() {
+                None => match &state.session_end {
+                    Some(SessionEndReason::SurfacedToHuman(reason)) => {
+                        let mut lines = vec![Line::from(Span::styled(
+                            "  startup failed",
+                            Style::default().fg(C_BAD).add_modifier(Modifier::BOLD),
+                        ))];
+                        lines.push(Line::from(""));
+                        for line in reason.lines() {
+                            lines.push(Line::from(vec![
+                                Span::styled("  │ ", Style::default().fg(C_BAD)),
+                                Span::styled(line.to_string(), Style::default().fg(C_BAD)),
+                            ]));
+                        }
+                        lines
+                    }
+                    _ => vec![Line::from(Span::styled(
+                        "  (finding next failing card…)",
+                        Style::default().fg(C_FAINT),
+                    ))],
+                },
+                Some(card) => {
+                    let iter = state.active_iteration().unwrap();
+                    let mut v = Vec::new();
+                    v.push(field("Name", &card.name, C_TITLE));
+                    v.push(field("Set", &card.set_code, C_DIM));
+                    v.push(field("Collector #", &card.collector_number, C_DIM));
+                    v.push(field("Layout", &format!("{:?}", card.layout), C_DIM));
+                    v.push(field(
+                        "Mana cost",
+                        if card.mana_cost.is_empty() {
+                            "—"
+                        } else {
+                            card.mana_cost.as_str()
+                        },
+                        C_INFO,
+                    ));
+                    v.push(Line::from(""));
+                    v.push(Line::from(Span::styled(
+                        "Oracle text",
+                        Style::default().fg(C_FAINT),
+                    )));
+                    for line in iter
+                        .normalized
+                        .as_deref()
+                        .unwrap_or(&card.oracle_text)
+                        .lines()
+                    {
+                        v.push(Line::from(vec![
+                            Span::styled("  │ ", Style::default().fg(C_FAINT)),
+                            Span::raw(line.to_string()),
+                        ]));
+                    }
+                    if let Some(err) = &iter.round_trip_error {
+                        v.push(Line::from(""));
+                        v.push(Line::from(Span::styled(
+                            "Round-trip",
+                            Style::default().fg(C_FAINT),
+                        )));
+                        for line in err.lines() {
+                            v.push(Line::from(vec![
+                                Span::styled("  │ ", Style::default().fg(C_BAD)),
+                                Span::styled(line.to_string(), Style::default().fg(C_BAD)),
+                            ]));
+                        }
+                    }
+                    v
+                }
+            }
         }
+    } else {
+        vec![Line::from(Span::styled(
+            "  (starting workflow…)",
+            Style::default().fg(C_FAINT),
+        ))]
     };
 
     let paragraph = Paragraph::new(lines)
@@ -576,12 +629,17 @@ fn push_output_line(out: &mut Vec<Line<'static>>, state: &AppState, line: Line<'
 }
 
 fn iter_separator_line(state: &AppState, iter_idx: u32) -> Line<'static> {
-    let card_name = state
+    let item_name = state
         .iterations
         .iter()
         .find(|i| i.index == iter_idx)
-        .and_then(|i| i.card.as_ref().map(|c| c.name.clone()))
-        .unwrap_or_else(|| "(no card)".to_string());
+        .and_then(|i| {
+            i.card
+                .as_ref()
+                .map(|c| c.name.clone())
+                .or_else(|| i.title.clone())
+        })
+        .unwrap_or_else(|| "(pending)".to_string());
     Line::from(vec![
         Span::styled("── iteration ", Style::default().fg(C_DIM)),
         Span::styled(
@@ -589,7 +647,7 @@ fn iter_separator_line(state: &AppState, iter_idx: u32) -> Line<'static> {
             Style::default().fg(C_TITLE).add_modifier(Modifier::BOLD),
         ),
         Span::styled(" · ", Style::default().fg(C_FAINT)),
-        Span::styled(card_name, Style::default().fg(C_TITLE)),
+        Span::styled(item_name, Style::default().fg(C_TITLE)),
         Span::styled(" ───", Style::default().fg(C_DIM)),
     ])
 }

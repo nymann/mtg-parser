@@ -75,6 +75,7 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
     let baseline_grammar_rules = count_grammar_rules();
     let (baseline_corpus_passing, baseline_corpus_total) = read_corpus_pp_total();
     sink.emit(FlowEvent::SessionStarted {
+        workflow: "add-card".to_string(),
         set: current_set.clone(),
         max_iterations: opts.max_iterations,
         baseline_corpus_passing,

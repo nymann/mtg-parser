@@ -40,10 +40,11 @@ Commands:
   rules-context \"<query>\"     Render the Comprehensive Rules prompt block for a
                               given oracle phrase. Lets you inspect retrieval
                               quality without invoking the full add-card loop.
-  refactor-hotspot            Build a qmd-grounded refactor prompt for a hotspot.
-              [--theme THEME] Defaults to parser-boilerplate. Other themes include
+  refactor-hotspot            Run a qmd-grounded autonomous refactor workflow.
+              [--theme THEME] Defaults to grammar-core. Other themes include
               [--target PATH] damage, destroy, prevention, keyword-abilities,
               [--out PATH]    triggered-abilities, and unparse-templates.
+              [--ui console|tui]
   add-card    [--set CODE]    Orchestrated loop: pick the next failing card in
               [--max-iterations N]  the corpus, hand it to a coding agent, gate the
               [--dry-run] [--allow-dirty]  result through tier-1/2 + corpus + commit. When
@@ -104,11 +105,30 @@ fn main() -> ExitCode {
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),
         Some("rules-split") => rules_split::run(&args[1..]),
         Some("rules-context") => rules_context::run_cli(&args[1..]),
-        Some("refactor-hotspot") => refactor_hotspot::run(&args[1..]),
+        Some("refactor-hotspot") => match parse_ui(&args[1..]) {
+            Ok(Ui::Console) => refactor_hotspot::run(&args[1..]),
+            Ok(Ui::Tui) => match refactor_hotspot::Options::parse(&args[1..]) {
+                Ok(opts) => match tui::run_refactor_hotspot(opts) {
+                    Ok(code) => code,
+                    Err(e) => {
+                        eprintln!("tui error: {e:#}");
+                        ExitCode::FAILURE
+                    }
+                },
+                Err(e) => {
+                    eprintln!("{e}");
+                    ExitCode::from(2)
+                }
+            },
+            Err(e) => {
+                eprintln!("{e}");
+                ExitCode::from(2)
+            }
+        },
         Some("add-card") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => add_card::run(&args[1..]),
             Ok(Ui::Tui) => match add_card::Options::parse(&args[1..]) {
-                Ok(opts) => match tui::run(opts) {
+                Ok(opts) => match tui::run_add_card(opts) {
                     Ok(code) => code,
                     Err(e) => {
                         eprintln!("tui error: {e:#}");

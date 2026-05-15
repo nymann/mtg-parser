@@ -134,9 +134,17 @@ impl AppState {
                 Some(SessionEndReason::SurfacedToHuman(reason)) => {
                     format!("startup failed\n\n{reason}")
                 }
-                _ => "finding next failing card".to_string(),
+                _ => "starting workflow".to_string(),
             };
         };
+        if let Some(title) = &iter.title {
+            let mut lines = vec![title.clone()];
+            if let Some(detail) = &iter.detail {
+                lines.push(String::new());
+                lines.extend(detail.lines().map(|line| format!("  {line}")));
+            }
+            return lines.join("\n");
+        }
         let Some(card) = &iter.card else {
             return "finding next failing card".to_string();
         };
@@ -227,6 +235,8 @@ impl AppState {
             .unwrap_or_default();
         let value = json!({
             "card": iter.and_then(|iter| iter.card.as_ref()),
+            "title": iter.and_then(|iter| iter.title.as_ref()),
+            "detail": iter.and_then(|iter| iter.detail.as_ref()),
             "steps": steps,
             "output": self.output_text(),
             "session_end": self.session_end.as_ref().map(output_session_end),
@@ -249,6 +259,7 @@ impl AppState {
     pub fn apply(&mut self, event: FlowEvent) {
         match event {
             FlowEvent::SessionStarted {
+                workflow,
                 set,
                 max_iterations,
                 baseline_corpus_passing,
@@ -256,6 +267,7 @@ impl AppState {
                 baseline_grammar_rules,
             } => {
                 self.session = Some(SessionMeta {
+                    workflow,
                     set,
                     max_iterations,
                     baseline_corpus_passing,
@@ -365,6 +377,33 @@ impl AppState {
                     card: Some(card),
                     normalized: Some(normalized),
                     round_trip_error: Some(round_trip_error),
+                    started_at,
+                    ..Iteration::default()
+                });
+            }
+
+            FlowEvent::WorkflowIterationStarted {
+                index,
+                max_iterations,
+                title,
+                detail,
+            } => {
+                let started_at = Instant::now();
+                if let Some(last) = self.iterations.last_mut() {
+                    if last.is_pending() {
+                        last.index = index;
+                        last.max_iterations = max_iterations;
+                        last.title = Some(title);
+                        last.detail = Some(detail);
+                        last.started_at = started_at;
+                        return;
+                    }
+                }
+                self.iterations.push(Iteration {
+                    index,
+                    max_iterations,
+                    title: Some(title),
+                    detail: Some(detail),
                     started_at,
                     ..Iteration::default()
                 });
@@ -508,6 +547,7 @@ impl VisualState {
 
 #[derive(Debug, Clone)]
 pub struct SessionMeta {
+    pub workflow: String,
     pub set: String,
     pub max_iterations: u32,
     pub baseline_corpus_passing: usize,
@@ -533,6 +573,8 @@ pub struct Iteration {
     pub index: u32,
     pub max_iterations: u32,
     pub card: Option<Card>,
+    pub title: Option<String>,
+    pub detail: Option<String>,
     pub normalized: Option<String>,
     pub round_trip_error: Option<String>,
     pub steps: Vec<StepState>,
@@ -549,6 +591,8 @@ impl Default for Iteration {
             index: 0,
             max_iterations: 0,
             card: None,
+            title: None,
+            detail: None,
             normalized: None,
             round_trip_error: None,
             steps: Vec::new(),
@@ -570,7 +614,7 @@ impl Iteration {
     }
 
     pub fn is_pending(&self) -> bool {
-        self.card.is_none() && self.outcome.is_none()
+        self.card.is_none() && self.title.is_none() && self.outcome.is_none()
     }
 
     fn set_step(&mut self, index: u8, state: StepState) {
@@ -688,13 +732,18 @@ pub enum TimelineKind {
 }
 
 fn output_iteration_separator(state: &AppState, iter_idx: u32) -> String {
-    let card_name = state
+    let item_name = state
         .iterations
         .iter()
         .find(|i| i.index == iter_idx)
-        .and_then(|i| i.card.as_ref().map(|c| c.name.clone()))
-        .unwrap_or_else(|| "(no card)".to_string());
-    format!("-- iteration {iter_idx} · {card_name} --")
+        .and_then(|i| {
+            i.card
+                .as_ref()
+                .map(|c| c.name.clone())
+                .or_else(|| i.title.clone())
+        })
+        .unwrap_or_else(|| "(pending)".to_string());
+    format!("-- iteration {iter_idx} · {item_name} --")
 }
 
 fn output_row_lines(row: &TimelineRow, repo: &std::path::Path) -> Vec<String> {

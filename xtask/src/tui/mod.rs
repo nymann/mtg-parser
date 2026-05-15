@@ -3,7 +3,7 @@
 //!
 //! The TUI is a *sink* for the orchestrator's `FlowEvent` stream
 //! (see [`TuiSink`]). It does not import any of the orchestrator's
-//! types beyond `FlowEvent` and `add_card::Options` — adding new
+//! types beyond `FlowEvent` and workflow entry points — adding new
 //! steps or reordering them in `add_card.rs` does not require any
 //! change here.
 
@@ -23,6 +23,7 @@ use ratatui::{backend::CrosstermBackend, Terminal};
 
 use crate::add_card;
 use crate::flow::{FlowEvent, FlowSink, NoteLevel};
+use crate::refactor_hotspot;
 
 mod input;
 mod state;
@@ -44,13 +45,25 @@ impl FlowSink for TuiSink {
 }
 
 /// Run add-card with the TUI as its output surface.
-pub fn run(opts: add_card::Options) -> Result<std::process::ExitCode> {
+pub fn run_add_card(opts: add_card::Options) -> Result<std::process::ExitCode> {
+    run_workflow(move |sink| add_card::run_with_sink(opts, sink))
+}
+
+/// Run refactor-hotspot with the TUI as its output surface.
+pub fn run_refactor_hotspot(opts: refactor_hotspot::Options) -> Result<std::process::ExitCode> {
+    run_workflow(move |sink| refactor_hotspot::run_with_sink(opts, sink))
+}
+
+fn run_workflow<F>(orchestrator: F) -> Result<std::process::ExitCode>
+where
+    F: FnOnce(&mut dyn FlowSink) -> Result<std::process::ExitCode> + Send + 'static,
+{
     let (tx, rx) = mpsc::channel::<FlowEvent>();
 
     // Orchestrator on background thread; sink owned by the thread.
     let orchestrator_handle = thread::spawn(move || -> Result<std::process::ExitCode> {
         let mut sink: Box<dyn FlowSink> = Box::new(TuiSink { tx });
-        match add_card::run_with_sink(opts, sink.as_mut()) {
+        match orchestrator(sink.as_mut()) {
             Ok(code) => Ok(code),
             Err(err) => {
                 let reason = format!("{err:#}");

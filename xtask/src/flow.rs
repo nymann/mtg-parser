@@ -14,6 +14,7 @@ pub enum FlowEvent {
     /// Emitted once at the start of a run with configuration + baseline
     /// state.
     SessionStarted {
+        workflow: String,
         set: String,
         max_iterations: u32,
         baseline_corpus_passing: usize,
@@ -37,6 +38,13 @@ pub enum FlowEvent {
         card: Card,
         normalized: String,
         round_trip_error: String,
+    },
+    /// One non-card workflow iteration begins.
+    WorkflowIterationStarted {
+        index: u32,
+        max_iterations: u32,
+        title: String,
+        detail: String,
     },
     /// Generic mid-step log line. Used sparingly — most output should
     /// be carried by `StepFinished.summary` or `AgentEvent`.

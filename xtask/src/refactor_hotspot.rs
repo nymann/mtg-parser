@@ -9,12 +9,15 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail, Context, Result};
 
-use crate::agent_events;
-use crate::flow::AgentProvider;
+use crate::console_sink::ConsoleSink;
+use crate::flow::{
+    AgentProvider, FlowEvent, FlowSink, IterationOutcomeSummary, NoteLevel, SessionEndReason,
+};
 use crate::paths::{refactor_hotspot_log_root, repo_root};
 
 const DEFAULT_CHURN_WINDOW: usize = 200;
 const DEFAULT_MAX_ITERATIONS: u32 = 3;
+const TOTAL_STEPS: u8 = 9;
 
 const HOT_FILES: &[(&str, &str)] = &[
     ("grammar.pest", "crates/mtg-grammar/src/grammar.pest"),
@@ -43,8 +46,16 @@ pub fn run(args: &[String]) -> ExitCode {
         print!("{HELP}");
         return ExitCode::SUCCESS;
     }
-    match Options::parse(args).and_then(run_inner) {
-        Ok(()) => ExitCode::SUCCESS,
+    let opts = match Options::parse(args) {
+        Ok(opts) => opts,
+        Err(e) => {
+            eprintln!("refactor-hotspot: {e:#}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let mut sink: Box<dyn FlowSink> = Box::new(ConsoleSink::new());
+    match run_with_sink(opts, sink.as_mut()) {
+        Ok(code) => code,
         Err(e) => {
             eprintln!("refactor-hotspot: {e:#}");
             ExitCode::FAILURE
@@ -53,7 +64,7 @@ pub fn run(args: &[String]) -> ExitCode {
 }
 
 #[derive(Debug, Clone)]
-struct Options {
+pub struct Options {
     theme: Option<Theme>,
     target: Option<String>,
     out: Option<PathBuf>,
@@ -66,7 +77,7 @@ struct Options {
 }
 
 impl Options {
-    fn parse(args: &[String]) -> Result<Self> {
+    pub fn parse(args: &[String]) -> Result<Self> {
         let mut theme = None::<Theme>;
         let mut target = None::<String>;
         let mut out = None::<PathBuf>;
@@ -111,6 +122,12 @@ impl Options {
                 "--print" => print = true,
                 "--dry-run" => dry_run = true,
                 "--allow-dirty" => allow_dirty = true,
+                "--ui" => {
+                    let _ = iter
+                        .next()
+                        .ok_or_else(|| anyhow!("--ui requires a value"))?;
+                }
+                s if s.starts_with("--ui=") => {}
                 "--agent" => {
                     let value = iter
                         .next()
@@ -170,7 +187,7 @@ impl Options {
 const HELP: &str = "\
 cargo xtask refactor-hotspot [--theme THEME] [--target PATH] [--agent codex|claude]
                              [--max-iterations N] [--dry-run] [--allow-dirty]
-                             [--out PATH] [--print]
+                             [--out PATH] [--print] [--ui console|tui]
 
 Autonomous by default: runs N staged grammar-core refactor passes over
 grammar.pest, ast.rs, parse.rs, and unparse.rs. Each pass inventories the
@@ -339,7 +356,7 @@ impl Theme {
     }
 }
 
-fn run_inner(opts: Options) -> Result<()> {
+pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode> {
     if !opts.dry_run && !opts.print && !opts.allow_dirty {
         ensure_clean_working_tree()
             .context("working tree must be clean (or pass --allow-dirty)")?;
@@ -348,8 +365,25 @@ fn run_inner(opts: Options) -> Result<()> {
         bail!("--out can only be used with --max-iterations 1");
     }
     if (opts.dry_run || opts.print) && opts.max_iterations > 1 {
-        println!("dry-run/print mode only builds the first prompt");
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Info,
+            text: "dry-run/print mode only builds the first prompt".to_string(),
+        });
     }
+
+    let (baseline_corpus_passing, baseline_corpus_total) = read_corpus_pp_total();
+    sink.emit(FlowEvent::SessionStarted {
+        workflow: "refactor-hotspot".to_string(),
+        set: opts
+            .target
+            .clone()
+            .or_else(|| opts.theme.map(|theme| theme.label().to_string()))
+            .unwrap_or_else(|| "grammar-core".to_string()),
+        max_iterations: opts.max_iterations,
+        baseline_corpus_passing,
+        baseline_corpus_total,
+        baseline_grammar_rules: count_grammar_rules(),
+    });
 
     let iterations = if opts.dry_run || opts.print {
         1
@@ -358,20 +392,33 @@ fn run_inner(opts: Options) -> Result<()> {
     };
 
     for iteration in 1..=iterations {
-        run_iteration(&opts, iteration)?;
+        run_iteration(&opts, sink, iteration)?;
     }
-    Ok(())
+    let reason = if opts.dry_run || opts.print {
+        SessionEndReason::DryRunStop
+    } else {
+        SessionEndReason::MaxIterationsReached(iterations)
+    };
+    sink.emit(FlowEvent::SessionFinished { reason });
+    Ok(ExitCode::SUCCESS)
 }
 
-fn run_iteration(opts: &Options, iteration: u32) -> Result<()> {
+fn run_iteration(opts: &Options, sink: &mut dyn FlowSink, iteration: u32) -> Result<()> {
+    let iteration_start = Instant::now();
+    let baseline_corpus_passing = read_corpus_pp_total().0;
     let selected = resolve_selection(opts)?;
-    println!(
-        "iteration {iteration}/{}: selected: {} ({})",
-        opts.max_iterations,
-        selected.files.join(", "),
-        selected.reason
-    );
+    sink.emit(FlowEvent::WorkflowIterationStarted {
+        index: iteration,
+        max_iterations: opts.max_iterations,
+        title: selected.theme.label().to_string(),
+        detail: format!("{}\n{}", selected.reason, selected.files.join("\n")),
+    });
 
+    sink.emit(FlowEvent::StepStarted {
+        index: 1,
+        total: TOTAL_STEPS,
+        label: "create log dir".to_string(),
+    });
     let log_dir = match opts.out.clone() {
         Some(path) => path
             .parent()
@@ -380,39 +427,72 @@ fn run_iteration(opts: &Options, iteration: u32) -> Result<()> {
         None => create_log_dir(selected.theme, iteration)?,
     };
     std::fs::create_dir_all(&log_dir).with_context(|| format!("create {}", log_dir.display()))?;
+    sink.emit(FlowEvent::StepFinished {
+        index: 1,
+        ok: true,
+        summary: Some(log_dir.display().to_string()),
+    });
 
+    sink.emit(FlowEvent::StepStarted {
+        index: 2,
+        total: TOTAL_STEPS,
+        label: "inventory grammar surface".to_string(),
+    });
     let inventory = build_inventory(opts, &selected)?;
     std::fs::write(log_dir.join("inventory.md"), &inventory)
         .with_context(|| format!("write {}", log_dir.join("inventory.md").display()))?;
+    sink.emit(FlowEvent::StepFinished {
+        index: 2,
+        ok: true,
+        summary: Some("wrote inventory.md".to_string()),
+    });
 
+    sink.emit(FlowEvent::StepStarted {
+        index: 3,
+        total: TOTAL_STEPS,
+        label: "build cluster prompt".to_string(),
+    });
     let cluster_prompt = build_cluster_prompt(opts, &selected, &inventory, iteration)?;
     std::fs::write(log_dir.join("cluster_prompt.md"), &cluster_prompt)
         .with_context(|| format!("write {}", log_dir.join("cluster_prompt.md").display()))?;
     if opts.print {
         print!("{cluster_prompt}");
     }
-    println!("inventory: {}", log_dir.join("inventory.md").display());
-    println!(
-        "cluster prompt: {}",
-        log_dir.join("cluster_prompt.md").display()
-    );
+    sink.emit(FlowEvent::StepFinished {
+        index: 3,
+        ok: true,
+        summary: Some("wrote cluster_prompt.md".to_string()),
+    });
 
     if opts.dry_run || opts.print {
-        println!(
-            "dry-run: not invoking {}, not planning, not implementing, not running gates",
-            opts.agent.label()
-        );
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Info,
+            text: format!(
+                "dry-run: not invoking {}, not planning, not implementing, not running gates",
+                opts.agent.label()
+            ),
+        });
         return Ok(());
     }
 
-    println!("stage: cluster ({})", opts.agent.label());
+    sink.emit(FlowEvent::StepStarted {
+        index: 4,
+        total: TOTAL_STEPS,
+        label: format!("{} cluster stage", opts.agent.label()),
+    });
     let cluster_outcome = invoke_agent(
         opts.agent,
         &cluster_prompt,
         &log_dir.join("cluster_transcript.ndjson"),
+        sink,
     )?;
     std::fs::write(log_dir.join("clusters.md"), &cluster_outcome.assistant_text)
         .with_context(|| format!("write {}", log_dir.join("clusters.md").display()))?;
+    sink.emit(FlowEvent::StepFinished {
+        index: 4,
+        ok: cluster_outcome.success,
+        summary: Some(format!("exit={}", cluster_outcome.exit_code)),
+    });
     if !cluster_outcome.success {
         bail!(
             "{} cluster stage exited with status {}; transcript: {}",
@@ -432,14 +512,24 @@ fn run_iteration(opts: &Options, iteration: u32) -> Result<()> {
     std::fs::write(log_dir.join("plan_prompt.md"), &plan_prompt)
         .with_context(|| format!("write {}", log_dir.join("plan_prompt.md").display()))?;
 
-    println!("stage: plan ({})", opts.agent.label());
+    sink.emit(FlowEvent::StepStarted {
+        index: 5,
+        total: TOTAL_STEPS,
+        label: format!("{} plan stage", opts.agent.label()),
+    });
     let plan_outcome = invoke_agent(
         opts.agent,
         &plan_prompt,
         &log_dir.join("plan_transcript.ndjson"),
+        sink,
     )?;
     std::fs::write(log_dir.join("plan.md"), &plan_outcome.assistant_text)
         .with_context(|| format!("write {}", log_dir.join("plan.md").display()))?;
+    sink.emit(FlowEvent::StepFinished {
+        index: 5,
+        ok: plan_outcome.success,
+        summary: Some(format!("exit={}", plan_outcome.exit_code)),
+    });
     if !plan_outcome.success {
         bail!(
             "{} plan stage exited with status {}; transcript: {}",
@@ -462,19 +552,32 @@ fn run_iteration(opts: &Options, iteration: u32) -> Result<()> {
         .unwrap_or_else(|| log_dir.join("prompt.md"));
     std::fs::write(&prompt_path, &implementation_prompt)
         .with_context(|| format!("write {}", prompt_path.display()))?;
-    println!("implementation prompt: {}", prompt_path.display());
 
-    println!("stage: implement ({})", opts.agent.label());
+    sink.emit(FlowEvent::StepStarted {
+        index: 6,
+        total: TOTAL_STEPS,
+        label: format!("{} implementation stage", opts.agent.label()),
+    });
     let implement_outcome = invoke_agent(
         opts.agent,
         &implementation_prompt,
         &log_dir.join("transcript.ndjson"),
+        sink,
     )?;
     std::fs::write(
         log_dir.join("response.md"),
         &implement_outcome.assistant_text,
     )
     .with_context(|| format!("write {}", log_dir.join("response.md").display()))?;
+    sink.emit(FlowEvent::StepFinished {
+        index: 6,
+        ok: implement_outcome.success,
+        summary: Some(format!(
+            "exit={} · prompt={}",
+            implement_outcome.exit_code,
+            prompt_path.display()
+        )),
+    });
     if !implement_outcome.success {
         bail!(
             "{} implementation stage exited with status {}; transcript: {}",
@@ -484,13 +587,55 @@ fn run_iteration(opts: &Options, iteration: u32) -> Result<()> {
         );
     }
 
+    sink.emit(FlowEvent::StepStarted {
+        index: 7,
+        total: TOTAL_STEPS,
+        label: "cargo fmt --all".to_string(),
+    });
     run_gate("cargo fmt --all", "cargo", &["fmt", "--all"])?;
+    sink.emit(FlowEvent::StepFinished {
+        index: 7,
+        ok: true,
+        summary: None,
+    });
+    sink.emit(FlowEvent::StepStarted {
+        index: 8,
+        total: TOTAL_STEPS,
+        label: "cargo test".to_string(),
+    });
     run_gate("cargo test", "cargo", &["test"])?;
+    sink.emit(FlowEvent::StepFinished {
+        index: 8,
+        ok: true,
+        summary: None,
+    });
+    sink.emit(FlowEvent::StepStarted {
+        index: 9,
+        total: TOTAL_STEPS,
+        label: "corpus, audit, commit".to_string(),
+    });
     run_gate("cargo xtask corpus", "cargo", &["xtask", "corpus"])?;
     run_gate("just audit-page", "just", &["audit-page"])?;
 
     match git_commit(&commit_message(&selected, iteration)?)? {
-        CommitOutcome::Committed => println!("committed refactor-hotspot iteration {iteration}"),
+        CommitOutcome::Committed => {
+            let (corpus_passing, corpus_total) = read_corpus_pp_total();
+            sink.emit(FlowEvent::StepFinished {
+                index: 9,
+                ok: true,
+                summary: Some(format!("status {corpus_passing}/{corpus_total}")),
+            });
+            sink.emit(FlowEvent::IterationFinished {
+                index: iteration,
+                outcome: IterationOutcomeSummary::Committed {
+                    new_passes: corpus_passing.saturating_sub(baseline_corpus_passing),
+                    corpus_passing,
+                    corpus_total,
+                    grammar_rules: count_grammar_rules(),
+                    duration_secs: iteration_start.elapsed().as_secs(),
+                },
+            });
+        }
         CommitOutcome::NoChanges => bail!("no changes to commit after successful refactor gates"),
     }
     Ok(())
@@ -876,9 +1021,10 @@ fn invoke_agent(
     provider: AgentProvider,
     prompt: &str,
     transcript_path: &Path,
+    sink: &mut dyn FlowSink,
 ) -> Result<AgentOutcome> {
     let command = base_agent_command(provider);
-    invoke_jsonl_agent(provider, command, prompt, transcript_path)
+    invoke_jsonl_agent(provider, command, prompt, transcript_path, sink)
 }
 
 fn base_agent_command(provider: AgentProvider) -> Command {
@@ -910,6 +1056,7 @@ fn invoke_jsonl_agent(
     mut command: Command,
     prompt: &str,
     transcript_path: &Path,
+    sink: &mut dyn FlowSink,
 ) -> Result<AgentOutcome> {
     let mut child = command
         .stdin(Stdio::piped())
@@ -940,15 +1087,20 @@ fn invoke_jsonl_agent(
             Ok(parsed) => {
                 collect_assistant_text(provider, &parsed, &mut assistant_text);
                 let elapsed_secs = start.elapsed().as_secs();
-                for event in agent_events::parse(provider, &parsed) {
-                    println!("    [+{elapsed_secs:>3}s] {}", render_agent_event(&event));
-                }
+                sink.emit(FlowEvent::AgentEvent {
+                    provider,
+                    raw: parsed,
+                    elapsed_secs,
+                });
             }
-            Err(_) => println!(
-                "    non-JSON line from {}: {}",
-                provider.label(),
-                trim(&line, 200)
-            ),
+            Err(_) => sink.emit(FlowEvent::Note {
+                level: NoteLevel::Warn,
+                text: format!(
+                    "non-JSON line from {}: {}",
+                    provider.label(),
+                    trim(&line, 200)
+                ),
+            }),
         }
     }
 
@@ -958,38 +1110,6 @@ fn invoke_jsonl_agent(
         exit_code: status.code().unwrap_or(-1),
         assistant_text: assistant_text.join("\n\n"),
     })
-}
-
-fn render_agent_event(event: &agent_events::ParsedAgentEvent) -> String {
-    use agent_events::{ParsedAgentEvent, ToolUseTarget};
-
-    match event {
-        ParsedAgentEvent::Init { model } => format!("init model={model}"),
-        ParsedAgentEvent::AssistantText { text } => trim(text, 160),
-        ParsedAgentEvent::ToolUse { name, target } => match target {
-            ToolUseTarget::File(path) => format!("{name} {path}"),
-            ToolUseTarget::Command(cmd) => format!("{name} {cmd}"),
-            ToolUseTarget::Pattern(pattern) => format!("{name} {pattern}"),
-            ToolUseTarget::Description(desc) => format!("{name} {}", trim(desc, 120)),
-            ToolUseTarget::None => name.clone(),
-        },
-        ParsedAgentEvent::ToolResult {
-            first_line,
-            is_error,
-        } => {
-            if *is_error {
-                format!("tool error: {}", trim(first_line, 160))
-            } else {
-                trim(first_line, 160)
-            }
-        }
-        ParsedAgentEvent::Done {
-            subtype,
-            num_turns,
-            total_cost_usd,
-        } => format!("done {subtype}; turns={num_turns}; cost=${total_cost_usd:.4}"),
-        ParsedAgentEvent::Other => "event".to_string(),
-    }
 }
 
 fn collect_assistant_text(
@@ -1047,7 +1167,6 @@ fn trim(s: &str, n: usize) -> String {
 }
 
 fn run_gate(label: &str, program: &str, args: &[&str]) -> Result<()> {
-    println!("gate: {label}");
     let status = Command::new(program)
         .args(args)
         .current_dir(repo_root())
@@ -1057,6 +1176,25 @@ fn run_gate(label: &str, program: &str, args: &[&str]) -> Result<()> {
         bail!("{label} failed with {status}");
     }
     Ok(())
+}
+
+fn read_corpus_pp_total() -> (usize, usize) {
+    let path = repo_root().join("corpus_status.json");
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return (0, 0);
+    };
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return (0, 0);
+    };
+    let total = value.get("total").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+    let passing = value.get("passing").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+    (passing, total)
+}
+
+fn count_grammar_rules() -> usize {
+    render_grammar_rule_inventory()
+        .map(|rules| rules.lines().count())
+        .unwrap_or(0)
 }
 
 fn ensure_clean_working_tree() -> Result<()> {
@@ -1160,6 +1298,12 @@ mod tests {
     #[test]
     fn rejects_unknown_theme() {
         assert!(Theme::parse("espresso").is_err());
+    }
+
+    #[test]
+    fn options_swallow_ui_flag() {
+        let args = vec!["--ui".to_string(), "tui".to_string()];
+        Options::parse(&args).expect("--ui tui should not error");
     }
 
     #[test]

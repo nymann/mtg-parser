@@ -21,6 +21,7 @@ impl FlowSink for ConsoleSink {
     fn emit(&mut self, event: FlowEvent) {
         match event {
             FlowEvent::SessionStarted {
+                workflow,
                 set,
                 max_iterations,
                 baseline_corpus_passing,
@@ -28,7 +29,7 @@ impl FlowSink for ConsoleSink {
                 baseline_grammar_rules,
             } => {
                 println!(
-                    "add-card  set={set}  max-iter={max_iterations}  \
+                    "{workflow}  set={set}  max-iter={max_iterations}  \
                      corpus={baseline_corpus_passing}/{baseline_corpus_total}  \
                      grammar={baseline_grammar_rules} rules",
                     max_iterations = format_max_iterations(max_iterations),
@@ -57,6 +58,23 @@ impl FlowSink for ConsoleSink {
                     format_max_iterations(max_iterations)
                 );
                 print_card_overview(&card, &normalized, &round_trip_error);
+            }
+
+            FlowEvent::WorkflowIterationStarted {
+                index,
+                max_iterations,
+                title,
+                detail,
+            } => {
+                println!();
+                println!(
+                    "== iteration {index} / {} ==",
+                    format_max_iterations(max_iterations)
+                );
+                println!("    {title}");
+                for line in detail.lines() {
+                    println!("      | {line}");
+                }
             }
 
             FlowEvent::StepFinished { index, ok, summary } => match (ok, summary) {
