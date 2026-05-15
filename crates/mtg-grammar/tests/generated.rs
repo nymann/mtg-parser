@@ -184,3 +184,5 @@ mod howling_mine;
 mod hurricane;
 #[path = "generated/hypnotic_specter.rs"]
 mod hypnotic_specter;
+#[path = "generated/ice_storm.rs"]
+mod ice_storm;

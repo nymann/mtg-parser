@@ -47,6 +47,7 @@ sentence_statement = _{
   | destroy_all
   | destroy_target_permanent_choice
   | destroy
+  | destroy_target_permanent
   | regenerate_target_creature
   | named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets
   | named_source_deals_variable_damage_to_damage_recipients

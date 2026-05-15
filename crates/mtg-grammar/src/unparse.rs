@@ -93,6 +93,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_permanent_type_choice(out, permanent_types);
             out.push('.');
         }
+        Statement::DestroyTargetPermanent { permanent_type } => {
+            out.push_str("Destroy target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push('.');
+        }
         Statement::DestroyAll { permanent_type } => {
             out.push_str("Destroy all ");
             out.push_str(permanent_type_plural_name(*permanent_type));

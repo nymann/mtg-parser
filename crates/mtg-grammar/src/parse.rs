@@ -95,6 +95,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             )
         }
         Rule::destroy_target_permanent_choice => destroy_target_permanent_choice_from_pair(pair),
+        Rule::destroy_target_permanent => destroy_target_permanent_from_pair(pair),
         Rule::destroy_all_basic_lands => destroy_all_basic_lands_from_pair(pair),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::target_player_activates_mana_ability_of_each_permanent_they_control => {
@@ -603,6 +604,16 @@ fn destroy_target_permanent_choice_from_pair(pair: Pair<Rule>) -> Result<Stateme
         .map(permanent_type_from_pair)
         .collect::<Result<Vec<_>, _>>()?;
     Ok(Statement::DestroyTargetPermanentChoice { permanent_types })
+}
+
+fn destroy_target_permanent_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let permanent_type = pair
+        .into_inner()
+        .next()
+        .expect("destroy_target_permanent always contains a permanent_type");
+    Ok(Statement::DestroyTargetPermanent {
+        permanent_type: permanent_type_from_pair(permanent_type)?,
+    })
 }
 
 fn this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair(

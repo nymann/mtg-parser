@@ -53,6 +53,8 @@ pub enum CardEffect {
     IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn { permanent_type: PermanentType },
     /// "Destroy target <permanent_type> or <permanent_type>."
     DestroyTargetPermanentChoice { permanent_types: Vec<PermanentType> },
+    /// "Destroy target <permanent_type>."
+    DestroyTargetPermanent { permanent_type: PermanentType },
     /// "Destroy all <permanent_type>s."
     DestroyAll { permanent_type: PermanentType },
     /// "Destroy all <basic_land_type>s."

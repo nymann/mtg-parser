@@ -261,6 +261,9 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 permanent_types: vec![a, b],
             }
         }),
+        arb_permanent_type().prop_map(|permanent_type| {
+            Statement::DestroyTargetPermanent { permanent_type }
+        }),
         arb_basic_land_type().prop_map(|basic_land_type| {
             Statement::DestroyAllBasicLands { basic_land_type }
         }),

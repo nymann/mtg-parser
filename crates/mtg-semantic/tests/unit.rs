@@ -40,6 +40,19 @@ fn lowers_destroy_target_permanent_choice() {
 }
 
 #[test]
+fn lowers_destroy_target_permanent() {
+    assert_eq!(
+        lower(&Statement::DestroyTargetPermanent {
+            permanent_type: PermanentType::Land,
+        })
+        .unwrap(),
+        CardEffect::DestroyTargetPermanent {
+            permanent_type: PermanentType::Land,
+        },
+    );
+}
+
+#[test]
 fn lowers_destroy_all_basic_lands() {
     assert_eq!(
         lower(&Statement::DestroyAllBasicLands {

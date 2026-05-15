@@ -65,6 +65,11 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
                 permanent_types: permanent_types.clone(),
             }
         }
+        Statement::DestroyTargetPermanent { permanent_type } => {
+            CardEffect::DestroyTargetPermanent {
+                permanent_type: *permanent_type,
+            }
+        }
         Statement::DestroyAll { permanent_type } => CardEffect::DestroyAll {
             permanent_type: *permanent_type,
         },

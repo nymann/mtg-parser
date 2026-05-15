@@ -59,6 +59,15 @@ fn arb_permanent_type() -> impl Strategy<Value = PermanentType> {
     ]
 }
 
+fn arb_noncreature_permanent_type() -> impl Strategy<Value = PermanentType> {
+    prop_oneof![
+        Just(PermanentType::Artifact),
+        Just(PermanentType::Enchantment),
+        Just(PermanentType::Land),
+        Just(PermanentType::Planeswalker),
+    ]
+}
+
 fn arb_basic_land_type() -> impl Strategy<Value = BasicLandType> {
     prop_oneof![
         Just(BasicLandType::Plains),
@@ -247,6 +256,9 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             Statement::DestroyTargetPermanentChoice {
                 permanent_types: vec![a, b],
             }
+        }),
+        arb_noncreature_permanent_type().prop_map(|permanent_type| {
+            Statement::DestroyTargetPermanent { permanent_type }
         }),
         arb_basic_land_type().prop_map(|basic_land_type| {
             Statement::DestroyAllBasicLands { basic_land_type }

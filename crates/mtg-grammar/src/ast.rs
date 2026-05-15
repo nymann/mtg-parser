@@ -51,6 +51,10 @@ pub enum Statement {
     DestroyTargetPermanentChoice {
         permanent_types: Vec<PermanentType>,
     },
+    /// "Destroy target <permanent_type>."
+    DestroyTargetPermanent {
+        permanent_type: PermanentType,
+    },
     /// "Destroy all <permanent_type>s."
     DestroyAll {
         permanent_type: PermanentType,
