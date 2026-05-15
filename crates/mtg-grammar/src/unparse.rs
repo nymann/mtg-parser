@@ -5,9 +5,9 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     ActivationPermission, AddManaAmount, AsEntersChoice, BalanceSameWayAction, BasicLandType,
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, CombatRole,
-    Condition, ContinuousEffect, CopyException, CounterAmount, CounterUnlessCost, CreatureStatus,
-    CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
-    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    Condition, ConditionalEffectOrder, ContinuousEffect, CopyException, CounterAmount,
+    CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageKind,
+    DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
     IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
@@ -1495,11 +1495,24 @@ fn write_physical_action(out: &mut String, action: PhysicalAction) {
 
 fn write_static_ability(out: &mut String, sa: &StaticAbility) {
     match sa {
-        StaticAbility::Conditional { condition, effect } => {
-            out.push_str("As long as ");
-            write_condition(out, condition);
-            out.push_str(", ");
-            write_continuous_effect(out, effect);
+        StaticAbility::Conditional {
+            order,
+            condition,
+            effect,
+        } => {
+            match order {
+                ConditionalEffectOrder::ConditionThenEffect => {
+                    out.push_str("As long as ");
+                    write_condition(out, condition);
+                    out.push_str(", ");
+                    write_continuous_effect(out, effect);
+                }
+                ConditionalEffectOrder::EffectThenCondition => {
+                    write_continuous_effect(out, effect);
+                    out.push_str(" as long as ");
+                    write_condition(out, condition);
+                }
+            }
             out.push('.');
         }
         StaticAbility::ColoredSpellsCostManaMoreToCast { color, mana } => {
@@ -2781,6 +2794,12 @@ fn variable_name(variable: Variable) -> &'static str {
 
 fn write_condition(out: &mut String, cond: &Condition) {
     match cond {
+        Condition::YouControlBasicLand { land_type } => {
+            out.push_str("you control ");
+            out.push_str(indefinite_article_for_basic_land_type(*land_type));
+            out.push(' ');
+            out.push_str(basic_land_type_name(*land_type));
+        }
         Condition::EnchantedIsNot {
             permanent_type,
             negated_type,
@@ -2808,6 +2827,11 @@ fn write_condition(out: &mut String, cond: &Condition) {
 
 fn write_continuous_effect(out: &mut String, eff: &ContinuousEffect) {
     match eff {
+        ContinuousEffect::SourceGets { source, modifier } => {
+            write_source_object_capitalized(out, *source);
+            out.push_str(" gets ");
+            write_pt_modifier(out, *modifier);
+        }
         ContinuousEffect::BecomesWithPtFromManaValue { types } => {
             out.push_str("it's");
             if let Some(first) = types.first() {

@@ -1585,6 +1585,7 @@ pub enum StaticAbility {
     /// "As long as <cond>, <effect>." — continuous effect gated on a
     /// condition.
     Conditional {
+        order: ConditionalEffectOrder,
         condition: Condition,
         effect: ContinuousEffect,
     },
@@ -1806,8 +1807,16 @@ pub enum EnchantedObject {
     CreatureType(CreatureType),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ConditionalEffectOrder {
+    ConditionThenEffect,
+    EffectThenCondition,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Condition {
+    /// "you control a/an <basic_land_type>"
+    YouControlBasicLand { land_type: BasicLandType },
     /// "enchanted <permanent_type> isn't a/an <negated_type>"
     EnchantedIsNot {
         permanent_type: PermanentType,
@@ -1832,6 +1841,11 @@ pub enum NamedSourcePowerToughnessCount {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ContinuousEffect {
+    /// "This <permanent_type> gets <modifier>"
+    SourceGets {
+        source: SourceObject,
+        modifier: PtModifier,
+    },
     /// "it's a/an <types> with power and toughness each equal to its
     /// mana value" — the enchanted permanent gains the listed types
     /// and a characteristic-defining P/T equal to its mana value.

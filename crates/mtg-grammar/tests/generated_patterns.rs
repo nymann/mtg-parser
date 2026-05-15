@@ -299,3 +299,5 @@ mod royal_assassin;
 mod sacrifice;
 #[path = "generated_patterns/scavenging_ghoul.rs"]
 mod scavenging_ghoul;
+#[path = "generated_patterns/sedge_troll.rs"]
+mod sedge_troll;

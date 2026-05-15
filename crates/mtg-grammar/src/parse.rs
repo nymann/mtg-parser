@@ -7,22 +7,22 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     ActivationPermission, AddManaAmount, AsEntersChoice, BalanceSameWayAction, BasicLandType,
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, CombatRole,
-    Condition, ContinuousEffect, CopyException, CounterAmount, CounterUnlessCost, CreatureStatus,
-    CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind,
-    DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
-    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
-    DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
-    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
-    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
-    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, RegenerateRecipient, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TriggerCondition,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    Condition, ConditionalEffectOrder, ContinuousEffect, CopyException, CounterAmount,
+    CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageEvent,
+    DamageEventPattern, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
+    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
+    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
+    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
+    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
+    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect,
+    TargetPermanentSelector, TriggerCondition, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -3123,13 +3123,23 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
     match pair.as_rule() {
         Rule::static_as_long_as => {
             let mut inner = pair.into_inner();
-            let cond_pair = inner
-                .next()
-                .expect("static_as_long_as begins with a condition");
-            let effect_pair = inner
-                .next()
-                .expect("static_as_long_as has an effect after the condition");
+            let first_pair = inner.next().expect("static_as_long_as has a first child");
+            let second_pair = inner.next().expect("static_as_long_as has a second child");
+            let (order, cond_pair, effect_pair) = if is_condition_rule(first_pair.as_rule()) {
+                (
+                    ConditionalEffectOrder::ConditionThenEffect,
+                    first_pair,
+                    second_pair,
+                )
+            } else {
+                (
+                    ConditionalEffectOrder::EffectThenCondition,
+                    second_pair,
+                    first_pair,
+                )
+            };
             Ok(StaticAbility::Conditional {
+                order,
                 condition: condition_from_pair(cond_pair)?,
                 effect: continuous_effect_from_pair(effect_pair)?,
             })
@@ -4379,6 +4389,13 @@ fn rounding_from_pair(pair: Pair<Rule>) -> Result<Rounding, ParseError> {
 
 fn condition_from_pair(pair: Pair<Rule>) -> Result<Condition, ParseError> {
     match pair.as_rule() {
+        Rule::you_control_basic_land => {
+            let land_type_pair =
+                only_inner(pair, "you_control_basic_land missing basic_land_type")?;
+            Ok(Condition::YouControlBasicLand {
+                land_type: basic_land_type_from_pair(land_type_pair)?,
+            })
+        }
         Rule::enchanted_isnt => {
             let mut types = pair.into_inner();
             let pt = types
@@ -4409,8 +4426,27 @@ fn condition_from_pair(pair: Pair<Rule>) -> Result<Condition, ParseError> {
     }
 }
 
+fn is_condition_rule(rule: Rule) -> bool {
+    matches!(
+        rule,
+        Rule::you_control_basic_land
+            | Rule::enchanted_isnt
+            | Rule::source_isnt_attacking
+            | Rule::source_is_attacking
+    )
+}
+
 fn continuous_effect_from_pair(pair: Pair<Rule>) -> Result<ContinuousEffect, ParseError> {
     match pair.as_rule() {
+        Rule::source_gets => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner.next().expect("source_gets names the source object");
+            let modifier_pair = inner.next().expect("source_gets has a pt_modifier");
+            Ok(ContinuousEffect::SourceGets {
+                source: source_object_from_pair(source_pair)?,
+                modifier: pt_modifier_from_pair(modifier_pair)?,
+            })
+        }
         Rule::becomes_pt_from_mv => {
             let types = pair
                 .into_inner()

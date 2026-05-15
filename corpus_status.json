@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 227,
+  "passing": 228,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -682,8 +682,7 @@
       "status": "pass"
     },
     "lea/Sedge Troll": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | This creature gets +1/+1 as long as you control a Swamp.\n  |      ^---\n  |\n  = expected aura_source_object"
+      "status": "pass"
     },
     "lea/Sengir Vampire": {
       "status": "fail",
@@ -848,7 +847,7 @@
     },
     "lea/Veteran Bodyguard": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:12\n  |\n1 | As long as this creature is untapped, all damage that would be dealt to you by unblocked creatures is dealt to this creature instead.\n  |            ^---\n  |\n  = expected proper_name or enchanted_isnt"
+      "error": "parse: parse error:  --> 1:12\n  |\n1 | As long as this creature is untapped, all damage that would be dealt to you by unblocked creatures is dealt to this creature instead.\n  |            ^---\n  |\n  = expected proper_name, you_control_basic_land, or enchanted_isnt"
     },
     "lea/Volcanic Eruption": {
       "status": "fail",
@@ -920,7 +919,7 @@
     },
     "lea/Winter Orb": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:12\n  |\n1 | As long as this artifact is untapped, players can't untap more than one land during their untap steps.\n  |            ^---\n  |\n  = expected proper_name or enchanted_isnt"
+      "error": "parse: parse error:  --> 1:12\n  |\n1 | As long as this artifact is untapped, players can't untap more than one land during their untap steps.\n  |            ^---\n  |\n  = expected proper_name, you_control_basic_land, or enchanted_isnt"
     },
     "lea/Wooden Sphere": {
       "status": "pass"
