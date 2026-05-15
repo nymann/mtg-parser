@@ -637,7 +637,7 @@ static_status_creatures_you_control_get = {
     creature_status ~ ^"creatures" ~ ^"you" ~ ^"control" ~ ^"get" ~ pt_modifier ~ "."
 }
 
-creature_status = @{ ^"tapped" | ^"untapped" }
+creature_status = @{ ^"attacking" | ^"tapped" | ^"untapped" }
 
 static_enchanted_gets = {
     ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier ~ "."

@@ -2410,6 +2410,7 @@ fn color_article(color: Color) -> &'static str {
 
 fn creature_status_name_capitalized(status: CreatureStatus) -> &'static str {
     match status {
+        CreatureStatus::Attacking => "Attacking",
         CreatureStatus::Tapped => "Tapped",
         CreatureStatus::Untapped => "Untapped",
     }

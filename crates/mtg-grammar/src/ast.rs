@@ -1336,6 +1336,7 @@ pub enum CreatureType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CreatureStatus {
+    Attacking,
     Tapped,
     Untapped,
 }

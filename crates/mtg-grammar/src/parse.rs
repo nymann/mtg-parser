@@ -3704,6 +3704,7 @@ fn creature_status_from_pair(pair: Pair<Rule>) -> Result<CreatureStatus, ParseEr
         return Err(ParseError::Internal("creature_status"));
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
+        "attacking" => Ok(CreatureStatus::Attacking),
         "tapped" => Ok(CreatureStatus::Tapped),
         "untapped" => Ok(CreatureStatus::Untapped),
         _ => Err(ParseError::Internal("creature_status variant")),

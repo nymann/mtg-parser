@@ -255,3 +255,5 @@ mod nightmare;
 mod northern_paladin;
 #[path = "generated_patterns/orcish_artillery.rs"]
 mod orcish_artillery;
+#[path = "generated_patterns/orcish_oriflamme.rs"]
+mod orcish_oriflamme;
