@@ -17,7 +17,7 @@ use crate::tui::state::{
     TimelineRow,
 };
 
-// Color palette mirrors design/grammar-fix-tui.html (mockup D).
+// Color palette mirrors design/add-card-tui.html (mockup D).
 const C_TITLE: Color = Color::White;
 const C_DIM: Color = Color::Gray;
 const C_FAINT: Color = Color::DarkGray;
@@ -71,7 +71,7 @@ fn render_title_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         .split(area);
 
     let mut left = vec![Span::styled(
-        "grammar-fix",
+        "add-card",
         Style::default().fg(C_TITLE).add_modifier(Modifier::BOLD),
     )];
     let mut center = Vec::new();

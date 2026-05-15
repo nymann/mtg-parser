@@ -3,8 +3,8 @@
 //!
 //! The TUI is a *sink* for the orchestrator's `FlowEvent` stream
 //! (see [`TuiSink`]). It does not import any of the orchestrator's
-//! types beyond `FlowEvent` and `grammar_fix::Options` — adding new
-//! steps or reordering them in `grammar_fix.rs` does not require any
+//! types beyond `FlowEvent` and `add_card::Options` — adding new
+//! steps or reordering them in `add_card.rs` does not require any
 //! change here.
 
 use std::io::{Stdout, Write};
@@ -21,8 +21,8 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 
+use crate::add_card;
 use crate::flow::{FlowEvent, FlowSink, NoteLevel};
-use crate::grammar_fix;
 
 mod input;
 mod state;
@@ -43,14 +43,14 @@ impl FlowSink for TuiSink {
     }
 }
 
-/// Run grammar-fix with the TUI as its output surface.
-pub fn run(opts: grammar_fix::Options) -> Result<std::process::ExitCode> {
+/// Run add-card with the TUI as its output surface.
+pub fn run(opts: add_card::Options) -> Result<std::process::ExitCode> {
     let (tx, rx) = mpsc::channel::<FlowEvent>();
 
     // Orchestrator on background thread; sink owned by the thread.
     let orchestrator_handle = thread::spawn(move || -> Result<std::process::ExitCode> {
         let mut sink: Box<dyn FlowSink> = Box::new(TuiSink { tx });
-        match grammar_fix::run_with_sink(opts, sink.as_mut()) {
+        match add_card::run_with_sink(opts, sink.as_mut()) {
             Ok(code) => Ok(code),
             Err(err) => {
                 let reason = format!("{err:#}");

@@ -1,5 +1,5 @@
 /target
-.grammar-fix/
+.add-card/
 .scryfall-cache/
 *.swp
 .DS_Store

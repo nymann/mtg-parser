@@ -28,7 +28,7 @@ impl FlowSink for ConsoleSink {
                 baseline_grammar_rules,
             } => {
                 println!(
-                    "grammar-fix  set={set}  max-iter={max_iterations}  \
+                    "add-card  set={set}  max-iter={max_iterations}  \
                      corpus={baseline_corpus_passing}/{baseline_corpus_total}  \
                      grammar={baseline_grammar_rules} rules",
                     max_iterations = format_max_iterations(max_iterations),
@@ -107,7 +107,7 @@ impl FlowSink for ConsoleSink {
                     eprintln!();
                     eprintln!("STOP at iteration {index}: {reason}");
                     eprintln!(
-                        "Working tree left as-is; inspect .grammar-fix/<latest>/ for context."
+                        "Working tree left as-is; inspect .add-card/<latest>/ for context."
                     );
                 }
             },

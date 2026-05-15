@@ -1,15 +1,15 @@
 // Developer workflow CLI. Subcommands are added per milestone:
 //   M1: `test`
 //   M2: `next-card`, `corpus`, `refresh-corpus`
-//   later: `grammar-fix`, `bench`, `diff-lark`
+//   later: `add-card`, `bench`, `diff-lark`
 
 use std::process::ExitCode;
 
+mod add_card;
 mod agent_events;
 mod console_sink;
 mod corpus_cmd;
 mod flow;
-mod grammar_fix;
 mod next_card;
 mod paths;
 mod refactor_hotspot;
@@ -39,7 +39,7 @@ Commands:
                               first to fetch the source document.
   rules-context \"<query>\"     Render the Comprehensive Rules prompt block for a
                               given oracle phrase. Lets you inspect retrieval
-                              quality without invoking the full grammar-fix loop.
+                              quality without invoking the full add-card loop.
   refactor-hotspot            Build a qmd-grounded refactor prompt for a hotspot.
               [--theme THEME] Defaults to parser-boilerplate. Other themes include
               [--target PATH] damage, destroy, prevention, keyword-abilities,
@@ -106,8 +106,8 @@ fn main() -> ExitCode {
         Some("rules-context") => rules_context::run_cli(&args[1..]),
         Some("refactor-hotspot") => refactor_hotspot::run(&args[1..]),
         Some("add-card") => match parse_ui(&args[1..]) {
-            Ok(Ui::Console) => grammar_fix::run(&args[1..]),
-            Ok(Ui::Tui) => match grammar_fix::Options::parse(&args[1..]) {
+            Ok(Ui::Console) => add_card::run(&args[1..]),
+            Ok(Ui::Tui) => match add_card::Options::parse(&args[1..]) {
                 Ok(opts) => match tui::run(opts) {
                     Ok(code) => code,
                     Err(e) => {

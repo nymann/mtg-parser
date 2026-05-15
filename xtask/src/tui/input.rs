@@ -4,7 +4,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::agent_events;
 use crate::flow::AgentProvider;
-use crate::paths::grammar_fix_log_root;
+use crate::paths::add_card_log_root;
 use crate::tui::state::{AppState, FocusPane, HistoryEntry, Iteration, TimelineKind, TimelineRow};
 
 pub enum Action {
@@ -326,7 +326,7 @@ fn jump_to_step(state: &mut AppState, step: u8) {
 
 fn load_history_entries() -> Vec<HistoryEntry> {
     let mut dirs = Vec::new();
-    let Ok(read_dir) = std::fs::read_dir(grammar_fix_log_root()) else {
+    let Ok(read_dir) = std::fs::read_dir(add_card_log_root()) else {
         return Vec::new();
     };
     for entry in read_dir.flatten() {

@@ -1,4 +1,4 @@
-//! The grammar-fix orchestrator. Walks a Scryfall set, hands one
+//! The add-card orchestrator. Walks a Scryfall set, hands one
 //! failing card at a time to a fresh coding agent, gates the
 //! result through tier-1/2 tests and the corpus regression check, and
 //! commits per-iteration progress.
@@ -30,7 +30,7 @@ use crate::flow::{
 };
 use crate::paths::{
     ast_rs_path, corpus_status_path, generated_pattern_tests_dir, generated_pattern_tests_manifest,
-    generated_tests_dir, generated_tests_manifest, grammar_fix_log_root, grammar_pest_path,
+    add_card_log_root, generated_tests_dir, generated_tests_manifest, grammar_pest_path,
     lower_rs_path, repo_root,
 };
 
@@ -709,7 +709,7 @@ fn ensure_clean_working_tree() -> Result<()> {
 fn create_log_dir(card: &Card) -> Result<PathBuf> {
     let ts = unix_secs();
     let slug = slugify(&card.name);
-    let dir = grammar_fix_log_root().join(format!("{ts}-{slug}"));
+    let dir = add_card_log_root().join(format!("{ts}-{slug}"));
     std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
     Ok(dir)
 }
@@ -741,7 +741,7 @@ fn find_next_failing_card_from_status(client: &ScryfallClient, set_code: &str) -
 
 fn create_supervisor_log_dir(iter_index: u32, attempt: u8) -> Result<PathBuf> {
     let ts = unix_secs();
-    let dir = grammar_fix_log_root().join(format!(
+    let dir = add_card_log_root().join(format!(
         "{ts}-supervisor-iter-{iter_index}-attempt-{attempt}"
     ));
     std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
@@ -1554,19 +1554,19 @@ fn render_file_excerpt(path: &Path, max_lines: usize) -> String {
 
 fn build_supervisor_prompt(error: &anyhow::Error, iter_index: u32, attempt: u8) -> Result<String> {
     let git_status = command_stdout("git", &["status", "--short"])?;
-    let recent_log_dirs = recent_grammar_fix_logs(8);
+    let recent_log_dirs = recent_add_card_logs(8);
     Ok(format!(
         "{intro}\n\n\
          ## Unknown Problem\n\n\
-         The grammar-fix orchestrator hit an unexpected error while running iteration {iter_index}. \
+         The add-card orchestrator hit an unexpected error while running iteration {iter_index}. \
          This is not a known grammar gate such as tier-2 failure, corpus regression, or an agent \
          saying it could not solve the card.\n\n\
          Attempt: {attempt}\n\n\
          Error:\n```text\n{error:#}\n```\n\n\
          Current git status:\n```text\n{git_status}```\n\n\
-         Recent `.grammar-fix` logs:\n```text\n{recent_log_dirs}```\n\n\
+         Recent `.add-card` logs:\n```text\n{recent_log_dirs}```\n\n\
          ## Mission\n\n\
-         Diagnose and fix the orchestrator or repository state so the main grammar-fix loop can \
+         Diagnose and fix the orchestrator or repository state so the main add-card loop can \
          continue autonomously. Prefer a general fix over a one-off workaround. Keep the patch \
          tightly scoped to the failure mode.\n\n\
          ## Rules\n\n\
@@ -1635,12 +1635,12 @@ fn build_downstream_repair_prompt(
 }
 
 const SUPERVISOR_PROMPT_INTRO: &str = "\
-You are the grammar-fix supervisor. The normal card-solving agent or deterministic
+You are the add-card supervisor. The normal card-solving agent or deterministic
 orchestrator flow encountered an unknown infrastructure problem. Your job is to mend
 the automation itself so the outer process can retry without human intervention.";
 
 const DOWNSTREAM_REPAIR_PROMPT_INTRO: &str = "\
-You are the grammar-fix downstream repair agent. The card-specific grammar repair has
+You are the add-card downstream repair agent. The card-specific grammar repair has
 passed focused validation, but a later deterministic gate exposed required follow-up
 wiring. Your job is to make the existing change pass the downstream gate without
 weakening the gate.";
@@ -2174,8 +2174,8 @@ fn command_output_allow_failure(program: &str, args: &[&str]) -> Result<String> 
     }
 }
 
-fn recent_grammar_fix_logs(limit: usize) -> String {
-    let root = grammar_fix_log_root();
+fn recent_add_card_logs(limit: usize) -> String {
+    let root = add_card_log_root();
     let mut entries = match std::fs::read_dir(root) {
         Ok(entries) => entries
             .filter_map(Result::ok)

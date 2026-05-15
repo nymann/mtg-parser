@@ -1,9 +1,9 @@
 //! TUI state model. The orchestrator's `FlowEvent`s feed [`AppState::apply`].
 //! Rendering reads `&AppState`; input handling mutates it.
 //!
-//! Intentionally decoupled from `grammar_fix.rs` — this module only
+//! Intentionally decoupled from `add_card.rs` — this module only
 //! knows about `FlowEvent` (a value type in `crate::flow`). Reordering
-//! steps or adding new ones in `grammar_fix.rs` doesn't require any
+//! steps or adding new ones in `add_card.rs` doesn't require any
 //! change here unless the event vocabulary itself grows.
 
 use std::time::{Duration, Instant};

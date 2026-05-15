@@ -33,8 +33,8 @@ pub fn generated_pattern_tests_manifest() -> PathBuf {
     repo_root().join("crates/mtg-grammar/tests/generated_patterns.rs")
 }
 
-pub fn grammar_fix_log_root() -> PathBuf {
-    repo_root().join(".grammar-fix")
+pub fn add_card_log_root() -> PathBuf {
+    repo_root().join(".add-card")
 }
 
 pub fn refactor_hotspot_log_root() -> PathBuf {

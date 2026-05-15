@@ -1,4 +1,4 @@
-//! Refactor-oriented workflow. Unlike `grammar-fix`, this flow is not
+//! Refactor-oriented workflow. Unlike `add-card`, this flow is not
 //! trying to make the next card pass. It prepares a bounded,
 //! qmd-grounded refactor prompt whose success criteria are unchanged
 //! behavior and lower future edit cost.

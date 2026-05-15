@@ -1,10 +1,10 @@
-//! Event-driven decoupling between the grammar-fix orchestrator and
+//! Event-driven decoupling between the add-card orchestrator and
 //! its output surface (console / TUI).
 //!
 //! The orchestrator emits `FlowEvent`s through any [`FlowSink`]; the
 //! sink decides how to display each event. Adding a new sink does not
-//! require touching `grammar_fix.rs`. Reordering or renaming steps in
-//! `grammar_fix.rs` does not require touching the sinks (unless the
+//! require touching `add_card.rs`. Reordering or renaming steps in
+//! `add_card.rs` does not require touching the sinks (unless the
 //! shape of the data attached to an event changes).
 
 use mtg_scryfall::Card;

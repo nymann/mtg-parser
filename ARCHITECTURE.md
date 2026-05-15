@@ -132,7 +132,7 @@ For each iteration up to `--max-iterations`:
    auto-advance is active, register the next paper expansion and
    continue with that as the new current set.
 2. Snapshot the card and the current corpus pass count into
-   `.grammar-fix/<unix-ts>-<slug>/`.
+   `.add-card/<unix-ts>-<slug>/`.
 3. Build the prompt (current `grammar.pest`, `ast.rs`, `lower.rs` inline
    plus the card, the round-trip error, and the constraint list) and
    write it to `prompt.md`.

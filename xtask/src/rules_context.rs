@@ -1,4 +1,4 @@
-//! Builds the "Comprehensive Rules Context" block for the grammar-fix
+//! Builds the "Comprehensive Rules Context" block for the add-card
 //! prompt. Two layers stacked:
 //!
 //! 1. **Always-load** — a small fixed set of high-leverage docs (the
@@ -149,7 +149,7 @@ fn render_from_search(search: &RulesSearch) -> String {
     if search.always_loaded.is_empty() && search.dynamic_hits.is_empty() {
         out.push_str(
             "_`resources/rules/` not built. Run `just rules` and `just rules-index` \
-             to populate, then re-run grammar-fix._\n\n",
+             to populate, then re-run add-card._\n\n",
         );
         return out;
     }
@@ -325,7 +325,7 @@ fn print_help() {
         "cargo xtask rules-context \"<query text>\"\n\n\
          Renders the Comprehensive Rules prompt block for the given query.\n\
          Use it to inspect what the agent would see for an oracle phrase\n\
-         without invoking the full grammar-fix loop.\n\n\
+         without invoking the full add-card loop.\n\n\
          The query can be a single quoted string or a series of positional\n\
          words; they're joined with spaces before being split per-line for\n\
          qmd retrieval.\n"
