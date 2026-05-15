@@ -56,7 +56,11 @@ sentence_statement = _{
   | prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
   | prevent_all_combat_damage_this_turn
   | spend_only_color_mana_on_variable
+  | as_source_enters_you_lose_life_equal_to_your_life_total
   | you_gain_life_equal_damage_dealt_capped
+  | you_dont_lose_game_for_having_zero_or_less_life
+  | if_you_would_gain_life_draw_that_many_cards_instead
+  | if_you_cant_you_lose_the_game
   | if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn
   | target_player_activates_mana_ability_of_each_permanent_they_control
   | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
@@ -107,6 +111,8 @@ sentence_statement = _{
   | static_enchanted_cant_be_blocked_except_by_creature_type
   | static_you_control_enchanted
   | static_you_have_no_maximum_hand_size
+  | you_dont_lose_game_for_having_zero_or_less_life
+  | if_you_would_gain_life_draw_that_many_cards_instead
   | static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
   | static_you_may_have_source_enter_as_copy
@@ -229,6 +235,26 @@ upper_alpha = _{ 'A'..'Z' }
 
 spend_only_color_mana_on_variable = {
     ^"spend" ~ ^"only" ~ color_word ~ ^"mana" ~ ^"on" ~ variable_name ~ "."
+}
+
+as_source_enters_you_lose_life_equal_to_your_life_total = {
+    ^"as" ~ source_object ~ ^"enters" ~ "," ~ ^"you" ~ ^"lose"
+  ~ ^"life" ~ ^"equal" ~ ^"to" ~ ^"your" ~ ^"life" ~ ^"total" ~ "."
+}
+
+you_dont_lose_game_for_having_zero_or_less_life = {
+    ^"you" ~ ^"don't" ~ ^"lose" ~ ^"the" ~ ^"game" ~ ^"for"
+  ~ ^"having" ~ ^"0" ~ ^"or" ~ ^"less" ~ ^"life" ~ "."
+}
+
+if_you_would_gain_life_draw_that_many_cards_instead = {
+    ^"if" ~ ^"you" ~ ^"would" ~ ^"gain" ~ ^"life" ~ ","
+  ~ ^"draw" ~ ^"that" ~ ^"many" ~ ^"cards" ~ ^"instead" ~ "."
+}
+
+if_you_cant_you_lose_the_game = {
+    ^"if" ~ ^"you" ~ ^"can't" ~ "," ~ ^"you" ~ ^"lose"
+  ~ ^"the" ~ ^"game" ~ "."
 }
 
 you_gain_life_equal_damage_dealt_capped = {
@@ -524,6 +550,8 @@ static_ability = _{
   | static_enchanted_cant_be_blocked_except_by_creature_type
   | static_you_control_enchanted
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
+  | you_dont_lose_game_for_having_zero_or_less_life
+  | if_you_would_gain_life_draw_that_many_cards_instead
   | static_you_may_have_source_enter_as_copy
   | static_source_attacks_each_combat_if_able
   | static_source_cant_be_blocked_by_creature_type
@@ -995,7 +1023,8 @@ triggered_ability_fragment = {
 trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
 
 trigger_event = _{
-    permanent_put_into_graveyard_from_battlefield
+    you_are_dealt_damage
+  | permanent_put_into_graveyard_from_battlefield
   | source_put_into_graveyard_from_battlefield
   | source_deals_damage_to_an_opponent
   | source_is_dealt_damage
@@ -1023,6 +1052,7 @@ source_put_into_graveyard_from_battlefield = {
   ~ ^"from" ~ ^"the" ~ ^"battlefield"
 }
 source_is_dealt_damage = { source_object ~ ^"is" ~ ^"dealt" ~ ^"damage" }
+you_are_dealt_damage = { ^"you're" ~ ^"dealt" ~ ^"damage" }
 source_deals_damage_to_an_opponent = {
     source_object ~ ^"deals" ~ ^"damage" ~ ^"to" ~ article ~ ^"opponent"
 }
@@ -1104,6 +1134,8 @@ trigger_effect = _{
   | its_controller_adds_an_additional_mana
   | source_gains_static_ability
   | that_creatures_controller_sacrifices_it
+  | sacrifice_that_many_nontoken_permanents
+  | you_lose_the_game
 }
 
 target_permanent_gains_keyword_and_gets_eot = {
@@ -1192,6 +1224,12 @@ that_creatures_controller_sacrifices_it = {
 sacrifice_source_unless_you_pay = {
     ^"sacrifice" ~ source_object ~ ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ "."
 }
+
+sacrifice_that_many_nontoken_permanents = {
+    ^"sacrifice" ~ ^"that" ~ ^"many" ~ ^"nontoken" ~ ^"permanents" ~ "."
+}
+
+you_lose_the_game = { ^"you" ~ ^"lose" ~ ^"the" ~ ^"game" ~ "." }
 
 you_may_pay_mana = { ^"you" ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
 if_you_do_gain_life_fragment = {

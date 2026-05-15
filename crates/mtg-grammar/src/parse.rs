@@ -86,9 +86,13 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::prevent_all_combat_damage_this_turn => Ok(Statement::PreventAllCombatDamageThisTurn),
         Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
+        Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
+            as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(pair)
+        }
         Rule::you_gain_life_equal_damage_dealt_capped => {
             you_gain_life_equal_damage_dealt_capped_from_pair(pair)
         }
+        Rule::if_you_cant_you_lose_the_game => Ok(Statement::IfYouCantYouLoseTheGame),
         Rule::if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn => {
             if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(
                 pair,
@@ -187,6 +191,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_cant_be_blocked_except_by_creature_type
         | Rule::static_you_control_enchanted
         | Rule::static_you_have_no_maximum_hand_size
+        | Rule::you_dont_lose_game_for_having_zero_or_less_life
+        | Rule::if_you_would_gain_life_draw_that_many_cards_instead
         | Rule::static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead
         | Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns
         | Rule::static_you_may_have_source_enter_as_copy
@@ -824,6 +830,17 @@ fn damage_life_gain_cap_from_pair(pair: Pair<Rule>) -> Result<DamageLifeGainCap,
     }
 }
 
+fn as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "as_source_enters_you_lose_life missing source",
+    ))?;
+    Ok(Statement::AsSourceEntersYouLoseLifeEqualToYourLifeTotal {
+        source: source_object_from_pair(source_pair)?,
+    })
+}
+
 fn if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
@@ -1164,6 +1181,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::source_is_dealt_damage => {
                 event = Some(source_is_dealt_damage_from_pair(child)?);
             }
+            Rule::you_are_dealt_damage => {
+                event = Some(TriggerEvent::YouAreDealtDamage);
+            }
             Rule::source_deals_damage_to_an_opponent => {
                 event = Some(source_deals_damage_to_an_opponent_from_pair(child)?);
             }
@@ -1252,6 +1272,12 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::sacrifice_source_unless_you_pay => {
                 effects.push(sacrifice_source_unless_you_pay_from_pair(child)?);
+            }
+            Rule::sacrifice_that_many_nontoken_permanents => {
+                effects.push(TriggerEffect::SacrificeThatManyNontokenPermanents);
+            }
+            Rule::you_lose_the_game => {
+                effects.push(TriggerEffect::YouLoseTheGame);
             }
             Rule::you_may_pay_mana => {
                 effects.push(you_may_pay_mana_from_pair(child)?);
@@ -2182,6 +2208,12 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             })
         }
         Rule::static_you_have_no_maximum_hand_size => Ok(StaticAbility::YouHaveNoMaximumHandSize),
+        Rule::you_dont_lose_game_for_having_zero_or_less_life => {
+            Ok(StaticAbility::YouDontLoseGameForHavingZeroOrLessLife)
+        }
+        Rule::if_you_would_gain_life_draw_that_many_cards_instead => {
+            Ok(StaticAbility::IfYouWouldGainLifeDrawThatManyCardsInstead)
+        }
         Rule::static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead => {
             Ok(StaticAbility::IfEffectCausesYouToDiscardCardYouMayPutItOnTopOfYourLibraryInstead)
         }

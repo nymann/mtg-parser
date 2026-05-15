@@ -46,8 +46,12 @@ pub enum CardEffect {
     PreventAllCombatDamageThisTurn,
     /// "Spend only <color> mana on X."
     SpendOnlyColorManaOnVariable { color: Color, variable: Variable },
+    /// "As this <source> enters, you lose life equal to your life total."
+    AsSourceEntersYouLoseLifeEqualToYourLifeTotal { source: SourceObject },
     /// "You gain life equal to the damage dealt, but not more life than ..."
     YouGainLifeEqualToDamageDealtCapped { caps: Vec<DamageLifeGainCap> },
+    /// "If you can't, you lose the game."
+    IfYouCantYouLoseTheGame,
     /// "If it's a <type>, it can't be regenerated this turn, and if it
     /// would die this turn, exile it instead."
     IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn { permanent_type: PermanentType },

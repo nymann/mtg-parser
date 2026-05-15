@@ -249,8 +249,14 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         (arb_color(), arb_variable()).prop_map(|(color, variable)| {
             Statement::SpendOnlyColorManaOnVariable { color, variable }
         }),
+        arb_permanent_type().prop_map(|permanent_type| {
+            Statement::AsSourceEntersYouLoseLifeEqualToYourLifeTotal {
+                source: SourceObject::This(permanent_type),
+            }
+        }),
         prop::collection::vec(arb_damage_life_gain_cap(), 2..5)
             .prop_map(|caps| Statement::YouGainLifeEqualToDamageDealtCapped { caps }),
+        Just(Statement::IfYouCantYouLoseTheGame),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
                 permanent_type,

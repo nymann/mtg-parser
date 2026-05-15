@@ -239,6 +239,27 @@ fn lowers_target_player_gains_life() {
 }
 
 #[test]
+fn lowers_as_source_enters_you_lose_life_equal_to_your_life_total() {
+    assert_eq!(
+        lower(&Statement::AsSourceEntersYouLoseLifeEqualToYourLifeTotal {
+            source: SourceObject::This(PermanentType::Enchantment),
+        })
+        .unwrap(),
+        CardEffect::AsSourceEntersYouLoseLifeEqualToYourLifeTotal {
+            source: SourceObject::This(PermanentType::Enchantment),
+        },
+    );
+}
+
+#[test]
+fn lowers_if_you_cant_you_lose_the_game() {
+    assert_eq!(
+        lower(&Statement::IfYouCantYouLoseTheGame).unwrap(),
+        CardEffect::IfYouCantYouLoseTheGame,
+    );
+}
+
+#[test]
 fn lowers_activation_threshold_sacrifice_delayed_trigger() {
     assert_eq!(
         lower(

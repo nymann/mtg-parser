@@ -38,10 +38,16 @@ pub enum Statement {
         color: Color,
         variable: Variable,
     },
+    /// "As this <source> enters, you lose life equal to your life total."
+    AsSourceEntersYouLoseLifeEqualToYourLifeTotal {
+        source: SourceObject,
+    },
     /// "You gain life equal to the damage dealt, but not more life than ..."
     YouGainLifeEqualToDamageDealtCapped {
         caps: Vec<DamageLifeGainCap>,
     },
+    /// "If you can't, you lose the game."
+    IfYouCantYouLoseTheGame,
     /// "If it's a <type>, it can't be regenerated this turn, and if it
     /// would die this turn, exile it instead."
     IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
@@ -421,6 +427,8 @@ pub enum TriggerEvent {
         source: SourceObject,
         excluded_type: CreatureType,
     },
+    /// "you're dealt damage"
+    YouAreDealtDamage,
     /// "this <source> deals damage to an opponent"
     SourceDealsDamageToAnOpponent { source: SourceObject },
 }
@@ -523,6 +531,10 @@ pub enum TriggerEffect {
         source: SourceObject,
         cost: ManaCost,
     },
+    /// "sacrifice that many nontoken permanents"
+    SacrificeThatManyNontokenPermanents,
+    /// "you lose the game"
+    YouLoseTheGame,
     /// "you may pay <mana_cost>"
     YouMayPayMana { cost: ManaCost },
     /// "If you do, you gain N life."
@@ -924,6 +936,12 @@ pub enum StaticAbility {
     YouControlEnchanted { object: EnchantedObject },
     /// "You have no maximum hand size." — maximum hand size modifier.
     YouHaveNoMaximumHandSize,
+    /// "You don't lose the game for having 0 or less life." — state-based
+    /// action exception.
+    YouDontLoseGameForHavingZeroOrLessLife,
+    /// "If you would gain life, draw that many cards instead." —
+    /// replacement effect for life gain.
+    IfYouWouldGainLifeDrawThatManyCardsInstead,
     /// "If an effect causes you to discard a card, discard it, but you
     /// may put it on top of your library instead of into your graveyard."
     IfEffectCausesYouToDiscardCardYouMayPutItOnTopOfYourLibraryInstead,

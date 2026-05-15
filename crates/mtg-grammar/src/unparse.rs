@@ -72,10 +72,18 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(variable_name(*variable));
             out.push('.');
         }
+        Statement::AsSourceEntersYouLoseLifeEqualToYourLifeTotal { source } => {
+            out.push_str("As ");
+            write_source_object(out, *source);
+            out.push_str(" enters, you lose life equal to your life total.");
+        }
         Statement::YouGainLifeEqualToDamageDealtCapped { caps } => {
             out.push_str("You gain life equal to the damage dealt, but not more life than ");
             write_damage_life_gain_caps(out, caps);
             out.push('.');
+        }
+        Statement::IfYouCantYouLoseTheGame => {
+            out.push_str("If you can't, you lose the game.");
         }
         Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
             permanent_type,
@@ -1153,6 +1161,12 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
         StaticAbility::YouHaveNoMaximumHandSize => {
             out.push_str("You have no maximum hand size.");
         }
+        StaticAbility::YouDontLoseGameForHavingZeroOrLessLife => {
+            out.push_str("You don't lose the game for having 0 or less life.");
+        }
+        StaticAbility::IfYouWouldGainLifeDrawThatManyCardsInstead => {
+            out.push_str("If you would gain life, draw that many cards instead.");
+        }
         StaticAbility::IfEffectCausesYouToDiscardCardYouMayPutItOnTopOfYourLibraryInstead => {
             out.push_str("If an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard.");
         }
@@ -1281,6 +1295,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::YouPlayPermanent { .. }
         | TriggerEvent::PlayerCastsColoredSpell { .. }
         | TriggerEvent::BasicLandTypeIsTappedForMana { .. }
+        | TriggerEvent::YouAreDealtDamage
         | TriggerEvent::SourceIsDealtDamage { .. }
         | TriggerEvent::SourceDealsDamageToAnOpponent { .. }
         | TriggerEvent::EnchantedObjectBecomesStatus { .. }
@@ -1377,6 +1392,9 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::SourceIsDealtDamage { source } => {
             write_source_object(out, source);
             out.push_str(" is dealt damage");
+        }
+        TriggerEvent::YouAreDealtDamage => {
+            out.push_str("you're dealt damage");
         }
         TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { permanent_type } => {
             out.push_str(indefinite_article(permanent_type));
@@ -1568,6 +1586,12 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str(" unless you pay ");
             write_mana_cost(out, cost);
             out.push('.');
+        }
+        TriggerEffect::SacrificeThatManyNontokenPermanents => {
+            out.push_str("sacrifice that many nontoken permanents.");
+        }
+        TriggerEffect::YouLoseTheGame => {
+            out.push_str("you lose the game.");
         }
         TriggerEffect::YouMayPayMana { cost } => {
             out.push_str("you may pay ");

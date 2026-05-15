@@ -220,3 +220,5 @@ mod kudzu;
 mod ley_druid;
 #[path = "generated/library_of_leng.rs"]
 mod library_of_leng;
+#[path = "generated/lich.rs"]
+mod lich;

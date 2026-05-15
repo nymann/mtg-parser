@@ -52,9 +52,13 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
                 variable: *variable,
             }
         }
+        Statement::AsSourceEntersYouLoseLifeEqualToYourLifeTotal { source } => {
+            CardEffect::AsSourceEntersYouLoseLifeEqualToYourLifeTotal { source: *source }
+        }
         Statement::YouGainLifeEqualToDamageDealtCapped { caps } => {
             CardEffect::YouGainLifeEqualToDamageDealtCapped { caps: caps.clone() }
         }
+        Statement::IfYouCantYouLoseTheGame => CardEffect::IfYouCantYouLoseTheGame,
         Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
             permanent_type,
         } => CardEffect::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
