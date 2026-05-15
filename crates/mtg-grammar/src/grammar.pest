@@ -481,20 +481,9 @@ sacrifice_permanents_action = { ^"sacrifice" ~ permanent_type_plural }
 keyword_ability = { keyword }
 keyword_ability_list = { keyword ~ ("," ~ keyword)+ }
 semicolon_keyword_ability_list = { keyword ~ (";" ~ keyword)+ }
-keyword         = _{ enchant | first_strike | protection | flying | reach | haste | defender | banding | trample | islandwalk | mountainwalk | swampwalk | indestructible | fear }
-first_strike    = { ^"first" ~ ^"strike" }
+keyword         = _{ enchant | protection | simple_keyword }
+simple_keyword  = @{ ^"first" ~ " " ~ ^"strike" | ^"flying" | ^"reach" | ^"haste" | ^"defender" | ^"banding" | ^"trample" | ^"islandwalk" | ^"mountainwalk" | ^"swampwalk" | ^"indestructible" | ^"fear" }
 protection      = { ^"protection" ~ ^"from" ~ color_word }
-flying          = @{ ^"flying" }
-reach           = @{ ^"reach" }
-haste           = @{ ^"haste" }
-defender        = @{ ^"defender" }
-banding         = @{ ^"banding" }
-trample         = @{ ^"trample" }
-islandwalk      = @{ ^"islandwalk" }
-mountainwalk    = @{ ^"mountainwalk" }
-swampwalk       = @{ ^"swampwalk" }
-indestructible  = @{ ^"indestructible" }
-fear            = @{ ^"fear" }
 
 cast_restriction = {
     ^"cast" ~ ^"this" ~ ^"spell" ~ ^"only" ~ cast_timing ~ "."

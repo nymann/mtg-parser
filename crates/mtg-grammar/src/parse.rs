@@ -13,10 +13,11 @@ use crate::ast::{
     IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost,
     ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost,
     PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SimpleKeyword, SourceObject, SpellType,
+    Statement, StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -1750,18 +1751,7 @@ fn loses_and_gains_keyword_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, 
 
 fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
     match pair.as_rule() {
-        Rule::flying => Ok(Keyword::Flying),
-        Rule::reach => Ok(Keyword::Reach),
-        Rule::haste => Ok(Keyword::Haste),
-        Rule::first_strike => Ok(Keyword::FirstStrike),
-        Rule::defender => Ok(Keyword::Defender),
-        Rule::banding => Ok(Keyword::Banding),
-        Rule::trample => Ok(Keyword::Trample),
-        Rule::islandwalk => Ok(Keyword::Islandwalk),
-        Rule::mountainwalk => Ok(Keyword::Mountainwalk),
-        Rule::swampwalk => Ok(Keyword::Swampwalk),
-        Rule::indestructible => Ok(Keyword::Indestructible),
-        Rule::fear => Ok(Keyword::Fear),
+        Rule::simple_keyword => Ok(Keyword::Simple(simple_keyword_from_str(pair.as_str())?)),
         Rule::protection => {
             let color = pair
                 .into_inner()
@@ -1777,6 +1767,24 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
             Ok(Keyword::Enchant(enchant_object_from_pair(object)?))
         }
         _ => Err(ParseError::Internal("quoted keyword")),
+    }
+}
+
+fn simple_keyword_from_str(text: &str) -> Result<SimpleKeyword, ParseError> {
+    match text.to_ascii_lowercase().as_str() {
+        "first strike" => Ok(SimpleKeyword::FirstStrike),
+        "flying" => Ok(SimpleKeyword::Flying),
+        "reach" => Ok(SimpleKeyword::Reach),
+        "haste" => Ok(SimpleKeyword::Haste),
+        "defender" => Ok(SimpleKeyword::Defender),
+        "banding" => Ok(SimpleKeyword::Banding),
+        "trample" => Ok(SimpleKeyword::Trample),
+        "islandwalk" => Ok(SimpleKeyword::Islandwalk),
+        "mountainwalk" => Ok(SimpleKeyword::Mountainwalk),
+        "swampwalk" => Ok(SimpleKeyword::Swampwalk),
+        "indestructible" => Ok(SimpleKeyword::Indestructible),
+        "fear" => Ok(SimpleKeyword::Fear),
+        _ => Err(ParseError::Internal("simple keyword")),
     }
 }
 

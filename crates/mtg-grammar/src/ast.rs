@@ -1103,8 +1103,55 @@ pub enum PhysicalAction {
     ThenDestroySource { source: SourceObject },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
+    Simple(SimpleKeyword),
+    Protection(Color),
+    Enchant(EnchantObject),
+}
+
+impl Keyword {
+    pub const FIRST_STRIKE: Self = Self::Simple(SimpleKeyword::FirstStrike);
+    pub const FLYING: Self = Self::Simple(SimpleKeyword::Flying);
+    pub const REACH: Self = Self::Simple(SimpleKeyword::Reach);
+    pub const HASTE: Self = Self::Simple(SimpleKeyword::Haste);
+    pub const DEFENDER: Self = Self::Simple(SimpleKeyword::Defender);
+    pub const BANDING: Self = Self::Simple(SimpleKeyword::Banding);
+    pub const TRAMPLE: Self = Self::Simple(SimpleKeyword::Trample);
+    pub const ISLANDWALK: Self = Self::Simple(SimpleKeyword::Islandwalk);
+    pub const MOUNTAINWALK: Self = Self::Simple(SimpleKeyword::Mountainwalk);
+    pub const SWAMPWALK: Self = Self::Simple(SimpleKeyword::Swampwalk);
+    pub const INDESTRUCTIBLE: Self = Self::Simple(SimpleKeyword::Indestructible);
+    pub const FEAR: Self = Self::Simple(SimpleKeyword::Fear);
+
+    #[allow(non_upper_case_globals)]
+    pub const FirstStrike: Self = Self::FIRST_STRIKE;
+    #[allow(non_upper_case_globals)]
+    pub const Flying: Self = Self::FLYING;
+    #[allow(non_upper_case_globals)]
+    pub const Reach: Self = Self::REACH;
+    #[allow(non_upper_case_globals)]
+    pub const Haste: Self = Self::HASTE;
+    #[allow(non_upper_case_globals)]
+    pub const Defender: Self = Self::DEFENDER;
+    #[allow(non_upper_case_globals)]
+    pub const Banding: Self = Self::BANDING;
+    #[allow(non_upper_case_globals)]
+    pub const Trample: Self = Self::TRAMPLE;
+    #[allow(non_upper_case_globals)]
+    pub const Islandwalk: Self = Self::ISLANDWALK;
+    #[allow(non_upper_case_globals)]
+    pub const Mountainwalk: Self = Self::MOUNTAINWALK;
+    #[allow(non_upper_case_globals)]
+    pub const Swampwalk: Self = Self::SWAMPWALK;
+    #[allow(non_upper_case_globals)]
+    pub const Indestructible: Self = Self::INDESTRUCTIBLE;
+    #[allow(non_upper_case_globals)]
+    pub const Fear: Self = Self::FEAR;
+}
+
+#[derive(Serialize, Deserialize)]
+enum KeywordSerde {
     FirstStrike,
     Flying,
     Reach,
@@ -1119,6 +1166,82 @@ pub enum Keyword {
     Fear,
     Protection(Color),
     Enchant(EnchantObject),
+}
+
+impl From<Keyword> for KeywordSerde {
+    fn from(keyword: Keyword) -> Self {
+        match keyword {
+            Keyword::Simple(SimpleKeyword::FirstStrike) => Self::FirstStrike,
+            Keyword::Simple(SimpleKeyword::Flying) => Self::Flying,
+            Keyword::Simple(SimpleKeyword::Reach) => Self::Reach,
+            Keyword::Simple(SimpleKeyword::Haste) => Self::Haste,
+            Keyword::Simple(SimpleKeyword::Defender) => Self::Defender,
+            Keyword::Simple(SimpleKeyword::Banding) => Self::Banding,
+            Keyword::Simple(SimpleKeyword::Trample) => Self::Trample,
+            Keyword::Simple(SimpleKeyword::Islandwalk) => Self::Islandwalk,
+            Keyword::Simple(SimpleKeyword::Mountainwalk) => Self::Mountainwalk,
+            Keyword::Simple(SimpleKeyword::Swampwalk) => Self::Swampwalk,
+            Keyword::Simple(SimpleKeyword::Indestructible) => Self::Indestructible,
+            Keyword::Simple(SimpleKeyword::Fear) => Self::Fear,
+            Keyword::Protection(color) => Self::Protection(color),
+            Keyword::Enchant(object) => Self::Enchant(object),
+        }
+    }
+}
+
+impl From<KeywordSerde> for Keyword {
+    fn from(keyword: KeywordSerde) -> Self {
+        match keyword {
+            KeywordSerde::FirstStrike => Self::Simple(SimpleKeyword::FirstStrike),
+            KeywordSerde::Flying => Self::Simple(SimpleKeyword::Flying),
+            KeywordSerde::Reach => Self::Simple(SimpleKeyword::Reach),
+            KeywordSerde::Haste => Self::Simple(SimpleKeyword::Haste),
+            KeywordSerde::Defender => Self::Simple(SimpleKeyword::Defender),
+            KeywordSerde::Banding => Self::Simple(SimpleKeyword::Banding),
+            KeywordSerde::Trample => Self::Simple(SimpleKeyword::Trample),
+            KeywordSerde::Islandwalk => Self::Simple(SimpleKeyword::Islandwalk),
+            KeywordSerde::Mountainwalk => Self::Simple(SimpleKeyword::Mountainwalk),
+            KeywordSerde::Swampwalk => Self::Simple(SimpleKeyword::Swampwalk),
+            KeywordSerde::Indestructible => Self::Simple(SimpleKeyword::Indestructible),
+            KeywordSerde::Fear => Self::Simple(SimpleKeyword::Fear),
+            KeywordSerde::Protection(color) => Self::Protection(color),
+            KeywordSerde::Enchant(object) => Self::Enchant(object),
+        }
+    }
+}
+
+impl Serialize for Keyword {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        KeywordSerde::from(*self).serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Keyword {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        KeywordSerde::deserialize(deserializer).map(Self::from)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SimpleKeyword {
+    FirstStrike,
+    Flying,
+    Reach,
+    Haste,
+    Defender,
+    Banding,
+    Trample,
+    Islandwalk,
+    Mountainwalk,
+    Swampwalk,
+    Indestructible,
+    Fear,
 }
 
 /// What an `Enchant <X>` keyword attaches to. Most Auras name a

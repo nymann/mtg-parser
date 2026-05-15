@@ -11,8 +11,8 @@ use crate::ast::{
     ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
     MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost, PermanentController,
     PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    SignedPtComponent, SignedVariable, SimpleKeyword, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -798,18 +798,7 @@ fn write_prevention_recipient(out: &mut String, recipient: PreventionRecipient) 
 
 fn write_keyword(out: &mut String, kw: Keyword) {
     match kw {
-        Keyword::FirstStrike => out.push_str("First strike"),
-        Keyword::Flying => out.push_str("Flying"),
-        Keyword::Reach => out.push_str("Reach"),
-        Keyword::Haste => out.push_str("Haste"),
-        Keyword::Defender => out.push_str("Defender"),
-        Keyword::Banding => out.push_str("Banding"),
-        Keyword::Trample => out.push_str("Trample"),
-        Keyword::Islandwalk => out.push_str("Islandwalk"),
-        Keyword::Mountainwalk => out.push_str("Mountainwalk"),
-        Keyword::Swampwalk => out.push_str("Swampwalk"),
-        Keyword::Indestructible => out.push_str("Indestructible"),
-        Keyword::Fear => out.push_str("Fear"),
+        Keyword::Simple(simple) => out.push_str(simple_keyword_title_name(simple)),
         Keyword::Protection(color) => {
             out.push_str("Protection from ");
             out.push_str(color_name(color));
@@ -1988,18 +1977,7 @@ fn write_copy_exception(out: &mut String, exception: CopyException) {
 /// keyword is printed lowercase, which is what we emit here.
 fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
     match kw {
-        Keyword::FirstStrike => out.push_str("first strike"),
-        Keyword::Flying => out.push_str("flying"),
-        Keyword::Reach => out.push_str("reach"),
-        Keyword::Haste => out.push_str("haste"),
-        Keyword::Defender => out.push_str("defender"),
-        Keyword::Banding => out.push_str("banding"),
-        Keyword::Trample => out.push_str("trample"),
-        Keyword::Islandwalk => out.push_str("islandwalk"),
-        Keyword::Mountainwalk => out.push_str("mountainwalk"),
-        Keyword::Swampwalk => out.push_str("swampwalk"),
-        Keyword::Indestructible => out.push_str("indestructible"),
-        Keyword::Fear => out.push_str("fear"),
+        Keyword::Simple(simple) => out.push_str(simple_keyword_name(simple)),
         Keyword::Protection(color) => {
             out.push_str("protection from ");
             out.push_str(color_name(color));
@@ -2008,6 +1986,40 @@ fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
             out.push_str("enchant ");
             write_enchant_object(out, object);
         }
+    }
+}
+
+fn simple_keyword_title_name(keyword: SimpleKeyword) -> &'static str {
+    match keyword {
+        SimpleKeyword::FirstStrike => "First strike",
+        SimpleKeyword::Flying => "Flying",
+        SimpleKeyword::Reach => "Reach",
+        SimpleKeyword::Haste => "Haste",
+        SimpleKeyword::Defender => "Defender",
+        SimpleKeyword::Banding => "Banding",
+        SimpleKeyword::Trample => "Trample",
+        SimpleKeyword::Islandwalk => "Islandwalk",
+        SimpleKeyword::Mountainwalk => "Mountainwalk",
+        SimpleKeyword::Swampwalk => "Swampwalk",
+        SimpleKeyword::Indestructible => "Indestructible",
+        SimpleKeyword::Fear => "Fear",
+    }
+}
+
+fn simple_keyword_name(keyword: SimpleKeyword) -> &'static str {
+    match keyword {
+        SimpleKeyword::FirstStrike => "first strike",
+        SimpleKeyword::Flying => "flying",
+        SimpleKeyword::Reach => "reach",
+        SimpleKeyword::Haste => "haste",
+        SimpleKeyword::Defender => "defender",
+        SimpleKeyword::Banding => "banding",
+        SimpleKeyword::Trample => "trample",
+        SimpleKeyword::Islandwalk => "islandwalk",
+        SimpleKeyword::Mountainwalk => "mountainwalk",
+        SimpleKeyword::Swampwalk => "swampwalk",
+        SimpleKeyword::Indestructible => "indestructible",
+        SimpleKeyword::Fear => "fear",
     }
 }
 
