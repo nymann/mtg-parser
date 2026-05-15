@@ -18,7 +18,10 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail, Context, Result};
 
-use mtg_corpus::{find_next_failing_card, NextCard};
+use mtg_corpus::{
+    card_key, load as load_corpus_report, normalize_oracle_text, CardOutcome, NextCard,
+};
+use mtg_scryfall::Layout;
 use mtg_scryfall::{Card, ScryfallClient};
 
 use crate::console_sink::ConsoleSink;
@@ -256,7 +259,7 @@ fn run_one_iteration(
         total: TOTAL_STEPS,
         label: "find next failing card".into(),
     });
-    let (card, error, normalized) = match find_next_failing_card(client, &opts.set)? {
+    let (card, error, normalized) = match find_next_failing_card_from_status(client, &opts.set)? {
         NextCard::AllPass => {
             sink.emit(FlowEvent::StepFinished {
                 index: 1,
@@ -483,13 +486,7 @@ fn run_one_iteration(
                 ok: true,
                 summary: Some("no changes to commit".into()),
             });
-            sink.emit(FlowEvent::IterationFinished {
-                index: iter_index,
-                outcome: IterationOutcomeSummary::SurfacedToHuman {
-                    reason: reason.clone(),
-                },
-            });
-            return Ok(IterationOutcome::SurfaceToHuman(reason));
+            bail!("{reason}");
         }
     }
 
@@ -539,6 +536,31 @@ fn create_log_dir(card: &Card) -> Result<PathBuf> {
     let dir = grammar_fix_log_root().join(format!("{ts}-{slug}"));
     std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
     Ok(dir)
+}
+
+fn find_next_failing_card_from_status(client: &ScryfallClient, set_code: &str) -> Result<NextCard> {
+    let report = load_corpus_report(&corpus_status_path()).context("load corpus status")?;
+    let cards = client.cards_in_set(set_code)?;
+    for card in cards {
+        if card.layout != Layout::Normal {
+            continue;
+        }
+        let normalized = normalize_oracle_text(&card.oracle_text);
+        if normalized.is_empty() {
+            continue;
+        }
+        let Some(outcome) = report.cards.get(&card_key(&card)) else {
+            continue;
+        };
+        if let CardOutcome::Fail { error } = outcome {
+            return Ok(NextCard::Failing {
+                card,
+                reason: error.clone(),
+                normalized,
+            });
+        }
+    }
+    Ok(NextCard::AllPass)
 }
 
 fn create_supervisor_log_dir(iter_index: u32, attempt: u8) -> Result<PathBuf> {
