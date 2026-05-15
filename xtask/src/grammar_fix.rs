@@ -38,7 +38,7 @@ const DEFAULT_SET: &str = "lea";
 /// 0 means unbounded; positive values cap the loop.
 const DEFAULT_MAX_ITERATIONS: u32 = 0;
 const DEFAULT_SUPERVISOR_ATTEMPTS: u8 = 1;
-const TOTAL_STEPS: u8 = 9;
+const TOTAL_STEPS: u8 = 11;
 
 pub fn run(args: &[String]) -> ExitCode {
     let opts = match Options::parse(args) {
@@ -342,22 +342,24 @@ fn run_one_iteration(
         return Ok(IterationOutcome::DryRunStop);
     }
 
-    // Step 5 — promote deterministic pattern tests first.
+    // Step 5 — promote deterministic generated tests first.
     sink.emit(FlowEvent::StepStarted {
         index: 5,
         total: TOTAL_STEPS,
-        label: "promote pattern tests".into(),
+        label: "promote generated tests".into(),
     });
     let patterns = extract_patterns(&normalized);
     write_pattern_tests(&pattern_test_path, &card, &patterns)
         .context("generate pattern test file")?;
     register_generated_pattern_test(&pattern_test_path)
         .context("register generated pattern test")?;
+    write_promoted_test(&test_path, &card, &normalized).context("generate promoted test file")?;
+    register_generated_test(&test_path).context("register generated test")?;
     sink.emit(FlowEvent::StepFinished {
         index: 5,
         ok: true,
         summary: Some(format!(
-            "{} patterns · {}",
+            "{} patterns + round-trip · {}",
             patterns.len(),
             pattern_test_path
                 .strip_prefix(repo_root())
@@ -366,38 +368,102 @@ fn run_one_iteration(
         )),
     });
 
-    // Step 6 — delegate to the configured agent (the one non-deterministic step).
+    // Step 6 — focused generated tests before invoking the agent. If
+    // these are already green, the card was fixed by a previous commit
+    // or deterministic test promotion and no LM work is needed.
     sink.emit(FlowEvent::StepStarted {
         index: 6,
         total: TOTAL_STEPS,
-        label: format!("{} agent", opts.agent.label()),
+        label: "focused generated tests".into(),
     });
-    let transcript_path = log_dir.join("transcript.ndjson");
-    let pattern_prompt = build_pattern_prompt(
-        &card,
-        &error,
-        &normalized,
-        &test_path,
-        &pattern_test_path,
-        &patterns,
+    let focused_before = run_focused_generated_tests(&card)?;
+    std::fs::write(
+        log_dir.join("focused_before_agent.txt"),
+        focused_before.summary_text(),
     )?;
-    std::fs::write(log_dir.join("pattern_prompt.md"), &pattern_prompt)?;
-    let agent_outcome = invoke_agent(opts.agent, &pattern_prompt, &transcript_path, sink)?;
-    std::fs::write(log_dir.join("response.md"), &agent_outcome.assistant_text)?;
     sink.emit(FlowEvent::StepFinished {
         index: 6,
-        ok: agent_outcome.success,
-        summary: Some(format!(
-            "exit={} · {} assistant blocks",
-            agent_outcome.exit_code, agent_outcome.assistant_blocks
-        )),
+        ok: true,
+        summary: Some(focused_before.short_summary()),
     });
-    if !agent_outcome.success {
-        let reason = format!(
-            "{} agent exited with status {}",
-            opts.agent.label(),
-            agent_outcome.exit_code
-        );
+
+    // Step 7 — delegate to the configured agent only when the
+    // orchestrator-owned focused tests say there is real work left.
+    sink.emit(FlowEvent::StepStarted {
+        index: 7,
+        total: TOTAL_STEPS,
+        label: format!("{} agent repair", opts.agent.label()),
+    });
+    let mut agent_ran = false;
+    let transcript_path = log_dir.join("transcript.ndjson");
+    if focused_before.success() {
+        sink.emit(FlowEvent::StepFinished {
+            index: 7,
+            ok: true,
+            summary: Some("skipped; focused tests already pass".into()),
+        });
+    } else {
+        agent_ran = true;
+        let pattern_prompt = build_pattern_prompt(
+            &card,
+            &error,
+            &normalized,
+            &test_path,
+            &pattern_test_path,
+            &patterns,
+            &focused_before,
+        )?;
+        std::fs::write(log_dir.join("agent_recipe.md"), &pattern_prompt)?;
+        let agent_outcome = invoke_agent(opts.agent, &pattern_prompt, &transcript_path, sink)?;
+        std::fs::write(log_dir.join("response.md"), &agent_outcome.assistant_text)?;
+        sink.emit(FlowEvent::StepFinished {
+            index: 7,
+            ok: agent_outcome.success,
+            summary: Some(format!(
+                "exit={} · {} assistant blocks",
+                agent_outcome.exit_code, agent_outcome.assistant_blocks
+            )),
+        });
+        if !agent_outcome.success {
+            let reason = format!(
+                "{} agent exited with status {}",
+                opts.agent.label(),
+                agent_outcome.exit_code
+            );
+            sink.emit(FlowEvent::IterationFinished {
+                index: iter_index,
+                outcome: IterationOutcomeSummary::SurfacedToHuman {
+                    reason: reason.clone(),
+                },
+            });
+            return Ok(IterationOutcome::SurfaceToHuman(reason));
+        }
+    }
+
+    // Step 8 — deterministic validation of the agent's patch, or a
+    // second confirmation when the agent was skipped.
+    sink.emit(FlowEvent::StepStarted {
+        index: 8,
+        total: TOTAL_STEPS,
+        label: "focused validation".into(),
+    });
+    let focused_after = run_focused_generated_tests(&card)?;
+    std::fs::write(
+        log_dir.join("focused_after_agent.txt"),
+        focused_after.summary_text(),
+    )?;
+    sink.emit(FlowEvent::StepFinished {
+        index: 8,
+        ok: focused_after.success(),
+        summary: Some(focused_after.short_summary()),
+    });
+    if !focused_after.success() {
+        let reason = if agent_ran {
+            "focused generated tests still fail after agent repair"
+        } else {
+            "focused generated tests failed without invoking the agent"
+        }
+        .to_string();
         sink.emit(FlowEvent::IterationFinished {
             index: iter_index,
             outcome: IterationOutcomeSummary::SurfacedToHuman {
@@ -407,25 +473,25 @@ fn run_one_iteration(
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
 
-    // If the agent got all parse-only patterns green, add the full
-    // round-trip test before the deterministic gates below.
-    write_promoted_test(&test_path, &card, &normalized).context("generate promoted test file")?;
-    register_generated_test(&test_path).context("register generated test")?;
-
-    // Step 7 — tier 1 + tier 2.
+    // Step 9 — tier 1 + tier 2.
     sink.emit(FlowEvent::StepStarted {
-        index: 7,
+        index: 9,
         total: TOTAL_STEPS,
         label: "cargo xtask test --tier 2".into(),
     });
     let tests_ok = run_xtask(&["test", "--tier", "2"])?;
     sink.emit(FlowEvent::StepFinished {
-        index: 7,
+        index: 9,
         ok: tests_ok,
         summary: None,
     });
     if !tests_ok {
-        let reason = "cargo xtask test --tier 2 failed after the agent's pass".to_string();
+        let reason = if agent_ran {
+            "cargo xtask test --tier 2 failed after the agent's pass"
+        } else {
+            "cargo xtask test --tier 2 failed after focused tests passed"
+        }
+        .to_string();
         sink.emit(FlowEvent::IterationFinished {
             index: iter_index,
             outcome: IterationOutcomeSummary::SurfacedToHuman {
@@ -435,15 +501,15 @@ fn run_one_iteration(
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
 
-    // Step 8 — corpus regression gate.
+    // Step 10 — corpus regression gate.
     sink.emit(FlowEvent::StepStarted {
-        index: 8,
+        index: 10,
         total: TOTAL_STEPS,
         label: "cargo xtask corpus (regression gate)".into(),
     });
     let corpus_ok = run_xtask(&["corpus"])?;
     sink.emit(FlowEvent::StepFinished {
-        index: 8,
+        index: 10,
         ok: corpus_ok,
         summary: None,
     });
@@ -458,21 +524,21 @@ fn run_one_iteration(
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
 
-    // Step 9 — commit.
+    // Step 11 — commit.
     let new_pass_count = read_corpus_passing(&corpus_status_path()).unwrap_or(baseline_pass_count);
     let total = read_corpus_total(&corpus_status_path()).unwrap_or(0);
     let new_passes = new_pass_count.saturating_sub(baseline_pass_count);
     let commit_msg = commit_message(&card, new_passes, new_pass_count, total);
     std::fs::write(log_dir.join("commit_message.txt"), &commit_msg)?;
     sink.emit(FlowEvent::StepStarted {
-        index: 9,
+        index: 11,
         total: TOTAL_STEPS,
         label: "git commit".into(),
     });
     match git_commit(&commit_msg).context("git commit")? {
         CommitOutcome::Committed => {
             sink.emit(FlowEvent::StepFinished {
-                index: 9,
+                index: 11,
                 ok: true,
                 summary: Some(format!(
                     "+{new_passes} pass · status {new_pass_count}/{total}"
@@ -482,7 +548,7 @@ fn run_one_iteration(
         CommitOutcome::NoChanges => {
             let reason = "no changes to commit after successful tests and corpus gate".to_string();
             sink.emit(FlowEvent::StepFinished {
-                index: 9,
+                index: 11,
                 ok: true,
                 summary: Some("no changes to commit".into()),
             });
@@ -820,6 +886,95 @@ fn register_generated_test(test_path: &Path) -> Result<()> {
     Ok(())
 }
 
+struct FocusedTestRun {
+    pattern: CommandRun,
+    round_trip: CommandRun,
+}
+
+impl FocusedTestRun {
+    fn success(&self) -> bool {
+        self.pattern.success && self.round_trip.success
+    }
+
+    fn short_summary(&self) -> String {
+        format!(
+            "patterns={} · round-trip={}",
+            status_word(self.pattern.success),
+            status_word(self.round_trip.success)
+        )
+    }
+
+    fn summary_text(&self) -> String {
+        format!(
+            "$ {}\nexit={}\n{}\n\n$ {}\nexit={}\n{}\n",
+            self.pattern.command,
+            self.pattern.exit_code,
+            self.pattern.output,
+            self.round_trip.command,
+            self.round_trip.exit_code,
+            self.round_trip.output
+        )
+    }
+}
+
+struct CommandRun {
+    command: String,
+    success: bool,
+    exit_code: i32,
+    output: String,
+}
+
+fn status_word(success: bool) -> &'static str {
+    if success {
+        "pass"
+    } else {
+        "fail"
+    }
+}
+
+fn run_focused_generated_tests(card: &Card) -> Result<FocusedTestRun> {
+    let filter = slugify(&card.name);
+    Ok(FocusedTestRun {
+        pattern: run_cargo_test(&[
+            "test",
+            "-p",
+            "mtg-grammar",
+            "--test",
+            "generated_patterns",
+            &filter,
+            "--",
+            "--nocapture",
+        ])?,
+        round_trip: run_cargo_test(&[
+            "test",
+            "-p",
+            "mtg-grammar",
+            "--test",
+            "generated",
+            &filter,
+            "--",
+            "--nocapture",
+        ])?,
+    })
+}
+
+fn run_cargo_test(args: &[&str]) -> Result<CommandRun> {
+    let out = Command::new("cargo")
+        .args(args)
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("run cargo {}", args.join(" ")))?;
+    let mut output = String::new();
+    output.push_str(&String::from_utf8_lossy(&out.stdout));
+    output.push_str(&String::from_utf8_lossy(&out.stderr));
+    Ok(CommandRun {
+        command: format!("cargo {}", args.join(" ")),
+        success: out.status.success(),
+        exit_code: out.status.code().unwrap_or(-1),
+        output,
+    })
+}
+
 fn read_corpus_passing(path: &Path) -> Result<usize> {
     let json: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(path)?)?;
     Ok(json
@@ -914,6 +1069,7 @@ fn build_pattern_prompt(
     full_test_path: &Path,
     pattern_test_path: &Path,
     patterns: &[PatternCase],
+    focused: &FocusedTestRun,
 ) -> Result<String> {
     let mut prompt = build_prompt(card, error, normalized, full_test_path)?;
     let pattern_rel = pattern_test_path
@@ -934,8 +1090,19 @@ fn build_pattern_prompt(
         ));
     }
     prompt.push_str(
-        "Work pattern by pattern. Keep changes general, then run `cargo xtask test --tier 2`. \
-         The orchestrator will add the full generated round-trip test after you exit successfully.\n",
+        "\n## Focused Test Failure\n\n\
+         The orchestrator already ran the focused generated tests. Fix the underlying grammar, AST, \
+         parser, unparser, or lowering issue exposed here:\n\n```text\n",
+    );
+    prompt.push_str(&focused.summary_text());
+    prompt.push_str(
+        "```\n\n\
+         ## Recipe\n\n\
+         1. Inspect only the files needed to explain the focused failure.\n\
+         2. Make the smallest general grammar/AST/parser/lowering change for this pattern.\n\
+         3. Run the focused generated test command(s) shown above until they pass.\n\
+         4. Do not run `cargo xtask corpus`; the orchestrator owns corpus regression checks.\n\
+         5. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n",
     );
     Ok(prompt)
 }
@@ -989,16 +1156,17 @@ const WORKFLOW_BLOCK: &str = "\
 3. Extend `grammar.pest` to recognize the pattern.
 4. Extend `ast.rs` with whatever new node(s) the grammar needs.
 5. Extend `lower.rs` so every new AST node has a lowering.
-6. Run `cargo xtask test --tier 2` until green.
-7. Run `cargo xtask corpus` and confirm zero new regressions.
-8. Stop. The orchestrator commits.";
+6. Run only the focused generated test command(s) supplied by the orchestrator.
+7. Stop once focused generated tests pass. The orchestrator runs tier 2,
+   corpus, and commit gates.";
 
 const CONSTRAINTS_BLOCK: &str = "\
 ## Constraints
 
-1. **Do not modify the unparser** to make round-trip pass. A round-trip
-   failure after your grammar change is a signal that the AST design is
-   wrong or there's new ambiguity. Think about it; don't paper over it.
+1. **Do not modify only the unparser** to make round-trip pass. A
+   round-trip failure after your grammar change is a signal that the AST
+   design may be wrong or there's new ambiguity. Think about it; don't
+   paper over it.
 2. **Do not add a special-case rule for this one card.** If the pattern
    looks specific to one card, ask yourself what *general* pattern it's
    an instance of and encode that.
@@ -1012,7 +1180,9 @@ const CONSTRAINTS_BLOCK: &str = "\
    `lower.rs`, and the generated test file if (and only if) you need to
    fix a generator bug — do not touch `mtg-scryfall`, `mtg-corpus`, or
    `xtask`.
-6. **If you can't solve it, say so.** Better to surface \"I don't see
+6. **Do not run broad gates.** The orchestrator owns `cargo xtask test
+   --tier 2`, `cargo xtask corpus`, and commit.
+7. **If you can't solve it, say so.** Better to surface \"I don't see
    how to extend the grammar without restructuring X\" than to ship a
    hack. The orchestrator will leave the working tree as-is for human
    triage.";
