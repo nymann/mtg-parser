@@ -172,3 +172,5 @@ mod goblin_balloon_brigade;
 mod goblin_king;
 #[path = "generated/guardian_angel.rs"]
 mod guardian_angel;
+#[path = "generated/healing_salve.rs"]
+mod healing_salve;

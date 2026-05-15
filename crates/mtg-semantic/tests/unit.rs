@@ -139,6 +139,14 @@ fn lowers_if_you_do_gain_life() {
 }
 
 #[test]
+fn lowers_target_player_gains_life() {
+    assert_eq!(
+        lower(&Statement::TargetPlayerGainsLife { amount: 3 }).unwrap(),
+        CardEffect::TargetPlayerGainsLife { amount: 3 },
+    );
+}
+
+#[test]
 fn lowers_activation_threshold_sacrifice_delayed_trigger() {
     assert_eq!(
         lower(

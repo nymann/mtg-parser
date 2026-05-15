@@ -103,6 +103,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way => {
             Ok(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay)
         }
+        Rule::target_player_gains_life => target_player_gains_life_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::add_mana => add_mana_from_pair(pair),
         Rule::until_eot_you_may_pay_cost_at_timing => {
@@ -221,6 +222,18 @@ fn modal_mode_from_pair(pair: Pair<Rule>) -> Result<ModalMode, ParseError> {
             Ok(ModalMode::DestroyTargetColoredPermanent {
                 color: color_from_pair(color)?,
             })
+        }
+        Rule::target_player_gains_life => Ok(ModalMode::TargetPlayerGainsLife {
+            amount: target_player_gains_life_amount_from_pair(effect)?,
+        }),
+        Rule::prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
+            let (amount, recipient) = prevent_next_damage_parts_from_pair(effect)?;
+            Ok(
+                ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                    amount,
+                    recipient,
+                },
+            )
         }
         _ => Err(ParseError::Internal("modal_effect")),
     }
@@ -729,6 +742,22 @@ fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     Ok(Statement::TargetPlayerDrawsCards {
         count: card_count_from_pair(count_pair)?,
     })
+}
+
+fn target_player_gains_life_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    Ok(Statement::TargetPlayerGainsLife {
+        amount: target_player_gains_life_amount_from_pair(pair)?,
+    })
+}
+
+fn target_player_gains_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, ParseError> {
+    let amount_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "target_player_gains_life missing amount",
+    ))?;
+    amount_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("target_player_gains_life amount"))
 }
 
 fn target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(

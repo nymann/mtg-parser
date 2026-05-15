@@ -12,7 +12,7 @@
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount, Color,
     DamageAmount, DamageLifeGainCap, DamageRecipient, EachPlayerAction, EnchantedObject,
-    ImperativeAction, Keyword, ManaCost, ManaSymbol, PermanentType, PreventionRecipient,
+    ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode, PermanentType, PreventionRecipient,
     PtModifier, Sign, SignedNumber, SourceObject, SpellType, Statement, StaticAbility,
     TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
 };
@@ -106,6 +106,17 @@ fn arb_prevention_recipient() -> impl Strategy<Value = PreventionRecipient> {
     prop_oneof![
         Just(PreventionRecipient::AnyTarget),
         Just(PreventionRecipient::ThatPermanentOrPlayer),
+    ]
+}
+
+fn arb_modal_mode() -> impl Strategy<Value = ModalMode> {
+    prop_oneof![
+        arb_color().prop_map(|color| ModalMode::CounterTargetColoredSpell { color }),
+        arb_color().prop_map(|color| ModalMode::DestroyTargetColoredPermanent { color }),
+        (1u32..=10).prop_map(|amount| ModalMode::TargetPlayerGainsLife { amount }),
+        (arb_damage_amount(), arb_prevention_recipient()).prop_map(|(amount, recipient)| {
+            ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient }
+        }),
     ]
 }
 
@@ -238,6 +249,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }
         }),
+        (1u32..=10).prop_map(|amount| Statement::TargetPlayerGainsLife { amount }),
         Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::ActivateOnlyDuringYourTurn),
@@ -270,6 +282,8 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_player_casts_colored_spell_pay_mana_gain_life_trigger(),
         arb_enchanted_land_has_upkeep_pay_mana_gain_life(),
         arb_target_player_discards_activated_ability(),
+        prop::collection::vec(arb_modal_mode(), 1..5)
+            .prop_map(|modes| Statement::ModalChoice { modes }),
         prop::collection::vec(arb_imperative_action(), 2..5)
             .prop_map(|actions| Statement::ImperativeActionSequence { actions }),
     ]

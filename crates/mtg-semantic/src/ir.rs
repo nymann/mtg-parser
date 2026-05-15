@@ -61,6 +61,8 @@ pub enum CardEffect {
     Keyword(Keyword),
     /// "Target player draws N cards."
     TargetPlayerDrawsCards { count: CardCount },
+    /// "Target player gains N life."
+    TargetPlayerGainsLife { amount: u32 },
     /// "Target player activates a mana ability of each <permanent_type>
     /// they control."
     TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type: PermanentType },

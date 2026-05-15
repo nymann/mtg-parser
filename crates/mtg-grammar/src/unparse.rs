@@ -109,6 +109,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_card_count(out, *count);
             out.push_str(" cards.");
         }
+        Statement::TargetPlayerGainsLife { amount } => {
+            write!(out, "Target player gains {amount} life.").expect("write to String never fails");
+        }
         Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
             permanent_type,
         } => {
@@ -308,6 +311,12 @@ fn write_modal_mode(out: &mut String, mode: ModalMode) {
             out.push_str("Destroy target ");
             out.push_str(color_name(color));
             out.push_str(" permanent.");
+        }
+        ModalMode::TargetPlayerGainsLife { amount } => {
+            write!(out, "Target player gains {amount} life.").expect("write to String never fails");
+        }
+        ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient } => {
+            write_prevent_next_damage_to_recipient(out, amount, recipient);
         }
     }
 }

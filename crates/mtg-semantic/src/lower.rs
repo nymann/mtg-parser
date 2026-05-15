@@ -75,6 +75,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }
+        Statement::TargetPlayerGainsLife { amount } => {
+            CardEffect::TargetPlayerGainsLife { amount: *amount }
+        }
         Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
             permanent_type,
         } => CardEffect::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {

@@ -63,6 +63,10 @@ pub enum Statement {
     TargetPlayerDrawsCards {
         count: CardCount,
     },
+    /// "Target player gains N life."
+    TargetPlayerGainsLife {
+        amount: u32,
+    },
     /// "Target player activates a mana ability of each <permanent_type>
     /// they control."
     TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
@@ -199,6 +203,13 @@ pub enum ModalMode {
     CounterTargetColoredSpell { color: Color },
     /// "Destroy target <color> permanent."
     DestroyTargetColoredPermanent { color: Color },
+    /// "Target player gains N life."
+    TargetPlayerGainsLife { amount: u32 },
+    /// "Prevent the next N damage that would be dealt to <recipient> this turn."
+    PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+        amount: DamageAmount,
+        recipient: PreventionRecipient,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
