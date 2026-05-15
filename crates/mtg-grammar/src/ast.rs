@@ -5,6 +5,9 @@ pub enum Statement {
     ManaCost(ManaCost),
     /// "Cast this spell only <restriction>."
     CastRestriction(CastRestriction),
+    /// "Ignore this effect for each creature the player didn't control
+    /// continuously since the beginning of the turn."
+    IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn,
     /// "Counter target spell[ unless its controller pays <mana>]."
     CounterTargetSpell {
         unless_cost: Option<CounterUnlessCost>,
@@ -671,6 +674,8 @@ pub enum CastRestriction {
     DuringYourStep { step: Step },
     /// "during combat before blockers are declared"
     DuringCombatBeforeBlockersAreDeclared,
+    /// "during an opponent's turn, before attackers are declared"
+    DuringOpponentsTurnBeforeAttackersDeclared,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -890,6 +895,11 @@ pub enum PermanentController {
 pub enum TriggerEffect {
     /// "destroy that creature if it attacked this turn"
     DestroyThatCreatureIfItAttackedThisTurn,
+    /// "destroy all non-<creature_type> creatures that player controls that
+    /// didn't attack this turn"
+    DestroyAllNonCreatureTypeCreaturesThatPlayerControlsThatDidntAttackThisTurn {
+        excluded_type: CreatureType,
+    },
     /// "destroy it"
     DestroyIt,
     /// "destroy that creature at end of combat"
@@ -1805,8 +1815,8 @@ pub enum StaticAbility {
     CreaturesItWasBlockingBecomeUnblocked,
     /// "You may have it block an attacking creature of your choice."
     YouMayHaveItBlockAttackingCreatureOfYourChoice,
-    /// "That creature attacks this turn if able."
-    ThatCreatureAttacksThisTurnIfAble,
+    /// "<subject> attacks this turn if able."
+    CreaturesAttackThisTurnIfAble { subject: AttackRequirementSubject },
     /// "It blocks each attacking creature this turn if able."
     ItBlocksEachAttackingCreatureThisTurnIfAble,
     /// "This turn, instead of declaring blockers, each defending player
@@ -1855,6 +1865,14 @@ pub enum Condition {
         source_name: String,
         is_attacking: bool,
     },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AttackRequirementSubject {
+    /// "that creature"
+    ThatCreature,
+    /// "creatures the active player controls"
+    CreaturesActivePlayerControls,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

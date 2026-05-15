@@ -5,24 +5,25 @@ use pest_derive::Parser;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
-    ActivationPermission, AddManaAmount, AsEntersChoice, BalanceSameWayAction, BasicLandType,
-    BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, CombatRole,
-    Condition, ConditionalEffectOrder, ContinuousEffect, CopyException, CounterAmount,
-    CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageEvent,
-    DamageEventPattern, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
-    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
-    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
-    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
-    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect,
-    TargetPermanentSelector, TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    ActivationPermission, AddManaAmount, AsEntersChoice, AttackRequirementSubject,
+    BalanceSameWayAction, BasicLandType, BasicLandTypeReference, CardCount, CastRestriction, Color,
+    ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
+    CopyException, CounterAmount, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
+    DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
+    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
+    DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
+    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
+    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
+    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, RegenerateRecipient, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TriggerCondition,
+    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -217,6 +218,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             Ok(Statement::ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared)
         }
         Rule::activate_only_as_sorcery => Ok(Statement::ActivateOnlyAsSorcery),
+        Rule::ignore_this_effect_for_each_creature_player_didnt_control_continuously => Ok(
+            Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn,
+        ),
         Rule::destroy_it_at_beginning_of_next_end_step_if_it_didnt_attack_this_turn => {
             Ok(Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn)
         }
@@ -262,7 +266,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::remove_target_creature_defending_player_controls_from_combat
         | Rule::creatures_it_was_blocking_become_unblocked
         | Rule::you_may_have_it_block_attacking_creature
-        | Rule::that_creature_attacks_this_turn_if_able
+        | Rule::creatures_attack_this_turn_if_able
         | Rule::target_creature_defending_player_controls_can_block_any_number
         | Rule::it_blocks_each_attacking_creature_if_able
         | Rule::this_turn_defending_players_make_random_blocking_piles
@@ -378,6 +382,9 @@ fn cast_restriction_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError>
         }
         Rule::during_combat_before_blockers_declared => {
             CastRestriction::DuringCombatBeforeBlockersAreDeclared
+        }
+        Rule::during_opponents_turn_before_attackers_declared => {
+            CastRestriction::DuringOpponentsTurnBeforeAttackersDeclared
         }
         _ => return Err(ParseError::Internal("cast_timing")),
     };
@@ -1957,6 +1964,9 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         Rule::destroy_that_creature_if_it_attacked_this_turn => {
             Ok(TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn)
         }
+        Rule::destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn => {
+            destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn_from_pair(pair)
+        }
         Rule::destroy_it => Ok(TriggerEffect::DestroyIt),
         Rule::destroy_that_creature_at_end_of_combat => {
             Ok(TriggerEffect::DestroyThatCreatureAtEndOfCombat)
@@ -2047,6 +2057,20 @@ fn defending_player_divides_creatures_without_keyword_into_labeled_piles_from_pa
         TriggerEffect::DefendingPlayerDividesCreaturesWithoutKeywordIntoLabeledPiles {
             keyword: keyword.ok_or(ParseError::Internal("divide labeled piles missing keyword"))?,
             labels,
+        },
+    )
+}
+
+fn destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let excluded_pair = only_inner(
+        pair,
+        "destroy all non-creature-type creatures missing creature_type",
+    )?;
+    Ok(
+        TriggerEffect::DestroyAllNonCreatureTypeCreaturesThatPlayerControlsThatDidntAttackThisTurn {
+            excluded_type: creature_type_from_pair(excluded_pair)?,
         },
     )
 }
@@ -3691,8 +3715,8 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
         Rule::you_may_have_it_block_attacking_creature => {
             Ok(StaticAbility::YouMayHaveItBlockAttackingCreatureOfYourChoice)
         }
-        Rule::that_creature_attacks_this_turn_if_able => {
-            Ok(StaticAbility::ThatCreatureAttacksThisTurnIfAble)
+        Rule::creatures_attack_this_turn_if_able => {
+            creatures_attack_this_turn_if_able_from_pair(pair)
         }
         Rule::it_blocks_each_attacking_creature_if_able => {
             Ok(StaticAbility::ItBlocksEachAttackingCreatureThisTurnIfAble)
@@ -3711,6 +3735,20 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
         }
         _ => Err(ParseError::Internal("static_ability variant")),
     }
+}
+
+fn creatures_attack_this_turn_if_able_from_pair(
+    pair: Pair<Rule>,
+) -> Result<StaticAbility, ParseError> {
+    let subject_pair = only_inner(pair, "attack requirement missing subject")?;
+    let subject = match subject_pair.as_rule() {
+        Rule::that_creature_subject => AttackRequirementSubject::ThatCreature,
+        Rule::creatures_active_player_controls_subject => {
+            AttackRequirementSubject::CreaturesActivePlayerControls
+        }
+        _ => return Err(ParseError::Internal("attack requirement subject")),
+    };
+    Ok(StaticAbility::CreaturesAttackThisTurnIfAble { subject })
 }
 
 fn copy_exception_from_pair(pair: Pair<Rule>) -> Result<CopyException, ParseError> {

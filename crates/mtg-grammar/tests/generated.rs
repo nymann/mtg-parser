@@ -316,3 +316,5 @@ mod sedge_troll;
 mod serra_angel;
 #[path = "generated/simulacrum.rs"]
 mod simulacrum;
+#[path = "generated/siren_s_call.rs"]
+mod siren_s_call;

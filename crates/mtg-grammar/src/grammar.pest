@@ -86,10 +86,11 @@ sentence_statement = _{
   | remove_target_creature_defending_player_controls_from_combat
   | creatures_it_was_blocking_become_unblocked
   | you_may_have_it_block_attacking_creature
-  | that_creature_attacks_this_turn_if_able
+  | creatures_attack_this_turn_if_able
   | target_creature_defending_player_controls_can_block_any_number
   | it_blocks_each_attacking_creature_if_able
   | destroy_it_at_beginning_of_next_end_step_if_it_didnt_attack_this_turn
+  | ignore_this_effect_for_each_creature_player_didnt_control_continuously
   | this_turn_defending_players_make_random_blocking_piles
   | additional_blockers_may_be_put_into_additional_piles
   | assign_each_pile_to_attacking_creature_at_random
@@ -599,7 +600,11 @@ during_your_step = { ^"during" ~ ^"your" ~ step ~ ^"step" }
 // Factor the shared `declare` prefix so declare-step names don't shadow
 // each other under PEG's ordered matching.
 step = { ^"combat" ~ ^"damage" | ^"declare" ~ (^"attackers" | ^"blockers") }
-cast_timing = _{ during_combat_before_blockers_declared | during_your_step | during_step | before_step }
+during_opponents_turn_before_attackers_declared = {
+    ^"during" ~ article ~ ^"opponent's" ~ ^"turn" ~ "," ~ ^"before"
+  ~ ^"attackers" ~ ^"are" ~ ^"declared"
+}
+cast_timing = _{ during_opponents_turn_before_attackers_declared | during_combat_before_blockers_declared | during_your_step | during_step | before_step }
 during_combat_before_blockers_declared = {
     ^"during" ~ ^"combat" ~ ^"before" ~ ^"blockers" ~ ^"are" ~ ^"declared"
 }
@@ -930,9 +935,15 @@ you_may_have_it_block_attacking_creature = {
   ~ ^"attacking" ~ ^"creature" ~ ^"of" ~ ^"your" ~ ^"choice" ~ "."
 }
 
-that_creature_attacks_this_turn_if_able = {
-    ^"that" ~ ^"creature" ~ ^"attacks" ~ ^"this" ~ ^"turn"
+creatures_attack_this_turn_if_able = {
+    attack_requirement_subject ~ attack_requirement_verb ~ ^"this" ~ ^"turn"
   ~ ^"if" ~ ^"able" ~ "."
+}
+attack_requirement_verb = _{ ^"attacks" | ^"attack" }
+attack_requirement_subject = _{ that_creature_subject | creatures_active_player_controls_subject }
+that_creature_subject = { ^"that" ~ ^"creature" }
+creatures_active_player_controls_subject = {
+    ^"creatures" ~ ^"the" ~ ^"active" ~ ^"player" ~ ^"controls"
 }
 
 it_blocks_each_attacking_creature_if_able = {
@@ -944,6 +955,11 @@ destroy_it_at_beginning_of_next_end_step_if_it_didnt_attack_this_turn = {
     ^"destroy" ~ ^"it" ~ ^"at" ~ ^"the" ~ ^"beginning" ~ ^"of"
   ~ ^"the" ~ ^"next" ~ ^"end" ~ ^"step" ~ ^"if" ~ ^"it"
   ~ ^"didn't" ~ ^"attack" ~ ^"this" ~ ^"turn" ~ "."
+}
+ignore_this_effect_for_each_creature_player_didnt_control_continuously = {
+    ^"ignore" ~ ^"this" ~ ^"effect" ~ ^"for" ~ ^"each" ~ ^"creature"
+  ~ ^"the" ~ ^"player" ~ ^"didn't" ~ ^"control" ~ ^"continuously"
+  ~ ^"since" ~ ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"turn" ~ "."
 }
 
 this_turn_defending_players_make_random_blocking_piles = {
@@ -1471,7 +1487,8 @@ source_object_is_status = { source_object ~ ^"is" ~ object_status }
 object_status = @{ ^"tapped" | ^"untapped" }
 
 trigger_effect = _{
-    destroy_that_creature_if_it_attacked_this_turn
+    destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn
+  | destroy_that_creature_if_it_attacked_this_turn
   | destroy_it
   | destroy_that_creature_at_end_of_combat
   | sacrifice_permanent_other_than_source
@@ -1502,6 +1519,12 @@ trigger_effect = _{
   | player_loses_life
   | you_lose_the_game
   | you_gain_life
+}
+
+destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn = {
+    ^"destroy" ~ ^"all" ~ ^"non-" ~ creature_type ~ ^"creatures"
+  ~ ^"that" ~ ^"player" ~ ^"controls" ~ ^"that" ~ ^"didn't"
+  ~ ^"attack" ~ ^"this" ~ ^"turn" ~ "."
 }
 
 defending_player_divides_creatures_without_keyword_into_labeled_piles = {

@@ -3,24 +3,24 @@ use std::fmt::Write;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
-    ActivationPermission, AddManaAmount, AsEntersChoice, BalanceSameWayAction, BasicLandType,
-    BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, CombatRole,
-    Condition, ConditionalEffectOrder, ContinuousEffect, CopyException, CounterAmount,
-    CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageKind,
-    DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
-    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
-    DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
-    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
-    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
-    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, RegenerateRecipient, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TriggerCondition,
-    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    ActivationPermission, AddManaAmount, AsEntersChoice, AttackRequirementSubject,
+    BalanceSameWayAction, BasicLandType, BasicLandTypeReference, CardCount, CastRestriction, Color,
+    ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
+    CopyException, CounterAmount, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
+    DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
+    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
+    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
+    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
+    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
+    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect,
+    TargetPermanentSelector, TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition,
+    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
+    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -33,6 +33,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
     match statement {
         Statement::ManaCost(mc) => write_mana_cost(out, mc),
         Statement::CastRestriction(restriction) => write_cast_restriction(out, *restriction),
+        Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn => {
+            out.push_str("Ignore this effect for each creature the player didn't control continuously since the beginning of the turn.");
+        }
         Statement::CounterTargetSpell { unless_cost } => {
             out.push_str("Counter target spell");
             if let Some(unless_cost) = unless_cost {
@@ -478,6 +481,7 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
         Statement::PlayerPaymentFailure { .. }
             | Statement::YouGainLifeEqualToDamage { .. }
             | Statement::NamedSourceDealsDamage { .. }
+            | Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn
             | Statement::ForEachAttackingCreatureChooseLabelBlockingRestriction { .. }
     )
 }
@@ -687,6 +691,9 @@ fn write_cast_restriction(out: &mut String, restriction: CastRestriction) {
         }
         CastRestriction::DuringCombatBeforeBlockersAreDeclared => {
             out.push_str("during combat before blockers are declared.");
+        }
+        CastRestriction::DuringOpponentsTurnBeforeAttackersDeclared => {
+            out.push_str("during an opponent's turn, before attackers are declared.");
         }
     }
 }
@@ -1836,8 +1843,19 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
         StaticAbility::YouMayHaveItBlockAttackingCreatureOfYourChoice => {
             out.push_str("You may have it block an attacking creature of your choice.");
         }
-        StaticAbility::ThatCreatureAttacksThisTurnIfAble => {
-            out.push_str("That creature attacks this turn if able.");
+        StaticAbility::CreaturesAttackThisTurnIfAble { subject } => {
+            match subject {
+                AttackRequirementSubject::ThatCreature => out.push_str("That creature"),
+                AttackRequirementSubject::CreaturesActivePlayerControls => {
+                    out.push_str("Creatures the active player controls")
+                }
+            }
+            match subject {
+                AttackRequirementSubject::ThatCreature => out.push_str(" attacks this turn if able."),
+                AttackRequirementSubject::CreaturesActivePlayerControls => {
+                    out.push_str(" attack this turn if able.")
+                }
+            }
         }
         StaticAbility::ItBlocksEachAttackingCreatureThisTurnIfAble => {
             out.push_str("It blocks each attacking creature this turn if able.");
@@ -2130,6 +2148,13 @@ fn write_trigger_effect(
     match eff {
         TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn => {
             out.push_str("destroy that creature if it attacked this turn.");
+        }
+        TriggerEffect::DestroyAllNonCreatureTypeCreaturesThatPlayerControlsThatDidntAttackThisTurn {
+            excluded_type,
+        } => {
+            out.push_str("destroy all non-");
+            write_creature_type(out, *excluded_type);
+            out.push_str(" creatures that player controls that didn't attack this turn.");
         }
         TriggerEffect::DestroyIt => {
             out.push_str("destroy it.");
