@@ -238,3 +238,5 @@ mod lord_of_the_pit;
 mod lure;
 #[path = "generated/magical_hack.rs"]
 mod magical_hack;
+#[path = "generated/manabarbs.rs"]
+mod manabarbs;

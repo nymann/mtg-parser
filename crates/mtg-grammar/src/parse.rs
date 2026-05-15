@@ -1219,6 +1219,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::player_casts_colored_spell => {
                 event = Some(player_casts_colored_spell_from_pair(child)?);
             }
+            Rule::player_taps_permanent_for_mana => {
+                event = Some(player_taps_permanent_for_mana_from_pair(child)?);
+            }
             Rule::basic_land_type_is_tapped_for_mana => {
                 event = Some(basic_land_type_is_tapped_for_mana_from_pair(child)?);
             }
@@ -1456,6 +1459,15 @@ fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent
     ))?;
     Ok(TriggerEvent::PlayerCastsColoredSpell {
         color: color_from_pair(color)?,
+    })
+}
+
+fn player_taps_permanent_for_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let permanent_type = pair.into_inner().next().ok_or(ParseError::Internal(
+        "player_taps_permanent_for_mana missing permanent_type",
+    ))?;
+    Ok(TriggerEvent::PlayerTapsPermanentForMana {
+        permanent_type: permanent_type_from_pair(permanent_type)?,
     })
 }
 

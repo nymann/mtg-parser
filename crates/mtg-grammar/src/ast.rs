@@ -404,6 +404,8 @@ pub enum TriggerEvent {
     PermanentEnters { permanent_type: PermanentType },
     /// "a player casts a/an <color> spell"
     PlayerCastsColoredSpell { color: Color },
+    /// "a player taps a/an <permanent_type> for mana"
+    PlayerTapsPermanentForMana { permanent_type: PermanentType },
     /// "a/an <basic_land_type> is tapped for mana"
     BasicLandTypeIsTappedForMana { land_type: BasicLandType },
     /// "a/an <basic_land_type> <controller> becomes <status>"

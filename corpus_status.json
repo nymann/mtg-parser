@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 186,
+  "passing": 187,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -480,7 +480,7 @@
     },
     "lea/Mana Flare": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:12\n  |\n1 | Whenever a player taps a land for mana, that player adds one mana of any type that land produced.\n  |            ^---\n  |\n  = expected permanent_type or basic_land_type"
+      "error": "parse: parse error:  --> 1:41\n  |\n1 | Whenever a player taps a land for mana, that player adds one mana of any type that land produced.\n  |                                         ^---\n  |\n  = expected if_you_do_gain_life, destroy_that_creature_if_it_attacked_this_turn, destroy_it, destroy_that_creature_at_end_of_combat, that_creatures_controller_sacrifices_it, sacrifice_permanent_other_than_source, sacrifice_source_unless_you_pay, sacrifice_that_many_nontoken_permanents, you_lose_the_game, you_gain_life, you_may_pay_mana, unless_you_pay_mana_do_actions, remove_pt_counter_from_it, put_pt_counter_on_it, put_that_many_named_counters_on_source, you_may_remove_named_counter_from_source, delayed_remove_all_named_counters_from_linked_land, that_player_draws_an_additional_card, that_player_discards_card_at_random, its_controller_adds_an_additional_mana, source_object, loses_and_gains_keyword, or return_enchanted_card_and_attach"
     },
     "lea/Mana Short": {
       "status": "fail",
@@ -491,8 +491,7 @@
       "error": "parse: parse error:  --> 2:62\n  |\n2 | At the beginning of your upkeep, you may pay {4}. If you do, untap this artifact.\n  |                                                              ^---\n  |\n  = expected prevent_next_damage_that_would_be_dealt_to_recipient_this_turn or add_mana"
     },
     "lea/Manabarbs": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:12\n  |\n1 | Whenever a player taps a land for mana, this enchantment deals 1 damage to that player.\n  |            ^---\n  |\n  = expected permanent_type or basic_land_type"
+      "status": "pass"
     },
     "lea/Meekstone": {
       "status": "fail",
@@ -567,7 +566,7 @@
     },
     "lea/Orcish Oriflamme": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:3\n  |\n1 | Attacking creatures you control get +1/+0.\n  |   ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
+      "error": "parse: parse error:  --> 1:3\n  |\n1 | Attacking creatures you control get +1/+0.\n  |   ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_taps_permanent_for_mana, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
     },
     "lea/Paralyze": {
       "status": "fail",
@@ -583,7 +582,7 @@
     },
     "lea/Pestilence": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of the end step, if no creatures are on the battlefield, sacrifice this enchantment.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of the end step, if no creatures are on the battlefield, sacrifice this enchantment.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_taps_permanent_for_mana, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
     },
     "lea/Phantasmal Forces": {
       "status": "pass"
@@ -639,7 +638,7 @@
     },
     "lea/Raging River": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever one or more creatures you control attack, each defending player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile. Then, for each attacking creature you control, choose \"left\" or \"right.\" That creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
+      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever one or more creatures you control attack, each defending player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile. Then, for each attacking creature you control, choose \"left\" or \"right.\" That creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_taps_permanent_for_mana, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
     },
     "lea/Raise Dead": {
       "status": "fail",
@@ -708,7 +707,7 @@
     },
     "lea/Scavenging Ghoul": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each end step, put a corpse counter on this creature for each creature that died this turn.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each end step, put a corpse counter on this creature for each creature that died this turn.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_taps_permanent_for_mana, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
     },
     "lea/Scrubland": {
       "status": "fail",
@@ -881,7 +880,7 @@
     },
     "lea/Verduran Enchantress": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever you cast an enchantment spell, you may draw a card.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
+      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever you cast an enchantment spell, you may draw a card.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_taps_permanent_for_mana, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
     },
     "lea/Vesuvan Doppelganger": {
       "status": "fail",
@@ -954,7 +953,7 @@
     },
     "lea/Wild Growth": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever enchanted land is tapped for mana, its controller adds an additional {G}.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
+      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever enchanted land is tapped for mana, its controller adds an additional {G}.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, you_are_dealt_damage, permanent_put_into_graveyard_from_battlefield, enchanted_permanent_dies, enchanted_object_becomes_status, permanent_enters, basic_land_type_is_tapped_for_mana, basic_land_type_controller_becomes_status, player_taps_permanent_for_mana, player_casts_colored_spell, you_play_permanent, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_each_players_draw_step, beginning_of_your_upkeep, beginning_of_upkeep_of_enchanted_permanent_controller, or source_object"
     },
     "lea/Will-o'-the-Wisp": {
       "status": "pass"

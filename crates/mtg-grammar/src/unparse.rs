@@ -1333,6 +1333,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { .. }
         | TriggerEvent::YouPlayPermanent { .. }
         | TriggerEvent::PlayerCastsColoredSpell { .. }
+        | TriggerEvent::PlayerTapsPermanentForMana { .. }
         | TriggerEvent::BasicLandTypeIsTappedForMana { .. }
         | TriggerEvent::BasicLandTypeControllerBecomesStatus { .. }
         | TriggerEvent::YouAreDealtDamage
@@ -1387,6 +1388,13 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str("a player casts a ");
             out.push_str(color_name(color));
             out.push_str(" spell");
+        }
+        TriggerEvent::PlayerTapsPermanentForMana { permanent_type } => {
+            out.push_str("a player taps ");
+            out.push_str(indefinite_article(permanent_type));
+            out.push(' ');
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str(" for mana");
         }
         TriggerEvent::BasicLandTypeIsTappedForMana { land_type } => {
             out.push_str("a ");

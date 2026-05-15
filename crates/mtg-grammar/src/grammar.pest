@@ -1056,6 +1056,7 @@ trigger_event = _{
   | beginning_of_chosen_players_upkeep
   | beginning_of_the_next_end_step
   | you_play_permanent
+  | player_taps_permanent_for_mana
   | player_casts_colored_spell
   | basic_land_type_is_tapped_for_mana
   | basic_land_type_controller_becomes_status
@@ -1088,6 +1089,9 @@ basic_land_type_controller_becomes_status = {
     article ~ basic_land_type ~ permanent_controller ~ ^"becomes" ~ object_status
 }
 permanent_controller = { ^"you" ~ ^"control" | article ~ ^"opponent" ~ ^"controls" }
+player_taps_permanent_for_mana = {
+    article ~ ^"player" ~ ^"taps" ~ article ~ permanent_type ~ ^"for" ~ ^"mana"
+}
 player_casts_colored_spell = { article ~ ^"player" ~ ^"casts" ~ article ~ color_word ~ ^"spell" }
 you_play_permanent = { ^"you" ~ ^"play" ~ article ~ permanent_type }
 source_blocks_or_becomes_blocked_by_non_creature_type_creature = {
