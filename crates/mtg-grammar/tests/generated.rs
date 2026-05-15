@@ -122,3 +122,5 @@ mod drain_life;
 mod drain_power;
 #[path = "generated/drudge_skeletons.rs"]
 mod drudge_skeletons;
+#[path = "generated/dwarven_demolition_team.rs"]
+mod dwarven_demolition_team;

@@ -1599,6 +1599,15 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 permanent_type: permanent_type_from_pair(permanent_type_pair)?,
             })
         }
+        Rule::destroy_target_creature_type => {
+            let creature_type_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("destroy target missing creature_type"))?;
+            Ok(ActivatedEffect::DestroyTargetCreatureType {
+                creature_type: creature_type_from_pair(creature_type_pair)?,
+            })
+        }
         Rule::target_player_discards_cards => {
             let count_pair = pair
                 .into_inner()

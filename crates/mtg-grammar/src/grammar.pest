@@ -509,6 +509,7 @@ activated_effect = _{
   | add_one_mana_of_any_color
   | add_mana
   | regenerate_source
+  | destroy_target_creature_type
   | destroy_target_permanent
   | counter_target_colored_spell
   | untap_source
@@ -527,6 +528,7 @@ add_mana_of_any_one_color = {
 add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"color" ~ "." }
 add_mana = { ^"add" ~ mana_cost ~ "." }
 regenerate_source = { ^"regenerate" ~ source_object ~ "." }
+destroy_target_creature_type = { ^"destroy" ~ ^"target" ~ creature_type ~ "." }
 destroy_target_permanent = { ^"destroy" ~ ^"target" ~ permanent_type ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
 target_player_discards_cards = {

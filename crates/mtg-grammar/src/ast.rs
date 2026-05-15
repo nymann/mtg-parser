@@ -394,6 +394,10 @@ pub enum ActivatedEffect {
     DestroyTargetPermanent {
         permanent_type: PermanentType,
     },
+    /// "Destroy target <creature_type>."
+    DestroyTargetCreatureType {
+        creature_type: CreatureType,
+    },
     /// "Target player discards N cards."
     TargetPlayerDiscardsCards {
         count: CardCount,

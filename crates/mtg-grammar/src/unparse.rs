@@ -556,6 +556,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(permanent_type_name(*permanent_type));
             out.push('.');
         }
+        ActivatedEffect::DestroyTargetCreatureType { creature_type } => {
+            out.push_str("Destroy target ");
+            write_creature_type(out, *creature_type);
+            out.push('.');
+        }
         ActivatedEffect::TargetPlayerDiscardsCards { count } => {
             out.push_str("Target player discards ");
             write_discard_count(out, *count);
