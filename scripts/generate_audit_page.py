@@ -23,7 +23,13 @@ FILES = [
 ]
 
 
-DEFAULT_REFS = "HEAD~3:Baseline,HEAD~2:Semantic collapse,HEAD~1:Damage refactor,HEAD:Current"
+DEFAULT_REFS = (
+    "d6cb122:Baseline,"
+    "59bef24:Semantic collapse,"
+    "b23fa54:Damage refactor,"
+    "c8e346e:Parse refactor,"
+    "HEAD:Current"
+)
 
 
 def git(*args: str) -> str:
@@ -90,7 +96,12 @@ def render(refs: list[dict[str, str]], rows: list[dict[str, object]]) -> str:
     )
     parse_row = next(row for row in rows if row["file"] == "parse.rs")
     parse_delta = parse_row["points"][current_idx]["loc"] - parse_row["points"][baseline_idx]["loc"]  # type: ignore[index]
-    payload = json.dumps({"refs": refs, "rows": rows})
+    payload = json.dumps({"refs": refs, "rows": rows}).replace("</", "<\\/")
+    ref_metrics = "\n".join(
+        f'    <div class="metric"><strong>{html.escape(ref["sha"])}</strong>'
+        f'<span>{html.escape(ref["label"])}</span></div>'
+        for ref in refs
+    )
     title = "MTG Parser Audit: Churn vs Lines of Code"
     return f"""<!doctype html>
 <html lang="en">
@@ -113,6 +124,7 @@ def render(refs: list[dict[str, str]], rows: list[dict[str, object]]) -> str:
     section, .metric {{ background: var(--panel); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }}
     section {{ padding: 18px; margin-top: 16px; }}
     .summary {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 22px 0; }}
+    .refs {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0 0 22px; }}
     .metric {{ padding: 14px 16px; }}
     .metric strong {{ display: block; font-size: 24px; line-height: 1.1; }}
     .metric span {{ display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }}
@@ -143,6 +155,9 @@ def render(refs: list[dict[str, str]], rows: list[dict[str, object]]) -> str:
     <div class="metric"><strong>{html.escape(refs[0]["sha"])}</strong><span>baseline ref</span></div>
     <div class="metric"><strong>{html.escape(refs[-1]["sha"])}</strong><span>current ref</span></div>
   </div>
+  <div class="refs">
+{ref_metrics}
+  </div>
   <section>
     <h2>Churn vs LOC Hotspot Movement</h2>
     <div class="legend" id="legend"></div>
@@ -158,7 +173,7 @@ def render(refs: list[dict[str, str]], rows: list[dict[str, object]]) -> str:
     <table><thead id="head"></thead><tbody id="rows"></tbody></table>
   </section>
 </main>
-<script id="audit-data" type="application/json">{html.escape(payload)}</script>
+<script id="audit-data" type="application/json">{payload}</script>
 <script>
 const data = JSON.parse(document.getElementById("audit-data").textContent);
 const colors = ["var(--c0)", "var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
