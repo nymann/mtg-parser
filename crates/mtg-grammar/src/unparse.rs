@@ -196,6 +196,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::YouMayChooseNewTargetsForTheCopy => {
             out.push_str("You may choose new targets for the copy.");
         }
+        Statement::Label { label } => {
+            write_label_title(out, label);
+        }
         Statement::ImperativeActionSequence { actions } => {
             write_imperative_action_sequence(out, actions);
         }
@@ -320,6 +323,17 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_same_way_actions(out, actions);
             out.push_str(" the same way.");
         }
+        Statement::ForEachAttackingCreatureChooseLabelBlockingRestriction { labels, keyword } => {
+            out.push_str("Then, for each attacking creature you control, choose ");
+            write_quoted_label(out, labels.first().map(String::as_str).unwrap_or(""));
+            out.push_str(" or \"");
+            out.push_str(labels.get(1).map(String::as_str).unwrap_or(""));
+            out.push_str(
+                ".\" That creature can't be blocked this combat except by creatures with ",
+            );
+            write_keyword_lowercase(out, *keyword);
+            out.push_str(" and creatures in a pile with the chosen label.");
+        }
         Statement::AsSourceEntersChoose { source, choice } => {
             out.push_str("As ");
             write_source_object(out, *source);
@@ -419,7 +433,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
 }
 
 fn statement_continues_previous_sentence(statement: &Statement) -> bool {
-    matches!(statement, Statement::PlayerPaymentFailure { .. })
+    matches!(
+        statement,
+        Statement::PlayerPaymentFailure { .. }
+            | Statement::ForEachAttackingCreatureChooseLabelBlockingRestriction { .. }
+    )
 }
 
 fn write_modal_choice(out: &mut String, modes: &[ModalMode]) {
@@ -1717,6 +1735,7 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::PlayerTapsPermanentForMana { .. }
         | TriggerEvent::BasicLandTypeIsTappedForMana { .. }
         | TriggerEvent::BasicLandTypeControllerBecomesStatus { .. }
+        | TriggerEvent::OneOrMoreCreaturesYouControlAttack
         | TriggerEvent::YouAreDealtDamage
         | TriggerEvent::SourceIsDealtDamage { .. }
         | TriggerEvent::SourceDealsDamageToAnOpponent { .. }
@@ -1814,6 +1833,9 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str(indefinite_article(permanent_type));
             out.push(' ');
             out.push_str(permanent_type_name(permanent_type));
+        }
+        TriggerEvent::OneOrMoreCreaturesYouControlAttack => {
+            out.push_str("one or more creatures you control attack");
         }
         TriggerEvent::EnchantedPermanentDies { permanent_type } => {
             out.push_str("enchanted ");
@@ -1977,6 +1999,18 @@ fn write_trigger_effect(
             out.push_str(" mana of any type that ");
             out.push_str(permanent_type_name(*permanent_type));
             out.push_str(" produced.");
+        }
+        TriggerEffect::DefendingPlayerDividesCreaturesWithoutKeywordIntoLabeledPiles {
+            keyword,
+            labels,
+        } => {
+            out.push_str("each defending player divides all creatures without ");
+            write_keyword_lowercase(out, *keyword);
+            out.push_str(" they control into a ");
+            write_quoted_label(out, labels.first().map(String::as_str).unwrap_or(""));
+            out.push_str(" pile and a ");
+            write_quoted_label(out, labels.get(1).map(String::as_str).unwrap_or(""));
+            out.push_str(" pile.");
         }
         TriggerEffect::ItsControllerAddsAdditionalMana { mana } => {
             out.push_str("its controller adds an additional ");
@@ -2385,6 +2419,20 @@ fn write_as_enters_choice(out: &mut String, choice: AsEntersChoice) {
         AsEntersChoice::Opponent => out.push_str("an opponent"),
         AsEntersChoice::BasicLandType => out.push_str("a basic land type"),
     }
+}
+
+fn write_label_title(out: &mut String, label: &str) {
+    let mut chars = label.chars();
+    if let Some(first) = chars.next() {
+        out.extend(first.to_uppercase());
+        out.push_str(chars.as_str());
+    }
+}
+
+fn write_quoted_label(out: &mut String, label: &str) {
+    out.push('"');
+    out.push_str(label);
+    out.push('"');
 }
 
 fn write_copy_exception(out: &mut String, exception: CopyException) {

@@ -133,6 +133,11 @@ pub enum Statement {
     },
     /// "You may choose new targets for the copy."
     YouMayChooseNewTargetsForTheCopy,
+    /// A standalone label word accepted for generated pattern tests
+    /// extracted from quoted label choices.
+    Label {
+        label: String,
+    },
     /// "<action>, [<action>, ]then <action>."
     ImperativeActionSequence {
         actions: Vec<ImperativeAction>,
@@ -262,6 +267,14 @@ pub enum Statement {
     ActivateOnlyAsSorcery,
     /// "Destroy it at the beginning of the next end step if it didn't attack this turn."
     DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn,
+    /// "Then, for each attacking creature you control, choose <label> or
+    /// <label>. That creature can't be blocked this combat except by
+    /// creatures with <keyword> and creatures in a pile with the chosen
+    /// label."
+    ForEachAttackingCreatureChooseLabelBlockingRestriction {
+        labels: Vec<String>,
+        keyword: Keyword,
+    },
     /// "Choose one —" followed by one or more bullet-pointed modes.
     ModalChoice {
         modes: Vec<ModalMode>,
@@ -717,6 +730,8 @@ pub enum TriggerEvent {
     },
     /// "you play a/an <permanent_type>"
     YouPlayPermanent { permanent_type: PermanentType },
+    /// "one or more creatures you control attack"
+    OneOrMoreCreaturesYouControlAttack,
     /// "enchanted <permanent_type> dies"
     EnchantedPermanentDies { permanent_type: PermanentType },
     /// "this <source> dies"
@@ -820,6 +835,12 @@ pub enum TriggerEffect {
     ThatPlayerAddsManaOfAnyTypeThatPermanentProduced {
         amount: u32,
         permanent_type: PermanentType,
+    },
+    /// "each defending player divides all creatures without <keyword> they
+    /// control into a <label> pile and a <label> pile."
+    DefendingPlayerDividesCreaturesWithoutKeywordIntoLabeledPiles {
+        keyword: Keyword,
+        labels: Vec<String>,
     },
     /// "remove a <pt_modifier> counter from it"
     RemoveCounterFromIt { counter: PtModifier },

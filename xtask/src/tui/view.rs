@@ -741,6 +741,7 @@ fn render_event_lines(state: &AppState, width: u16) -> Vec<Line<'static>> {
     let mut out = Vec::new();
     let mut current_iter: Option<u32> = None;
     let root = repo_root();
+    let content_width = width.saturating_sub(7);
     for row in &state.events {
         if !should_render_row_for_current_iteration(state, row) {
             continue;
@@ -759,7 +760,7 @@ fn render_event_lines(state: &AppState, width: u16) -> Vec<Line<'static>> {
             );
             current_iter = Some(row.iteration_index);
         }
-        for line in render_row(row, &root, width) {
+        for line in render_row(row, &root, content_width) {
             push_output_line(&mut out, state, line);
         }
     }
@@ -807,6 +808,15 @@ fn set_output_cursor(
 
 fn push_output_line(out: &mut Vec<Line<'static>>, state: &AppState, line: Line<'static>) {
     let idx = out.len();
+    let line_no = idx + 1;
+    let mut spans = Vec::with_capacity(line.spans.len() + 2);
+    spans.push(Span::styled(
+        format!("{line_no:>5} "),
+        Style::default().fg(C_FAINT),
+    ));
+    spans.push(Span::styled("│ ", Style::default().fg(C_FAINT)));
+    spans.extend(line.spans);
+    let line = Line::from(spans);
     let line = if state
         .visual
         .range()

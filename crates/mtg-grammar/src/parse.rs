@@ -93,6 +93,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::you_may_choose_new_targets_for_the_copy => {
             Ok(Statement::YouMayChooseNewTargetsForTheCopy)
         }
+        Rule::label_phrase => Ok(Statement::Label {
+            label: label_from_pair(pair)?,
+        }),
         Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
         Rule::counter_target_spell => counter_target_spell_from_pair(pair),
         Rule::this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first => {
@@ -173,6 +176,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             each_player_equalizes_controlled_permanents_from_pair(pair)
         }
         Rule::players_do_actions_the_same_way => players_do_actions_the_same_way_from_pair(pair),
+        Rule::then_for_each_attacking_creature_choose_label_blocking_restriction => {
+            then_for_each_attacking_creature_choose_label_blocking_restriction_from_pair(pair)
+        }
         Rule::as_source_enters_choose => as_source_enters_choose_from_pair(pair),
         Rule::activated_ability_with_activation_permission => {
             activated_ability_with_activation_permission_from_pair(pair)
@@ -1528,6 +1534,47 @@ fn semicolon_keyword_list_from_pair(pair: Pair<Rule>) -> Result<Statement, Parse
     Ok(Statement::SemicolonKeywordList(keywords))
 }
 
+fn label_from_pair(pair: Pair<Rule>) -> Result<String, ParseError> {
+    match pair.as_rule() {
+        Rule::label_word => Ok(pair.as_str().to_ascii_lowercase()),
+        Rule::label_phrase | Rule::quoted_label | Rule::quoted_label_with_inner_period => {
+            let label_pair = only_inner(pair, "label missing word")?;
+            label_from_pair(label_pair)
+        }
+        Rule::quoted_label_pile => {
+            let label_pair = only_inner(pair, "quoted label pile missing label")?;
+            label_from_pair(label_pair)
+        }
+        _ => Err(ParseError::Internal("label")),
+    }
+}
+
+fn then_for_each_attacking_creature_choose_label_blocking_restriction_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut labels = Vec::new();
+    let mut keyword = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::quoted_label | Rule::quoted_label_with_inner_period => {
+                labels.push(label_from_pair(child)?);
+            }
+            Rule::keyword_ability_name | Rule::landwalk | Rule::protection | Rule::enchant => {
+                keyword = Some(keyword_from_inner_pair(child)?);
+            }
+            _ => return Err(ParseError::Internal("label blocking restriction child")),
+        }
+    }
+    Ok(
+        Statement::ForEachAttackingCreatureChooseLabelBlockingRestriction {
+            labels,
+            keyword: keyword.ok_or(ParseError::Internal(
+                "label blocking restriction missing keyword",
+            ))?,
+        },
+    )
+}
+
 fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, ParseError> {
     let mut condition: Option<TriggerCondition> = None;
     let mut effects: Vec<TriggerEffect> = Vec::new();
@@ -1580,6 +1627,9 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
         }
         Rule::basic_land_type_controller_becomes_status => {
             basic_land_type_controller_becomes_status_from_pair(event_pair)
+        }
+        Rule::one_or_more_creatures_you_control_attack => {
+            Ok(TriggerEvent::OneOrMoreCreaturesYouControlAttack)
         }
         Rule::you_play_permanent => you_play_permanent_from_pair(event_pair),
         Rule::enchanted_permanent_dies => enchanted_permanent_dies_from_pair(event_pair),
@@ -1755,11 +1805,36 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         Rule::its_controller_adds_an_additional_mana => {
             its_controller_adds_an_additional_mana_from_pair(pair)
         }
+        Rule::defending_player_divides_creatures_without_keyword_into_labeled_piles => {
+            defending_player_divides_creatures_without_keyword_into_labeled_piles_from_pair(pair)
+        }
         Rule::source_gains_static_ability => source_gains_static_ability_from_pair(pair),
         Rule::remove_pt_counter_from_it => remove_pt_counter_from_it_from_pair(pair),
         Rule::put_pt_counter_on_it => put_pt_counter_on_it_from_pair(pair),
         _ => Err(ParseError::Internal("trigger effect")),
     }
+}
+
+fn defending_player_divides_creatures_without_keyword_into_labeled_piles_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut keyword = None;
+    let mut labels = Vec::new();
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::keyword_ability_name | Rule::landwalk | Rule::protection | Rule::enchant => {
+                keyword = Some(keyword_from_inner_pair(child)?);
+            }
+            Rule::quoted_label_pile => labels.push(label_from_pair(child)?),
+            _ => return Err(ParseError::Internal("divide labeled piles child")),
+        }
+    }
+    Ok(
+        TriggerEffect::DefendingPlayerDividesCreaturesWithoutKeywordIntoLabeledPiles {
+            keyword: keyword.ok_or(ParseError::Internal("divide labeled piles missing keyword"))?,
+            labels,
+        },
+    )
 }
 
 fn this_card_in_your_graveyard_with_cards_above_it_from_pair(

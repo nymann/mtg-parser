@@ -115,8 +115,20 @@ impl AppState {
             .saturating_sub(self.output_viewport_height)
     }
 
+    pub fn effective_output_scroll(&self) -> u16 {
+        if self.autoscroll {
+            self.output_bottom_scroll()
+        } else {
+            self.scroll.min(self.output_bottom_scroll())
+        }
+    }
+
+    pub fn materialize_output_scroll(&mut self) {
+        self.scroll = self.effective_output_scroll();
+    }
+
     pub fn pause_output(&mut self) {
-        self.scroll = self.output_bottom_scroll();
+        self.materialize_output_scroll();
         self.autoscroll = false;
     }
 
@@ -1029,5 +1041,33 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    #[test]
+    fn visual_text_returns_selected_output_lines() {
+        let mut state = AppState::new();
+        state.events.push(TimelineRow {
+            iteration_index: 1,
+            delta: 0,
+            kind: TimelineKind::Note {
+                level: NoteLevel::Info,
+                text: "first".into(),
+            },
+        });
+        state.events.push(TimelineRow {
+            iteration_index: 1,
+            delta: 0,
+            kind: TimelineKind::Note {
+                level: NoteLevel::Info,
+                text: "second".into(),
+            },
+        });
+        state.visual.start(1);
+        state.visual.cursor = 2;
+
+        let text = state.visual_text();
+
+        assert!(text.contains("first"));
+        assert!(text.contains("second"));
     }
 }

@@ -51,21 +51,25 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
         }
 
         (KeyCode::Up, _) | (KeyCode::Char('k'), _) => {
+            state.materialize_output_scroll();
             state.autoscroll = false;
             scroll_focused(state, false, scroll_step);
             Action::None
         }
         (KeyCode::Down, _) | (KeyCode::Char('j'), _) => {
+            state.materialize_output_scroll();
             state.autoscroll = false;
             scroll_focused(state, true, scroll_step);
             Action::None
         }
         (KeyCode::PageUp, _) => {
+            state.materialize_output_scroll();
             state.autoscroll = false;
             scroll_focused(state, false, page_step);
             Action::None
         }
         (KeyCode::PageDown, _) => {
+            state.materialize_output_scroll();
             state.autoscroll = false;
             scroll_focused(state, true, page_step);
             Action::None
@@ -97,6 +101,7 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
             Action::None
         }
         (KeyCode::Char('v'), _) | (KeyCode::Char('V'), _) => {
+            state.materialize_output_scroll();
             state.autoscroll = false;
             state
                 .visual
@@ -149,6 +154,7 @@ pub fn handle_mouse(mouse: MouseEvent, state: &mut AppState) -> Action {
             if state.history.open {
                 state.history.selected = state.history.selected.saturating_sub(1);
             } else {
+                state.materialize_output_scroll();
                 state.autoscroll = false;
                 scroll_focused(state, false, scroll_step);
                 if state.visual.active {
@@ -163,6 +169,7 @@ pub fn handle_mouse(mouse: MouseEvent, state: &mut AppState) -> Action {
                         (state.history.selected + 1).min(state.history.entries.len() - 1);
                 }
             } else {
+                state.materialize_output_scroll();
                 state.autoscroll = false;
                 scroll_focused(state, true, scroll_step);
                 if state.visual.active {
@@ -183,26 +190,36 @@ fn handle_visual_key(key: KeyEvent, state: &mut AppState) -> Action {
         }
         KeyCode::Char('y') => Action::Copy(CopyTarget::Visual),
         KeyCode::Up | KeyCode::Char('k') => {
+            state.materialize_output_scroll();
             state.autoscroll = false;
             state.scroll = state.scroll.saturating_sub(1);
             state.visual.cursor = state.scroll;
             Action::None
         }
         KeyCode::Down | KeyCode::Char('j') => {
+            state.materialize_output_scroll();
             state.autoscroll = false;
-            state.scroll = state.scroll.saturating_add(1);
+            state.scroll = state
+                .scroll
+                .saturating_add(1)
+                .min(state.output_bottom_scroll());
             state.visual.cursor = state.scroll;
             Action::None
         }
         KeyCode::PageUp => {
+            state.materialize_output_scroll();
             state.autoscroll = false;
             state.scroll = state.scroll.saturating_sub(10);
             state.visual.cursor = state.scroll;
             Action::None
         }
         KeyCode::PageDown => {
+            state.materialize_output_scroll();
             state.autoscroll = false;
-            state.scroll = state.scroll.saturating_add(10);
+            state.scroll = state
+                .scroll
+                .saturating_add(10)
+                .min(state.output_bottom_scroll());
             state.visual.cursor = state.scroll;
             Action::None
         }
@@ -332,14 +349,24 @@ fn infer_history_provider(raw: &serde_json::Value) -> AgentProvider {
 }
 
 fn scroll_focused(state: &mut AppState, down: bool, amount: u16) {
-    let slot = match state.focus {
-        FocusPane::Output | FocusPane::Modal => &mut state.scroll,
-        FocusPane::Card => &mut state.card_scroll,
-    };
-    if down {
-        *slot = slot.saturating_add(amount);
-    } else {
-        *slot = slot.saturating_sub(amount);
+    match state.focus {
+        FocusPane::Output | FocusPane::Modal => {
+            if down {
+                state.scroll = state
+                    .scroll
+                    .saturating_add(amount)
+                    .min(state.output_bottom_scroll());
+            } else {
+                state.scroll = state.scroll.saturating_sub(amount);
+            }
+        }
+        FocusPane::Card => {
+            if down {
+                state.card_scroll = state.card_scroll.saturating_add(amount);
+            } else {
+                state.card_scroll = state.card_scroll.saturating_sub(amount);
+            }
+        }
     }
 }
 
@@ -408,15 +435,20 @@ mod tests {
         }
     }
 
+    fn key(code: KeyCode) -> KeyEvent {
+        KeyEvent::new(code, KeyModifiers::empty())
+    }
+
     #[test]
     fn mouse_wheel_scrolls_focused_output_and_disables_autoscroll() {
         let mut state = AppState::new();
+        state.remember_output_view(100, 20);
         state.autoscroll = true;
 
         handle_mouse(wheel(MouseEventKind::ScrollDown), &mut state);
 
         assert!(!state.autoscroll);
-        assert_eq!(state.scroll, 3);
+        assert_eq!(state.scroll, 80);
     }
 
     #[test]
@@ -428,5 +460,50 @@ mod tests {
 
         assert_eq!(state.card_scroll, 3);
         assert_eq!(state.scroll, 0);
+    }
+
+    #[test]
+    fn normal_scroll_up_from_autoscroll_moves_one_line_from_bottom() {
+        let mut state = AppState::new();
+        state.remember_output_view(100, 20);
+        state.autoscroll = true;
+        state.scroll = 0;
+
+        let action = handle(key(KeyCode::Char('k')), &mut state);
+
+        assert!(matches!(action, Action::None));
+        assert!(!state.autoscroll);
+        assert_eq!(state.scroll, 79);
+    }
+
+    #[test]
+    fn visual_mode_starts_at_visible_bottom_when_autoscrolling() {
+        let mut state = AppState::new();
+        state.remember_output_view(100, 20);
+        state.autoscroll = true;
+        state.scroll = 0;
+
+        let action = handle(key(KeyCode::Char('v')), &mut state);
+
+        assert!(matches!(action, Action::None));
+        assert!(!state.autoscroll);
+        assert!(state.visual.active);
+        assert_eq!(state.visual.anchor, 80);
+        assert_eq!(state.visual.cursor, 80);
+    }
+
+    #[test]
+    fn visual_down_extends_selection_one_line() {
+        let mut state = AppState::new();
+        state.remember_output_view(100, 20);
+        state.scroll = 40;
+        state.autoscroll = false;
+        state.visual.start(40);
+
+        let action = handle(key(KeyCode::Char('j')), &mut state);
+
+        assert!(matches!(action, Action::None));
+        assert_eq!(state.scroll, 41);
+        assert_eq!(state.visual.range(), Some((40, 41)));
     }
 }

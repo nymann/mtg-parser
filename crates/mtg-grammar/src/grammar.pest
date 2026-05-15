@@ -90,6 +90,7 @@ sentence_statement = _{
   | additional_blockers_may_be_put_into_additional_piles
   | assign_each_pile_to_attacking_creature_at_random
   | creatures_in_assigned_pile_block_if_able
+  | then_for_each_attacking_creature_choose_label_blocking_restriction
   | as_source_enters_choose
   | activated_ability_with_activation_permission
   | activated_ability
@@ -147,6 +148,7 @@ sentence_statement = _{
 phrase_statement = _{
     modal_choice
   | mana_cost
+  | label_phrase
   | semicolon_keyword_ability_list
   | keyword_ability_list
   | keyword_ability
@@ -547,6 +549,10 @@ keyword_ability_list = { keyword ~ ("," ~ keyword)+ }
 semicolon_keyword_ability_list = { keyword ~ (";" ~ keyword)+ }
 keyword              = _{ enchant | protection | landwalk | keyword_ability_name }
 keyword_ability_name = @{ ^"first" ~ " " ~ ^"strike" | ^"flying" | ^"reach" | ^"haste" | ^"defender" | ^"banding" | ^"trample" | ^"indestructible" | ^"fear" }
+label_phrase = { label_word }
+label_word = @{ ^"left" | ^"right" }
+quoted_label = { "\"" ~ label_word ~ "\"" }
+quoted_label_with_inner_period = { "\"" ~ label_word ~ "." ~ "\"" }
 landwalk        = ${ basic_land_type ~ ^"walk" }
 protection      = { ^"protection" ~ ^"from" ~ color_word }
 
@@ -932,6 +938,16 @@ creatures_in_assigned_pile_block_if_able = {
   ~ ^"is" ~ ^"assigned" ~ ^"to" ~ ^"does" ~ ^"so" ~ "."
 }
 
+then_for_each_attacking_creature_choose_label_blocking_restriction = {
+    ^"then" ~ "," ~ ^"for" ~ ^"each" ~ ^"attacking" ~ ^"creature"
+  ~ ^"you" ~ ^"control" ~ "," ~ ^"choose" ~ quoted_label
+  ~ ^"or" ~ quoted_label_with_inner_period ~ ^"that" ~ ^"creature"
+  ~ ^"can't" ~ ^"be" ~ ^"blocked" ~ ^"this" ~ ^"combat" ~ ^"except"
+  ~ ^"by" ~ ^"creatures" ~ ^"with" ~ keyword ~ ^"and" ~ ^"creatures"
+  ~ ^"in" ~ article ~ ^"pile" ~ ^"with" ~ ^"the" ~ ^"chosen"
+  ~ ^"label" ~ "."
+}
+
 enchanted_object = _{ permanent_type | creature_type }
 
 // Activated abilities have a printed cost before the colon and one or
@@ -1282,6 +1298,7 @@ trigger_event = _{
   | player_casts_colored_spell
   | basic_land_type_is_tapped_for_mana
   | basic_land_type_controller_becomes_status
+  | one_or_more_creatures_you_control_attack
   | permanent_enters
 }
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
@@ -1318,6 +1335,9 @@ player_taps_permanent_for_mana = {
 }
 player_casts_colored_spell = { article ~ ^"player" ~ ^"casts" ~ article ~ color_word ~ ^"spell" }
 you_play_permanent = { ^"you" ~ ^"play" ~ article ~ permanent_type }
+one_or_more_creatures_you_control_attack = {
+    ^"one" ~ ^"or" ~ ^"more" ~ ^"creatures" ~ ^"you" ~ ^"control" ~ ^"attack"
+}
 source_blocks_or_becomes_blocked_by_non_creature_type_creature = {
     source_object ~ ^"blocks" ~ ^"or" ~ ^"becomes" ~ ^"blocked"
   ~ ^"by" ~ article ~ ^"non-" ~ creature_type ~ ^"creature"
@@ -1395,6 +1415,7 @@ trigger_effect = _{
   | that_player_discards_card_at_random
   | that_player_draws_an_additional_card
   | its_controller_adds_an_additional_mana
+  | defending_player_divides_creatures_without_keyword_into_labeled_piles
   | source_gains_static_ability
   | that_creatures_controller_sacrifices_it
   | sacrifice_that_many_nontoken_permanents
@@ -1402,6 +1423,14 @@ trigger_effect = _{
   | you_lose_the_game
   | you_gain_life
 }
+
+defending_player_divides_creatures_without_keyword_into_labeled_piles = {
+    ^"each" ~ ^"defending" ~ ^"player" ~ ^"divides" ~ ^"all"
+  ~ ^"creatures" ~ ^"without" ~ keyword ~ ^"they" ~ ^"control"
+  ~ ^"into" ~ article ~ quoted_label_pile ~ ^"and" ~ article
+  ~ quoted_label_pile ~ "."
+}
+quoted_label_pile = { quoted_label ~ ^"pile" }
 
 target_spell_or_permanent_becomes_color = {
     ^"target" ~ ^"spell" ~ ^"or" ~ ^"permanent" ~ ^"becomes" ~ color_word ~ "."

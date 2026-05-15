@@ -277,3 +277,5 @@ mod power_sink;
 mod power_surge;
 #[path = "generated_patterns/psionic_blast.rs"]
 mod psionic_blast;
+#[path = "generated_patterns/raging_river.rs"]
+mod raging_river;
