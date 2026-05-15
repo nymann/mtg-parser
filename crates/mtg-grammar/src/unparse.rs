@@ -8,9 +8,9 @@ use crate::ast::{
     InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
     ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TriggerEffect,
-    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TargetPermanentEndOfTurnEffect, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
+    Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -261,31 +261,34 @@ fn write_statement(out: &mut String, statement: &Statement) {
             permanent_type,
             modifier,
         } => {
-            out.push_str("Target ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str(" gets ");
-            write_pt_modifier(out, *modifier);
-            out.push_str(" until end of turn.");
+            write_target_permanent_until_end_of_turn(
+                out,
+                *permanent_type,
+                &TargetPermanentEndOfTurnEffect::Gets(MixedPtModifier {
+                    power: SignedPtComponent::Number(modifier.power),
+                    toughness: SignedPtComponent::Number(modifier.toughness),
+                }),
+            );
         }
         Statement::TargetPermanentGetsMixedUntilEndOfTurn {
             permanent_type,
             modifier,
         } => {
-            out.push_str("Target ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str(" gets ");
-            write_mixed_pt_modifier(out, *modifier);
-            out.push_str(" until end of turn.");
+            write_target_permanent_until_end_of_turn(
+                out,
+                *permanent_type,
+                &TargetPermanentEndOfTurnEffect::Gets(*modifier),
+            );
         }
         Statement::TargetPermanentGainsKeywordUntilEndOfTurn {
             permanent_type,
             keyword,
         } => {
-            out.push_str("Target ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str(" gains ");
-            write_keyword_lowercase(out, *keyword);
-            out.push_str(" until end of turn.");
+            write_target_permanent_until_end_of_turn(
+                out,
+                *permanent_type,
+                &TargetPermanentEndOfTurnEffect::GainsKeyword(*keyword),
+            );
         }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             permanent_type,
@@ -293,15 +296,15 @@ fn write_statement(out: &mut String, statement: &Statement) {
             modifier,
             definitions,
         } => {
-            out.push_str("Target ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str(" gains ");
-            write_keyword_lowercase(out, *keyword);
-            out.push_str(" and gets ");
-            write_mixed_pt_modifier(out, *modifier);
-            out.push_str(" until end of turn, where ");
-            write_variable_definitions(out, definitions);
-            out.push('.');
+            write_target_permanent_until_end_of_turn(
+                out,
+                *permanent_type,
+                &TargetPermanentEndOfTurnEffect::GainsKeywordAndGets {
+                    keyword: *keyword,
+                    modifier: *modifier,
+                    definitions: definitions.clone(),
+                },
+            );
         }
         Statement::EachPlayerEqualizesControlledPermanents { permanent_type } => {
             out.push_str("Each player chooses a number of ");
@@ -2064,6 +2067,41 @@ fn write_destroy_target_permanent_choice(out: &mut String, permanent_types: &[Pe
     out.push_str("Destroy target ");
     write_permanent_type_choice(out, permanent_types);
     out.push('.');
+}
+
+fn write_target_permanent_until_end_of_turn(
+    out: &mut String,
+    permanent_type: PermanentType,
+    effect: &TargetPermanentEndOfTurnEffect,
+) {
+    out.push_str("Target ");
+    out.push_str(permanent_type_name(permanent_type));
+    out.push(' ');
+    match effect {
+        TargetPermanentEndOfTurnEffect::Gets(modifier) => {
+            out.push_str("gets ");
+            write_mixed_pt_modifier(out, *modifier);
+            out.push_str(" until end of turn.");
+        }
+        TargetPermanentEndOfTurnEffect::GainsKeyword(keyword) => {
+            out.push_str("gains ");
+            write_keyword_lowercase(out, *keyword);
+            out.push_str(" until end of turn.");
+        }
+        TargetPermanentEndOfTurnEffect::GainsKeywordAndGets {
+            keyword,
+            modifier,
+            definitions,
+        } => {
+            out.push_str("gains ");
+            write_keyword_lowercase(out, *keyword);
+            out.push_str(" and gets ");
+            write_mixed_pt_modifier(out, *modifier);
+            out.push_str(" until end of turn, where ");
+            write_variable_definitions(out, definitions);
+            out.push('.');
+        }
+    }
 }
 
 fn write_permanent_type_plural_list(out: &mut String, permanent_types: &[PermanentType]) {

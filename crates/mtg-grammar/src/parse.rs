@@ -10,9 +10,9 @@ use crate::ast::{
     InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
     ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TriggerEffect,
-    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TargetPermanentEndOfTurnEffect, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
+    Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -170,13 +170,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::target_spell_or_permanent_becomes_color => {
             target_spell_or_permanent_becomes_color_from_pair(pair)
         }
-        Rule::target_permanent_gets_until_eot => target_permanent_gets_until_eot_from_pair(pair),
-        Rule::target_permanent_gains_keyword_until_eot => {
-            target_permanent_gains_keyword_until_eot_from_pair(pair)
-        }
-        Rule::target_permanent_gains_keyword_and_gets_eot => {
-            target_permanent_gains_keyword_and_gets_eot_from_pair(pair)
-        }
+        Rule::target_permanent_until_eot => target_permanent_until_eot_from_pair(pair),
         Rule::each_player_performs_action => each_player_performs_action_from_pair(pair),
         Rule::each_player_equalizes_controlled_permanents => {
             each_player_equalizes_controlled_permanents_from_pair(pair)
@@ -474,70 +468,75 @@ fn each_player_action_from_pair(pair: Pair<Rule>) -> Result<EachPlayerAction, Pa
     }
 }
 
-fn target_permanent_gains_keyword_and_gets_eot_from_pair(
-    pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
+fn target_permanent_until_eot_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let mut inner = pair.into_inner();
-    let pt_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("target gains missing permanent_type"))?;
-    let keyword_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("target gains missing keyword"))?;
-    let modifier_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("target gains missing modifier"))?;
-    let where_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("target gains missing where_clause"))?;
-    Ok(
-        Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
-            permanent_type: permanent_type_from_pair(pt_pair)?,
-            keyword: keyword_from_inner_pair(keyword_pair)?,
-            modifier: mixed_pt_modifier_from_pair(modifier_pair)?,
-            definitions: where_clause_from_pair(where_pair)?,
-        },
-    )
+    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+        "target permanent until end of turn missing permanent_type",
+    ))?;
+    let effect_pair = inner.next().ok_or(ParseError::Internal(
+        "target permanent until end of turn missing effect",
+    ))?;
+    Ok(Statement::target_permanent_until_end_of_turn(
+        permanent_type_from_pair(permanent_type_pair)?,
+        target_permanent_eot_effect_from_pair(effect_pair)?,
+    ))
+}
+
+fn target_permanent_eot_effect_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TargetPermanentEndOfTurnEffect, ParseError> {
+    match pair.as_rule() {
+        Rule::target_permanent_gets_eot_effect => {
+            let modifier_pair = only_inner(pair, "target gets missing modifier")?;
+            Ok(TargetPermanentEndOfTurnEffect::Gets(
+                mixed_pt_modifier_from_pair(modifier_pair)?,
+            ))
+        }
+        Rule::target_permanent_gains_keyword_eot_effect => {
+            let keyword_pair = only_inner(pair, "target gains missing keyword")?;
+            Ok(TargetPermanentEndOfTurnEffect::GainsKeyword(
+                keyword_from_inner_pair(keyword_pair)?,
+            ))
+        }
+        Rule::target_permanent_gains_keyword_and_gets_eot_effect => {
+            let mut inner = pair.into_inner();
+            let keyword_pair = inner.next().ok_or(ParseError::Internal(
+                "target gains and gets missing keyword",
+            ))?;
+            let modifier_pair = inner.next().ok_or(ParseError::Internal(
+                "target gains and gets missing modifier",
+            ))?;
+            let where_pair = inner.next().ok_or(ParseError::Internal(
+                "target gains and gets missing where_clause",
+            ))?;
+            Ok(TargetPermanentEndOfTurnEffect::GainsKeywordAndGets {
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+                modifier: mixed_pt_modifier_from_pair(modifier_pair)?,
+                definitions: where_clause_from_pair(where_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("target permanent end of turn effect")),
+    }
 }
 
 fn target_permanent_gains_keyword_until_eot_from_pair(
     pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
+) -> Result<ActivatedEffect, ParseError> {
     let mut inner = pair.into_inner();
-    let pt_pair = inner.next().ok_or(ParseError::Internal(
+    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
         "target permanent gains keyword missing permanent_type",
     ))?;
-    let keyword_pair = inner.next().ok_or(ParseError::Internal(
-        "target permanent gains keyword missing keyword",
+    let effect_pair = inner.next().ok_or(ParseError::Internal(
+        "target permanent gains keyword missing effect",
     ))?;
-    Ok(Statement::TargetPermanentGainsKeywordUntilEndOfTurn {
-        permanent_type: permanent_type_from_pair(pt_pair)?,
+    let keyword_pair = only_inner(
+        effect_pair,
+        "target permanent gains keyword missing keyword",
+    )?;
+    Ok(ActivatedEffect::TargetPermanentGainsKeywordUntilEndOfTurn {
+        permanent_type: permanent_type_from_pair(permanent_type_pair)?,
         keyword: keyword_from_inner_pair(keyword_pair)?,
     })
-}
-
-fn target_permanent_gets_until_eot_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let mut inner = pair.into_inner();
-    let pt_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("target gets missing permanent_type"))?;
-    let modifier_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("target gets missing modifier"))?;
-    let permanent_type = permanent_type_from_pair(pt_pair)?;
-    let modifier = mixed_pt_modifier_from_pair(modifier_pair)?;
-    match (modifier.power, modifier.toughness) {
-        (SignedPtComponent::Number(power), SignedPtComponent::Number(toughness)) => {
-            Ok(Statement::TargetPermanentGetsUntilEndOfTurn {
-                permanent_type,
-                modifier: PtModifier { power, toughness },
-            })
-        }
-        _ => Ok(Statement::TargetPermanentGetsMixedUntilEndOfTurn {
-            permanent_type,
-            modifier,
-        }),
-    }
 }
 
 fn target_spell_or_permanent_becomes_color_from_pair(
@@ -2859,17 +2858,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             Ok(ActivatedEffect::TargetCreatureWithPowerOrLessCantBeBlockedThisTurn { power })
         }
         Rule::target_permanent_gains_keyword_until_eot => {
-            let mut inner = pair.into_inner();
-            let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
-                "target permanent gains missing permanent_type",
-            ))?;
-            let keyword_pair = inner.next().ok_or(ParseError::Internal(
-                "target permanent gains missing keyword",
-            ))?;
-            Ok(ActivatedEffect::TargetPermanentGainsKeywordUntilEndOfTurn {
-                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
-                keyword: keyword_from_inner_pair(keyword_pair)?,
-            })
+            target_permanent_gains_keyword_until_eot_from_pair(pair)
         }
         Rule::activated_enchanted_gets_until_eot => {
             let mut inner = pair.into_inner();

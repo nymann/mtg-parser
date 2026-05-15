@@ -282,6 +282,55 @@ impl Statement {
             _ => Statement::DestroyTargetPermanentChoice { permanent_types },
         }
     }
+
+    pub(crate) fn target_permanent_until_end_of_turn(
+        permanent_type: PermanentType,
+        effect: TargetPermanentEndOfTurnEffect,
+    ) -> Self {
+        match effect {
+            TargetPermanentEndOfTurnEffect::Gets(modifier) => {
+                match (modifier.power, modifier.toughness) {
+                    (SignedPtComponent::Number(power), SignedPtComponent::Number(toughness)) => {
+                        Statement::TargetPermanentGetsUntilEndOfTurn {
+                            permanent_type,
+                            modifier: PtModifier { power, toughness },
+                        }
+                    }
+                    _ => Statement::TargetPermanentGetsMixedUntilEndOfTurn {
+                        permanent_type,
+                        modifier,
+                    },
+                }
+            }
+            TargetPermanentEndOfTurnEffect::GainsKeyword(keyword) => {
+                Statement::TargetPermanentGainsKeywordUntilEndOfTurn {
+                    permanent_type,
+                    keyword,
+                }
+            }
+            TargetPermanentEndOfTurnEffect::GainsKeywordAndGets {
+                keyword,
+                modifier,
+                definitions,
+            } => Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
+                permanent_type,
+                keyword,
+                modifier,
+                definitions,
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) enum TargetPermanentEndOfTurnEffect {
+    Gets(MixedPtModifier),
+    GainsKeyword(Keyword),
+    GainsKeywordAndGets {
+        keyword: Keyword,
+        modifier: MixedPtModifier,
+        definitions: Vec<VariableDefinition>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

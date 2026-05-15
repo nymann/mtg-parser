@@ -535,7 +535,10 @@ mod tests {
     fn parses_defaults() {
         let opts = Options::parse(&[]).expect("parse");
         assert_eq!(opts.stop_after, DEFAULT_STOP_AFTER);
-        assert_eq!(opts.max_refactor_iterations, DEFAULT_MAX_REFACTOR_ITERATIONS);
+        assert_eq!(
+            opts.max_refactor_iterations,
+            DEFAULT_MAX_REFACTOR_ITERATIONS
+        );
         assert_eq!(opts.max_card_iterations, 0);
         assert_eq!(opts.repair_attempts, DEFAULT_REPAIR_ATTEMPTS);
         assert!(!opts.allow_dirty);
@@ -548,14 +551,22 @@ mod tests {
     #[test]
     fn parses_all_flags_space_form() {
         let args = s(&[
-            "--set", "neo",
-            "--stop-after", "5",
-            "--max-refactor-iterations", "10",
-            "--max-card-iterations", "3",
-            "--repair-attempts", "2",
-            "--agent", "claude",
-            "--theme", "damage",
-            "--target", "crates/mtg-grammar/src/grammar.pest",
+            "--set",
+            "neo",
+            "--stop-after",
+            "5",
+            "--max-refactor-iterations",
+            "10",
+            "--max-card-iterations",
+            "3",
+            "--repair-attempts",
+            "2",
+            "--agent",
+            "claude",
+            "--theme",
+            "damage",
+            "--target",
+            "crates/mtg-grammar/src/grammar.pest",
             "--allow-dirty",
             "--dry-run",
         ]);
@@ -602,8 +613,8 @@ mod tests {
 
     #[test]
     fn rejects_zero_max_refactor() {
-        let err = Options::parse(&s(&["--max-refactor-iterations", "0"]))
-            .expect_err("should reject");
+        let err =
+            Options::parse(&s(&["--max-refactor-iterations", "0"])).expect_err("should reject");
         assert!(err.to_string().contains("max-refactor-iterations"));
     }
 
