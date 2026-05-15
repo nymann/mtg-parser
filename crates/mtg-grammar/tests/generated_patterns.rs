@@ -31,3 +31,5 @@ mod black_ward;
 mod blaze_of_glory;
 #[path = "generated_patterns/blessing.rs"]
 mod blessing;
+#[path = "generated_patterns/blue_elemental_blast.rs"]
+mod blue_elemental_blast;

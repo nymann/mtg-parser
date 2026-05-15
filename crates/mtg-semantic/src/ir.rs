@@ -1,5 +1,5 @@
 use mtg_grammar::{
-    ActivatedAbility, BalanceSameWayAction, CastRestriction, Keyword, MixedPtModifier,
+    ActivatedAbility, BalanceSameWayAction, CastRestriction, Keyword, MixedPtModifier, ModalMode,
     PermanentType, StaticAbility, TriggeredAbility, VariableDefinition,
 };
 use serde::{Deserialize, Serialize};
@@ -38,6 +38,8 @@ pub enum CardEffect {
     PlayersDoActionsTheSameWay { actions: Vec<BalanceSameWayAction> },
     /// "As this <permanent_type> enters, choose an opponent."
     AsThisPermanentEntersChooseOpponent { permanent_type: PermanentType },
+    /// A modal spell choice with one or more printed modes.
+    ModalChoice { modes: Vec<ModalMode> },
     /// A static ability with a conditional continuous effect. The
     /// grammar-side AST is reused verbatim until the IR grows real
     /// reference-resolution work to do here.

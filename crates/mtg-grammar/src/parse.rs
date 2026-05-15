@@ -5,10 +5,10 @@ use pest_derive::Parser;
 use crate::ast::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType,
     CastRestriction, Color, Condition, ContinuousEffect, CreatureType, EnchantObject,
-    EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, PermanentType,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
-    Variable, VariableDefinition, VariablePtModifier, Zone,
+    EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    PermanentType, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -49,6 +49,10 @@ pub fn parse(text: &str) -> Result<Statement, ParseError> {
 fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     match pair.as_rule() {
         Rule::mana_cost => Ok(Statement::ManaCost(mana_cost_from_pair(pair))),
+        Rule::modal_choice => modal_choice_from_pair(pair),
+        Rule::modal_mode => Ok(Statement::ModalChoice {
+            modes: vec![modal_mode_from_pair(pair)?],
+        }),
         Rule::cast_restriction => cast_restriction_from_pair(pair),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::destroy_all => destroy_all_from_pair(pair),
@@ -83,6 +87,43 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             pair,
         )?)),
         _ => Err(ParseError::Internal("statement")),
+    }
+}
+
+fn modal_choice_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let modes = pair
+        .into_inner()
+        .filter(|child| child.as_rule() == Rule::modal_mode)
+        .map(modal_mode_from_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(Statement::ModalChoice { modes })
+}
+
+fn modal_mode_from_pair(pair: Pair<Rule>) -> Result<ModalMode, ParseError> {
+    let effect = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("modal_mode missing effect"))?;
+    match effect.as_rule() {
+        Rule::counter_target_colored_spell => {
+            let color = effect
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("counter mode missing color"))?;
+            Ok(ModalMode::CounterTargetColoredSpell {
+                color: color_from_pair(color)?,
+            })
+        }
+        Rule::destroy_target_colored_permanent => {
+            let color = effect
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("destroy mode missing color"))?;
+            Ok(ModalMode::DestroyTargetColoredPermanent {
+                color: color_from_pair(color)?,
+            })
+        }
+        _ => Err(ParseError::Internal("modal_effect")),
     }
 }
 

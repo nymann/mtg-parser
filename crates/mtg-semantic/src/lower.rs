@@ -46,6 +46,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
                 permanent_type: *permanent_type,
             }
         }
+        Statement::ModalChoice { modes } => CardEffect::ModalChoice {
+            modes: modes.clone(),
+        },
         Statement::StaticAbility(sa) => CardEffect::StaticAbility(sa.clone()),
         Statement::ActivatedAbility(aa) => CardEffect::ActivatedAbility(aa.clone()),
         Statement::TriggeredAbility(ta) => CardEffect::TriggeredAbility(ta.clone()),

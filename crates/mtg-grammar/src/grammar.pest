@@ -16,7 +16,7 @@
 
 WHITESPACE = _{ " " }
 
-card_text = { SOI ~ abilities ~ EOI }
+card_text = { SOI ~ (modal_choice | abilities) ~ EOI }
 
 // Card text is a list of printed lines (paragraphs) separated by '\n'.
 // Each line is either a single "phrase" ability (no terminating period,
@@ -33,7 +33,8 @@ line      = _{ sentence_chain | phrase_statement }
 // `parse("{2} {R}")` from silently accepting two mana costs.
 sentence_chain     = _{ sentence_statement+ }
 sentence_statement = _{
-    cast_restriction
+    modal_mode
+  | cast_restriction
   | destroy_all
   | destroy
   | draw_cards
@@ -56,8 +57,23 @@ sentence_statement = _{
 }
 
 phrase_statement = _{
-    mana_cost
+    modal_choice
+  | mana_cost
   | keyword_ability
+}
+
+// Modal spells print a choice header followed by bullet-pointed modes.
+// The header alone and each bullet alone are accepted for generated
+// pattern tests, but the canonical full-card AST is one modal choice.
+modal_choice = { choose_one ~ ("\n" ~ modal_mode)* }
+choose_one    = { ^"choose" ~ ^"one" ~ "—" }
+modal_mode    = { "•" ~ modal_effect }
+modal_effect  = _{ counter_target_colored_spell | destroy_target_colored_permanent }
+counter_target_colored_spell = {
+    ^"counter" ~ ^"target" ~ color_word ~ ^"spell" ~ "."
+}
+destroy_target_colored_permanent = {
+    ^"destroy" ~ ^"target" ~ color_word ~ ^"permanent" ~ "."
 }
 
 mana_cost   = ${ mana_symbol+ }

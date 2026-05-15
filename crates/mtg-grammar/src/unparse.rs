@@ -3,10 +3,10 @@ use std::fmt::Write;
 use crate::ast::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType,
     CastRestriction, Color, Condition, ContinuousEffect, CreatureType, EnchantObject,
-    EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, PermanentType,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
-    Variable, VariableDefinition, VariablePtModifier, Zone,
+    EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    PermanentType, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -69,6 +69,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(permanent_type_name(*permanent_type));
             out.push_str(" enters, choose an opponent.");
         }
+        Statement::ModalChoice { modes } => write_modal_choice(out, modes),
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
         Statement::ActivatedAbility(aa) => write_activated_ability(out, aa),
         Statement::TriggeredAbility(ta) => write_triggered_ability(out, ta),
@@ -79,6 +80,29 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 }
                 write_statement(out, s);
             }
+        }
+    }
+}
+
+fn write_modal_choice(out: &mut String, modes: &[ModalMode]) {
+    out.push_str("Choose one —");
+    for mode in modes {
+        out.push_str("\n• ");
+        write_modal_mode(out, *mode);
+    }
+}
+
+fn write_modal_mode(out: &mut String, mode: ModalMode) {
+    match mode {
+        ModalMode::CounterTargetColoredSpell { color } => {
+            out.push_str("Counter target ");
+            out.push_str(color_name(color));
+            out.push_str(" spell.");
+        }
+        ModalMode::DestroyTargetColoredPermanent { color } => {
+            out.push_str("Destroy target ");
+            out.push_str(color_name(color));
+            out.push_str(" permanent.");
         }
     }
 }

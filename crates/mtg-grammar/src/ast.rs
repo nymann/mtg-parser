@@ -36,6 +36,10 @@ pub enum Statement {
     AsThisPermanentEntersChooseOpponent {
         permanent_type: PermanentType,
     },
+    /// "Choose one —" followed by one or more bullet-pointed modes.
+    ModalChoice {
+        modes: Vec<ModalMode>,
+    },
     StaticAbility(StaticAbility),
     ActivatedAbility(ActivatedAbility),
     TriggeredAbility(TriggeredAbility),
@@ -44,6 +48,14 @@ pub enum Statement {
     /// card is never wrapped in `Compound`, so each piece of card
     /// text has exactly one canonical AST.
     Compound(Vec<Statement>),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ModalMode {
+    /// "Counter target <color> spell."
+    CounterTargetColoredSpell { color: Color },
+    /// "Destroy target <color> permanent."
+    DestroyTargetColoredPermanent { color: Color },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
