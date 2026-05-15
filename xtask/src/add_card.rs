@@ -29,9 +29,9 @@ use crate::flow::{
     AgentProvider, FlowEvent, FlowSink, IterationOutcomeSummary, NoteLevel, SessionEndReason,
 };
 use crate::paths::{
-    ast_rs_path, corpus_status_path, generated_pattern_tests_dir, generated_pattern_tests_manifest,
-    add_card_log_root, generated_tests_dir, generated_tests_manifest, grammar_pest_path,
-    lower_rs_path, repo_root,
+    add_card_log_root, ast_rs_path, corpus_status_path, generated_pattern_tests_dir,
+    generated_pattern_tests_manifest, generated_tests_dir, generated_tests_manifest,
+    grammar_pest_path, lower_rs_path, repo_root,
 };
 
 /// 0 means unbounded; positive values cap the loop.
@@ -69,8 +69,7 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
     let auto_advance = opts.set.is_none();
     let mut current_set = match &opts.set {
         Some(s) => s.clone(),
-        None => pick_starting_set()
-            .context("pick newest tracked set with actionable failures")?,
+        None => pick_starting_set().context("pick newest tracked set with actionable failures")?,
     };
 
     let baseline_grammar_rules = count_grammar_rules();
@@ -1163,7 +1162,10 @@ fn try_advance_set(current: &str, sink: &mut dyn FlowSink) -> Result<Option<Stri
         crate::corpus_cmd::AdvanceOutcome::Advanced { from, to } => {
             sink.emit(FlowEvent::Note {
                 level: NoteLevel::Info,
-                text: format!("advanced from {from} to {} ({}, {})", to.code, to.name, to.released_at),
+                text: format!(
+                    "advanced from {from} to {} ({}, {})",
+                    to.code, to.name, to.released_at
+                ),
             });
             Ok(Some(to.code))
         }

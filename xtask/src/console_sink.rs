@@ -106,9 +106,7 @@ impl FlowSink for ConsoleSink {
                 IterationOutcomeSummary::SurfacedToHuman { reason } => {
                     eprintln!();
                     eprintln!("STOP at iteration {index}: {reason}");
-                    eprintln!(
-                        "Working tree left as-is; inspect .add-card/<latest>/ for context."
-                    );
+                    eprintln!("Working tree left as-is; inspect .add-card/<latest>/ for context.");
                 }
             },
 

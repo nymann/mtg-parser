@@ -261,7 +261,8 @@ fn ensure_qmd_paths() -> Result<(), String> {
         .parent()
         .ok_or_else(|| format!("qmd index path has no parent: {}", index.display()))?;
     std::fs::create_dir_all(index_dir).map_err(|e| format!("create qmd index dir: {e}"))?;
-    std::fs::create_dir_all(qmd_config_home()).map_err(|e| format!("create qmd config dir: {e}"))?;
+    std::fs::create_dir_all(qmd_config_home())
+        .map_err(|e| format!("create qmd config dir: {e}"))?;
     Ok(())
 }
 
