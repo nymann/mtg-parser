@@ -1059,28 +1059,26 @@ pub(crate) fn build_prompt(
     normalized: &str,
     test_path: &Path,
 ) -> Result<String> {
-    let grammar = std::fs::read_to_string(grammar_pest_path()).context("read grammar.pest")?;
-    let ast = std::fs::read_to_string(ast_rs_path()).context("read ast.rs")?;
-    let lower = std::fs::read_to_string(lower_rs_path()).context("read lower.rs")?;
     let test_rel = test_path
         .strip_prefix(repo_root())
         .unwrap_or(test_path)
         .display()
         .to_string();
+    let patterns = extract_patterns(normalized);
 
     Ok(format!(
         "{intro}\n\n\
          {card_block}\n\n\
          {error_block}\n\n\
          {test_block}\n\n\
-         {files_block}\n\n\
+         {context_block}\n\n\
          {workflow_block}\n\n\
          {constraints_block}\n",
         intro = PROMPT_INTRO,
         card_block = render_card_block(card, normalized),
         error_block = render_error_block(error),
         test_block = render_test_block(&test_rel),
-        files_block = render_files_block(&grammar, &ast, &lower),
+        context_block = render_context_block(&patterns),
         workflow_block = WORKFLOW_BLOCK,
         constraints_block = CONSTRAINTS_BLOCK,
     ))
@@ -1113,8 +1111,6 @@ fn build_pattern_prompt(
             text = pattern.text
         ));
     }
-    prompt.push_str("\n## Orchestrator Code Map\n\n");
-    prompt.push_str(&render_code_map(patterns));
     prompt.push_str(
         "\n## Focused Test Failure\n\n\
          The orchestrator already ran the focused generated tests. Fix the underlying grammar, AST, \
@@ -1191,6 +1187,16 @@ fn render_code_map(patterns: &[PatternCase]) -> String {
         out.push_str("```\n\n");
     }
     out
+}
+
+fn render_context_block(patterns: &[PatternCase]) -> String {
+    format!(
+        "## Deterministic Context\n\n\
+         The orchestrator intentionally includes targeted snippets instead of full source files. \
+         Use this map first; inspect whole files only if the snippets are insufficient.\n\n\
+         {code_map}",
+        code_map = render_code_map(patterns)
+    )
 }
 
 fn build_supervisor_prompt(error: &anyhow::Error, iter_index: u32, attempt: u8) -> Result<String> {
@@ -1305,18 +1311,6 @@ fn render_test_block(test_rel: &str) -> String {
          The orchestrator just wrote `{test_rel}`. It calls\n\
          `mtg_grammar::parse(text)` on the normalized oracle text and\n\
          asserts that re-parsing the unparsed AST yields the same AST."
-    )
-}
-
-fn render_files_block(grammar: &str, ast: &str, lower: &str) -> String {
-    format!(
-        "## Current files\n\n\
-         ### crates/mtg-grammar/src/grammar.pest\n\n\
-         ```\n{grammar}\n```\n\n\
-         ### crates/mtg-grammar/src/ast.rs\n\n\
-         ```rust\n{ast}\n```\n\n\
-         ### crates/mtg-semantic/src/lower.rs\n\n\
-         ```rust\n{lower}\n```"
     )
 }
 
