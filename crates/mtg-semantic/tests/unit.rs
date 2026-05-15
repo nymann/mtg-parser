@@ -328,6 +328,14 @@ fn lowers_then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way() {
 }
 
 #[test]
+fn lowers_change_text_replacing_basic_land_type() {
+    assert_eq!(
+        lower(&Statement::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType).unwrap(),
+        CardEffect::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType,
+    );
+}
+
+#[test]
 fn lowers_pure_generic_mana_cost() {
     assert_eq!(
         lower(&mc(vec![ManaSymbol::Generic(2)])).unwrap(),

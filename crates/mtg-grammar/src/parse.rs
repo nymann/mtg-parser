@@ -145,6 +145,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords => {
             if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords_from_pair(pair)
         }
+        Rule::change_text_of_target_spell_or_permanent_replacing_basic_land_type => {
+            Ok(Statement::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType)
+        }
         Rule::target_spell_or_permanent_becomes_color => {
             target_spell_or_permanent_becomes_color_from_pair(pair)
         }

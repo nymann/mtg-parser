@@ -169,6 +169,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 "Then that player loses all unspent mana and you add the mana lost this way.",
             );
         }
+        Statement::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType => {
+            out.push_str("Change the text of target spell or permanent by replacing all instances of one basic land type with another.");
+        }
         Statement::AddMana { mana } => {
             out.push_str("Add ");
             write_mana_cost(out, mana);

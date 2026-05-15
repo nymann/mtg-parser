@@ -321,6 +321,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         (1u32..=10).prop_map(|amount| Statement::TargetPlayerGainsLife { amount }),
         Just(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw),
         Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),
+        Just(Statement::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::ActivateOnlyDuringYourTurn),
         Just(Statement::ActivateOnlyDuringCombat),

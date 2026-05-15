@@ -106,6 +106,9 @@ pub enum Statement {
     /// "Then that player loses all unspent mana and you add the mana lost
     /// this way."
     ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay,
+    /// "Change the text of target spell or permanent by replacing all
+    /// instances of one basic land type with another."
+    ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType,
     /// "Add <mana>."
     AddMana {
         mana: ManaCost,

@@ -119,6 +119,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay => {
             CardEffect::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay
         }
+        Statement::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType => {
+            CardEffect::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType
+        }
         Statement::AddMana { mana } => CardEffect::AddMana { mana: mana.clone() },
         Statement::AntePlayRestriction => CardEffect::AntePlayRestriction,
         Statement::YouOwnTargetCardInZone { zone } => {

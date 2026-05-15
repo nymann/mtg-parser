@@ -236,3 +236,5 @@ mod lord_of_atlantis;
 mod lord_of_the_pit;
 #[path = "generated/lure.rs"]
 mod lure;
+#[path = "generated/magical_hack.rs"]
+mod magical_hack;
