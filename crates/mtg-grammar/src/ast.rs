@@ -517,6 +517,8 @@ pub enum DamageLifeGainCap {
 pub enum DamageLifeGainReference {
     /// "the damage dealt, but not more life than ..."
     DamageDealtCapped { caps: Vec<DamageLifeGainCap> },
+    /// "the damage dealt to you this turn"
+    DamageDealtToYouThisTurn,
     /// "the damage prevented this way"
     DamagePreventedThisWay,
 }
@@ -527,6 +529,8 @@ pub enum DamageRecipient {
     AnyTarget,
     /// "you"
     You,
+    /// "target creature you control"
+    TargetCreatureYouControl,
     /// "each creature"
     EachCreature,
     /// "each creature with <keyword>"
@@ -557,6 +561,7 @@ pub type NamedDamageEvent = DamageEvent<String, DamageRecipients>;
 pub enum DamageAmount {
     Number(u32),
     Variable(Variable),
+    DamageDealtToYouThisTurn,
     ThatPermanentsToughness(PermanentType),
     NumberOfBasicLandsTheyControl(BasicLandType),
 }

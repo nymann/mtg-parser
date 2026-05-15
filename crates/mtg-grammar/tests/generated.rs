@@ -314,3 +314,5 @@ mod scavenging_ghoul;
 mod sedge_troll;
 #[path = "generated/serra_angel.rs"]
 mod serra_angel;
+#[path = "generated/simulacrum.rs"]
+mod simulacrum;

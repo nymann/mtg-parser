@@ -953,6 +953,14 @@ fn named_damage_event_from_pair(pair: Pair<Rule>) -> Result<NamedDamageEvent, Pa
             recipient: DamageRecipients::Assignments(assignments),
         });
     }
+    if next_pair.as_rule() == Rule::damage_event_recipients {
+        let amount_pair = next_inner(&mut inner, "damage event missing amount")?;
+        return Ok(DamageEvent {
+            source: source_pair.as_str().to_string(),
+            amount: damage_event_amount_from_pair(amount_pair)?,
+            recipient: damage_event_recipients_from_pair(next_pair)?,
+        });
+    }
     let recipients_pair = next_inner(&mut inner, "damage event missing recipients")?;
     Ok(DamageEvent {
         source: source_pair.as_str().to_string(),
@@ -1010,6 +1018,9 @@ fn damage_recipient_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient, Parse
     match inner.as_rule() {
         Rule::any_target_prevention_recipient => Ok(DamageRecipient::AnyTarget),
         Rule::you_damage_recipient => Ok(DamageRecipient::You),
+        Rule::target_creature_you_control_damage_recipient => {
+            Ok(DamageRecipient::TargetCreatureYouControl)
+        }
         Rule::each_creature_damage_recipient => Ok(DamageRecipient::EachCreature),
         Rule::each_creature_with_keyword => {
             let keyword_pair = only_inner(inner, "creature damage recipient missing keyword")?;
@@ -1051,6 +1062,9 @@ fn you_gain_life_equal_damage_from_pair(pair: Pair<Rule>) -> Result<Statement, P
         }
         Rule::you_gain_life_equal_damage_prevented_this_way => {
             DamageLifeGainReference::DamagePreventedThisWay
+        }
+        Rule::you_gain_life_equal_damage_dealt_to_you_this_turn => {
+            DamageLifeGainReference::DamageDealtToYouThisTurn
         }
         _ => return Err(ParseError::Internal("life gain damage reference")),
     };
@@ -1440,6 +1454,7 @@ fn damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError>
             Ok(DamageAmount::Number(amount))
         }
         Rule::variable_name => Ok(DamageAmount::Variable(variable_from_str(pair.as_str())?)),
+        Rule::damage_dealt_to_you_this_turn => Ok(DamageAmount::DamageDealtToYouThisTurn),
         _ => Err(ParseError::Internal("damage amount")),
     }
 }
@@ -2500,13 +2515,15 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
                 "variable damage missing amount definition",
             ));
         }
-        (DamageAmount::ThatPermanentsToughness(_), Some(_))
+        (DamageAmount::DamageDealtToYouThisTurn, Some(_))
+        | (DamageAmount::ThatPermanentsToughness(_), Some(_))
         | (DamageAmount::NumberOfBasicLandsTheyControl(_), Some(_)) => {
             return Err(ParseError::Internal(
                 "equal-to damage cannot have variable definition",
             ));
         }
-        (DamageAmount::ThatPermanentsToughness(_), None)
+        (DamageAmount::DamageDealtToYouThisTurn, None)
+        | (DamageAmount::ThatPermanentsToughness(_), None)
         | (DamageAmount::NumberOfBasicLandsTheyControl(_), None) => Vec::new(),
     };
 
@@ -2604,7 +2621,12 @@ fn validate_trigger_damage_amount_recipient(
         (DamageAmount::NumberOfBasicLandsTheyControl(_), _) => Err(ParseError::Internal(
             "basic-land-count damage must be dealt to that player",
         )),
-        (DamageAmount::Number(_) | DamageAmount::Variable(_), _) => Ok(()),
+        (
+            DamageAmount::DamageDealtToYouThisTurn
+            | DamageAmount::Number(_)
+            | DamageAmount::Variable(_),
+            _,
+        ) => Ok(()),
     }
 }
 

@@ -477,6 +477,7 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
         statement,
         Statement::PlayerPaymentFailure { .. }
             | Statement::YouGainLifeEqualToDamage { .. }
+            | Statement::NamedSourceDealsDamage { .. }
             | Statement::ForEachAttackingCreatureChooseLabelBlockingRestriction { .. }
     )
 }
@@ -542,6 +543,9 @@ fn write_damage_life_gain_reference(out: &mut String, reference: &DamageLifeGain
         DamageLifeGainReference::DamageDealtCapped { caps } => {
             out.push_str("damage dealt, but not more life than ");
             write_damage_life_gain_caps(out, caps);
+        }
+        DamageLifeGainReference::DamageDealtToYouThisTurn => {
+            out.push_str("damage dealt to you this turn");
         }
         DamageLifeGainReference::DamagePreventedThisWay => {
             out.push_str("damage prevented this way");
@@ -614,6 +618,14 @@ fn write_named_damage_event(out: &mut String, event: &NamedDamageEvent) {
         out.push('.');
         return;
     }
+    if event.amount == DamageAmount::DamageDealtToYouThisTurn {
+        out.push_str("damage");
+        write_damage_event_recipients(out, &event.recipient);
+        out.push_str(" equal to the ");
+        write_damage_amount(out, event.amount);
+        out.push('.');
+        return;
+    }
     write_damage_amount(out, event.amount);
     out.push_str(" damage");
     write_damage_event_recipients(out, &event.recipient);
@@ -624,6 +636,7 @@ fn write_damage_recipient(out: &mut String, recipient: DamageRecipient) {
     match recipient {
         DamageRecipient::AnyTarget => out.push_str("any target"),
         DamageRecipient::You => out.push_str("you"),
+        DamageRecipient::TargetCreatureYouControl => out.push_str("target creature you control"),
         DamageRecipient::EachCreature => out.push_str("each creature"),
         DamageRecipient::EachCreatureWithKeyword { keyword } => {
             out.push_str("each creature with ");
@@ -1059,6 +1072,7 @@ fn write_damage_amount(out: &mut String, amount: DamageAmount) {
     match amount {
         DamageAmount::Number(n) => write!(out, "{n}").expect("write to String never fails"),
         DamageAmount::Variable(variable) => out.push_str(variable_name(variable)),
+        DamageAmount::DamageDealtToYouThisTurn => out.push_str("damage dealt to you this turn"),
         DamageAmount::ThatPermanentsToughness(permanent_type) => {
             out.push_str("equal to that ");
             out.push_str(permanent_type_name(permanent_type));
@@ -2372,6 +2386,12 @@ fn write_triggered_damage(
             out.push_str(" damage to ");
             write_trigger_damage_recipient(out, damage.event.recipient);
         }
+        DamageAmount::DamageDealtToYouThisTurn => {
+            out.push_str("damage to ");
+            write_trigger_damage_recipient(out, damage.event.recipient);
+            out.push_str(" equal to ");
+            write_damage_amount(out, damage.event.amount);
+        }
         DamageAmount::ThatPermanentsToughness(permanent_type) => {
             out.push_str("damage equal to that ");
             out.push_str(permanent_type_name(permanent_type));
@@ -2401,6 +2421,7 @@ fn write_triggered_damage(
             out.push('.');
         }
         DamageAmount::Number(_)
+        | DamageAmount::DamageDealtToYouThisTurn
         | DamageAmount::ThatPermanentsToughness(_)
         | DamageAmount::NumberOfBasicLandsTheyControl(_) => {
             if terminal {

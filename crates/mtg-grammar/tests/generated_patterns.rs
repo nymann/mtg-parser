@@ -303,3 +303,5 @@ mod scavenging_ghoul;
 mod sedge_troll;
 #[path = "generated_patterns/serra_angel.rs"]
 mod serra_angel;
+#[path = "generated_patterns/simulacrum.rs"]
+mod simulacrum;

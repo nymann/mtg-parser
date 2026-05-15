@@ -231,7 +231,11 @@ spell_type = @{ ^"instant" | ^"sorcery" }
 
 damage_event_statement = {
     proper_name ~ ^"deals"
-  ~ (damage_event_assignment_list | (damage_event_amount ~ ^"damage" ~ damage_event_recipients))
+  ~ (
+      damage_event_assignment_list
+    | (damage_event_amount ~ ^"damage" ~ damage_event_recipients)
+    | (^"damage" ~ damage_event_recipients ~ ^"equal" ~ ^"to" ~ ^"the" ~ damage_event_amount)
+    )
   ~ "."
 }
 damage_event_amount = { damage_amount_expression }
@@ -305,12 +309,14 @@ prevention_recipient = _{ any_target_prevention_recipient | that_permanent_or_pl
 any_target_prevention_recipient = { ^"any" ~ ^"target" }
 that_permanent_or_player_prevention_recipient = { ^"that" ~ ^"permanent" ~ ^"or" ~ ^"player" }
 damage_recipient = {
-    each_creature_with_keyword
+    target_creature_you_control_damage_recipient
+  | each_creature_with_keyword
   | each_creature_without_keyword
   | each_creature_damage_recipient
   | each_player_damage_recipient
   | that_player_damage_recipient
 }
+target_creature_you_control_damage_recipient = { ^"target" ~ ^"creature" ~ ^"you" ~ ^"control" }
 each_creature_damage_recipient = { ^"each" ~ ^"creature" }
 each_creature_with_keyword = { ^"each" ~ ^"creature" ~ ^"with" ~ keyword }
 each_creature_without_keyword = { ^"each" ~ ^"creature" ~ ^"without" ~ keyword }
@@ -345,6 +351,7 @@ if_you_cant_you_lose_the_game = {
 you_gain_life_equal_damage = {
     you_gain_life_equal_damage_dealt_capped
   | you_gain_life_equal_damage_prevented_this_way
+  | you_gain_life_equal_damage_dealt_to_you_this_turn
 }
 you_gain_life_equal_damage_dealt_capped = {
     ^"you" ~ ^"gain" ~ ^"life" ~ ^"equal" ~ ^"to" ~ ^"the"
@@ -355,6 +362,10 @@ you_gain_life_equal_damage_dealt_capped = {
 you_gain_life_equal_damage_prevented_this_way = {
     ^"you" ~ ^"gain" ~ ^"life" ~ ^"equal" ~ ^"to" ~ ^"the"
   ~ ^"damage" ~ ^"prevented" ~ ^"this" ~ ^"way" ~ "."
+}
+you_gain_life_equal_damage_dealt_to_you_this_turn = {
+    ^"you" ~ ^"gain" ~ ^"life" ~ ^"equal" ~ ^"to" ~ ^"the"
+  ~ damage_dealt_to_you_this_turn ~ "."
 }
 
 damage_life_gain_cap = _{
@@ -1779,7 +1790,10 @@ that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice = {
 }
 that_permanents_toughness = { ^"that" ~ permanent_type ~ "'s" ~ ^"toughness" }
 the_permanents_controller = { ^"the" ~ permanent_type ~ "'s" ~ ^"controller" }
-damage_amount_expression = _{ unsigned_number | variable_name }
+damage_amount_expression = _{ damage_dealt_to_you_this_turn | unsigned_number | variable_name }
+damage_dealt_to_you_this_turn = {
+    ^"damage" ~ ^"dealt" ~ ^"to" ~ ^"you" ~ ^"this" ~ ^"turn"
+}
 damage_amount = @{ ASCII_DIGIT+ }
 
 // `it loses "<keyword>" and gains "<keyword>."`. The quoted strings are
