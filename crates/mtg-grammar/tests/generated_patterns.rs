@@ -185,3 +185,5 @@ mod instill_energy;
 mod invisibility;
 #[path = "generated_patterns/ironclaw_orcs.rs"]
 mod ironclaw_orcs;
+#[path = "generated_patterns/island_sanctuary.rs"]
+mod island_sanctuary;

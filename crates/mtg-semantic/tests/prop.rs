@@ -144,6 +144,10 @@ fn arb_modal_mode() -> impl Strategy<Value = ModalMode> {
     ]
 }
 
+fn arb_evasion_keyword() -> impl Strategy<Value = Keyword> {
+    prop_oneof![Just(Keyword::Flying), Just(Keyword::Islandwalk)]
+}
+
 fn arb_imperative_action() -> impl Strategy<Value = ImperativeAction> {
     prop_oneof![
         Just(ImperativeAction::DiscardYourHand),
@@ -283,6 +287,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }
         }),
         (1u32..=10).prop_map(|amount| Statement::TargetPlayerGainsLife { amount }),
+        Just(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw),
         Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::ActivateOnlyDuringYourTurn),
@@ -312,6 +317,11 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         ),
         Just(Statement::YouMayChooseNewTargetsForTheCopy),
         (1u32..=10).prop_map(|amount| Statement::IfYouDoGainLife { amount }),
+        prop::collection::vec(arb_evasion_keyword(), 1..3).prop_map(|keywords| {
+            Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
+                keywords,
+            }
+        }),
         (arb_player_casts_colored_spell_pay_mana_trigger(), 1u32..=10,).prop_map(
             |(trigger, amount)| {
                 Statement::Compound(vec![trigger, Statement::IfYouDoGainLife { amount }])

@@ -114,6 +114,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_card_count(out, *count);
             out.push_str(" cards.");
         }
+        Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw => {
+            out.push_str("If you would draw a card during your draw step, instead you may skip that draw.");
+        }
         Statement::TargetPlayerGainsLife { amount } => {
             write!(out, "Target player gains {amount} life.").expect("write to String never fails");
         }
@@ -189,6 +192,13 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::IfYouDoGainLife { amount } => {
             write!(out, "If you do, you gain {amount} life.").expect("write to String never fails");
+        }
+        Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
+            keywords,
+        } => {
+            out.push_str("If you do, until your next turn, you can't be attacked except by creatures with ");
+            write_keyword_and_or_list(out, keywords);
+            out.push('.');
         }
         Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power, toughness } => {
             write!(
@@ -630,6 +640,7 @@ fn write_keyword(out: &mut String, kw: Keyword) {
         Keyword::Defender => out.push_str("Defender"),
         Keyword::Banding => out.push_str("Banding"),
         Keyword::Trample => out.push_str("Trample"),
+        Keyword::Islandwalk => out.push_str("Islandwalk"),
         Keyword::Mountainwalk => out.push_str("Mountainwalk"),
         Keyword::Swampwalk => out.push_str("Swampwalk"),
         Keyword::Indestructible => out.push_str("Indestructible"),
@@ -1522,6 +1533,7 @@ fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
         Keyword::Defender => out.push_str("defender"),
         Keyword::Banding => out.push_str("banding"),
         Keyword::Trample => out.push_str("trample"),
+        Keyword::Islandwalk => out.push_str("islandwalk"),
         Keyword::Mountainwalk => out.push_str("mountainwalk"),
         Keyword::Swampwalk => out.push_str("swampwalk"),
         Keyword::Indestructible => out.push_str("indestructible"),
@@ -1534,6 +1546,15 @@ fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
             out.push_str("enchant ");
             write_enchant_object(out, object);
         }
+    }
+}
+
+fn write_keyword_and_or_list(out: &mut String, keywords: &[Keyword]) {
+    for (index, keyword) in keywords.iter().enumerate() {
+        if index > 0 {
+            out.push_str(" and/or ");
+        }
+        write_keyword_lowercase(out, *keyword);
     }
 }
 

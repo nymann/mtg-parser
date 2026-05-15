@@ -63,6 +63,9 @@ pub enum CardEffect {
     Keyword(Keyword),
     /// "Target player draws N cards."
     TargetPlayerDrawsCards { count: CardCount },
+    /// "If you would draw a card during your draw step, instead you may
+    /// skip that draw."
+    IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw,
     /// "Target player gains N life."
     TargetPlayerGainsLife { amount: u32 },
     /// "Target player activates a mana ability of each <permanent_type>
@@ -113,6 +116,11 @@ pub enum CardEffect {
     IfYouDoAddMana { mana: ManaCost },
     /// "If you do, you gain N life."
     IfYouDoGainLife { amount: u32 },
+    /// "If you do, until your next turn, you can't be attacked except
+    /// by creatures with <keyword>[ and/or <keyword>]."
+    IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
+        keywords: Vec<Keyword>,
+    },
     /// "If you do, you may cast that card face down as a N/N creature
     /// spell without paying its mana cost."
     IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power: u32, toughness: u32 },

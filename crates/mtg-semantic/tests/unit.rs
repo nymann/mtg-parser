@@ -1,7 +1,7 @@
 // Tier 1 lowering unit tests. Hand-written AST → expected IR.
 
 use mtg_grammar::{
-    BasicLandType, DamageAmount, ManaCost, ManaSymbol, PermanentType, PreventionRecipient,
+    BasicLandType, DamageAmount, Keyword, ManaCost, ManaSymbol, PermanentType, PreventionRecipient,
     PtModifier, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement,
     Variable,
 };
@@ -171,6 +171,30 @@ fn lowers_if_you_do_gain_life() {
     assert_eq!(
         lower(&Statement::IfYouDoGainLife { amount: 1 }).unwrap(),
         CardEffect::IfYouDoGainLife { amount: 1 },
+    );
+}
+
+#[test]
+fn lowers_if_you_would_draw_during_draw_step_skip_that_draw() {
+    assert_eq!(
+        lower(&Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw).unwrap(),
+        CardEffect::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw,
+    );
+}
+
+#[test]
+fn lowers_if_you_do_cant_be_attacked_except_by_keyword_creatures() {
+    let keywords = vec![Keyword::Flying, Keyword::Islandwalk];
+    assert_eq!(
+        lower(
+            &Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
+                keywords: keywords.clone(),
+            }
+        )
+        .unwrap(),
+        CardEffect::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
+            keywords,
+        },
     );
 }
 

@@ -105,6 +105,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             Ok(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay)
         }
         Rule::target_player_gains_life => target_player_gains_life_from_pair(pair),
+        Rule::if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw => {
+            Ok(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw)
+        }
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::add_mana => add_mana_from_pair(pair),
         Rule::until_eot_you_may_pay_cost_at_timing => {
@@ -124,6 +127,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::if_you_do_add_mana => if_you_do_add_mana_from_pair(pair),
         Rule::if_you_do_gain_life => if_you_do_gain_life_from_pair(pair),
+        Rule::if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords => {
+            if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords_from_pair(pair)
+        }
         Rule::target_spell_or_permanent_becomes_color => {
             target_spell_or_permanent_becomes_color_from_pair(pair)
         }
@@ -966,6 +972,23 @@ fn if_you_do_gain_life_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseErr
     })
 }
 
+fn if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let list_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+        "attack restriction missing keyword list",
+    ))?;
+    let keywords = list_pair
+        .into_inner()
+        .map(keyword_from_inner_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(
+        Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
+            keywords,
+        },
+    )
+}
+
 fn if_you_do_gain_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, ParseError> {
     let amount_pair = pair
         .into_inner()
@@ -1411,6 +1434,7 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         Rule::defender => Ok(Keyword::Defender),
         Rule::banding => Ok(Keyword::Banding),
         Rule::trample => Ok(Keyword::Trample),
+        Rule::islandwalk => Ok(Keyword::Islandwalk),
         Rule::mountainwalk => Ok(Keyword::Mountainwalk),
         Rule::swampwalk => Ok(Keyword::Swampwalk),
         Rule::indestructible => Ok(Keyword::Indestructible),

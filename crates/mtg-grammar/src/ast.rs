@@ -67,6 +67,9 @@ pub enum Statement {
     TargetPlayerDrawsCards {
         count: CardCount,
     },
+    /// "If you would draw a card during your draw step, instead you may
+    /// skip that draw."
+    IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw,
     /// "Target player gains N life."
     TargetPlayerGainsLife {
         amount: u32,
@@ -130,6 +133,11 @@ pub enum Statement {
     /// "If you do, you gain N life."
     IfYouDoGainLife {
         amount: u32,
+    },
+    /// "If you do, until your next turn, you can't be attacked except
+    /// by creatures with <keyword>[ and/or <keyword>]."
+    IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
+        keywords: Vec<Keyword>,
     },
     /// "If you do, you may cast that card face down as a N/N creature
     /// spell without paying its mana cost."
@@ -668,6 +676,7 @@ pub enum Keyword {
     Defender,
     Banding,
     Trample,
+    Islandwalk,
     Mountainwalk,
     Swampwalk,
     Indestructible,

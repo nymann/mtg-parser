@@ -80,6 +80,9 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }
+        Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw => {
+            CardEffect::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw
+        }
         Statement::TargetPlayerGainsLife { amount } => {
             CardEffect::TargetPlayerGainsLife { amount: *amount }
         }
@@ -135,6 +138,11 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         },
         Statement::IfYouDoAddMana { mana } => CardEffect::IfYouDoAddMana { mana: mana.clone() },
         Statement::IfYouDoGainLife { amount } => CardEffect::IfYouDoGainLife { amount: *amount },
+        Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
+            keywords,
+        } => CardEffect::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
+            keywords: keywords.clone(),
+        },
         Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power, toughness } => {
             CardEffect::IfYouDoCastThatCardFaceDownWithoutPayingManaCost {
                 power: *power,
