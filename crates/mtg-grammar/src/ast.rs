@@ -184,6 +184,8 @@ pub enum DamageRecipient {
 pub enum CastRestriction {
     /// "before the <step> step"
     BeforeStep { step: Step },
+    /// "during the <step> step"
+    DuringStep { step: Step },
     /// "during your <step> step"
     DuringYourStep { step: Step },
     /// "during combat before blockers are declared"
@@ -194,6 +196,7 @@ pub enum CastRestriction {
 pub enum Step {
     CombatDamage,
     DeclareAttackers,
+    DeclareBlockers,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -672,6 +675,13 @@ pub enum StaticAbility {
     /// "Target creature defending player controls can block any number
     /// of creatures this turn."
     TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn,
+    /// "Remove target creature defending player controls from combat."
+    RemoveTargetCreatureDefendingPlayerControlsFromCombat,
+    /// "Creatures it was blocking that had become blocked by only that
+    /// creature this combat become unblocked."
+    CreaturesItWasBlockingBecomeUnblocked,
+    /// "You may have it block an attacking creature of your choice."
+    YouMayHaveItBlockAttackingCreatureOfYourChoice,
     /// "It blocks each attacking creature this turn if able."
     ItBlocksEachAttackingCreatureThisTurnIfAble,
     /// "This turn, instead of declaring blockers, each defending player

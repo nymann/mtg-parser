@@ -314,6 +314,11 @@ fn write_cast_restriction(out: &mut String, restriction: CastRestriction) {
             out.push_str(step_name(step));
             out.push_str(" step.");
         }
+        CastRestriction::DuringStep { step } => {
+            out.push_str("during the ");
+            out.push_str(step_name(step));
+            out.push_str(" step.");
+        }
         CastRestriction::DuringYourStep { step } => {
             out.push_str("during your ");
             out.push_str(step_name(step));
@@ -843,6 +848,15 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
                 "Target creature defending player controls can block any number of creatures this turn.",
             );
         }
+        StaticAbility::RemoveTargetCreatureDefendingPlayerControlsFromCombat => {
+            out.push_str("Remove target creature defending player controls from combat.");
+        }
+        StaticAbility::CreaturesItWasBlockingBecomeUnblocked => {
+            out.push_str("Creatures it was blocking that had become blocked by only that creature this combat become unblocked.");
+        }
+        StaticAbility::YouMayHaveItBlockAttackingCreatureOfYourChoice => {
+            out.push_str("You may have it block an attacking creature of your choice.");
+        }
         StaticAbility::ItBlocksEachAttackingCreatureThisTurnIfAble => {
             out.push_str("It blocks each attacking creature this turn if able.");
         }
@@ -1365,6 +1379,7 @@ fn step_name(step: Step) -> &'static str {
     match step {
         Step::CombatDamage => "combat damage",
         Step::DeclareAttackers => "declare attackers",
+        Step::DeclareBlockers => "declare blockers",
     }
 }
 

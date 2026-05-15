@@ -60,6 +60,9 @@ sentence_statement = _{
   | target_spell_or_permanent_becomes_color
   | target_permanent_gains_keyword_and_gets_eot
   | each_player_performs_action
+  | remove_target_creature_defending_player_controls_from_combat
+  | creatures_it_was_blocking_become_unblocked
+  | you_may_have_it_block_attacking_creature
   | target_creature_defending_player_controls_can_block_any_number
   | it_blocks_each_attacking_creature_if_able
   | this_turn_defending_players_make_random_blocking_piles
@@ -306,9 +309,12 @@ cast_restriction = {
     ^"cast" ~ ^"this" ~ ^"spell" ~ ^"only" ~ cast_timing ~ "."
 }
 before_step = { ^"before" ~ ^"the" ~ step ~ ^"step" }
+during_step = { ^"during" ~ ^"the" ~ step ~ ^"step" }
 during_your_step = { ^"during" ~ ^"your" ~ step ~ ^"step" }
-step = { ^"combat" ~ ^"damage" | ^"declare" ~ ^"attackers" }
-cast_timing = _{ during_combat_before_blockers_declared | during_your_step | before_step }
+// Factor the shared `declare` prefix so declare-step names don't shadow
+// each other under PEG's ordered matching.
+step = { ^"combat" ~ ^"damage" | ^"declare" ~ (^"attackers" | ^"blockers") }
+cast_timing = _{ during_combat_before_blockers_declared | during_your_step | during_step | before_step }
 during_combat_before_blockers_declared = {
     ^"during" ~ ^"combat" ~ ^"before" ~ ^"blockers" ~ ^"are" ~ ^"declared"
 }
@@ -484,6 +490,22 @@ target_creature_defending_player_controls_can_block_any_number = {
     ^"target" ~ ^"creature" ~ ^"defending" ~ ^"player" ~ ^"controls"
   ~ ^"can" ~ ^"block" ~ ^"any" ~ ^"number" ~ ^"of" ~ ^"creatures"
   ~ ^"this" ~ ^"turn" ~ "."
+}
+
+remove_target_creature_defending_player_controls_from_combat = {
+    ^"remove" ~ ^"target" ~ ^"creature" ~ ^"defending" ~ ^"player"
+  ~ ^"controls" ~ ^"from" ~ ^"combat" ~ "."
+}
+
+creatures_it_was_blocking_become_unblocked = {
+    ^"creatures" ~ ^"it" ~ ^"was" ~ ^"blocking" ~ ^"that" ~ ^"had"
+  ~ ^"become" ~ ^"blocked" ~ ^"by" ~ ^"only" ~ ^"that" ~ ^"creature"
+  ~ ^"this" ~ ^"combat" ~ ^"become" ~ ^"unblocked" ~ "."
+}
+
+you_may_have_it_block_attacking_creature = {
+    ^"you" ~ ^"may" ~ ^"have" ~ ^"it" ~ ^"block" ~ article
+  ~ ^"attacking" ~ ^"creature" ~ ^"of" ~ ^"your" ~ ^"choice" ~ "."
 }
 
 it_blocks_each_attacking_creature_if_able = {

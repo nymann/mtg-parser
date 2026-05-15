@@ -135,6 +135,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::static_basic_lands_are_basic_lands
         | Rule::static_that_permanent_is_basic_land_type_while_has_named_counter
+        | Rule::remove_target_creature_defending_player_controls_from_combat
+        | Rule::creatures_it_was_blocking_become_unblocked
+        | Rule::you_may_have_it_block_attacking_creature
         | Rule::target_creature_defending_player_controls_can_block_any_number
         | Rule::it_blocks_each_attacking_creature_if_able
         | Rule::this_turn_defending_players_make_random_blocking_piles
@@ -220,6 +223,15 @@ fn cast_restriction_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError>
                 step: step_from_pair(step_pair)?,
             }
         }
+        Rule::during_step => {
+            let step_pair = timing
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("during_step missing step"))?;
+            CastRestriction::DuringStep {
+                step: step_from_pair(step_pair)?,
+            }
+        }
         Rule::during_combat_before_blockers_declared => {
             CastRestriction::DuringCombatBeforeBlockersAreDeclared
         }
@@ -235,6 +247,7 @@ fn step_from_pair(pair: Pair<Rule>) -> Result<Step, ParseError> {
     match pair.as_str().to_ascii_lowercase().as_str() {
         "combat damage" => Ok(Step::CombatDamage),
         "declare attackers" => Ok(Step::DeclareAttackers),
+        "declare blockers" => Ok(Step::DeclareBlockers),
         _ => Err(ParseError::Internal("step variant")),
     }
 }
@@ -1574,6 +1587,15 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
         Rule::target_creature_defending_player_controls_can_block_any_number => Ok(
             StaticAbility::TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn,
         ),
+        Rule::remove_target_creature_defending_player_controls_from_combat => {
+            Ok(StaticAbility::RemoveTargetCreatureDefendingPlayerControlsFromCombat)
+        }
+        Rule::creatures_it_was_blocking_become_unblocked => {
+            Ok(StaticAbility::CreaturesItWasBlockingBecomeUnblocked)
+        }
+        Rule::you_may_have_it_block_attacking_creature => {
+            Ok(StaticAbility::YouMayHaveItBlockAttackingCreatureOfYourChoice)
+        }
         Rule::it_blocks_each_attacking_creature_if_able => {
             Ok(StaticAbility::ItBlocksEachAttackingCreatureThisTurnIfAble)
         }
