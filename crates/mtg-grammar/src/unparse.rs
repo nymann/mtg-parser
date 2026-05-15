@@ -659,6 +659,13 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
                 " source of your choice would deal damage to you this turn, prevent that damage.",
             );
         }
+        ActivatedEffect::PreventAllButDamageFromUnblockedCreature { amount } => {
+            write!(
+                out,
+                "The next time an unblocked creature of your choice would deal combat damage to you this turn, prevent all but {amount} of that damage."
+            )
+            .expect("writing to String cannot fail");
+        }
         ActivatedEffect::PreventNextDamageToYouThisTurn { amount } => {
             write!(
                 out,

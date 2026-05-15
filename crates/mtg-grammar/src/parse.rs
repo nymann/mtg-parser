@@ -1918,6 +1918,16 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 color: color_from_pair(color_pair)?,
             })
         }
+        Rule::prevent_all_but_damage_from_unblocked_creature => {
+            let amount_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "prevent all but damage missing amount",
+            ))?;
+            let amount = amount_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("prevent all but damage amount"))?;
+            Ok(ActivatedEffect::PreventAllButDamageFromUnblockedCreature { amount })
+        }
         Rule::prevent_next_damage_to_you_this_turn => {
             let amount_pair = pair
                 .into_inner()

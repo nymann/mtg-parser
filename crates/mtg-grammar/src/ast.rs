@@ -479,6 +479,11 @@ pub enum ActivatedEffect {
     PreventNextDamageFromColoredSource {
         color: Color,
     },
+    /// "The next time an unblocked creature of your choice would deal
+    /// combat damage to you this turn, prevent all but N of that damage."
+    PreventAllButDamageFromUnblockedCreature {
+        amount: u32,
+    },
     /// "Prevent the next N damage that would be dealt to you this turn."
     PreventNextDamageToYouThisTurn {
         amount: u32,

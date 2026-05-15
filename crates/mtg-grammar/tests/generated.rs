@@ -146,3 +146,5 @@ mod fireball;
 mod flashfires;
 #[path = "generated/fog.rs"]
 mod fog;
+#[path = "generated/forcefield.rs"]
+mod forcefield;
