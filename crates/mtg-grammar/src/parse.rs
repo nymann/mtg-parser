@@ -86,6 +86,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_status_creatures_you_control_get
         | Rule::static_enchanted_gets_with_definitions
         | Rule::static_enchanted_gets
+        | Rule::static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
         | Rule::static_enchanted_has_keyword
         | Rule::static_enchanted_can_attack_as_though
         | Rule::static_you_may_have_source_enter_as_copy
@@ -438,6 +439,7 @@ fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         Rule::trample => Ok(Keyword::Trample),
         Rule::mountainwalk => Ok(Keyword::Mountainwalk),
         Rule::swampwalk => Ok(Keyword::Swampwalk),
+        Rule::indestructible => Ok(Keyword::Indestructible),
         Rule::protection => {
             let color = inner
                 .into_inner()
@@ -588,6 +590,7 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         Rule::trample => Ok(Keyword::Trample),
         Rule::mountainwalk => Ok(Keyword::Mountainwalk),
         Rule::swampwalk => Ok(Keyword::Swampwalk),
+        Rule::indestructible => Ok(Keyword::Indestructible),
         Rule::protection => {
             let color = pair
                 .into_inner()
@@ -842,6 +845,21 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 object: enchanted_object_from_pair(object_pair)?,
                 keyword: keyword_from_inner_pair(keyword_pair)?,
             })
+        }
+        Rule::static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras => {
+            let mut inner = pair.into_inner();
+            let object_pair = inner.next().expect(
+                "static_enchanted_has_keyword_and_cant_be_enchanted begins with enchanted object",
+            );
+            let keyword_pair = inner.next().expect(
+                "static_enchanted_has_keyword_and_cant_be_enchanted names granted keyword",
+            );
+            Ok(
+                StaticAbility::EnchantedHasKeywordAndCantBeEnchantedByOtherAuras {
+                    object: enchanted_object_from_pair(object_pair)?,
+                    keyword: keyword_from_inner_pair(keyword_pair)?,
+                },
+            )
         }
         Rule::static_enchanted_can_attack_as_though => {
             let mut inner = pair.into_inner();

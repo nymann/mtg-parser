@@ -68,3 +68,5 @@ mod clockwork_beast;
 mod clone;
 #[path = "generated/cockatrice.rs"]
 mod cockatrice;
+#[path = "generated/consecrate_land.rs"]
+mod consecrate_land;

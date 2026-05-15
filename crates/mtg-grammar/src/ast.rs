@@ -281,6 +281,7 @@ pub enum Keyword {
     Trample,
     Mountainwalk,
     Swampwalk,
+    Indestructible,
     Protection(Color),
     Enchant(EnchantObject),
 }
@@ -395,6 +396,13 @@ pub enum StaticAbility {
     /// "Enchanted <object> has <keyword>." — keyword-granting effect on
     /// the enchanted object.
     EnchantedHasKeyword {
+        object: EnchantedObject,
+        keyword: Keyword,
+    },
+    /// "Enchanted <object> has <keyword> and can't be enchanted by other
+    /// Auras." — keyword-granting effect plus an Aura attachment
+    /// restriction on the enchanted object.
+    EnchantedHasKeywordAndCantBeEnchantedByOtherAuras {
         object: EnchantedObject,
         keyword: Keyword,
     },
