@@ -123,6 +123,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_gets
         | Rule::static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
         | Rule::static_enchanted_has_keyword
+        | Rule::static_enchanted_loses_keyword
+        | Rule::static_enchanted_loses_keyword_fragment
         | Rule::static_enchanted_can_attack_as_though
         | Rule::static_you_control_enchanted
         | Rule::static_you_may_have_source_enter_as_copy
@@ -781,6 +783,19 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                     source: source_object_from_pair(source_pair)?,
                 });
             }
+            Rule::enchanted_has_keyword => {
+                let mut inner = child.into_inner();
+                let object_pair = inner.next().ok_or(ParseError::Internal(
+                    "enchanted-has condition missing object",
+                ))?;
+                let keyword_pair = inner.next().ok_or(ParseError::Internal(
+                    "enchanted-has condition missing keyword",
+                ))?;
+                intervening_if = Some(InterveningIf::EnchantedHasKeyword {
+                    object: enchanted_object_from_pair(object_pair)?,
+                    keyword: keyword_from_inner_pair(keyword_pair)?,
+                });
+            }
             Rule::destroy_that_creature_if_it_attacked_this_turn => {
                 effects.push(TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn);
             }
@@ -821,10 +836,16 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::source_deals_damage_to_that_player => {
                 effects.push(source_deals_damage_to_that_player_from_pair(child)?);
             }
+            Rule::source_deals_damage_to_that_permanent => {
+                effects.push(source_deals_damage_to_that_permanent_from_pair(child)?);
+            }
             Rule::source_deals_variable_damage_to_that_player => {
                 effects.push(source_deals_variable_damage_to_that_player_from_pair(
                     child,
                 )?);
+            }
+            Rule::source_gains_static_ability => {
+                effects.push(source_gains_static_ability_from_pair(child)?);
             }
             Rule::remove_pt_counter_from_it => {
                 effects.push(remove_pt_counter_from_it_from_pair(child)?);
@@ -1104,6 +1125,30 @@ fn source_deals_damage_to_that_player_from_pair(
     })
 }
 
+fn source_deals_damage_to_that_permanent_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "damage-to-permanent effect missing source",
+    ))?;
+    let amount_pair = inner.next().ok_or(ParseError::Internal(
+        "damage-to-permanent effect missing amount",
+    ))?;
+    let recipient_pair = inner.next().ok_or(ParseError::Internal(
+        "damage-to-permanent effect missing recipient",
+    ))?;
+    let amount = amount_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("damage-to-permanent amount"))?;
+    Ok(TriggerEffect::SourceDealsDamageToThatPermanent {
+        source: source_object_from_pair(source_pair)?,
+        amount,
+        recipient: permanent_type_from_pair(recipient_pair)?,
+    })
+}
+
 fn source_deals_variable_damage_to_that_player_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEffect, ParseError> {
@@ -1131,6 +1176,20 @@ fn source_deals_variable_damage_to_that_player_from_pair(
         source: source_object_from_pair(source_pair)?,
         amount,
         definitions,
+    })
+}
+
+fn source_gains_static_ability_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("source gains static missing source"))?;
+    let ability_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("source gains static missing ability"))?;
+    Ok(TriggerEffect::SourceGainsStaticAbility {
+        source: source_object_from_pair(source_pair)?,
+        ability: static_ability_from_pair(ability_pair)?,
     })
 }
 
@@ -1362,6 +1421,19 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 .next()
                 .expect("static_enchanted_has_keyword names granted keyword");
             Ok(StaticAbility::EnchantedHasKeyword {
+                object: enchanted_object_from_pair(object_pair)?,
+                keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
+        Rule::static_enchanted_loses_keyword | Rule::static_enchanted_loses_keyword_fragment => {
+            let mut inner = pair.into_inner();
+            let object_pair = inner
+                .next()
+                .expect("static_enchanted_loses_keyword begins with enchanted object");
+            let keyword_pair = inner
+                .next()
+                .expect("static_enchanted_loses_keyword names removed keyword");
+            Ok(StaticAbility::EnchantedLosesKeyword {
                 object: enchanted_object_from_pair(object_pair)?,
                 keyword: keyword_from_inner_pair(keyword_pair)?,
             })

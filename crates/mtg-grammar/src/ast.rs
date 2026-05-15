@@ -283,6 +283,11 @@ pub enum TriggerEvent {
 pub enum InterveningIf {
     /// "if it's on the battlefield"
     ItsOnTheBattlefield,
+    /// "if enchanted <object> has <keyword>"
+    EnchantedHasKeyword {
+        object: EnchantedObject,
+        keyword: Keyword,
+    },
     /// "if this <source> attacked or blocked this combat"
     SourceAttackedOrBlockedThisCombat { source: SourceObject },
 }
@@ -303,6 +308,12 @@ pub enum TriggerEffect {
     },
     /// "this <source> deals N damage to that player"
     SourceDealsDamageToThatPlayer { source: SourceObject, amount: u32 },
+    /// "this <source> deals N damage to that <permanent_type>"
+    SourceDealsDamageToThatPermanent {
+        source: SourceObject,
+        amount: u32,
+        recipient: PermanentType,
+    },
     /// "this <source> deals X damage to that player, where X is <expr>"
     SourceDealsVariableDamageToThatPlayer {
         source: SourceObject,
@@ -317,6 +328,12 @@ pub enum TriggerEffect {
     },
     /// "remove a <pt_modifier> counter from it"
     RemoveCounterFromIt { counter: PtModifier },
+    /// "this <source> gains \"<static ability>\"" — the source object
+    /// gains quoted rules text as part of a triggered ability.
+    SourceGainsStaticAbility {
+        source: SourceObject,
+        ability: StaticAbility,
+    },
     /// `it loses "<keyword>" and gains "<keyword>"` — the source object
     /// rewrites its own printed rules text. Reanimator Auras use this
     /// to switch their `Enchant` target from a graveyard card to the
@@ -581,6 +598,12 @@ pub enum StaticAbility {
     /// "Enchanted <object> has <keyword>." — keyword-granting effect on
     /// the enchanted object.
     EnchantedHasKeyword {
+        object: EnchantedObject,
+        keyword: Keyword,
+    },
+    /// "Enchanted <object> loses <keyword>." — keyword-removing effect
+    /// on the enchanted object.
+    EnchantedLosesKeyword {
         object: EnchantedObject,
         keyword: Keyword,
     },

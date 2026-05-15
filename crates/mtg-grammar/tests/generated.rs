@@ -126,3 +126,5 @@ mod drudge_skeletons;
 mod dwarven_demolition_team;
 #[path = "generated/dwarven_warriors.rs"]
 mod dwarven_warriors;
+#[path = "generated/earthbind.rs"]
+mod earthbind;

@@ -74,6 +74,7 @@ sentence_statement = _{
   | static_enchanted_gets_with_definitions
   | static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
   | static_enchanted_has_keyword
+  | static_enchanted_loses_keyword
   | static_enchanted_can_attack_as_though
   | static_you_control_enchanted
   | static_you_may_have_source_enter_as_copy
@@ -95,6 +96,7 @@ phrase_statement = _{
     modal_choice
   | mana_cost
   | keyword_ability
+  | static_enchanted_loses_keyword_fragment
 }
 
 // Modal spells print a choice header followed by bullet-pointed modes.
@@ -377,6 +379,7 @@ static_ability = _{
   | static_enchanted_gets_with_definitions
   | static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
   | static_enchanted_has_keyword
+  | static_enchanted_loses_keyword
   | static_enchanted_can_attack_as_though
   | static_you_control_enchanted
   | static_you_may_have_source_enter_as_copy
@@ -410,6 +413,13 @@ static_enchanted_gets_with_definitions = {
 
 static_enchanted_has_keyword = {
     ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword ~ "."
+}
+
+static_enchanted_loses_keyword = {
+    ^"enchanted" ~ enchanted_object ~ ^"loses" ~ keyword ~ "."
+}
+static_enchanted_loses_keyword_fragment = {
+    ^"enchanted" ~ enchanted_object ~ ^"loses" ~ keyword
 }
 
 static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras = {
@@ -670,7 +680,7 @@ counter_name = @{ ASCII_ALPHA+ }
 triggered_ability = {
     trigger_word ~ trigger_event ~ ","
   ~ (^"if" ~ intervening_if ~ ",")?
-  ~ trigger_effect+
+  ~ trigger_effect ~ (^"and"? ~ trigger_effect)*
 }
 
 // "Whenever" is listed first because "When" is its prefix.
@@ -727,8 +737,9 @@ beginning_of_upkeep_of_enchanted_permanent_controller = {
   ~ ^"enchanted" ~ permanent_type ~ "'s" ~ ^"controller"
 }
 
-intervening_if         = _{ its_on_the_battlefield | source_attacked_or_blocked_this_combat }
+intervening_if         = _{ its_on_the_battlefield | enchanted_has_keyword | source_attacked_or_blocked_this_combat }
 its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
+enchanted_has_keyword = { ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword }
 source_attacked_or_blocked_this_combat = {
     source_object ~ ^"attacked" ~ ^"or" ~ ^"blocked" ~ ^"this" ~ ^"combat"
 }
@@ -747,6 +758,8 @@ trigger_effect = _{
   | source_deals_variable_damage_to_that_player
   | source_deals_damage_to_that_player
   | source_deals_damage_to_that_permanents_controller
+  | source_deals_damage_to_that_permanent
+  | source_gains_static_ability
   | that_creatures_controller_sacrifices_it
 }
 
@@ -832,6 +845,9 @@ source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_control
 source_deals_damage_to_that_player = {
     source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"that" ~ ^"player" ~ "."
 }
+source_deals_damage_to_that_permanent = {
+    source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"that" ~ permanent_type
+}
 source_deals_variable_damage_to_that_player = {
     source_object ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"
   ~ ^"that" ~ ^"player" ~ "," ~ where_clause ~ "."
@@ -856,6 +872,8 @@ loses_and_gains_keyword = {
 }
 quoted_keyword                   = _{ "\"" ~ keyword ~ "\"" }
 quoted_keyword_with_inner_period = _{ "\"" ~ keyword ~ "." ~ "\"" }
+source_gains_static_ability      = { source_object ~ ^"gains" ~ quoted_static_ability }
+quoted_static_ability            = _{ "\"" ~ static_enchanted_loses_keyword ~ "\"" }
 
 // "Return enchanted <type> card to the battlefield under your control
 // and attach this Aura to it."

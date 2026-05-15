@@ -115,3 +115,5 @@ mod drudge_skeletons;
 mod dwarven_demolition_team;
 #[path = "generated_patterns/dwarven_warriors.rs"]
 mod dwarven_warriors;
+#[path = "generated_patterns/earthbind.rs"]
+mod earthbind;

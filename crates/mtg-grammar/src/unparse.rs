@@ -732,6 +732,13 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_keyword_lowercase(out, *keyword);
             out.push('.');
         }
+        StaticAbility::EnchantedLosesKeyword { object, keyword } => {
+            out.push_str("Enchanted ");
+            write_enchanted_object(out, *object);
+            out.push_str(" loses ");
+            write_keyword_lowercase(out, *keyword);
+            out.push('.');
+        }
         StaticAbility::EnchantedHasKeywordAndCantBeEnchantedByOtherAuras { object, keyword } => {
             out.push_str("Enchanted ");
             write_enchanted_object(out, *object);
@@ -842,9 +849,13 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
     }
     for (i, eff) in ta.effects.iter().enumerate() {
         if i > 0 {
-            out.push(' ');
+            if matches!(eff, TriggerEffect::SourceGainsStaticAbility { .. }) {
+                out.push_str(" and ");
+            } else {
+                out.push(' ');
+            }
         }
-        write_trigger_effect(out, eff);
+        write_trigger_effect(out, eff, i + 1 == ta.effects.len());
     }
 }
 
@@ -915,6 +926,12 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
 fn write_intervening_if(out: &mut String, iif: InterveningIf) {
     match iif {
         InterveningIf::ItsOnTheBattlefield => out.push_str("it's on the battlefield"),
+        InterveningIf::EnchantedHasKeyword { object, keyword } => {
+            out.push_str("enchanted ");
+            write_enchanted_object(out, object);
+            out.push_str(" has ");
+            write_keyword_lowercase(out, keyword);
+        }
         InterveningIf::SourceAttackedOrBlockedThisCombat { source } => {
             write_source_object(out, source);
             out.push_str(" attacked or blocked this combat");
@@ -922,7 +939,7 @@ fn write_intervening_if(out: &mut String, iif: InterveningIf) {
     }
 }
 
-fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
+fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
     match eff {
         TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn => {
             out.push_str("destroy that creature if it attacked this turn.");
@@ -947,6 +964,19 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
             write_source_object(out, *source);
             write!(out, " deals {amount} damage to that player.")
                 .expect("write to String never fails");
+        }
+        TriggerEffect::SourceDealsDamageToThatPermanent {
+            source,
+            amount,
+            recipient,
+        } => {
+            write_source_object(out, *source);
+            write!(out, " deals {amount} damage to that ")
+                .expect("write to String never fails");
+            out.push_str(permanent_type_name(*recipient));
+            if terminal {
+                out.push('.');
+            }
         }
         TriggerEffect::SourceDealsVariableDamageToThatPlayer {
             source,
@@ -975,6 +1005,12 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
             out.push_str("remove a ");
             write_pt_modifier(out, *counter);
             out.push_str(" counter from it.");
+        }
+        TriggerEffect::SourceGainsStaticAbility { source, ability } => {
+            write_source_object(out, *source);
+            out.push_str(" gains \"");
+            write_static_ability(out, ability);
+            out.push('"');
         }
         TriggerEffect::LosesAndGainsKeyword { loses, gains } => {
             out.push_str("it loses \"");
