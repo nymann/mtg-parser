@@ -113,3 +113,5 @@ mod drain_power;
 mod drudge_skeletons;
 #[path = "generated_patterns/dwarven_demolition_team.rs"]
 mod dwarven_demolition_team;
+#[path = "generated_patterns/dwarven_warriors.rs"]
+mod dwarven_warriors;

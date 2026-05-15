@@ -402,6 +402,10 @@ pub enum ActivatedEffect {
     TargetPlayerDiscardsCards {
         count: CardCount,
     },
+    /// "Target creature with power N or less can't be blocked this turn."
+    TargetCreatureWithPowerOrLessCantBeBlockedThisTurn {
+        power: u32,
+    },
     /// "Enchanted <type> gets <modifier> until end of turn."
     EnchantedGetsUntilEndOfTurn {
         permanent_type: PermanentType,

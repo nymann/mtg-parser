@@ -1617,6 +1617,16 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 count: discard_count_from_pair(count_pair)?,
             })
         }
+        Rule::target_creature_with_power_or_less_cant_be_blocked => {
+            let power_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "target creature unblockable missing power",
+            ))?;
+            let power = power_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("target creature unblockable power"))?;
+            Ok(ActivatedEffect::TargetCreatureWithPowerOrLessCantBeBlockedThisTurn { power })
+        }
         Rule::activated_enchanted_gets_until_eot => {
             let mut inner = pair.into_inner();
             let pt_pair = inner.next().ok_or(ParseError::Internal(

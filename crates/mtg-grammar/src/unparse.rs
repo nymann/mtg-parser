@@ -566,6 +566,13 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_discard_count(out, *count);
             out.push('.');
         }
+        ActivatedEffect::TargetCreatureWithPowerOrLessCantBeBlockedThisTurn { power } => {
+            write!(
+                out,
+                "Target creature with power {power} or less can't be blocked this turn."
+            )
+            .expect("writing to String cannot fail");
+        }
         ActivatedEffect::EnchantedGetsUntilEndOfTurn {
             permanent_type,
             modifier,
