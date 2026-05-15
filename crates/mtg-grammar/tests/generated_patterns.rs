@@ -301,3 +301,5 @@ mod sacrifice;
 mod scavenging_ghoul;
 #[path = "generated_patterns/sedge_troll.rs"]
 mod sedge_troll;
+#[path = "generated_patterns/serra_angel.rs"]
+mod serra_angel;

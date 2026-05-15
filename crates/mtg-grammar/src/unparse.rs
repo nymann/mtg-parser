@@ -2681,6 +2681,7 @@ fn keyword_ability_title_name(keyword: NamedKeywordAbility) -> &'static str {
         NamedKeywordAbility::Trample => "Trample",
         NamedKeywordAbility::Indestructible => "Indestructible",
         NamedKeywordAbility::Fear => "Fear",
+        NamedKeywordAbility::Vigilance => "Vigilance",
     }
 }
 
@@ -2695,6 +2696,7 @@ fn keyword_ability_name(keyword: NamedKeywordAbility) -> &'static str {
         NamedKeywordAbility::Trample => "trample",
         NamedKeywordAbility::Indestructible => "indestructible",
         NamedKeywordAbility::Fear => "fear",
+        NamedKeywordAbility::Vigilance => "vigilance",
     }
 }
 

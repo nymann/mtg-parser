@@ -1379,6 +1379,7 @@ impl KeywordAbility {
     pub const FORESTWALK: Self = Self::Landwalk(BasicLandType::Forest);
     pub const INDESTRUCTIBLE: Self = Self::Named(NamedKeywordAbility::Indestructible);
     pub const FEAR: Self = Self::Named(NamedKeywordAbility::Fear);
+    pub const VIGILANCE: Self = Self::Named(NamedKeywordAbility::Vigilance);
 
     #[allow(non_upper_case_globals)]
     pub const FirstStrike: Self = Self::FIRST_STRIKE;
@@ -1408,6 +1409,8 @@ impl KeywordAbility {
     pub const Indestructible: Self = Self::INDESTRUCTIBLE;
     #[allow(non_upper_case_globals)]
     pub const Fear: Self = Self::FEAR;
+    #[allow(non_upper_case_globals)]
+    pub const Vigilance: Self = Self::VIGILANCE;
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1427,6 +1430,7 @@ enum KeywordSerde {
     Landwalk(BasicLandType),
     Indestructible,
     Fear,
+    Vigilance,
     Protection(Color),
     Enchant(EnchantObject),
 }
@@ -1448,6 +1452,7 @@ impl From<KeywordAbility> for KeywordSerde {
             KeywordAbility::Landwalk(BasicLandType::Forest) => Self::Forestwalk,
             KeywordAbility::Named(NamedKeywordAbility::Indestructible) => Self::Indestructible,
             KeywordAbility::Named(NamedKeywordAbility::Fear) => Self::Fear,
+            KeywordAbility::Named(NamedKeywordAbility::Vigilance) => Self::Vigilance,
             KeywordAbility::Protection(color) => Self::Protection(color),
             KeywordAbility::Enchant(object) => Self::Enchant(object),
         }
@@ -1472,6 +1477,7 @@ impl From<KeywordSerde> for KeywordAbility {
             KeywordSerde::Landwalk(land_type) => Self::Landwalk(land_type),
             KeywordSerde::Indestructible => Self::Named(NamedKeywordAbility::Indestructible),
             KeywordSerde::Fear => Self::Named(NamedKeywordAbility::Fear),
+            KeywordSerde::Vigilance => Self::Named(NamedKeywordAbility::Vigilance),
             KeywordSerde::Protection(color) => Self::Protection(color),
             KeywordSerde::Enchant(object) => Self::Enchant(object),
         }
@@ -1507,6 +1513,7 @@ pub enum NamedKeywordAbility {
     Trample,
     Indestructible,
     Fear,
+    Vigilance,
 }
 
 /// What an `Enchant <X>` keyword attaches to. Most Auras name a

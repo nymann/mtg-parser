@@ -2343,6 +2343,7 @@ fn named_keyword_ability_from_str(text: &str) -> Result<NamedKeywordAbility, Par
         "trample" => Ok(NamedKeywordAbility::Trample),
         "indestructible" => Ok(NamedKeywordAbility::Indestructible),
         "fear" => Ok(NamedKeywordAbility::Fear),
+        "vigilance" => Ok(NamedKeywordAbility::Vigilance),
         _ => Err(ParseError::Internal("keyword ability name")),
     }
 }

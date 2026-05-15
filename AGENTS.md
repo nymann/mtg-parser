@@ -22,6 +22,15 @@ explaining why no existing rule could be widened.
 hand-edits. To change the shape of a generated test, change the
 template in `xtask/src/add_card.rs`.
 
+## Do not run add-card yourself
+
+Do not run `cargo xtask add-card` from an agent session. The human runs
+add-card sessions and may leave generated tests or partial repair state in the
+working tree for agents to inspect or continue from. Agents may inspect
+`.add-card/` logs and run narrower validation or audit commands, but must not
+start, resume, or rerun the add-card orchestrator unless the human explicitly
+overrides this rule in the current turn.
+
 ## A failing round-trip test points at the grammar, not the unparser
 
 The round-trip law `parse(unparse(ast)) == ast` is enforced by
