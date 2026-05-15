@@ -942,6 +942,13 @@ pub enum StaticAbility {
         from: BasicLandType,
         to: BasicLandType,
     },
+    /// "All <basic_land_type>s are N/N <color> creatures that are still lands."
+    BasicLandsAreColoredCreaturesStillLands {
+        land_type: BasicLandType,
+        power: u32,
+        toughness: u32,
+        color: Color,
+    },
     /// "That <type> is a <basic_land_type> for as long as it has a
     /// <counter> counter on it."
     ThatPermanentIsBasicLandTypeWhileHasNamedCounter {

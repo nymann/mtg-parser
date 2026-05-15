@@ -113,6 +113,7 @@ sentence_statement = _{
   | static_source_cant_block_creatures_with_power_or_greater
   | static_named_source_pt_equal_to_non_creature_type_creatures_you_control
   | static_effect_doesnt_remove_this_aura
+  | static_basic_lands_are_pt_colored_creatures_still_lands
   | static_basic_lands_are_basic_lands
   | static_that_permanent_is_basic_land_type_while_has_named_counter
   | triggered_ability_fragment
@@ -526,6 +527,7 @@ static_ability = _{
   | static_source_cant_block_creatures_with_power_or_greater
   | static_named_source_pt_equal_to_non_creature_type_creatures_you_control
   | static_effect_doesnt_remove_this_aura
+  | static_basic_lands_are_pt_colored_creatures_still_lands
   | static_basic_lands_are_basic_lands
   | static_that_permanent_is_basic_land_type_while_has_named_counter
 }
@@ -640,6 +642,11 @@ static_source_cant_be_blocked_by_creature_type = {
 
 static_basic_lands_are_basic_lands = {
     ^"all" ~ basic_land_type_plural ~ ^"are" ~ basic_land_type_plural ~ "."
+}
+
+static_basic_lands_are_pt_colored_creatures_still_lands = {
+    ^"all" ~ basic_land_type_plural ~ ^"are" ~ unsigned_number ~ "/" ~ unsigned_number
+  ~ color_word ~ ^"creatures" ~ ^"that" ~ ^"are" ~ ^"still" ~ ^"lands" ~ "."
 }
 
 static_that_permanent_is_basic_land_type_while_has_named_counter = {

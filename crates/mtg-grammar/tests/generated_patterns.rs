@@ -201,3 +201,5 @@ mod jump;
 mod karma;
 #[path = "generated_patterns/keldon_warlord.rs"]
 mod keldon_warlord;
+#[path = "generated_patterns/kormus_bell.rs"]
+mod kormus_bell;

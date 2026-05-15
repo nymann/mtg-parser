@@ -189,6 +189,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_source_cant_block_creatures_with_power_or_greater
         | Rule::static_named_source_pt_equal_to_non_creature_type_creatures_you_control
         | Rule::static_basic_lands_are_basic_lands
+        | Rule::static_basic_lands_are_pt_colored_creatures_still_lands
         | Rule::static_that_permanent_is_basic_land_type_while_has_named_counter
         | Rule::remove_target_creature_defending_player_controls_from_combat
         | Rule::creatures_it_was_blocking_become_unblocked
@@ -2237,6 +2238,35 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::BasicLandsAreBasicLands {
                 from: basic_land_type_from_plural_pair(from_pair)?,
                 to: basic_land_type_from_plural_pair(to_pair)?,
+            })
+        }
+        Rule::static_basic_lands_are_pt_colored_creatures_still_lands => {
+            let mut inner = pair.into_inner();
+            let land_type_pair = inner
+                .next()
+                .expect("basic land creature effect names affected land type");
+            let power_pair = inner
+                .next()
+                .expect("basic land creature effect names power");
+            let toughness_pair = inner
+                .next()
+                .expect("basic land creature effect names toughness");
+            let color_pair = inner
+                .next()
+                .expect("basic land creature effect names color");
+            let power = power_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("basic land creature effect power"))?;
+            let toughness = toughness_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("basic land creature effect toughness"))?;
+            Ok(StaticAbility::BasicLandsAreColoredCreaturesStillLands {
+                land_type: basic_land_type_from_plural_pair(land_type_pair)?,
+                power,
+                toughness,
+                color: color_from_pair(color_pair)?,
             })
         }
         Rule::static_that_permanent_is_basic_land_type_while_has_named_counter => {
