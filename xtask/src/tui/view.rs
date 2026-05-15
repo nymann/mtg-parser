@@ -9,7 +9,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::agent_events::ParsedAgentEvent;
+use crate::agent_events::{self, ParsedAgentEvent};
 use crate::flow::{AgentProvider, IterationOutcomeSummary, NoteLevel, SessionEndReason};
 use crate::paths::repo_root;
 use crate::tui::state::{
@@ -520,7 +520,7 @@ fn render_card_panel(f: &mut Frame<'_>, area: Rect, state: &AppState) {
                 Some(card) => {
                     let iter = state.active_iteration().unwrap();
                     let mut v = Vec::new();
-                    v.push(field("Name", &card.name, C_TITLE));
+                    v.push(card_name_field(&card.name));
                     v.push(field("Set", &card.set_code, C_DIM));
                     v.push(field("Collector #", &card.collector_number, C_DIM));
                     v.push(field("Layout", &format!("{:?}", card.layout), C_DIM));
@@ -593,6 +593,47 @@ fn field(label: &str, value: &str, value_color: Color) -> Line<'static> {
                 .add_modifier(Modifier::BOLD),
         ),
     ])
+}
+
+fn card_name_field(name: &str) -> Line<'static> {
+    let url = scryfall_card_url(name);
+    Line::from(vec![
+        Span::styled(
+            format!("{label:<11} ", label = "Name"),
+            Style::default().fg(C_FAINT),
+        ),
+        Span::styled(
+            terminal_link(name, &url),
+            Style::default()
+                .fg(C_TITLE)
+                .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+        ),
+    ])
+}
+
+fn terminal_link(label: &str, url: &str) -> String {
+    format!("\x1b]8;;{url}\x1b\\{label}\x1b]8;;\x1b\\")
+}
+
+fn scryfall_card_url(name: &str) -> String {
+    format!(
+        "https://scryfall.com/search?q=%21%22{}%22",
+        url_encode_component(name)
+    )
+}
+
+fn url_encode_component(input: &str) -> String {
+    let mut out = String::new();
+    for byte in input.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(byte as char);
+            }
+            b' ' => out.push_str("%20"),
+            other => out.push_str(&format!("%{other:02X}")),
+        }
+    }
+    out
 }
 
 fn render_steps(f: &mut Frame<'_>, area: Rect, state: &AppState) {
@@ -908,9 +949,9 @@ fn render_agent_row(
     match parsed {
         ParsedAgentEvent::Init { model } => render_message_block(
             row.delta,
-            &format!("{label} init"),
+            label,
             C_INFO,
-            &format!("model={model}"),
+            &format!("init model={model}"),
             Style::default().fg(C_DIM),
             width,
         ),
@@ -922,42 +963,25 @@ fn render_agent_row(
             Style::default().fg(C_TEXT),
             width,
         ),
-        ParsedAgentEvent::ToolUse { name, target } => match target {
-            crate::agent_events::ToolUseTarget::Command(command) => {
-                render_command_block(row.delta, command, width)
-            }
-            _ => {
-                let target_str = format_tool_target(target, repo);
-                let body = if target_str.is_empty() {
-                    name.clone()
-                } else {
-                    format!("{name} {target_str}")
-                };
-                render_message_block(
-                    row.delta,
-                    "tool",
-                    C_TOOL,
-                    &body,
-                    Style::default().fg(match target {
-                        crate::agent_events::ToolUseTarget::File(_) => C_FILE,
-                        _ => C_TOOL,
-                    }),
-                    width,
-                )
-            }
-        },
+        ParsedAgentEvent::ToolUse { name, target } => {
+            let (body, color) = agent_action_summary(name, target, repo);
+            render_message_block(
+                row.delta,
+                label,
+                color,
+                &body,
+                Style::default().fg(color),
+                width,
+            )
+        }
         ParsedAgentEvent::ToolResult {
             first_line,
             is_error,
         } => render_message_block(
             row.delta,
-            if *is_error {
-                "tool error"
-            } else {
-                "tool result"
-            },
+            label,
             if *is_error { C_BAD } else { C_DIM },
-            first_line,
+            &format!("{} {}", if *is_error { "error" } else { "ok" }, first_line),
             Style::default().fg(if *is_error { C_BAD } else { C_DIM }),
             width,
         ),
@@ -969,14 +993,42 @@ fn render_agent_row(
             let color = if subtype == "success" { C_GOOD } else { C_BAD };
             render_message_block(
                 row.delta,
-                &format!("{label} done"),
+                label,
                 color,
-                &format!("subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"),
+                &format!("done subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"),
                 Style::default().fg(color),
                 width,
             )
         }
         ParsedAgentEvent::Other => Vec::new(),
+    }
+}
+
+fn agent_action_summary(
+    name: &str,
+    target: &crate::agent_events::ToolUseTarget,
+    repo: &std::path::Path,
+) -> (String, Color) {
+    match target {
+        crate::agent_events::ToolUseTarget::File(path) => (
+            format!("edit {}", agent_events::relativize(path, repo)),
+            C_FILE,
+        ),
+        crate::agent_events::ToolUseTarget::Command(command) => (
+            format!(
+                "run {}",
+                agent_events::trim_to(&display_shell_command(command), 220)
+            ),
+            C_CMD,
+        ),
+        crate::agent_events::ToolUseTarget::Pattern(pattern) => {
+            (format!("search /{pattern}/"), C_TOOL)
+        }
+        crate::agent_events::ToolUseTarget::Description(desc) => (
+            format!("{name} {}", agent_events::trim_to(desc, 220)),
+            C_TOOL,
+        ),
+        crate::agent_events::ToolUseTarget::None => (name.to_string(), C_TOOL),
     }
 }
 
@@ -1001,25 +1053,6 @@ fn render_message_block(
         }
     }
     out.push(message_footer(label_color));
-    out
-}
-
-fn render_command_block(delta: u64, command: &str, width: u16) -> Vec<Line<'static>> {
-    let command = display_shell_command(command);
-    let body_width = body_width(width, 4);
-    let mut out = vec![message_header(delta, "tool exec", C_TOOL)];
-    let token_lines = wrap_shell_command(&command, body_width.max(1));
-    for (i, spans) in token_lines.into_iter().enumerate() {
-        let prompt = if i == 0 { "$ " } else { "  " };
-        let mut line = vec![Span::styled("  │ ", Style::default().fg(C_FAINT))];
-        line.push(Span::styled(
-            prompt,
-            Style::default().fg(C_CMD).add_modifier(Modifier::BOLD),
-        ));
-        line.extend(spans);
-        out.push(Line::from(line));
-    }
-    out.push(message_footer(C_TOOL));
     out
 }
 
@@ -1107,42 +1140,6 @@ fn delta_cell(delta: u64) -> Span<'static> {
     Span::styled(txt, Style::default().fg(color))
 }
 
-fn wrap_shell_command(command: &str, width: usize) -> Vec<Vec<Span<'static>>> {
-    let mut out: Vec<Vec<Span<'static>>> = Vec::new();
-    let mut line: Vec<Span<'static>> = Vec::new();
-    let mut len = 0usize;
-    for (i, token) in shell_tokens(command).into_iter().enumerate() {
-        let token_len = display_width(&token);
-        let sep = usize::from(!line.is_empty());
-        if !line.is_empty() && len + sep + token_len > width {
-            out.push(std::mem::take(&mut line));
-            len = 0;
-        }
-        if !line.is_empty() {
-            line.push(Span::raw(" "));
-            len += 1;
-        }
-        let style = shell_token_style(&token, i == 0);
-        if token_len > width {
-            for part in split_long_word(&token, width) {
-                if !line.is_empty() {
-                    out.push(std::mem::take(&mut line));
-                }
-                line.push(Span::styled(part, style));
-                out.push(std::mem::take(&mut line));
-                len = 0;
-            }
-        } else {
-            len += token_len;
-            line.push(Span::styled(token, style));
-        }
-    }
-    if !line.is_empty() {
-        out.push(line);
-    }
-    out
-}
-
 fn display_shell_command(command: &str) -> String {
     let trimmed = command.trim();
     for prefix in ["zsh -lc ", "zsh -c ", "bash -lc ", "bash -c ", "sh -c "] {
@@ -1163,59 +1160,6 @@ fn unquote_shell_arg(s: &str) -> &str {
     } else {
         s
     }
-}
-
-fn shell_tokens(command: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut current = String::new();
-    let mut quote: Option<char> = None;
-    for ch in command.chars() {
-        if let Some(q) = quote {
-            current.push(ch);
-            if ch == q {
-                quote = None;
-            }
-            continue;
-        }
-        match ch {
-            '\'' | '"' => {
-                quote = Some(ch);
-                current.push(ch);
-            }
-            ' ' | '\t' if !current.is_empty() => {
-                out.push(std::mem::take(&mut current));
-            }
-            ' ' | '\t' => {}
-            '|' | '&' | ';' | '<' | '>' => {
-                if !current.is_empty() {
-                    out.push(std::mem::take(&mut current));
-                }
-                out.push(ch.to_string());
-            }
-            _ => current.push(ch),
-        }
-    }
-    if !current.is_empty() {
-        out.push(current);
-    }
-    out
-}
-
-fn shell_token_style(token: &str, first: bool) -> Style {
-    let color = if first || token.contains('/') {
-        C_CMD
-    } else if token.starts_with('-') {
-        C_INFO
-    } else if token.starts_with('$') || token.contains('=') {
-        C_WARN
-    } else if token.starts_with('"') || token.starts_with('\'') {
-        C_TEXT
-    } else if matches!(token, "|" | "&" | ";" | "<" | ">") {
-        C_BAD
-    } else {
-        C_TITLE
-    };
-    Style::default().fg(color)
 }
 
 fn copy_title(name: &'static str, hotkey: char, active: bool) -> Line<'static> {

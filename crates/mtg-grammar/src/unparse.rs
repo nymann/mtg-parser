@@ -6,18 +6,19 @@ use crate::ast::{
     ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
     ContinuousEffect, CopyException, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
-    DamageKind, DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration,
-    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
-    DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
-    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
-    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    DamageAssignment, DamageKind, DamageLifeGainCap, DamagePreventionAmount,
+    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
+    DamageRecipients, DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject,
+    EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController,
+    LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
+    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TriggerCondition,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -510,12 +511,38 @@ fn write_damage_event_recipients(out: &mut String, recipients: &DamageRecipients
             out.push_str(" to ");
             write_damage_recipients(out, recipients);
         }
+        DamageRecipients::Assignments(assignments) => write_damage_assignments(out, assignments),
+    }
+}
+
+fn write_damage_assignments(out: &mut String, assignments: &[DamageAssignment<DamageRecipient>]) {
+    let mut idx = 0;
+    while idx < assignments.len() {
+        if idx > 0 {
+            out.push_str(" and ");
+        }
+        let assignment = &assignments[idx];
+        write_damage_amount(out, assignment.amount);
+        out.push_str(" damage to ");
+        write_damage_recipient(out, assignment.recipient);
+        let mut next_idx = idx + 1;
+        while next_idx < assignments.len() && assignments[next_idx].amount == assignment.amount {
+            out.push_str(" and ");
+            write_damage_recipient(out, assignments[next_idx].recipient);
+            next_idx += 1;
+        }
+        idx = next_idx;
     }
 }
 
 fn write_named_damage_event(out: &mut String, event: &NamedDamageEvent) {
     out.push_str(&event.source);
     out.push_str(" deals ");
+    if let DamageRecipients::Assignments(assignments) = &event.recipient {
+        write_damage_assignments(out, assignments);
+        out.push('.');
+        return;
+    }
     write_damage_amount(out, event.amount);
     out.push_str(" damage");
     write_damage_event_recipients(out, &event.recipient);
@@ -524,6 +551,8 @@ fn write_named_damage_event(out: &mut String, event: &NamedDamageEvent) {
 
 fn write_damage_recipient(out: &mut String, recipient: DamageRecipient) {
     match recipient {
+        DamageRecipient::AnyTarget => out.push_str("any target"),
+        DamageRecipient::You => out.push_str("you"),
         DamageRecipient::EachCreature => out.push_str("each creature"),
         DamageRecipient::EachCreatureWithKeyword { keyword } => {
             out.push_str("each creature with ");

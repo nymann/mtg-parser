@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 215,
+  "passing": 216,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -603,8 +603,7 @@
       "status": "pass"
     },
     "lea/Psionic Blast": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Psionic Blast deals 4 damage to any target and 2 damage to you.\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Psychic Venom": {
       "status": "pass"

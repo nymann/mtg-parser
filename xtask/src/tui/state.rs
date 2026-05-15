@@ -819,8 +819,8 @@ fn output_agent_lines(
         ParsedAgentEvent::Init { model } => {
             vec![format_timed_row(
                 row.delta,
-                &format!("{label} init"),
-                &format!("model={model}"),
+                label,
+                &format!("init model={model}"),
             )]
         }
         ParsedAgentEvent::AssistantText { text } => text
@@ -835,25 +835,19 @@ fn output_agent_lines(
             })
             .collect(),
         ParsedAgentEvent::ToolUse { name, target } => {
-            let target = format_tool_target(target, repo);
-            let detail = if target.is_empty() {
-                name.clone()
-            } else {
-                format!("{name} {target}")
-            };
-            vec![format_timed_row(row.delta, "tool_use", &detail)]
+            vec![format_timed_row(
+                row.delta,
+                label,
+                &agent_action_summary(name, target, repo),
+            )]
         }
         ParsedAgentEvent::ToolResult {
             first_line,
             is_error,
         } => vec![format_timed_row(
             row.delta,
-            if *is_error {
-                "tool_error"
-            } else {
-                "tool_result"
-            },
-            first_line,
+            label,
+            &format!("{} {}", if *is_error { "error" } else { "ok" }, first_line),
         )],
         ParsedAgentEvent::Done {
             subtype,
@@ -861,10 +855,24 @@ fn output_agent_lines(
             total_cost_usd,
         } => vec![format_timed_row(
             row.delta,
-            &format!("{label} done"),
-            &format!("subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"),
+            label,
+            &format!("done subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"),
         )],
         ParsedAgentEvent::Other => Vec::new(),
+    }
+}
+
+fn agent_action_summary(name: &str, target: &ToolUseTarget, repo_root: &std::path::Path) -> String {
+    match target {
+        ToolUseTarget::File(path) => format!("edit {}", agent_events::relativize(path, repo_root)),
+        ToolUseTarget::Command(command) => {
+            format!("run {}", agent_events::trim_to(command, 220))
+        }
+        ToolUseTarget::Pattern(pattern) => format!("search /{pattern}/"),
+        ToolUseTarget::Description(desc) => {
+            format!("{name} {}", agent_events::trim_to(desc, 220))
+        }
+        ToolUseTarget::None => name.to_string(),
     }
 }
 

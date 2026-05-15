@@ -791,13 +791,42 @@ fn only_sources_owner_may_activate_this_ability_from_pair(
 fn named_damage_event_from_pair(pair: Pair<Rule>) -> Result<NamedDamageEvent, ParseError> {
     let mut inner = pair.into_inner();
     let source_pair = next_inner(&mut inner, "damage event missing source name")?;
-    let amount_pair = next_inner(&mut inner, "damage event missing amount")?;
+    let next_pair = next_inner(&mut inner, "damage event missing payload")?;
+    if next_pair.as_rule() == Rule::damage_event_assignment_list {
+        let assignments = damage_event_assignments_from_pair(next_pair)?;
+        let amount = assignments
+            .first()
+            .ok_or(ParseError::Internal("damage event missing assignment"))?
+            .amount;
+        return Ok(DamageEvent {
+            source: source_pair.as_str().to_string(),
+            amount,
+            recipient: DamageRecipients::Assignments(assignments),
+        });
+    }
     let recipients_pair = next_inner(&mut inner, "damage event missing recipients")?;
     Ok(DamageEvent {
         source: source_pair.as_str().to_string(),
-        amount: damage_event_amount_from_pair(amount_pair)?,
+        amount: damage_event_amount_from_pair(next_pair)?,
         recipient: damage_event_recipients_from_pair(recipients_pair)?,
     })
+}
+
+fn damage_event_assignments_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Vec<DamageAssignment<DamageRecipient>>, ParseError> {
+    pair.into_inner()
+        .map(|assignment_pair| {
+            let mut inner = assignment_pair.into_inner();
+            let amount_pair = next_inner(&mut inner, "damage event assignment missing amount")?;
+            let recipient_pair =
+                next_inner(&mut inner, "damage event assignment missing recipient")?;
+            Ok(DamageAssignment {
+                amount: damage_event_amount_from_pair(amount_pair)?,
+                recipient: damage_recipient_from_pair(recipient_pair)?,
+            })
+        })
+        .collect()
 }
 
 fn damage_event_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
@@ -824,8 +853,14 @@ fn damage_event_recipients_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient
 }
 
 fn damage_recipient_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient, ParseError> {
-    let inner = only_inner(pair, "damage recipient missing inner rule")?;
+    let inner = if pair.as_rule() == Rule::damage_recipient {
+        only_inner(pair, "damage recipient missing inner rule")?
+    } else {
+        pair
+    };
     match inner.as_rule() {
+        Rule::any_target_prevention_recipient => Ok(DamageRecipient::AnyTarget),
+        Rule::you_damage_recipient => Ok(DamageRecipient::You),
         Rule::each_creature_damage_recipient => Ok(DamageRecipient::EachCreature),
         Rule::each_creature_with_keyword => {
             let keyword_pair = only_inner(inner, "creature damage recipient missing keyword")?;

@@ -243,10 +243,7 @@ fn parse_codex_item(ev: &serde_json::Value, started: bool) -> Vec<ParsedAgentEve
                 target: path.map(ToolUseTarget::File).unwrap_or(ToolUseTarget::None),
             }]
         }
-        "file_change" if !started => vec![ParsedAgentEvent::ToolResult {
-            first_line: first_codex_file_change_path(item).unwrap_or_else(|| "file change".into()),
-            is_error: item.get("status").and_then(|v| v.as_str()) == Some("failed"),
-        }],
+        "file_change" if !started => vec![ParsedAgentEvent::Other],
         _ => vec![ParsedAgentEvent::Other],
     }
 }

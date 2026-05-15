@@ -473,6 +473,10 @@ pub enum DamageLifeGainCap {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DamageRecipient {
+    /// "any target"
+    AnyTarget,
+    /// "you"
+    You,
     /// "each creature"
     EachCreature,
     /// "each creature with <keyword>"
@@ -493,6 +497,8 @@ pub enum DamageRecipients {
     DividedEvenlyRoundedDownAmongAnyNumberOfTargets,
     /// "to <recipient> and <recipient>"
     List(Vec<DamageRecipient>),
+    /// "<amount> damage to <recipient> and <amount> damage to <recipient>"
+    Assignments(Vec<DamageAssignment<DamageRecipient>>),
 }
 
 pub type NamedDamageEvent = DamageEvent<String, DamageRecipients>;

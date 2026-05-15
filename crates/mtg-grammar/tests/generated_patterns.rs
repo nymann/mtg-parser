@@ -275,3 +275,5 @@ mod power_leak;
 mod power_sink;
 #[path = "generated_patterns/power_surge.rs"]
 mod power_surge;
+#[path = "generated_patterns/psionic_blast.rs"]
+mod psionic_blast;
