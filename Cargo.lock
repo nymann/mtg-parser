@@ -2298,6 +2298,7 @@ dependencies = [
  "anyhow",
  "crossterm",
  "mtg-corpus",
+ "mtg-grammar",
  "mtg-scryfall",
  "ratatui",
  "serde",

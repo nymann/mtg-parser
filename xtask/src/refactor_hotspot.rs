@@ -701,8 +701,20 @@ fn run_iteration(
     sink.emit(FlowEvent::StepStarted {
         index: 9,
         total: TOTAL_STEPS,
-        label: "corpus, audit, commit".to_string(),
+        label: "coverage, corpus, audit, commit".to_string(),
     });
+    if let Err(e) = run_gate(
+        "cargo xtask ast-coverage --fail-on-dead-parser-surface",
+        "cargo",
+        &["xtask", "ast-coverage", "--fail-on-dead-parser-surface"],
+    ) {
+        sink.emit(FlowEvent::StepFinished {
+            index: 9,
+            ok: false,
+            summary: Some(format!("{e:#}")),
+        });
+        return Ok(IterationOutcome::GateFailed(e));
+    }
     if let Err(e) = run_gate("cargo xtask corpus", "cargo", &["xtask", "corpus"]) {
         sink.emit(FlowEvent::StepFinished {
             index: 9,
@@ -1399,7 +1411,7 @@ fn git_commit(message: &str) -> Result<CommitOutcome> {
 fn commit_message(selected: &SelectedRefactor, iteration: u32) -> Result<String> {
     let stat = git_diff_stat()?;
     Ok(format!(
-        "Refactor {} hotspot iteration {}\n\nGates: cargo test; cargo xtask corpus; just audit-page.\nBehavior: intended unchanged.\nPrimary LOC delta:\n{}",
+        "Refactor {} hotspot iteration {}\n\nGates: cargo test; cargo xtask ast-coverage --fail-on-dead-parser-surface; cargo xtask corpus; just audit-page.\nBehavior: intended unchanged.\nPrimary LOC delta:\n{}",
         selected.theme.label(),
         iteration,
         stat.trim()

@@ -962,6 +962,7 @@ fn render_generated_test(card: &Card, normalized: &str) -> String {
              let text = {text:?};\n    \
              let ast = mtg_grammar::parse(text).expect(\"parse\");\n    \
              let reprinted = mtg_grammar::unparse(&ast);\n    \
+             assert_eq!(reprinted, text, \"unparse must preserve the normalized oracle text\");\n    \
              let ast2 = mtg_grammar::parse(&reprinted).expect(\"reparse\");\n    \
              assert_eq!(ast, ast2);\n\
          }}\n",

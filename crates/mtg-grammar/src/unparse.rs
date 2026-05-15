@@ -8,8 +8,8 @@ use crate::ast::{
     DamageKind, DamageLifeGainCap, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamageRecipient, DamageRecipients, DestroyTarget, EachPlayerAction,
     EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
-    KeywordAbility, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    NamedDamageEvent, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost,
+    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent,
+    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost,
     PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
     Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
     StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
@@ -1010,11 +1010,6 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             });
         }
         ActivatedEffect::Destroy { target } => write_destroy(out, target),
-        ActivatedEffect::DestroyTargetCreatureType { creature_type } => {
-            out.push_str("Destroy target ");
-            write_creature_type(out, *creature_type);
-            out.push('.');
-        }
         ActivatedEffect::LookAtTargetPlayersHand => {
             out.push_str("Look at target player's hand.");
         }
@@ -2091,31 +2086,31 @@ fn write_landwalk_lowercase(out: &mut String, land_type: BasicLandType) {
     out.push_str("walk");
 }
 
-fn keyword_ability_title_name(keyword: KeywordAbility) -> &'static str {
+fn keyword_ability_title_name(keyword: NamedKeywordAbility) -> &'static str {
     match keyword {
-        KeywordAbility::FirstStrike => "First strike",
-        KeywordAbility::Flying => "Flying",
-        KeywordAbility::Reach => "Reach",
-        KeywordAbility::Haste => "Haste",
-        KeywordAbility::Defender => "Defender",
-        KeywordAbility::Banding => "Banding",
-        KeywordAbility::Trample => "Trample",
-        KeywordAbility::Indestructible => "Indestructible",
-        KeywordAbility::Fear => "Fear",
+        NamedKeywordAbility::FirstStrike => "First strike",
+        NamedKeywordAbility::Flying => "Flying",
+        NamedKeywordAbility::Reach => "Reach",
+        NamedKeywordAbility::Haste => "Haste",
+        NamedKeywordAbility::Defender => "Defender",
+        NamedKeywordAbility::Banding => "Banding",
+        NamedKeywordAbility::Trample => "Trample",
+        NamedKeywordAbility::Indestructible => "Indestructible",
+        NamedKeywordAbility::Fear => "Fear",
     }
 }
 
-fn keyword_ability_name(keyword: KeywordAbility) -> &'static str {
+fn keyword_ability_name(keyword: NamedKeywordAbility) -> &'static str {
     match keyword {
-        KeywordAbility::FirstStrike => "first strike",
-        KeywordAbility::Flying => "flying",
-        KeywordAbility::Reach => "reach",
-        KeywordAbility::Haste => "haste",
-        KeywordAbility::Defender => "defender",
-        KeywordAbility::Banding => "banding",
-        KeywordAbility::Trample => "trample",
-        KeywordAbility::Indestructible => "indestructible",
-        KeywordAbility::Fear => "fear",
+        NamedKeywordAbility::FirstStrike => "first strike",
+        NamedKeywordAbility::Flying => "flying",
+        NamedKeywordAbility::Reach => "reach",
+        NamedKeywordAbility::Haste => "haste",
+        NamedKeywordAbility::Defender => "defender",
+        NamedKeywordAbility::Banding => "banding",
+        NamedKeywordAbility::Trample => "trample",
+        NamedKeywordAbility::Indestructible => "indestructible",
+        NamedKeywordAbility::Fear => "fear",
     }
 }
 

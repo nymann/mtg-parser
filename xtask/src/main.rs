@@ -7,6 +7,7 @@ use std::process::ExitCode;
 
 mod add_card;
 mod agent_events;
+mod ast_coverage;
 mod console_sink;
 mod corpus_cmd;
 mod flow;
@@ -30,6 +31,10 @@ Commands:
   corpus [--update]           Parse every card in the tracked sets and diff against the
                               committed corpus_status.json. --update overwrites it even
                               if there are regressions (use with care).
+  ast-coverage [--fail-on-dead-parser-surface]
+                              Parse generated regression tests, report exercised AST
+                              variants, and flag variants with unparse arms but no parser
+                              construction when requested.
   corpus-add-set CODE         Add a set to corpus_sets.json, refresh it, then run corpus.
   corpus-advance              Add the next paper core/expansion set once the current newest
               [--max-grammar-left N]  tracked set has at most N actionable failures.
@@ -113,6 +118,7 @@ fn main() -> ExitCode {
         Some("test") => testrun::run(&args[1..]),
         Some("next-card") => next_card::run(&args[1..]),
         Some("corpus") => corpus_cmd::run(&args[1..]),
+        Some("ast-coverage") => ast_coverage::run(&args[1..]),
         Some("corpus-add-set") => corpus_cmd::add_set(&args[1..]),
         Some("corpus-advance") => corpus_cmd::advance(&args[1..]),
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),

@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 mtg-corpus = { path = "../crates/mtg-corpus" }
+mtg-grammar = { path = "../crates/mtg-grammar" }
 mtg-scryfall = { path = "../crates/mtg-scryfall" }
 anyhow = { workspace = true }
 serde = { workspace = true }

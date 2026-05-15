@@ -936,6 +936,11 @@ fn finalize_repair(sink: &mut dyn FlowSink, phase: &str, iteration: u32) -> Resu
     for (label, program, args) in [
         ("cargo fmt --all", "cargo", &["fmt", "--all"][..]),
         ("cargo test", "cargo", &["test"][..]),
+        (
+            "cargo xtask ast-coverage --fail-on-dead-parser-surface",
+            "cargo",
+            &["xtask", "ast-coverage", "--fail-on-dead-parser-surface"][..],
+        ),
         ("cargo xtask corpus", "cargo", &["xtask", "corpus"][..]),
         ("just audit-page", "just", &["audit-page"][..]),
     ] {
@@ -1119,7 +1124,7 @@ fn git_commit_repair(message: &str) -> Result<CommitOutcome> {
 fn repair_commit_message(phase: &str, iteration: u32) -> Result<String> {
     let stat = git_diff_stat()?;
     Ok(format!(
-        "Repair grind {phase} iteration {iteration}\n\nGates: cargo test; cargo xtask corpus; just audit-page.\nPrimary LOC delta:\n{}",
+        "Repair grind {phase} iteration {iteration}\n\nGates: cargo test; cargo xtask ast-coverage --fail-on-dead-parser-surface; cargo xtask corpus; just audit-page.\nPrimary LOC delta:\n{}",
         stat.trim()
     ))
 }
