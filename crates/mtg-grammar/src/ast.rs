@@ -15,9 +15,8 @@ pub enum Statement {
     RegenerateTargetCreature,
     /// "<source name> deals <amount> damage <recipients>."
     NamedSourceDealsDamage {
-        source_name: String,
-        amount: DamageAmount,
-        recipients: DamageRecipients,
+        #[serde(flatten)]
+        event: DamageEvent<String, DamageRecipients>,
     },
     /// "Prevent all combat damage that would be dealt this turn."
     PreventAllCombatDamageThisTurn,
@@ -743,7 +742,7 @@ pub struct TriggeredDamage {
     pub definitions: Vec<VariableDefinition>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DamageEvent<S, R> {
     pub source: S,
     pub amount: DamageAmount,

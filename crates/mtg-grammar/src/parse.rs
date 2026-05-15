@@ -749,34 +749,34 @@ fn named_source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<Statement, Pa
     let amount_pair = next_inner(&mut inner, "named damage missing amount")?;
     let recipients_pair = next_inner(&mut inner, "named damage missing recipients")?;
     Ok(Statement::NamedSourceDealsDamage {
-        source_name: source_pair.as_str().to_string(),
-        amount: named_source_damage_amount_from_pair(amount_pair)?,
-        recipients: named_source_damage_recipients_from_pair(recipients_pair)?,
+        event: DamageEvent {
+            source: source_pair.as_str().to_string(),
+            amount: damage_event_amount_from_pair(amount_pair)?,
+            recipient: damage_event_recipients_from_pair(recipients_pair)?,
+        },
     })
 }
 
-fn named_source_damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
-    let inner = only_inner(pair, "named damage amount missing inner rule")?;
+fn damage_event_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
+    let inner = only_inner(pair, "damage event amount missing inner rule")?;
     damage_amount_from_pair(inner)
 }
 
-fn named_source_damage_recipients_from_pair(
-    pair: Pair<Rule>,
-) -> Result<DamageRecipients, ParseError> {
-    let inner = only_inner(pair, "named damage recipients missing inner rule")?;
+fn damage_event_recipients_from_pair(pair: Pair<Rule>) -> Result<DamageRecipients, ParseError> {
+    let inner = only_inner(pair, "damage event recipients missing inner rule")?;
     match inner.as_rule() {
-        Rule::named_source_damage_any_target => Ok(DamageRecipients::AnyTarget),
-        Rule::named_source_damage_divided_evenly_rounded_down_among_any_number_of_targets => {
+        Rule::damage_event_any_target => Ok(DamageRecipients::AnyTarget),
+        Rule::damage_event_divided_evenly_rounded_down_among_any_number_of_targets => {
             Ok(DamageRecipients::DividedEvenlyRoundedDownAmongAnyNumberOfTargets)
         }
-        Rule::named_source_damage_recipient_list => {
+        Rule::damage_event_recipient_list => {
             let recipients = inner
                 .into_inner()
                 .map(damage_recipient_from_pair)
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(DamageRecipients::List(recipients))
         }
-        _ => Err(ParseError::Internal("named damage recipients")),
+        _ => Err(ParseError::Internal("damage event recipients")),
     }
 }
 

@@ -34,16 +34,12 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" more to cast for each target beyond the first.");
         }
         Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
-        Statement::NamedSourceDealsDamage {
-            source_name,
-            amount,
-            recipients,
-        } => {
-            out.push_str(source_name);
+        Statement::NamedSourceDealsDamage { event } => {
+            out.push_str(&event.source);
             out.push_str(" deals ");
-            write_damage_amount(out, *amount);
+            write_damage_amount(out, event.amount);
             out.push_str(" damage");
-            write_named_source_damage_recipients(out, recipients);
+            write_damage_event_recipients(out, &event.recipient);
             out.push('.');
         }
         Statement::PreventAllCombatDamageThisTurn => {
@@ -489,7 +485,7 @@ fn write_damage_recipients(out: &mut String, recipients: &[DamageRecipient]) {
     }
 }
 
-fn write_named_source_damage_recipients(out: &mut String, recipients: &DamageRecipients) {
+fn write_damage_event_recipients(out: &mut String, recipients: &DamageRecipients) {
     match recipients {
         DamageRecipients::AnyTarget => out.push_str(" to any target"),
         DamageRecipients::DividedEvenlyRoundedDownAmongAnyNumberOfTargets => {

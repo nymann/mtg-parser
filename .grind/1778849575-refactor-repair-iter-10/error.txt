@@ -1,0 +1,41 @@
+cargo test failed with exit status: 101
+    |             ^^^^^^ `Statement::NamedSourceDealsDamage` does not have this field
+    |
+    = note: available fields are: `event`
+
+error[E0559]: variant `Statement::NamedSourceDealsDamage` has no field named `recipients`
+   --> crates/mtg-semantic/tests/prop.rs:251:13
+    |
+251 |             recipients: DamageRecipients::AnyTarget,
+    |             ^^^^^^^^^^ `Statement::NamedSourceDealsDamage` does not have this field
+    |
+    = note: available fields are: `event`
+
+error[E0559]: variant `Statement::NamedSourceDealsDamage` has no field named `source_name`
+   --> crates/mtg-semantic/tests/prop.rs:254:13
+    |
+254 |             source_name: "Earthquake".to_string(),
+    |             ^^^^^^^^^^^ `Statement::NamedSourceDealsDamage` does not have this field
+    |
+    = note: available fields are: `event`
+
+error[E0559]: variant `Statement::NamedSourceDealsDamage` has no field named `amount`
+   --> crates/mtg-semantic/tests/prop.rs:255:13
+    |
+255 |             amount: DamageAmount::Variable(Variable::X),
+    |             ^^^^^^ `Statement::NamedSourceDealsDamage` does not have this field
+    |
+    = note: available fields are: `event`
+
+error[E0559]: variant `Statement::NamedSourceDealsDamage` has no field named `recipients`
+   --> crates/mtg-semantic/tests/prop.rs:256:13
+    |
+256 |             recipients: DamageRecipients::List(vec![
+    |             ^^^^^^^^^^ `Statement::NamedSourceDealsDamage` does not have this field
+    |
+    = note: available fields are: `event`
+
+For more information about this error, try `rustc --explain E0559`.
+error: could not compile `mtg-grammar` (test "prop") due to 12 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `mtg-semantic` (test "prop") due to 12 previous errors

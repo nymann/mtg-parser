@@ -11,11 +11,11 @@
 
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount, Color,
-    DamageAmount, DamageLifeGainCap, DamagePrevention, DamageRecipient, DamageRecipients,
-    EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode,
-    PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent,
-    TriggeredAbility, Variable, Zone,
+    DamageAmount, DamageEvent, DamageLifeGainCap, DamagePrevention, DamageRecipient,
+    DamageRecipients, EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, ManaCost,
+    ManaSymbol, ModalMode, PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility,
+    TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -236,29 +236,37 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst { mana }
         }),
         Just(Statement::NamedSourceDealsDamage {
-            source_name: "Fireball".to_string(),
-            amount: DamageAmount::Variable(Variable::X),
-            recipients: DamageRecipients::DividedEvenlyRoundedDownAmongAnyNumberOfTargets,
+            event: DamageEvent {
+                source: "Fireball".to_string(),
+                amount: DamageAmount::Variable(Variable::X),
+                recipient: DamageRecipients::DividedEvenlyRoundedDownAmongAnyNumberOfTargets,
+            },
         }),
         Just(Statement::NamedSourceDealsDamage {
-            source_name: "Disintegrate".to_string(),
-            amount: DamageAmount::Variable(Variable::X),
-            recipients: DamageRecipients::AnyTarget,
+            event: DamageEvent {
+                source: "Disintegrate".to_string(),
+                amount: DamageAmount::Variable(Variable::X),
+                recipient: DamageRecipients::AnyTarget,
+            },
         }),
         Just(Statement::NamedSourceDealsDamage {
-            source_name: "Lightning Bolt".to_string(),
-            amount: DamageAmount::Number(3),
-            recipients: DamageRecipients::AnyTarget,
+            event: DamageEvent {
+                source: "Lightning Bolt".to_string(),
+                amount: DamageAmount::Number(3),
+                recipient: DamageRecipients::AnyTarget,
+            },
         }),
         Just(Statement::NamedSourceDealsDamage {
-            source_name: "Earthquake".to_string(),
-            amount: DamageAmount::Variable(Variable::X),
-            recipients: DamageRecipients::List(vec![
-                DamageRecipient::EachCreatureWithoutKeyword {
-                    keyword: Keyword::Flying,
-                },
-                DamageRecipient::EachPlayer,
-            ]),
+            event: DamageEvent {
+                source: "Earthquake".to_string(),
+                amount: DamageAmount::Variable(Variable::X),
+                recipient: DamageRecipients::List(vec![
+                    DamageRecipient::EachCreatureWithoutKeyword {
+                        keyword: Keyword::Flying,
+                    },
+                    DamageRecipient::EachPlayer,
+                ]),
+            },
         }),
         Just(Statement::PreventAllCombatDamageThisTurn),
         (arb_damage_amount(), arb_prevention_recipient()).prop_map(|(amount, recipient)| {

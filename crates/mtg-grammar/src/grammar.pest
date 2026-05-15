@@ -210,21 +210,21 @@ spell_type_choice = { spell_type ~ (^"or" ~ spell_type)* }
 spell_type = @{ ^"instant" | ^"sorcery" }
 
 named_source_deals_damage = {
-    proper_name ~ ^"deals" ~ named_source_damage_amount ~ ^"damage"
-  ~ named_source_damage_recipients ~ "."
+    proper_name ~ ^"deals" ~ damage_event_amount ~ ^"damage"
+  ~ damage_event_recipients ~ "."
 }
-named_source_damage_amount = { damage_amount_expression }
-named_source_damage_recipients = {
-    named_source_damage_any_target
-  | named_source_damage_divided_evenly_rounded_down_among_any_number_of_targets
-  | named_source_damage_recipient_list
+damage_event_amount = { damage_amount_expression }
+damage_event_recipients = {
+    damage_event_any_target
+  | damage_event_divided_evenly_rounded_down_among_any_number_of_targets
+  | damage_event_recipient_list
 }
-named_source_damage_any_target = { ^"to" ~ ^"any" ~ ^"target" }
-named_source_damage_divided_evenly_rounded_down_among_any_number_of_targets = {
+damage_event_any_target = { ^"to" ~ ^"any" ~ ^"target" }
+damage_event_divided_evenly_rounded_down_among_any_number_of_targets = {
     ^"divided" ~ ^"evenly" ~ "," ~ ^"rounded" ~ ^"down" ~ ","
   ~ ^"among" ~ ^"any" ~ ^"number" ~ ^"of" ~ ^"targets"
 }
-named_source_damage_recipient_list = {
+damage_event_recipient_list = {
     ^"to" ~ damage_recipient ~ (^"and" ~ damage_recipient)+
 }
 damage_prevention_effect = {
