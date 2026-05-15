@@ -1868,20 +1868,15 @@ fn write_trigger_damage_recipient(out: &mut String, recipient: TriggerDamageReci
 
 fn write_activated_damage_effect(out: &mut String, effect: ActivatedDamageEffect) {
     match effect {
-        ActivatedDamageEffect::NextDamageEvent {
-            source,
-            kind,
-            recipient,
-            effect,
-        } => {
+        ActivatedDamageEffect::NextDamageEvent { event, effect } => {
             out.push_str("The next time ");
-            write_activated_damage_source(out, source);
+            write_activated_damage_source(out, event.source);
             out.push_str(" of your choice would deal ");
-            if kind == DamageKind::CombatDamage {
+            if event.kind == DamageKind::CombatDamage {
                 out.push_str("combat ");
             }
             out.push_str("damage to ");
-            write_activated_damage_recipient(out, recipient);
+            write_activated_damage_recipient(out, event.recipient);
             out.push_str(" this turn, ");
             write_activated_damage_event_effect(out, effect);
             out.push('.');

@@ -7,16 +7,16 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
-    DamageEvent, DamageKind, DamageLifeGainCap, DamagePrevention, DamagePreventionAmount,
-    DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
-    DestroyAllTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TargetPermanentEndOfTurnEffect, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap, DamagePrevention,
+    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect, DamageRecipient,
+    DamageRecipients, DestroyAllTarget, EachPlayerAction, EnchantObject, EnchantedObject,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost,
+    ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerDamageCondition,
+    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
+    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -2129,9 +2129,12 @@ fn next_damage_event_effect_from_pair(
     }
 
     Ok(ActivatedDamageEffect::NextDamageEvent {
-        source: source.ok_or(ParseError::Internal("next damage event missing source"))?,
-        kind,
-        recipient: recipient.ok_or(ParseError::Internal("next damage event missing recipient"))?,
+        event: DamageEventPattern {
+            source: source.ok_or(ParseError::Internal("next damage event missing source"))?,
+            kind,
+            recipient: recipient
+                .ok_or(ParseError::Internal("next damage event missing recipient"))?,
+        },
         effect: effect.ok_or(ParseError::Internal("next damage event missing effect"))?,
     })
 }

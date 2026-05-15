@@ -979,9 +979,8 @@ pub enum ActivatedDamageEffect {
     /// "The next time <source> of your choice would deal [combat] damage
     /// to <recipient> this turn, <effect>."
     NextDamageEvent {
-        source: ActivatedDamageSource,
-        kind: DamageKind,
-        recipient: ActivatedDamageRecipient,
+        #[serde(flatten)]
+        event: DamageEventPattern<ActivatedDamageSource, ActivatedDamageRecipient>,
         effect: ActivatedDamageEventEffect,
     },
     /// "Prevent the next N damage that would be dealt to <recipient> this turn."
@@ -1005,6 +1004,13 @@ pub enum ActivatedDamageSource {
 pub enum DamageKind {
     Damage,
     CombatDamage,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DamageEventPattern<S, R> {
+    pub source: S,
+    pub kind: DamageKind,
+    pub recipient: R,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
