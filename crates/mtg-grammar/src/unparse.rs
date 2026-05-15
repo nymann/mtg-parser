@@ -3,7 +3,7 @@ use std::fmt::Write;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
-    ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
+    ActivationPermission, AddManaAmount, AsEntersChoice, BalanceSameWayAction, BasicLandType,
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, CombatRole,
     Condition, ContinuousEffect, CopyException, CounterAmount, CounterUnlessCost, CreatureStatus,
     CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
@@ -15,11 +15,11 @@ use crate::ast::{
     NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
-    TriggerCondition, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
+    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect,
+    TargetPermanentSelector, TriggerCondition, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -37,6 +37,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             if let Some(unless_cost) = unless_cost {
                 write_counter_unless_cost(out, unless_cost);
             }
+            out.push('.');
+        }
+        Statement::AsAdditionalCostToCastThisSpell { cost } => {
+            out.push_str("As an additional cost to cast this spell, ");
+            write_spell_additional_cost(out, *cost);
             out.push('.');
         }
         Statement::ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst { mana } => {
@@ -189,8 +194,8 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType => {
             out.push_str("Change the text of target spell or permanent by replacing all instances of one basic land type with another.");
         }
-        Statement::AddMana { mana } => {
-            write_add_mana_sentence(out, mana, SentenceCase::Upper);
+        Statement::AddMana { amount } => {
+            write_add_mana_sentence(out, amount, SentenceCase::Upper);
         }
         Statement::AntePlayRestriction => {
             out.push_str(
@@ -258,8 +263,13 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 IfYouDoEffect::PreventDamageThisTurn { effect: *effect },
             );
         }
-        Statement::IfYouDoAddMana { mana } => {
-            write_if_you_do_effect(out, IfYouDoEffect::AddMana { mana: mana.clone() });
+        Statement::IfYouDoAddMana { amount } => {
+            write_if_you_do_effect(
+                out,
+                IfYouDoEffect::AddMana {
+                    amount: amount.clone(),
+                },
+            );
         }
         Statement::IfYouDoUntap { source } => {
             write_if_you_do_effect(out, IfYouDoEffect::Untap { source: *source });
@@ -808,7 +818,9 @@ fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
         IfYouDoEffect::PreventDamageThisTurn { effect } => {
             write_damage_prevention_effect_lowercase(out, effect);
         }
-        IfYouDoEffect::AddMana { mana } => write_add_mana_sentence(out, &mana, SentenceCase::Lower),
+        IfYouDoEffect::AddMana { amount } => {
+            write_add_mana_sentence(out, &amount, SentenceCase::Lower)
+        }
         IfYouDoEffect::Untap { source } => write_untap_sentence(out, source, SentenceCase::Lower),
         IfYouDoEffect::UntapReferencedPermanent { permanent_type } => {
             write_untap_referenced_permanent_sentence(out, permanent_type, SentenceCase::Lower);
@@ -869,10 +881,37 @@ fn write_template_sentence(
     out.push('.');
 }
 
-fn write_add_mana_sentence(out: &mut String, mana: &ManaCost, case: SentenceCase) {
+fn write_add_mana_sentence(out: &mut String, amount: &AddManaAmount, case: SentenceCase) {
     write_template_sentence(out, ADD_MANA_SENTENCE, case, |out| {
-        write_mana_cost(out, mana)
+        write_add_mana_amount(out, amount)
     });
+}
+
+fn write_add_mana_amount(out: &mut String, amount: &AddManaAmount) {
+    match amount {
+        AddManaAmount::Cost(mana) => write_mana_cost(out, mana),
+        AddManaAmount::EqualToSacrificedPermanentManaValue {
+            mana,
+            permanent_type,
+        } => {
+            out.push_str("an amount of ");
+            write_mana_symbol(out, *mana);
+            out.push_str(" equal to the sacrificed ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str("'s mana value");
+        }
+    }
+}
+
+fn write_spell_additional_cost(out: &mut String, cost: SpellAdditionalCost) {
+    match cost {
+        SpellAdditionalCost::SacrificePermanent { permanent_type } => {
+            out.push_str("sacrifice ");
+            out.push_str(indefinite_article(permanent_type));
+            out.push(' ');
+            out.push_str(permanent_type_name(permanent_type));
+        }
+    }
 }
 
 fn write_untap_sentence(out: &mut String, source: SourceObject, case: SentenceCase) {
@@ -1214,8 +1253,8 @@ fn write_activated_cost(out: &mut String, cost: &ActivatedCost) {
 
 fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
     match effect {
-        ActivatedEffect::AddMana(mana) => {
-            write_add_mana_sentence(out, mana, SentenceCase::Upper);
+        ActivatedEffect::AddMana(amount) => {
+            write_add_mana_sentence(out, amount, SentenceCase::Upper);
         }
         ActivatedEffect::AddOneManaOfAnyColor => {
             out.push_str("Add one mana of any color.");

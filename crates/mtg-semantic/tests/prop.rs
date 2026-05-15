@@ -10,15 +10,15 @@
 // xtask runner to enable that feature for tier 2.
 
 use mtg_grammar::{
-    ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount, Color, CombatRole,
-    DamageAmount, DamageEvent, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
-    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
-    DamagePreventionEvent, DamageRecipient, DamageRecipients, DestroyTarget, EachPlayerAction,
-    EnchantedObject, ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentType, PreventionRecipient, PtModifier, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, TapAllPermanentsActor, TargetPermanentSelector, TriggerEffect, TriggerEvent,
-    TriggeredAbility, Variable, Zone,
+    ActivatedAbility, ActivatedCost, ActivatedEffect, AddManaAmount, BasicLandType, CardCount,
+    Color, CombatRole, DamageAmount, DamageEvent, DamageKind, DamageLifeGainCap,
+    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
+    DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, ManaCost,
+    ManaSymbol, ModalMode, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentType,
+    PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, TapAllPermanentsActor,
+    TargetPermanentSelector, TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -38,6 +38,18 @@ fn arb_mana_symbol() -> impl Strategy<Value = ManaSymbol> {
 
 fn arb_mana_cost() -> impl Strategy<Value = ManaCost> {
     prop::collection::vec(arb_mana_symbol(), 1..16).prop_map(|symbols| ManaCost { symbols })
+}
+
+fn arb_add_mana_amount() -> impl Strategy<Value = AddManaAmount> {
+    prop_oneof![
+        arb_mana_cost().prop_map(AddManaAmount::Cost),
+        (arb_mana_symbol(), arb_permanent_type()).prop_map(|(mana, permanent_type)| {
+            AddManaAmount::EqualToSacrificedPermanentManaValue {
+                mana,
+                permanent_type,
+            }
+        }),
+    ]
 }
 
 fn arb_card_count() -> impl Strategy<Value = CardCount> {
@@ -254,7 +266,12 @@ fn arb_target_player_discards_activated_ability() -> impl Strategy<Value = State
 fn arb_statement() -> impl Strategy<Value = Statement> {
     prop_oneof![
         arb_mana_cost().prop_map(Statement::ManaCost),
-        arb_mana_cost().prop_map(|mana| Statement::AddMana { mana }),
+        arb_add_mana_amount().prop_map(|amount| Statement::AddMana { amount }),
+        arb_permanent_type().prop_map(|permanent_type| {
+            Statement::AsAdditionalCostToCastThisSpell {
+                cost: SpellAdditionalCost::SacrificePermanent { permanent_type },
+            }
+        }),
         Just(Statement::CounterTargetSpell { unless_cost: None }),
         Just(Statement::Destroy {
             target: DestroyTarget::TargetPermanents(vec![PermanentType::Creature]),

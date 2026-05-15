@@ -48,20 +48,29 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
 
         (KeyCode::Tab, _) if state.normal.leader => {
             state.normal.clear();
-            state.focus = match state.focus {
-                FocusPane::Output => FocusPane::Card,
-                FocusPane::Card | FocusPane::Modal => FocusPane::Output,
-            };
+            switch_focus(
+                state,
+                match state.focus {
+                    FocusPane::Output => FocusPane::Steps,
+                    FocusPane::Steps => FocusPane::Card,
+                    FocusPane::Card | FocusPane::Modal => FocusPane::Output,
+                },
+            );
             Action::None
         }
         (KeyCode::Char('h'), _) if state.normal.leader => {
             state.normal.clear();
-            state.focus = FocusPane::Card;
+            switch_focus(state, FocusPane::Card);
             Action::None
         }
         (KeyCode::Char('l'), _) if state.normal.leader => {
             state.normal.clear();
-            state.focus = FocusPane::Output;
+            switch_focus(state, FocusPane::Output);
+            Action::None
+        }
+        (KeyCode::Char('s'), _) if state.normal.leader => {
+            state.normal.clear();
+            switch_focus(state, FocusPane::Steps);
             Action::None
         }
         (KeyCode::Char('H'), _) if state.normal.leader => {
@@ -154,9 +163,7 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
 
         (KeyCode::Char('v'), _) | (KeyCode::Char('V'), _) => {
             state.normal.clear();
-            state.materialize_output_scroll();
-            state.autoscroll = false;
-            state.visual.start(state.output_cursor);
+            start_visual_for_focus(state);
             Action::None
         }
         (KeyCode::Char('n'), _) => {
@@ -218,56 +225,77 @@ pub fn handle_mouse(mouse: MouseEvent, state: &mut AppState) -> Action {
 }
 
 fn handle_visual_key(key: KeyEvent, state: &mut AppState) -> Action {
+    if state.normal.leader {
+        state.normal.clear();
+        match key.code {
+            KeyCode::Tab => {
+                switch_focus(
+                    state,
+                    match state.focus {
+                        FocusPane::Output => FocusPane::Steps,
+                        FocusPane::Steps => FocusPane::Card,
+                        FocusPane::Card | FocusPane::Modal => FocusPane::Output,
+                    },
+                );
+                return Action::None;
+            }
+            KeyCode::Char('h') => {
+                switch_focus(state, FocusPane::Card);
+                return Action::None;
+            }
+            KeyCode::Char('l') => {
+                switch_focus(state, FocusPane::Output);
+                return Action::None;
+            }
+            KeyCode::Char('s') => {
+                switch_focus(state, FocusPane::Steps);
+                return Action::None;
+            }
+            _ => {}
+        }
+    }
+
     match key.code {
         KeyCode::Esc => {
             state.visual.cancel();
             Action::None
         }
+        KeyCode::Char(' ') => {
+            state.normal.leader = true;
+            Action::None
+        }
         KeyCode::Char('y') => Action::YankVisual,
         KeyCode::Char('G') => {
-            state.materialize_output_scroll();
-            state.autoscroll = false;
-            state.output_cursor = state.output_line_count.saturating_sub(1);
-            state.visual.cursor = state.output_cursor;
-            keep_output_cursor_visible(state);
+            match state.focus {
+                FocusPane::Output | FocusPane::Modal => {
+                    state.materialize_output_scroll();
+                    state.autoscroll = false;
+                    state.output_cursor = state.output_line_count.saturating_sub(1);
+                    state.visual.cursor = state.output_cursor;
+                    keep_output_cursor_visible(state);
+                }
+                FocusPane::Steps => {
+                    state.steps_cursor = state.steps_line_count.saturating_sub(1);
+                    state.visual.cursor = state.steps_cursor;
+                }
+                FocusPane::Card => {}
+            }
             Action::None
         }
         KeyCode::Up | KeyCode::Char('k') => {
-            state.materialize_output_scroll();
-            state.autoscroll = false;
-            state.output_cursor = state.output_cursor.saturating_sub(1);
-            state.visual.cursor = state.output_cursor;
-            keep_output_cursor_visible(state);
+            visual_move(state, false, 1);
             Action::None
         }
         KeyCode::Down | KeyCode::Char('j') => {
-            state.materialize_output_scroll();
-            state.autoscroll = false;
-            state.output_cursor = state
-                .output_cursor
-                .saturating_add(1)
-                .min(state.output_line_count.saturating_sub(1));
-            state.visual.cursor = state.output_cursor;
-            keep_output_cursor_visible(state);
+            visual_move(state, true, 1);
             Action::None
         }
         KeyCode::PageUp => {
-            state.materialize_output_scroll();
-            state.autoscroll = false;
-            state.output_cursor = state.output_cursor.saturating_sub(10);
-            state.visual.cursor = state.output_cursor;
-            keep_output_cursor_visible(state);
+            visual_move(state, false, 10);
             Action::None
         }
         KeyCode::PageDown => {
-            state.materialize_output_scroll();
-            state.autoscroll = false;
-            state.output_cursor = state
-                .output_cursor
-                .saturating_add(10)
-                .min(state.output_line_count.saturating_sub(1));
-            state.visual.cursor = state.output_cursor;
-            keep_output_cursor_visible(state);
+            visual_move(state, true, 10);
             Action::None
         }
         _ => Action::None,
@@ -421,6 +449,14 @@ fn scroll_focused(state: &mut AppState, down: bool, amount: u16) {
             };
             keep_output_cursor_visible(state);
         }
+        FocusPane::Steps => {
+            let last_line = state.steps_line_count.saturating_sub(1);
+            state.steps_cursor = if down {
+                state.steps_cursor.saturating_add(amount).min(last_line)
+            } else {
+                state.steps_cursor.saturating_sub(amount)
+            };
+        }
         FocusPane::Card => {
             if down {
                 state.card_scroll = state.card_scroll.saturating_add(amount);
@@ -428,6 +464,57 @@ fn scroll_focused(state: &mut AppState, down: bool, amount: u16) {
                 state.card_scroll = state.card_scroll.saturating_sub(amount);
             }
         }
+    }
+}
+
+fn switch_focus(state: &mut AppState, focus: FocusPane) {
+    state.focus = focus;
+    if state.visual.active {
+        match focus {
+            FocusPane::Output | FocusPane::Steps => state.visual.start(state.focused_cursor()),
+            FocusPane::Card | FocusPane::Modal => state.visual.cancel(),
+        }
+    }
+}
+
+fn start_visual_for_focus(state: &mut AppState) {
+    match state.focus {
+        FocusPane::Output | FocusPane::Modal => {
+            state.materialize_output_scroll();
+            state.autoscroll = false;
+            state.visual.start(state.output_cursor);
+        }
+        FocusPane::Steps => {
+            state.visual.start(state.steps_cursor);
+        }
+        FocusPane::Card => {}
+    }
+}
+
+fn visual_move(state: &mut AppState, down: bool, amount: u16) {
+    match state.focus {
+        FocusPane::Output | FocusPane::Modal => {
+            state.materialize_output_scroll();
+            state.autoscroll = false;
+            let last_line = state.output_line_count.saturating_sub(1);
+            state.output_cursor = if down {
+                state.output_cursor.saturating_add(amount).min(last_line)
+            } else {
+                state.output_cursor.saturating_sub(amount)
+            };
+            state.visual.cursor = state.output_cursor;
+            keep_output_cursor_visible(state);
+        }
+        FocusPane::Steps => {
+            let last_line = state.steps_line_count.saturating_sub(1);
+            state.steps_cursor = if down {
+                state.steps_cursor.saturating_add(amount).min(last_line)
+            } else {
+                state.steps_cursor.saturating_sub(amount)
+            };
+            state.visual.cursor = state.steps_cursor;
+        }
+        FocusPane::Card => {}
     }
 }
 
@@ -693,5 +780,38 @@ mod tests {
         assert!(matches!(action, Action::None));
         assert_eq!(state.scroll, 40);
         assert_eq!(state.visual.range(), Some((40, 41)));
+    }
+
+    #[test]
+    fn visual_leader_tab_switches_focus_to_steps() {
+        let mut state = AppState::new();
+        state.remember_output_view(100, 20);
+        state.remember_steps_view(4);
+        state.output_cursor = 40;
+        state.steps_cursor = 2;
+        state.visual.start(40);
+
+        handle(key(KeyCode::Char(' ')), &mut state);
+        let action = handle(key(KeyCode::Tab), &mut state);
+
+        assert!(matches!(action, Action::None));
+        assert_eq!(state.focus, FocusPane::Steps);
+        assert!(state.visual.active);
+        assert_eq!(state.visual.range(), Some((2, 2)));
+    }
+
+    #[test]
+    fn visual_steps_down_extends_step_selection() {
+        let mut state = AppState::new();
+        state.focus = FocusPane::Steps;
+        state.remember_steps_view(4);
+        state.steps_cursor = 1;
+        state.visual.start(1);
+
+        let action = handle(key(KeyCode::Char('j')), &mut state);
+
+        assert!(matches!(action, Action::None));
+        assert_eq!(state.steps_cursor, 2);
+        assert_eq!(state.visual.range(), Some((1, 2)));
     }
 }

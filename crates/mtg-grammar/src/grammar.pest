@@ -44,6 +44,7 @@ sentence_statement = _{
   | you_may_choose_new_targets_for_the_copy
   | imperative_action_sequence
   | counter_target_spell
+  | as_additional_cost_to_cast_this_spell
   | destroy
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
   | regenerate_target_creature
@@ -1020,7 +1021,12 @@ add_mana_of_any_one_color = {
     ^"add" ~ number_word ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"one" ~ ^"color" ~ "."
 }
 add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"color" ~ "." }
-add_mana = { ^"add" ~ mana_cost ~ "." }
+add_mana = { ^"add" ~ add_mana_amount ~ "." }
+add_mana_amount = _{ mana_cost | amount_of_mana_equal_to_sacrificed_permanent_mana_value }
+amount_of_mana_equal_to_sacrificed_permanent_mana_value = {
+    article ~ ^"amount" ~ ^"of" ~ mana_symbol ~ ^"equal" ~ ^"to"
+  ~ ^"the" ~ ^"sacrificed" ~ permanent_type ~ "'s" ~ ^"mana" ~ ^"value"
+}
 tap_target_permanent_choice = { ^"tap" ~ target_permanent_choice ~ "." }
 target_permanent_choice = { ^"target" ~ permanent_type_choice }
 target_colored_permanent = { ^"target" ~ color_word ~ ^"permanent" }
@@ -1589,6 +1595,13 @@ that_creatures_controller_sacrifices_it = {
 sacrifice_permanent_other_than_source = {
     ^"sacrifice" ~ article ~ permanent_type ~ ^"other" ~ ^"than" ~ source_object ~ "."
 }
+
+as_additional_cost_to_cast_this_spell = {
+    ^"as" ~ article ~ ^"additional" ~ ^"cost" ~ ^"to" ~ ^"cast"
+  ~ ^"this" ~ ^"spell" ~ "," ~ spell_additional_cost ~ "."
+}
+spell_additional_cost = _{ sacrifice_permanent_cost }
+sacrifice_permanent_cost = { ^"sacrifice" ~ article ~ permanent_type }
 
 sacrifice_source_unless_you_pay = {
     ^"sacrifice" ~ source_object ~ ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ "."

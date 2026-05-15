@@ -9,6 +9,10 @@ pub enum Statement {
     CounterTargetSpell {
         unless_cost: Option<CounterUnlessCost>,
     },
+    /// "As an additional cost to cast this spell, <cost>."
+    AsAdditionalCostToCastThisSpell {
+        cost: SpellAdditionalCost,
+    },
     /// "This spell costs <mana> more to cast for each target beyond the first."
     ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst {
         mana: ManaCost,
@@ -123,9 +127,9 @@ pub enum Statement {
     /// "Change the text of target spell or permanent by replacing all
     /// instances of one basic land type with another."
     ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType,
-    /// "Add <mana>."
+    /// "Add <mana>." / "Add an amount of <mana> equal to ..."
     AddMana {
-        mana: ManaCost,
+        amount: AddManaAmount,
     },
     /// "Remove this card from your deck before playing if you're not
     /// playing for ante."
@@ -175,7 +179,7 @@ pub enum Statement {
     },
     /// "If you do, add <mana>."
     IfYouDoAddMana {
-        mana: ManaCost,
+        amount: AddManaAmount,
     },
     /// "If you do, untap this <source>."
     IfYouDoUntap {
@@ -390,7 +394,7 @@ impl Statement {
             IfYouDoEffect::PreventDamageThisTurn { effect } => {
                 Statement::IfYouDoPreventDamageThisTurn { effect }
             }
-            IfYouDoEffect::AddMana { mana } => Statement::IfYouDoAddMana { mana },
+            IfYouDoEffect::AddMana { amount } => Statement::IfYouDoAddMana { amount },
             IfYouDoEffect::Untap { source } => Statement::IfYouDoUntap { source },
             IfYouDoEffect::UntapReferencedPermanent { permanent_type } => {
                 Statement::IfYouDoUntapReferencedPermanent { permanent_type }
@@ -431,7 +435,7 @@ pub(crate) enum IfYouDoEffect {
         effect: DamagePreventionEffect<PreventionRecipient>,
     },
     AddMana {
-        mana: ManaCost,
+        amount: AddManaAmount,
     },
     Untap {
         source: SourceObject,
@@ -633,6 +637,23 @@ pub enum PayManaAmount {
     Cost(ManaCost),
     /// "any amount of mana"
     AnyAmountOfMana,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AddManaAmount {
+    /// "<mana_cost>"
+    Cost(ManaCost),
+    /// "an amount of <mana_symbol> equal to the sacrificed <permanent_type>'s mana value"
+    EqualToSacrificedPermanentManaValue {
+        mana: ManaSymbol,
+        permanent_type: PermanentType,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SpellAdditionalCost {
+    /// "sacrifice a/an <permanent_type>"
+    SacrificePermanent { permanent_type: PermanentType },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1078,7 +1099,7 @@ pub enum RegenerateRecipient {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActivatedEffect {
     /// "Add <mana>."
-    AddMana(ManaCost),
+    AddMana(AddManaAmount),
     /// "Add one mana of any color."
     AddOneManaOfAnyColor,
     /// "Add N mana of any one color."

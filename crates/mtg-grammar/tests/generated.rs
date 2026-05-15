@@ -306,3 +306,5 @@ mod righteousness;
 mod rock_hydra;
 #[path = "generated/royal_assassin.rs"]
 mod royal_assassin;
+#[path = "generated/sacrifice.rs"]
+mod sacrifice;

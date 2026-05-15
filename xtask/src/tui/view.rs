@@ -462,7 +462,7 @@ fn responsive_left_width(total: u16) -> u16 {
     }
 }
 
-fn render_left_column(f: &mut Frame<'_>, area: Rect, state: &AppState) {
+fn render_left_column(f: &mut Frame<'_>, area: Rect, state: &mut AppState) {
     let rows = Layout::default()
         .direction(Direction::Vertical)
         // 13 lines for the step list: 1 top border + 1 title + 9 step rows
@@ -644,7 +644,7 @@ fn url_encode_component(input: &str) -> String {
     out
 }
 
-fn render_steps(f: &mut Frame<'_>, area: Rect, state: &AppState) {
+fn render_steps(f: &mut Frame<'_>, area: Rect, state: &mut AppState) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(C_FAINT))
@@ -656,7 +656,8 @@ fn render_steps(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         for (i, step) in iter.steps.iter().enumerate() {
             let idx = (i + 1) as u8;
             let total = step.total.max(idx);
-            lines.push(step_line(idx, total, step));
+            let line = step_line(idx, total, step);
+            lines.push(highlight_steps_line_if_selected(state, i, line));
         }
         if iter.steps.is_empty() {
             lines.push(Line::from(Span::styled(
@@ -665,8 +666,27 @@ fn render_steps(f: &mut Frame<'_>, area: Rect, state: &AppState) {
             )));
         }
     }
+    state.remember_steps_view(lines.len());
     let paragraph = Paragraph::new(lines).block(block);
     f.render_widget(paragraph, area);
+}
+
+fn highlight_steps_line_if_selected(
+    state: &AppState,
+    index: usize,
+    mut line: Line<'static>,
+) -> Line<'static> {
+    let selected = state.focus == crate::tui::state::FocusPane::Steps
+        && state
+            .visual
+            .range()
+            .is_some_and(|(start, end)| (start..=end).contains(&index));
+    if selected {
+        for span in &mut line.spans {
+            span.style = span.style.bg(Color::Rgb(0x35, 0x2f, 0x1b));
+        }
+    }
+    line
 }
 
 fn step_line(index: u8, total: u8, step: &StepState) -> Line<'static> {
@@ -1229,6 +1249,7 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         Span::styled(
             match state.focus {
                 crate::tui::state::FocusPane::Output => "output",
+                crate::tui::state::FocusPane::Steps => "steps",
                 crate::tui::state::FocusPane::Card => "card",
                 crate::tui::state::FocusPane::Modal => "modal",
             },

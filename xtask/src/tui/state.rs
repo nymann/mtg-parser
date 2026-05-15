@@ -31,6 +31,8 @@ pub struct AppState {
     pub output_line_count: u16,
     pub output_viewport_height: u16,
     pub output_cursor: u16,
+    pub steps_line_count: u16,
+    pub steps_cursor: u16,
     pub autoscroll: bool,
     pub focus: FocusPane,
     pub normal: NormalInputState,
@@ -118,6 +120,21 @@ impl AppState {
             .saturating_sub(self.output_viewport_height)
     }
 
+    pub fn remember_steps_view(&mut self, line_count: usize) {
+        self.steps_line_count = line_count.min(u16::MAX as usize) as u16;
+        self.steps_cursor = self
+            .steps_cursor
+            .min(self.steps_line_count.saturating_sub(1));
+    }
+
+    pub fn focused_cursor(&self) -> u16 {
+        match self.focus {
+            FocusPane::Output | FocusPane::Modal => self.output_cursor,
+            FocusPane::Steps => self.steps_cursor,
+            FocusPane::Card => 0,
+        }
+    }
+
     pub fn effective_output_scroll(&self) -> u16 {
         if self.autoscroll {
             self.output_bottom_scroll()
@@ -142,10 +159,49 @@ impl AppState {
         let Some((start, end)) = self.visual.range() else {
             return String::new();
         };
-        self.visible_output_text()
-            .lines()
+        let text = match self.focus {
+            FocusPane::Output | FocusPane::Modal => self.visible_output_text(),
+            FocusPane::Steps => self.visible_steps_text(),
+            FocusPane::Card => String::new(),
+        };
+        text.lines()
             .skip(start)
             .take(end.saturating_sub(start) + 1)
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn visible_steps_text(&self) -> String {
+        let Some(iter) = self.active_iteration() else {
+            return String::new();
+        };
+        if iter.steps.is_empty() {
+            return "(no steps yet)".to_string();
+        }
+        iter.steps
+            .iter()
+            .enumerate()
+            .map(|(i, step)| {
+                let idx = (i + 1) as u8;
+                let total = step.total.max(idx);
+                let status = match step.status {
+                    StepStatus::Pending => "pending",
+                    StepStatus::Running => "running",
+                    StepStatus::Done => "done",
+                    StepStatus::Failed => "failed",
+                };
+                let label = if step.label.is_empty() {
+                    "(pending)"
+                } else {
+                    &step.label
+                };
+                let duration = step
+                    .duration_secs()
+                    .filter(|d| *d > 0)
+                    .map(|d| format!(" {d}s"))
+                    .unwrap_or_default();
+                format!("{idx}/{total} {status} {label}{duration}")
+            })
             .collect::<Vec<_>>()
             .join("\n")
     }
@@ -849,6 +905,7 @@ fn format_max_iterations(n: u32) -> String {
 pub enum FocusPane {
     #[default]
     Output,
+    Steps,
     Card,
     Modal,
 }
@@ -997,5 +1054,33 @@ mod tests {
 
         assert!(text.contains("first"));
         assert!(text.contains("second"));
+    }
+
+    #[test]
+    fn visual_text_returns_selected_step_lines() {
+        let mut state = AppState::new();
+        state.focus = FocusPane::Steps;
+        state.apply(FlowEvent::StepStarted {
+            index: 1,
+            total: 2,
+            label: "first step".into(),
+        });
+        state.apply(FlowEvent::StepFinished {
+            index: 1,
+            ok: true,
+            summary: None,
+        });
+        state.apply(FlowEvent::StepStarted {
+            index: 2,
+            total: 2,
+            label: "second step".into(),
+        });
+        state.visual.start(0);
+        state.visual.cursor = 1;
+
+        let text = state.visual_text();
+
+        assert!(text.contains("first step"));
+        assert!(text.contains("second step"));
     }
 }

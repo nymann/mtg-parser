@@ -5,7 +5,7 @@ use pest_derive::Parser;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
-    ActivationPermission, AsEntersChoice, BalanceSameWayAction, BasicLandType,
+    ActivationPermission, AddManaAmount, AsEntersChoice, BalanceSameWayAction, BasicLandType,
     BasicLandTypeReference, CardCount, CastRestriction, Color, ColoredTargetEffect, CombatRole,
     Condition, ContinuousEffect, CopyException, CounterAmount, CounterUnlessCost, CreatureStatus,
     CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind,
@@ -17,11 +17,11 @@ use crate::ast::{
     NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
-    TriggerCondition, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
+    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect,
+    TargetPermanentSelector, TriggerCondition, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -102,6 +102,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }),
         Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
         Rule::counter_target_spell => counter_target_spell_from_pair(pair),
+        Rule::as_additional_cost_to_cast_this_spell => {
+            as_additional_cost_to_cast_this_spell_from_pair(pair)
+        }
         Rule::this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first => {
             this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair(pair)
         }
@@ -1467,13 +1470,55 @@ fn prevention_recipient_from_pair(pair: Pair<Rule>) -> Result<PreventionRecipien
 }
 
 fn add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let mana_pair = pair
+    let amount_pair = pair
         .into_inner()
         .next()
-        .ok_or(ParseError::Internal("add_mana missing mana_cost"))?;
+        .ok_or(ParseError::Internal("add_mana missing amount"))?;
     Ok(Statement::AddMana {
-        mana: mana_cost_from_pair(mana_pair),
+        amount: add_mana_amount_from_pair(amount_pair)?,
     })
+}
+
+fn add_mana_amount_from_pair(pair: Pair<Rule>) -> Result<AddManaAmount, ParseError> {
+    match pair.as_rule() {
+        Rule::mana_cost => Ok(AddManaAmount::Cost(mana_cost_from_pair(pair))),
+        Rule::amount_of_mana_equal_to_sacrificed_permanent_mana_value => {
+            let mut inner = pair.into_inner();
+            let mana_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("sacrificed mana amount missing mana"))?;
+            let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+                "sacrificed mana amount missing permanent_type",
+            ))?;
+            Ok(AddManaAmount::EqualToSacrificedPermanentManaValue {
+                mana: mana_symbol_from_pair(mana_pair),
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("add_mana_amount")),
+    }
+}
+
+fn as_additional_cost_to_cast_this_spell_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let cost_pair = only_inner(pair, "additional cost missing cost")?;
+    Ok(Statement::AsAdditionalCostToCastThisSpell {
+        cost: spell_additional_cost_from_pair(cost_pair)?,
+    })
+}
+
+fn spell_additional_cost_from_pair(pair: Pair<Rule>) -> Result<SpellAdditionalCost, ParseError> {
+    match pair.as_rule() {
+        Rule::sacrifice_permanent_cost => {
+            let permanent_type_pair =
+                only_inner(pair, "sacrifice additional cost missing permanent_type")?;
+            Ok(SpellAdditionalCost::SacrificePermanent {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("spell_additional_cost")),
+    }
 }
 
 fn if_you_do_effect_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
@@ -1486,9 +1531,9 @@ fn if_you_do_effect_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError>
 fn if_you_do_effect_from_inner_pair(pair: Pair<Rule>) -> Result<IfYouDoEffect, ParseError> {
     match pair.as_rule() {
         Rule::add_mana => {
-            let mana_pair = only_inner(pair, "if_you_do add_mana missing mana_cost")?;
+            let amount_pair = only_inner(pair, "if_you_do add_mana missing amount")?;
             Ok(IfYouDoEffect::AddMana {
-                mana: mana_cost_from_pair(mana_pair),
+                amount: add_mana_amount_from_pair(amount_pair)?,
             })
         }
         Rule::untap_source => {
@@ -3643,8 +3688,10 @@ fn activated_cost_from_pair(pair: Pair<Rule>) -> Result<Vec<ActivatedCost>, Pars
 fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, ParseError> {
     match pair.as_rule() {
         Rule::add_mana => {
-            let mana_pair = only_inner(pair, "add_mana missing mana_cost")?;
-            Ok(ActivatedEffect::AddMana(mana_cost_from_pair(mana_pair)))
+            let amount_pair = only_inner(pair, "add_mana missing amount")?;
+            Ok(ActivatedEffect::AddMana(add_mana_amount_from_pair(
+                amount_pair,
+            )?))
         }
         Rule::add_one_mana_of_any_color => Ok(ActivatedEffect::AddOneManaOfAnyColor),
         Rule::add_mana_of_any_one_color => {
