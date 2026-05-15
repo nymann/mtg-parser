@@ -952,13 +952,10 @@ fn base_agent_command(provider: AgentProvider) -> Command {
         AgentProvider::Codex => {
             let mut cmd = Command::new("codex");
             cmd.arg("exec")
+                .arg("--dangerously-bypass-approvals-and-sandbox")
                 .arg("--json")
                 .arg("--cd")
                 .arg(repo_root())
-                .arg("--sandbox")
-                .arg("workspace-write")
-                .arg("--ask-for-approval")
-                .arg("never")
                 .arg("-");
             cmd
         }
