@@ -2,8 +2,8 @@ use std::fmt::Write;
 
 use crate::ast::{
     Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject, InterveningIf,
-    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber, Statement,
-    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Zone,
+    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber, SourceObject,
+    Statement, StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -143,7 +143,10 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
 }
 
 fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
-    out.push_str("When ");
+    out.push_str(match ta.event {
+        TriggerEvent::PermanentEnters { .. } => "Whenever ",
+        TriggerEvent::ThisAuraEnters | TriggerEvent::ThisAuraLeavesTheBattlefield => "When ",
+    });
     write_trigger_event(out, ta.event);
     out.push_str(", ");
     if let Some(iif) = ta.intervening_if {
@@ -165,6 +168,12 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::ThisAuraLeavesTheBattlefield => {
             out.push_str("this Aura leaves the battlefield");
         }
+        TriggerEvent::PermanentEnters { permanent_type } => {
+            out.push_str(indefinite_article(permanent_type));
+            out.push(' ');
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str(" enters");
+        }
     }
 }
 
@@ -179,6 +188,16 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
         TriggerEffect::ThatCreaturesControllerSacrificesIt => {
             out.push_str("that creature's controller sacrifices it.");
         }
+        TriggerEffect::SourceDealsDamageToThatPermanentController {
+            source,
+            amount,
+            recipient,
+        } => {
+            write_source_object(out, *source);
+            write!(out, " deals {amount} damage to that ").expect("write to String never fails");
+            out.push_str(permanent_type_name(*recipient));
+            out.push_str("'s controller.");
+        }
         TriggerEffect::LosesAndGainsKeyword { loses, gains } => {
             out.push_str("it loses \"");
             write_keyword_lowercase(out, *loses);
@@ -190,6 +209,15 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
             out.push_str("Return enchanted ");
             out.push_str(permanent_type_name(*card_type));
             out.push_str(" card to the battlefield under your control and attach this Aura to it.");
+        }
+    }
+}
+
+fn write_source_object(out: &mut String, source: SourceObject) {
+    match source {
+        SourceObject::This(pt) => {
+            out.push_str("this ");
+            out.push_str(permanent_type_name(pt));
         }
     }
 }

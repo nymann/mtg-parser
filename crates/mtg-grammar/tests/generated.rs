@@ -12,3 +12,5 @@ mod animate_artifact;
 mod animate_dead;
 #[path = "generated/animate_wall.rs"]
 mod animate_wall;
+#[path = "generated/ankh_of_mishra.rs"]
+mod ankh_of_mishra;

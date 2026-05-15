@@ -138,14 +138,18 @@ signed_number = @{ ("+" | "-") ~ ASCII_DIGIT+ }
 // space-separated within the trigger; no ". " separator is needed at
 // this layer.
 triggered_ability = {
-    ^"when" ~ trigger_event ~ ","
+    trigger_word ~ trigger_event ~ ","
   ~ (^"if" ~ intervening_if ~ ",")?
   ~ trigger_effect+
 }
 
-trigger_event = _{ aura_leaves_battlefield | aura_enters }
+// "Whenever" is listed first because "When" is its prefix.
+trigger_word = _{ ^"whenever" | ^"when" }
+
+trigger_event = _{ aura_leaves_battlefield | aura_enters | permanent_enters }
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
 aura_leaves_battlefield = { ^"this" ~ ^"aura" ~ ^"leaves" ~ ^"the" ~ ^"battlefield" }
+permanent_enters        = { article ~ permanent_type ~ ^"enters" }
 
 intervening_if         = _{ its_on_the_battlefield }
 its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
@@ -153,12 +157,21 @@ its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
 trigger_effect = _{
     loses_and_gains_keyword
   | return_enchanted_card_and_attach
+  | source_deals_damage_to_that_permanents_controller
   | that_creatures_controller_sacrifices_it
 }
 
 that_creatures_controller_sacrifices_it = {
     ^"that" ~ ^"creature's" ~ ^"controller" ~ ^"sacrifices" ~ ^"it" ~ "."
 }
+
+source_deals_damage_to_that_permanents_controller = {
+    source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to"
+  ~ that_permanents_controller ~ "."
+}
+source_object = { ^"this" ~ permanent_type }
+that_permanents_controller = { ^"that" ~ permanent_type ~ "'s" ~ ^"controller" }
+damage_amount = @{ ASCII_DIGIT+ }
 
 // `it loses "<keyword>" and gains "<keyword>."`. The quoted strings are
 // themselves keyword abilities — recursive parsing keeps them in the

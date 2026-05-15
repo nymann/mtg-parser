@@ -241,10 +241,26 @@ fn render_card_panel(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         .title_style(Style::default().fg(C_DIM).add_modifier(Modifier::BOLD));
 
     let lines: Vec<Line> = match state.active_iteration().and_then(|i| i.card.as_ref()) {
-        None => vec![Line::from(Span::styled(
-            "  (finding next failing card…)",
-            Style::default().fg(C_FAINT),
-        ))],
+        None => match &state.session_end {
+            Some(SessionEndReason::SurfacedToHuman(reason)) => {
+                let mut lines = vec![Line::from(Span::styled(
+                    "  startup failed",
+                    Style::default().fg(C_BAD).add_modifier(Modifier::BOLD),
+                ))];
+                lines.push(Line::from(""));
+                for line in reason.lines() {
+                    lines.push(Line::from(vec![
+                        Span::styled("  │ ", Style::default().fg(C_BAD)),
+                        Span::styled(line.to_string(), Style::default().fg(C_BAD)),
+                    ]));
+                }
+                lines
+            }
+            _ => vec![Line::from(Span::styled(
+                "  (finding next failing card…)",
+                Style::default().fg(C_FAINT),
+            ))],
+        },
         Some(card) => {
             let iter = state.active_iteration().unwrap();
             let mut v = Vec::new();

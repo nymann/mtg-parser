@@ -50,7 +50,20 @@ pub fn run(opts: grammar_fix::Options) -> Result<std::process::ExitCode> {
     // Orchestrator on background thread; sink owned by the thread.
     let orchestrator_handle = thread::spawn(move || -> Result<std::process::ExitCode> {
         let mut sink: Box<dyn FlowSink> = Box::new(TuiSink { tx });
-        grammar_fix::run_with_sink(opts, sink.as_mut())
+        match grammar_fix::run_with_sink(opts, sink.as_mut()) {
+            Ok(code) => Ok(code),
+            Err(err) => {
+                let reason = format!("{err:#}");
+                sink.emit(FlowEvent::Note {
+                    level: NoteLevel::Error,
+                    text: format!("startup failed: {reason}"),
+                });
+                sink.emit(FlowEvent::SessionFinished {
+                    reason: crate::flow::SessionEndReason::SurfacedToHuman(reason),
+                });
+                Ok(std::process::ExitCode::FAILURE)
+            }
+        }
     });
 
     // TUI on the main thread.

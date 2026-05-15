@@ -108,6 +108,33 @@ fn parse_codex(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
         .unwrap_or("");
     let lower = kind.to_ascii_lowercase();
 
+    if lower == "thread.started" {
+        let model = string_at(ev, &["model", "model_slug"])
+            .or_else(|| string_at_path(ev, &["payload", "model"]))
+            .unwrap_or_else(|| "unknown".to_string());
+        return vec![ParsedAgentEvent::Init { model }];
+    }
+
+    if matches!(lower.as_str(), "turn.started" | "turn.failed" | "turn.aborted") {
+        return vec![ParsedAgentEvent::Other];
+    }
+
+    if lower == "turn.completed" || lower == "result" {
+        return vec![ParsedAgentEvent::Done {
+            subtype: string_at(ev, &["subtype", "status"]).unwrap_or_else(|| "success".into()),
+            num_turns: ev.get("num_turns").and_then(|v| v.as_u64()).unwrap_or(0),
+            total_cost_usd: ev
+                .get("total_cost_usd")
+                .or_else(|| ev.get("cost_usd"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0),
+        }];
+    }
+
+    if matches!(lower.as_str(), "item.started" | "item.completed") {
+        return parse_codex_item(ev, lower == "item.started");
+    }
+
     if lower.contains("session") || lower.contains("init") || lower == "started" {
         let model = string_at(ev, &["model", "model_slug"])
             .or_else(|| string_at_path(ev, &["payload", "model"]))
@@ -145,7 +172,7 @@ fn parse_codex(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
         }
     }
 
-    if lower.contains("done") || lower.contains("completed") || lower.contains("result") {
+    if lower.contains("done") || lower.contains("result") {
         return vec![ParsedAgentEvent::Done {
             subtype: string_at(ev, &["subtype", "status"]).unwrap_or_else(|| "success".into()),
             num_turns: ev.get("num_turns").and_then(|v| v.as_u64()).unwrap_or(0),
@@ -163,6 +190,72 @@ fn parse_codex(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
         }
     }
     vec![ParsedAgentEvent::Other]
+}
+
+fn parse_codex_item(ev: &serde_json::Value, started: bool) -> Vec<ParsedAgentEvent> {
+    let item = match ev.get("item") {
+        Some(item) => item,
+        None => return vec![ParsedAgentEvent::Other],
+    };
+    let item_type = item.get("type").and_then(|v| v.as_str()).unwrap_or("");
+    match item_type {
+        "agent_message" if !started => item
+            .get("text")
+            .and_then(|v| v.as_str())
+            .filter(|text| !text.trim().is_empty())
+            .map(|text| {
+                vec![ParsedAgentEvent::AssistantText {
+                    text: text.to_string(),
+                }]
+            })
+            .unwrap_or_else(|| vec![ParsedAgentEvent::Other]),
+        "command_execution" if started => {
+            let command = item
+                .get("command")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            vec![ParsedAgentEvent::ToolUse {
+                name: "command".to_string(),
+                target: if command.is_empty() {
+                    ToolUseTarget::None
+                } else {
+                    ToolUseTarget::Command(command)
+                },
+            }]
+        }
+        "command_execution" if !started => vec![ParsedAgentEvent::ToolResult {
+            first_line: item
+                .get("aggregated_output")
+                .and_then(|v| v.as_str())
+                .and_then(|s| s.lines().find(|line| !line.trim().is_empty()))
+                .unwrap_or_else(|| item.get("status").and_then(|v| v.as_str()).unwrap_or(""))
+                .to_string(),
+            is_error: item.get("exit_code").and_then(|v| v.as_i64()).unwrap_or(0) != 0
+                || item.get("status").and_then(|v| v.as_str()) == Some("failed"),
+        }],
+        "file_change" if started => {
+            let path = first_codex_file_change_path(item);
+            vec![ParsedAgentEvent::ToolUse {
+                name: "file_change".to_string(),
+                target: path.map(ToolUseTarget::File).unwrap_or(ToolUseTarget::None),
+            }]
+        }
+        "file_change" if !started => vec![ParsedAgentEvent::ToolResult {
+            first_line: first_codex_file_change_path(item).unwrap_or_else(|| "file change".into()),
+            is_error: item.get("status").and_then(|v| v.as_str()) == Some("failed"),
+        }],
+        _ => vec![ParsedAgentEvent::Other],
+    }
+}
+
+fn first_codex_file_change_path(item: &serde_json::Value) -> Option<String> {
+    item.get("changes")
+        .and_then(|v| v.as_array())
+        .and_then(|changes| changes.first())
+        .and_then(|change| change.get("path"))
+        .and_then(|v| v.as_str())
+        .map(str::to_string)
 }
 
 fn parse_assistant(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
@@ -398,5 +491,45 @@ mod tests {
             serde_json::from_str(r#"{"type":"assistant_message","message":"hello"}"#).unwrap();
         let out = parse(AgentProvider::Codex, &v);
         assert!(matches!(&out[0], ParsedAgentEvent::AssistantText { text } if text == "hello"));
+    }
+
+    #[test]
+    fn parses_codex_item_completed_agent_message_as_text() {
+        let v: serde_json::Value = serde_json::from_str(
+            r#"{"type":"item.completed","item":{"type":"agent_message","text":"done editing"}}"#,
+        )
+        .unwrap();
+        let out = parse(AgentProvider::Codex, &v);
+        assert!(matches!(&out[0], ParsedAgentEvent::AssistantText { text } if text == "done editing"));
+    }
+
+    #[test]
+    fn parses_codex_item_completed_command_as_tool_result() {
+        let v: serde_json::Value = serde_json::from_str(
+            r#"{
+                "type":"item.completed",
+                "item":{
+                    "type":"command_execution",
+                    "aggregated_output":"first line\nsecond line",
+                    "exit_code":0,
+                    "status":"completed"
+                }
+            }"#,
+        )
+        .unwrap();
+        let out = parse(AgentProvider::Codex, &v);
+        assert!(matches!(
+            &out[0],
+            ParsedAgentEvent::ToolResult { first_line, is_error: false }
+                if first_line == "first line"
+        ));
+    }
+
+    #[test]
+    fn parses_codex_turn_completed_as_done() {
+        let v: serde_json::Value =
+            serde_json::from_str(r#"{"type":"turn.completed","status":"success"}"#).unwrap();
+        let out = parse(AgentProvider::Codex, &v);
+        assert!(matches!(&out[0], ParsedAgentEvent::Done { subtype, .. } if subtype == "success"));
     }
 }

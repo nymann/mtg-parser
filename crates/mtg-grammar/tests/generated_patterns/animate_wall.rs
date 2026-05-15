@@ -16,4 +16,3 @@ fn pattern_02_static_ability() {
     let text = "Enchanted Wall can attack as though it didn't have defender.";
     mtg_grammar::parse(text).expect("parse pattern");
 }
-

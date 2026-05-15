@@ -4,8 +4,8 @@ use pest_derive::Parser;
 
 use crate::ast::{
     Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject, InterveningIf,
-    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber, Statement,
-    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Zone,
+    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Sign, SignedNumber, SourceObject,
+    Statement, StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Zone,
 };
 
 #[derive(Parser)]
@@ -115,6 +115,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::aura_leaves_battlefield => {
                 event = Some(TriggerEvent::ThisAuraLeavesTheBattlefield);
             }
+            Rule::permanent_enters => {
+                event = Some(permanent_enters_from_pair(child)?);
+            }
             Rule::its_on_the_battlefield => {
                 intervening_if = Some(InterveningIf::ItsOnTheBattlefield);
             }
@@ -127,6 +130,11 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::return_enchanted_card_and_attach => {
                 effects.push(return_enchanted_card_and_attach_from_pair(child)?);
             }
+            Rule::source_deals_damage_to_that_permanents_controller => {
+                effects.push(source_deals_damage_to_that_permanents_controller_from_pair(
+                    child,
+                )?);
+            }
             _ => return Err(ParseError::Internal("triggered_ability child")),
         }
     }
@@ -138,6 +146,15 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
         event,
         intervening_if,
         effects,
+    })
+}
+
+fn permanent_enters_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let pt = pair.into_inner().next().ok_or(ParseError::Internal(
+        "permanent_enters missing permanent_type",
+    ))?;
+    Ok(TriggerEvent::PermanentEnters {
+        permanent_type: permanent_type_from_pair(pt)?,
     })
 }
 
@@ -180,6 +197,51 @@ fn return_enchanted_card_and_attach_from_pair(
     Ok(TriggerEffect::ReturnEnchantedCardAndAttach {
         card_type: permanent_type_from_pair(pt)?,
     })
+}
+
+fn source_deals_damage_to_that_permanents_controller_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("damage effect missing source"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("damage effect missing amount"))?;
+    let recipient_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("damage effect missing recipient"))?;
+    let amount = amount_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("damage amount"))?;
+    Ok(TriggerEffect::SourceDealsDamageToThatPermanentController {
+        source: source_object_from_pair(source_pair)?,
+        amount,
+        recipient: that_permanents_controller_from_pair(recipient_pair)?,
+    })
+}
+
+fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError> {
+    if pair.as_rule() != Rule::source_object {
+        return Err(ParseError::Internal("source_object"));
+    }
+    let pt = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("source_object missing permanent_type"))?;
+    Ok(SourceObject::This(permanent_type_from_pair(pt)?))
+}
+
+fn that_permanents_controller_from_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseError> {
+    if pair.as_rule() != Rule::that_permanents_controller {
+        return Err(ParseError::Internal("that_permanents_controller"));
+    }
+    let pt = pair.into_inner().next().ok_or(ParseError::Internal(
+        "that_permanents_controller missing permanent_type",
+    ))?;
+    permanent_type_from_pair(pt)
 }
 
 fn enchant_object_from_pair(pair: Pair<Rule>) -> Result<EnchantObject, ParseError> {

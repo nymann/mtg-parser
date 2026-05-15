@@ -17,7 +17,7 @@ pub enum Statement {
     Compound(Vec<Statement>),
 }
 
-/// "When <event>, [if <intervening-if>,] <effect>[. <effect>]*."
+/// "When/Whenever <event>, [if <intervening-if>,] <effect>[. <effect>]*."
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TriggeredAbility {
     pub event: TriggerEvent,
@@ -31,6 +31,8 @@ pub enum TriggerEvent {
     ThisAuraEnters,
     /// "this Aura leaves the battlefield"
     ThisAuraLeavesTheBattlefield,
+    /// "a/an <permanent_type> enters"
+    PermanentEnters { permanent_type: PermanentType },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,6 +45,12 @@ pub enum InterveningIf {
 pub enum TriggerEffect {
     /// "that creature's controller sacrifices it"
     ThatCreaturesControllerSacrificesIt,
+    /// "this <source> deals N damage to that <recipient>'s controller"
+    SourceDealsDamageToThatPermanentController {
+        source: SourceObject,
+        amount: u32,
+        recipient: PermanentType,
+    },
     /// `it loses "<keyword>" and gains "<keyword>"` — the source object
     /// rewrites its own printed rules text. Reanimator Auras use this
     /// to switch their `Enchant` target from a graveyard card to the
@@ -52,6 +60,12 @@ pub enum TriggerEffect {
     /// control and attach this Aura to it" — pulls the enchanted card
     /// out of its zone and re-attaches the Aura on the battlefield.
     ReturnEnchantedCardAndAttach { card_type: PermanentType },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SourceObject {
+    /// "this <permanent_type>"
+    This(PermanentType),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
