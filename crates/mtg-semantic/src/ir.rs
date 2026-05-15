@@ -2,7 +2,8 @@ use mtg_grammar::{
     ActionTiming, ActivatedAbility, BalanceSameWayAction, BasicLandType, CardCount,
     CastRestriction, Color, DamageLifeGainCap, DamageRecipient, EachPlayerAction, ImperativeAction,
     Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
-    PtModifier, SourceObject, StaticAbility, TriggeredAbility, Variable, VariableDefinition, Zone,
+    PtModifier, SourceObject, SpellType, StaticAbility, TriggeredAbility, Variable,
+    VariableDefinition, Zone,
 };
 use serde::{Deserialize, Serialize};
 
@@ -75,6 +76,14 @@ pub enum CardEffect {
     YouOwnTargetCardInZone { zone: Zone },
     /// "Exchange that card with the top card of your library."
     ExchangeThatCardWithTopCardOfYourLibrary,
+    /// "Copy target <spell_type> [or <spell_type>] spell, except that the
+    /// copy is <color>."
+    CopyTargetSpellExceptCopyIsColor {
+        spell_types: Vec<SpellType>,
+        color: Color,
+    },
+    /// "You may choose new targets for the copy."
+    YouMayChooseNewTargetsForTheCopy,
     /// Ordered imperative actions such as "discard your hand, ante the
     /// top card of your library, then draw seven cards."
     ImperativeActionSequence { actions: Vec<ImperativeAction> },

@@ -139,3 +139,5 @@ mod fog;
 mod force_of_nature;
 #[path = "generated_patterns/forcefield.rs"]
 mod forcefield;
+#[path = "generated_patterns/fork.rs"]
+mod fork;

@@ -84,6 +84,14 @@ pub enum Statement {
     },
     /// "Exchange that card with the top card of your library."
     ExchangeThatCardWithTopCardOfYourLibrary,
+    /// "Copy target <spell_type> [or <spell_type>] spell, except that the
+    /// copy is <color>."
+    CopyTargetSpellExceptCopyIsColor {
+        spell_types: Vec<SpellType>,
+        color: Color,
+    },
+    /// "You may choose new targets for the copy."
+    YouMayChooseNewTargetsForTheCopy,
     /// "<action>, [<action>, ]then <action>."
     ImperativeActionSequence {
         actions: Vec<ImperativeAction>,
@@ -581,6 +589,12 @@ pub enum Color {
     Black,
     Red,
     Green,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SpellType {
+    Instant,
+    Sorcery,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

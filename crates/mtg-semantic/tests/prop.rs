@@ -12,8 +12,8 @@
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount, Color,
     DamageLifeGainCap, DamageRecipient, EachPlayerAction, EnchantedObject, ImperativeAction,
-    Keyword, ManaCost, ManaSymbol, PermanentType, SourceObject, Statement, StaticAbility,
-    TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
+    Keyword, ManaCost, ManaSymbol, PermanentType, SourceObject, SpellType, Statement,
+    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -46,6 +46,10 @@ fn arb_color() -> impl Strategy<Value = Color> {
         Just(Color::Red),
         Just(Color::Green),
     ]
+}
+
+fn arb_spell_type() -> impl Strategy<Value = SpellType> {
+    prop_oneof![Just(SpellType::Instant), Just(SpellType::Sorcery)]
 }
 
 fn arb_permanent_type() -> impl Strategy<Value = PermanentType> {
@@ -209,6 +213,13 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         }),
         Just(Statement::YouOwnTargetCardInZone { zone: Zone::Ante }),
         Just(Statement::ExchangeThatCardWithTopCardOfYourLibrary),
+        (prop::collection::vec(arb_spell_type(), 1..3), arb_color()).prop_map(
+            |(spell_types, color)| Statement::CopyTargetSpellExceptCopyIsColor {
+                spell_types,
+                color,
+            }
+        ),
+        Just(Statement::YouMayChooseNewTargetsForTheCopy),
         (1u32..=10).prop_map(|amount| Statement::IfYouDoGainLife { amount }),
         (arb_player_casts_colored_spell_pay_mana_trigger(), 1u32..=10,).prop_map(
             |(trigger, amount)| {

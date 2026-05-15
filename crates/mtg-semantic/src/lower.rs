@@ -91,6 +91,15 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::ExchangeThatCardWithTopCardOfYourLibrary => {
             CardEffect::ExchangeThatCardWithTopCardOfYourLibrary
         }
+        Statement::CopyTargetSpellExceptCopyIsColor { spell_types, color } => {
+            CardEffect::CopyTargetSpellExceptCopyIsColor {
+                spell_types: spell_types.clone(),
+                color: *color,
+            }
+        }
+        Statement::YouMayChooseNewTargetsForTheCopy => {
+            CardEffect::YouMayChooseNewTargetsForTheCopy
+        }
         Statement::ImperativeActionSequence { actions } => CardEffect::ImperativeActionSequence {
             actions: actions.clone(),
         },

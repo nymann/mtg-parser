@@ -39,6 +39,8 @@ sentence_statement = _{
   | ante_play_restriction
   | you_own_target_card_in_zone
   | exchange_that_card_with_top_card_of_your_library
+  | copy_target_spell_except_copy_is_color
+  | you_may_choose_new_targets_for_the_copy
   | imperative_action_sequence
   | counter_target_spell
   | destroy_all_basic_lands
@@ -146,6 +148,17 @@ destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural ~ "." }
 destroy_target_permanent_choice = { ^"destroy" ~ ^"target" ~ permanent_type ~ (^"or" ~ permanent_type)+ ~ "." }
 counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
+
+copy_target_spell_except_copy_is_color = {
+    ^"copy" ~ ^"target" ~ spell_type_choice ~ ^"spell" ~ ","
+  ~ ^"except" ~ ^"that" ~ ^"the" ~ ^"copy" ~ ^"is" ~ color_word ~ "."
+}
+you_may_choose_new_targets_for_the_copy = {
+    ^"you" ~ ^"may" ~ ^"choose" ~ ^"new" ~ ^"targets"
+  ~ ^"for" ~ ^"the" ~ ^"copy" ~ "."
+}
+spell_type_choice = { spell_type ~ (^"or" ~ spell_type)* }
+spell_type = @{ ^"instant" | ^"sorcery" }
 
 named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets = {
     proper_name ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"divided"

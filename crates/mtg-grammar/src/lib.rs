@@ -8,8 +8,8 @@ pub use ast::{
     CreatureType, DamageLifeGainCap, DamageRecipient, EachPlayerAction, EnchantObject,
     EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
     MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
-    Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
     VariableDefinition, VariablePtModifier, Zone,
 };
 pub use parse::{parse, ParseError};

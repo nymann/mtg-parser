@@ -8,8 +8,8 @@ use crate::ast::{
     CreatureStatus, CreatureType, DamageLifeGainCap, DamageRecipient, EachPlayerAction,
     EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
     MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
-    Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
     VariableDefinition, VariablePtModifier, Zone,
 };
 
@@ -60,6 +60,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::you_own_target_card_in_zone => you_own_target_card_in_zone_from_pair(pair),
         Rule::exchange_that_card_with_top_card_of_your_library => {
             Ok(Statement::ExchangeThatCardWithTopCardOfYourLibrary)
+        }
+        Rule::copy_target_spell_except_copy_is_color => {
+            copy_target_spell_except_copy_is_color_from_pair(pair)
+        }
+        Rule::you_may_choose_new_targets_for_the_copy => {
+            Ok(Statement::YouMayChooseNewTargetsForTheCopy)
         }
         Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
         Rule::counter_target_spell => Ok(Statement::CounterTargetSpell),
@@ -268,6 +274,29 @@ fn you_own_target_card_in_zone_from_pair(pair: Pair<Rule>) -> Result<Statement, 
     ))?;
     Ok(Statement::YouOwnTargetCardInZone {
         zone: zone_from_pair(zone_pair)?,
+    })
+}
+
+fn copy_target_spell_except_copy_is_color_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let spell_types_pair = inner.next().ok_or(ParseError::Internal(
+        "copy target spell missing spell_type_choice",
+    ))?;
+    let color_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("copy target spell missing color"))?;
+    let spell_types = spell_types_pair
+        .into_inner()
+        .map(spell_type_from_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    if spell_types.is_empty() {
+        return Err(ParseError::Internal("spell_type_choice empty"));
+    }
+    Ok(Statement::CopyTargetSpellExceptCopyIsColor {
+        spell_types,
+        color: color_from_pair(color_pair)?,
     })
 }
 
@@ -2369,6 +2398,17 @@ fn color_from_pair(pair: Pair<Rule>) -> Result<Color, ParseError> {
         "red" => Ok(Color::Red),
         "green" => Ok(Color::Green),
         _ => Err(ParseError::Internal("color_word variant")),
+    }
+}
+
+fn spell_type_from_pair(pair: Pair<Rule>) -> Result<SpellType, ParseError> {
+    if pair.as_rule() != Rule::spell_type {
+        return Err(ParseError::Internal("spell_type"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "instant" => Ok(SpellType::Instant),
+        "sorcery" => Ok(SpellType::Sorcery),
+        _ => Err(ParseError::Internal("spell_type variant")),
     }
 }
 

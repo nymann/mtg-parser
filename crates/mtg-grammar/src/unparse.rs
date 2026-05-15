@@ -6,8 +6,8 @@ use crate::ast::{
     CreatureStatus, CreatureType, DamageLifeGainCap, DamageRecipient, EachPlayerAction,
     EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, ManaCost, ManaSymbol,
     MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
-    Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
     VariableDefinition, VariablePtModifier, Zone,
 };
 
@@ -137,6 +137,16 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::ExchangeThatCardWithTopCardOfYourLibrary => {
             out.push_str("Exchange that card with the top card of your library.");
+        }
+        Statement::CopyTargetSpellExceptCopyIsColor { spell_types, color } => {
+            out.push_str("Copy target ");
+            write_spell_type_choice(out, spell_types);
+            out.push_str(" spell, except that the copy is ");
+            out.push_str(color_name(*color));
+            out.push('.');
+        }
+        Statement::YouMayChooseNewTargetsForTheCopy => {
+            out.push_str("You may choose new targets for the copy.");
         }
         Statement::ImperativeActionSequence { actions } => {
             write_imperative_action_sequence(out, actions);
@@ -327,6 +337,22 @@ fn write_damage_recipient(out: &mut String, recipient: DamageRecipient) {
             write_keyword(out, keyword);
         }
         DamageRecipient::EachPlayer => out.push_str("each player"),
+    }
+}
+
+fn write_spell_type_choice(out: &mut String, spell_types: &[SpellType]) {
+    for (idx, spell_type) in spell_types.iter().enumerate() {
+        if idx > 0 {
+            out.push_str(" or ");
+        }
+        out.push_str(spell_type_name(*spell_type));
+    }
+}
+
+fn spell_type_name(spell_type: SpellType) -> &'static str {
+    match spell_type {
+        SpellType::Instant => "instant",
+        SpellType::Sorcery => "sorcery",
     }
 }
 
