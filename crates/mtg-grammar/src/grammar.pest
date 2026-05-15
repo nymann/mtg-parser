@@ -233,10 +233,14 @@ prevent_all_combat_damage_this_turn = {
   ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"this" ~ ^"turn" ~ "."
 }
 prevent_next_damage_that_would_be_dealt_to_recipient_this_turn = {
-    ^"prevent" ~ ^"the" ~ ^"next" ~ damage_prevention_amount ~ ^"damage"
-  ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"to" ~ prevention_recipient
-  ~ ^"this" ~ ^"turn" ~ "."
+    prevent_next_damage_prefix ~ damage_prevention_amount
+  ~ damage_that_would_be_dealt_to ~ prevention_recipient ~ this_turn_period
 }
+prevent_next_damage_prefix = _{ ^"prevent" ~ ^"the" ~ ^"next" }
+damage_that_would_be_dealt_to = _{
+    ^"damage" ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"to"
+}
+this_turn_period = _{ ^"this" ~ ^"turn" ~ "." }
 damage_prevention_amount = _{ damage_amount_expression }
 prevention_recipient = _{ any_target_prevention_recipient | that_permanent_or_player_prevention_recipient }
 any_target_prevention_recipient = { ^"any" ~ ^"target" }
@@ -974,9 +978,8 @@ redirect_that_damage_to_you = {
     ^"that" ~ ^"source" ~ ^"deals" ~ ^"that" ~ ^"damage" ~ ^"to" ~ ^"you" ~ ^"instead"
 }
 prevent_next_damage_this_turn = {
-    ^"prevent" ~ ^"the" ~ ^"next" ~ unsigned_number ~ ^"damage"
-  ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt" ~ ^"to" ~ activated_damage_prevention_recipient
-  ~ ^"this" ~ ^"turn" ~ "."
+    prevent_next_damage_prefix ~ damage_prevention_amount ~ damage_that_would_be_dealt_to
+  ~ activated_damage_prevention_recipient ~ this_turn_period
 }
 put_up_to_variable_pt_counters_on_source = {
     ^"put" ~ ^"up" ~ ^"to" ~ variable_name ~ pt_counters
@@ -1234,8 +1237,6 @@ trigger_effect = _{
   | you_may_pay_mana
   | if_you_do_gain_life
   | sacrifice_source_unless_you_pay
-  | source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller
-  | source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player
   | source_deals_damage
   | that_player_adds_mana_of_any_type_that_permanent_produced
   | that_player_discards_card_at_random
@@ -1407,26 +1408,27 @@ delayed_remove_all_named_counters_from_linked_land = {
   ~ ^"with" ~ source_object ~ "."
 }
 
-source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller = {
-    source_object ~ ^"deals" ~ ^"damage" ~ ^"equal" ~ ^"to"
-  ~ that_permanents_toughness ~ ^"to" ~ the_permanents_controller ~ "."
-}
-source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player = {
-    source_object ~ ^"deals" ~ ^"damage" ~ ^"to" ~ ^"that" ~ ^"player"
-  ~ ^"equal" ~ ^"to" ~ ^"the" ~ ^"number" ~ ^"of" ~ basic_land_type_plural
-  ~ ^"they" ~ ^"control" ~ "."
-}
 source_deals_damage = {
-    trigger_damage_source ~ ^"deals" ~ trigger_damage_amount ~ ^"damage"
-  ~ ^"to" ~ trigger_damage_recipient ~ trigger_damage_condition?
+    trigger_damage_source ~ ^"deals" ~ (
+      trigger_damage_amount ~ ^"damage" ~ ^"to" ~ trigger_damage_recipient
+    | ^"damage" ~ trigger_damage_equal_to_amount ~ ^"to" ~ trigger_damage_recipient
+    | ^"damage" ~ ^"to" ~ trigger_damage_recipient ~ trigger_damage_equal_to_amount
+    ) ~ trigger_damage_condition?
   ~ trigger_damage_variable_definition? ~ trigger_damage_terminator
 }
 trigger_damage_terminator = _{ "." | &(^"and") }
 trigger_damage_source = _{ it_damage_source | source_object }
 it_damage_source = { ^"it" }
 trigger_damage_amount = { damage_amount_expression }
+trigger_damage_equal_to_amount = {
+    ^"equal" ~ ^"to" ~ (
+      that_permanents_toughness
+    | ^"the" ~ ^"number" ~ ^"of" ~ basic_land_type_plural ~ ^"they" ~ ^"control"
+    )
+}
 trigger_damage_recipient = _{
     that_permanents_controller
+  | the_permanents_controller
   | that_player_damage_recipient
   | you_damage_recipient
   | that_permanent_damage_recipient

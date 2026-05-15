@@ -7,12 +7,12 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
-    DamageKind, DamageLifeGainCap, DamageRecipient, DamageRecipients, DestroyAllTarget,
-    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
-    InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    DamageKind, DamageLifeGainCap, DamagePrevention, DamageRecipient, DamageRecipients,
+    DestroyAllTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
+    MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerDamageCondition, TriggerDamageRecipient,
     TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
     ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -289,13 +289,8 @@ fn modal_mode_from_pair(pair: Pair<Rule>) -> Result<ModalMode, ParseError> {
             amount: target_player_gains_life_amount_from_pair(effect)?,
         }),
         Rule::prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
-            let (amount, recipient) = prevent_next_damage_parts_from_pair(effect)?;
-            Ok(
-                ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                    amount,
-                    recipient,
-                },
-            )
+            let prevention = prevent_next_damage_parts_from_pair(effect)?;
+            Ok(ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention })
         }
         _ => Err(ParseError::Internal("modal_effect")),
     }
@@ -971,8 +966,8 @@ fn until_eot_you_may_pay_cost_at_timing_from_pair(
 fn prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let (amount, recipient) = prevent_next_damage_parts_from_pair(pair)?;
-    Ok(Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient })
+    let prevention = prevent_next_damage_parts_from_pair(pair)?;
+    Ok(Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention })
 }
 
 fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
@@ -1001,7 +996,7 @@ fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
 
 fn prevent_next_damage_parts_from_pair(
     pair: Pair<Rule>,
-) -> Result<(DamageAmount, PreventionRecipient), ParseError> {
+) -> Result<DamagePrevention<PreventionRecipient>, ParseError> {
     let mut inner = pair.into_inner();
     let amount_pair = inner
         .next()
@@ -1009,10 +1004,10 @@ fn prevent_next_damage_parts_from_pair(
     let recipient_pair = inner.next().ok_or(ParseError::Internal(
         "prevent next damage missing recipient",
     ))?;
-    Ok((
-        damage_amount_from_pair(amount_pair)?,
-        prevention_recipient_from_pair(recipient_pair)?,
-    ))
+    Ok(DamagePrevention {
+        amount: damage_amount_from_pair(amount_pair)?,
+        recipient: prevention_recipient_from_pair(recipient_pair)?,
+    })
 }
 
 fn damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
@@ -1090,13 +1085,8 @@ fn if_you_do_effect_from_inner_pair(pair: Pair<Rule>) -> Result<IfYouDoEffect, P
             amount: if_you_do_gain_life_amount_from_pair(pair)?,
         }),
         Rule::prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
-            let (amount, recipient) = prevent_next_damage_parts_from_pair(pair)?;
-            Ok(
-                IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                    amount,
-                    recipient,
-                },
-            )
+            let prevention = prevent_next_damage_parts_from_pair(pair)?;
+            Ok(IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention })
         }
         _ => Err(ParseError::Internal("if_you_do effect")),
     }
@@ -1298,9 +1288,8 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                 )?);
             }
             Rule::beginning_of_upkeep_of_enchanted_permanent_controller => {
-                event = Some(beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(
-                    child,
-                )?);
+                event =
+                    Some(beginning_of_upkeep_of_enchanted_permanent_controller_from_pair(child)?);
             }
             Rule::end_of_combat => {
                 event = Some(TriggerEvent::EndOfCombat);
@@ -1316,19 +1305,20 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                 intervening_if = Some(InterveningIf::ItsOnTheBattlefield);
             }
             Rule::source_attacked_or_blocked_this_combat => {
-                let source_pair = only_inner(child, "attacked-or-blocked condition missing source")?;
+                let source_pair =
+                    only_inner(child, "attacked-or-blocked condition missing source")?;
                 intervening_if = Some(InterveningIf::SourceAttackedOrBlockedThisCombat {
                     source: source_object_from_pair(source_pair)?,
                 });
             }
             Rule::source_object_is_status => {
                 let mut inner = child.into_inner();
-                let source_pair = inner
-                    .next()
-                    .ok_or(ParseError::Internal("source-status condition missing source"))?;
-                let status_pair = inner
-                    .next()
-                    .ok_or(ParseError::Internal("source-status condition missing status"))?;
+                let source_pair = inner.next().ok_or(ParseError::Internal(
+                    "source-status condition missing source",
+                ))?;
+                let status_pair = inner.next().ok_or(ParseError::Internal(
+                    "source-status condition missing status",
+                ))?;
                 intervening_if = Some(InterveningIf::SourceIsStatus {
                     source: source_object_from_pair(source_pair)?,
                     status: object_status_from_pair(status_pair)?,
@@ -1353,9 +1343,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                 });
             }
             Rule::it_wasnt_first_permanent_you_played_this_turn => {
-                let permanent_type_pair = child.into_inner().next().ok_or(
-                    ParseError::Internal("first-play condition missing permanent_type"),
-                )?;
+                let permanent_type_pair = child.into_inner().next().ok_or(ParseError::Internal(
+                    "first-play condition missing permanent_type",
+                ))?;
                 intervening_if = Some(InterveningIf::ItWasntFirstPermanentYouPlayedThisTurn {
                     permanent_type: permanent_type_from_pair(permanent_type_pair)?,
                 });
@@ -1408,9 +1398,7 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                 effects.push(unless_you_pay_mana_do_actions_from_pair(child)?);
             }
             Rule::delayed_remove_all_named_counters_from_linked_land => {
-                effects.push(delayed_remove_all_named_counters_from_linked_land_from_pair(
-                    child,
-                )?);
+                effects.push(delayed_remove_all_named_counters_from_linked_land_from_pair(child)?);
             }
             Rule::put_that_many_named_counters_on_source => {
                 effects.push(put_that_many_named_counters_on_source_from_pair(child)?);
@@ -1421,12 +1409,6 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::source_deals_damage => {
                 effects.push(source_deals_damage_from_pair(child)?);
             }
-            Rule::source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller => {
-                effects.push(source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller_from_pair(child)?);
-            }
-            Rule::source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player => {
-                effects.push(source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player_from_pair(child)?);
-            }
             Rule::that_player_draws_an_additional_card => {
                 effects.push(TriggerEffect::ThatPlayerDrawsAnAdditionalCard);
             }
@@ -1434,7 +1416,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                 effects.push(TriggerEffect::ThatPlayerDiscardsCardAtRandom);
             }
             Rule::that_player_adds_mana_of_any_type_that_permanent_produced => {
-                effects.push(that_player_adds_mana_of_any_type_that_permanent_produced_from_pair(child)?);
+                effects.push(
+                    that_player_adds_mana_of_any_type_that_permanent_produced_from_pair(child)?,
+                );
             }
             Rule::its_controller_adds_an_additional_mana => {
                 effects.push(its_controller_adds_an_additional_mana_from_pair(child)?);
@@ -1804,50 +1788,6 @@ fn unless_you_pay_mana_do_actions_from_pair(pair: Pair<Rule>) -> Result<TriggerE
     })
 }
 
-fn source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller_from_pair(
-    pair: Pair<Rule>,
-) -> Result<TriggerEffect, ParseError> {
-    let mut inner = pair.into_inner();
-    let source_pair = inner.next().ok_or(ParseError::Internal(
-        "toughness damage effect missing source",
-    ))?;
-    let toughness_pair = inner.next().ok_or(ParseError::Internal(
-        "toughness damage effect missing toughness reference",
-    ))?;
-    let controller_pair = inner.next().ok_or(ParseError::Internal(
-        "toughness damage effect missing controller reference",
-    ))?;
-    let toughness_permanent_type = permanent_type_from_inner_pair(toughness_pair)?;
-    let controller_permanent_type = permanent_type_from_inner_pair(controller_pair)?;
-    if toughness_permanent_type != controller_permanent_type {
-        return Err(ParseError::Internal("toughness damage references mismatch"));
-    }
-    Ok(
-        TriggerEffect::SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {
-            source: source_object_from_pair(source_pair)?,
-            permanent_type: toughness_permanent_type,
-        },
-    )
-}
-
-fn source_deals_damage_equal_to_number_of_basic_lands_they_control_to_that_player_from_pair(
-    pair: Pair<Rule>,
-) -> Result<TriggerEffect, ParseError> {
-    let mut inner = pair.into_inner();
-    let source_pair = inner.next().ok_or(ParseError::Internal(
-        "basic-land-count damage effect missing source",
-    ))?;
-    let land_type_pair = inner.next().ok_or(ParseError::Internal(
-        "basic-land-count damage effect missing basic land type",
-    ))?;
-    Ok(
-        TriggerEffect::SourceDealsDamageEqualToNumberOfBasicLandsTheyControlToThatPlayer {
-            source: source_object_from_pair(source_pair)?,
-            basic_land_type: basic_land_type_from_plural_pair(land_type_pair)?,
-        },
-    )
-}
-
 fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
     let mut source = None;
     let mut amount = None;
@@ -1866,7 +1806,11 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
             Rule::trigger_damage_amount => {
                 amount = Some(trigger_damage_amount_from_pair(child)?);
             }
+            Rule::trigger_damage_equal_to_amount => {
+                amount = Some(trigger_damage_equal_to_amount_from_pair(child)?);
+            }
             Rule::that_permanents_controller
+            | Rule::the_permanents_controller
             | Rule::that_player_damage_recipient
             | Rule::you_damage_recipient
             | Rule::that_permanent_damage_recipient => {
@@ -1888,6 +1832,8 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
     let recipient = recipient.ok_or(ParseError::Internal(
         "source deals damage missing recipient",
     ))?;
+    validate_trigger_damage_amount_recipient(amount, recipient)?;
+
     let definitions = match (amount, definitions) {
         (DamageAmount::Number(_), Some(_)) => {
             return Err(ParseError::Internal(
@@ -1911,6 +1857,14 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
                 "variable damage missing amount definition",
             ));
         }
+        (DamageAmount::ThatPermanentsToughness(_), Some(_))
+        | (DamageAmount::NumberOfBasicLandsTheyControl(_), Some(_)) => {
+            return Err(ParseError::Internal(
+                "equal-to damage cannot have variable definition",
+            ));
+        }
+        (DamageAmount::ThatPermanentsToughness(_), None)
+        | (DamageAmount::NumberOfBasicLandsTheyControl(_), None) => Vec::new(),
     };
 
     Ok(TriggerEffect::SourceDealsDamage(TriggeredDamage {
@@ -1933,12 +1887,54 @@ fn trigger_damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, Par
     damage_amount_from_pair(inner)
 }
 
+fn trigger_damage_equal_to_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
+    let inner = only_inner(pair, "trigger damage equal amount missing inner rule")?;
+    match inner.as_rule() {
+        Rule::that_permanents_toughness => Ok(DamageAmount::ThatPermanentsToughness(
+            permanent_type_from_inner_pair(inner)?,
+        )),
+        Rule::basic_land_type_plural => Ok(DamageAmount::NumberOfBasicLandsTheyControl(
+            basic_land_type_from_plural_pair(inner)?,
+        )),
+        _ => Err(ParseError::Internal("trigger damage equal amount")),
+    }
+}
+
+fn validate_trigger_damage_amount_recipient(
+    amount: DamageAmount,
+    recipient: TriggerDamageRecipient,
+) -> Result<(), ParseError> {
+    match (amount, recipient) {
+        (
+            DamageAmount::ThatPermanentsToughness(amount_type),
+            TriggerDamageRecipient::ThatPermanentController(recipient_type),
+        ) if amount_type == recipient_type => Ok(()),
+        (
+            DamageAmount::ThatPermanentsToughness(_),
+            TriggerDamageRecipient::ThatPermanentController(_),
+        ) => Err(ParseError::Internal("toughness damage references mismatch")),
+        (DamageAmount::ThatPermanentsToughness(_), _) => Err(ParseError::Internal(
+            "toughness damage must be dealt to that permanent's controller",
+        )),
+        (DamageAmount::NumberOfBasicLandsTheyControl(_), TriggerDamageRecipient::ThatPlayer) => {
+            Ok(())
+        }
+        (DamageAmount::NumberOfBasicLandsTheyControl(_), _) => Err(ParseError::Internal(
+            "basic-land-count damage must be dealt to that player",
+        )),
+        (DamageAmount::Number(_) | DamageAmount::Variable(_), _) => Ok(()),
+    }
+}
+
 fn trigger_damage_recipient_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerDamageRecipient, ParseError> {
     match pair.as_rule() {
         Rule::that_permanents_controller => Ok(TriggerDamageRecipient::ThatPermanentController(
             that_permanents_controller_from_pair(pair)?,
+        )),
+        Rule::the_permanents_controller => Ok(TriggerDamageRecipient::ThatPermanentController(
+            the_permanents_controller_from_pair(pair)?,
         )),
         Rule::that_player_damage_recipient => Ok(TriggerDamageRecipient::ThatPlayer),
         Rule::you_damage_recipient => Ok(TriggerDamageRecipient::You),
@@ -1977,10 +1973,11 @@ fn activated_damage_effect_from_pair(
             let recipient_pair = inner.next().ok_or(ParseError::Internal(
                 "prevent next damage missing recipient",
             ))?;
-            let amount = damage_number_from_pair(amount_pair, "prevent next damage amount")?;
             Ok(ActivatedDamageEffect::PreventNextDamageThisTurn {
-                amount,
-                recipient: activated_damage_recipient_from_pair(recipient_pair)?,
+                prevention: DamagePrevention {
+                    amount: damage_amount_from_pair(amount_pair)?,
+                    recipient: activated_damage_recipient_from_pair(recipient_pair)?,
+                },
             })
         }
         _ => Err(ParseError::Internal("activated damage effect")),
@@ -2207,6 +2204,14 @@ fn that_permanents_controller_from_pair(pair: Pair<Rule>) -> Result<PermanentTyp
         return Err(ParseError::Internal("that_permanents_controller"));
     }
     let pt = only_inner(pair, "that_permanents_controller missing permanent_type")?;
+    permanent_type_from_pair(pt)
+}
+
+fn the_permanents_controller_from_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseError> {
+    if pair.as_rule() != Rule::the_permanents_controller {
+        return Err(ParseError::Internal("the_permanents_controller"));
+    }
+    let pt = only_inner(pair, "the_permanents_controller missing permanent_type")?;
     permanent_type_from_pair(pt)
 }
 

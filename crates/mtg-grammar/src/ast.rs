@@ -142,13 +142,13 @@ pub enum Statement {
     },
     /// "Prevent the next N damage that would be dealt to <recipient> this turn."
     PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-        amount: DamageAmount,
-        recipient: PreventionRecipient,
+        #[serde(flatten)]
+        prevention: DamagePrevention<PreventionRecipient>,
     },
     /// "If you do, prevent the next N damage that would be dealt to <recipient> this turn."
     IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-        amount: DamageAmount,
-        recipient: PreventionRecipient,
+        #[serde(flatten)]
+        prevention: DamagePrevention<PreventionRecipient>,
     },
     /// "If you do, add <mana>."
     IfYouDoAddMana {
@@ -331,13 +331,11 @@ impl Statement {
 
     pub(crate) fn if_you_do(effect: IfYouDoEffect) -> Self {
         match effect {
-            IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                amount,
-                recipient,
-            } => Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                amount,
-                recipient,
-            },
+            IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
+                Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                    prevention,
+                }
+            }
             IfYouDoEffect::AddMana { mana } => Statement::IfYouDoAddMana { mana },
             IfYouDoEffect::Untap { source } => Statement::IfYouDoUntap { source },
             IfYouDoEffect::GainLife { amount } => Statement::IfYouDoGainLife { amount },
@@ -348,8 +346,7 @@ impl Statement {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) enum IfYouDoEffect {
     PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-        amount: DamageAmount,
-        recipient: PreventionRecipient,
+        prevention: DamagePrevention<PreventionRecipient>,
     },
     AddMana {
         mana: ManaCost,
@@ -391,8 +388,8 @@ pub enum ModalMode {
     TargetPlayerGainsLife { amount: u32 },
     /// "Prevent the next N damage that would be dealt to <recipient> this turn."
     PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-        amount: DamageAmount,
-        recipient: PreventionRecipient,
+        #[serde(flatten)]
+        prevention: DamagePrevention<PreventionRecipient>,
     },
 }
 
@@ -430,6 +427,14 @@ pub enum DamageRecipients {
 pub enum DamageAmount {
     Number(u32),
     Variable(Variable),
+    ThatPermanentsToughness(PermanentType),
+    NumberOfBasicLandsTheyControl(BasicLandType),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DamagePrevention<R, A = DamageAmount> {
+    pub amount: A,
+    pub recipient: R,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -640,18 +645,6 @@ pub enum TriggerEffect {
     ThatPlayerAddsManaOfAnyTypeThatPermanentProduced {
         amount: u32,
         permanent_type: PermanentType,
-    },
-    /// "this <source> deals damage equal to that <permanent_type>'s
-    /// toughness to the <permanent_type>'s controller"
-    SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {
-        source: SourceObject,
-        permanent_type: PermanentType,
-    },
-    /// "this <source> deals damage to that player equal to the number of
-    /// <basic_land_type>s they control"
-    SourceDealsDamageEqualToNumberOfBasicLandsTheyControlToThatPlayer {
-        source: SourceObject,
-        basic_land_type: BasicLandType,
     },
     /// "remove a <pt_modifier> counter from it"
     RemoveCounterFromIt { counter: PtModifier },
@@ -912,8 +905,8 @@ pub enum ActivatedDamageEffect {
     },
     /// "Prevent the next N damage that would be dealt to <recipient> this turn."
     PreventNextDamageThisTurn {
-        amount: u32,
-        recipient: ActivatedDamageRecipient,
+        #[serde(flatten)]
+        prevention: DamagePrevention<ActivatedDamageRecipient>,
     },
 }
 

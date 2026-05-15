@@ -5,15 +5,15 @@ use crate::ast::{
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     BalanceSameWayAction, BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect,
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
-    DamageKind, DamageLifeGainCap, DamageRecipient, DamageRecipients, EachPlayerAction,
-    EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus,
-    OptionalCost, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    SpellType, Statement, StaticAbility, Step, TargetPermanentEndOfTurnEffect,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    DamageKind, DamageLifeGainCap, DamagePrevention, DamageRecipient, DamageRecipients,
+    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
+    InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    ObjectStatus, OptionalCost, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
+    TargetPermanentEndOfTurnEffect, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -205,18 +205,14 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_optional_cost(out, cost);
             out.push('.');
         }
-        Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient } => {
-            write_prevent_next_damage_to_recipient(out, *amount, *recipient);
+        Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
+            write_prevent_next_damage_to_recipient(out, *prevention);
         }
-        Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-            amount,
-            recipient,
-        } => {
+        Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
             write_if_you_do_effect(
                 out,
                 IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                    amount: *amount,
-                    recipient: *recipient,
+                    prevention: *prevention,
                 },
             );
         }
@@ -416,8 +412,8 @@ fn write_modal_mode(out: &mut String, mode: ModalMode) {
         ModalMode::TargetPlayerGainsLife { amount } => {
             write!(out, "Target player gains {amount} life.").expect("write to String never fails");
         }
-        ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient } => {
-            write_prevent_next_damage_to_recipient(out, amount, recipient);
+        ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
+            write_prevent_next_damage_to_recipient(out, prevention);
         }
     }
 }
@@ -682,10 +678,9 @@ fn write_optional_cost(out: &mut String, cost: &OptionalCost) {
 fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
     out.push_str("If you do, ");
     match effect {
-        IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-            amount,
-            recipient,
-        } => write_prevent_next_damage_to_recipient_lowercase(out, amount, recipient),
+        IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { prevention } => {
+            write_prevent_next_damage_to_recipient_lowercase(out, prevention)
+        }
         IfYouDoEffect::AddMana { mana } => {
             out.push_str("add ");
             write_mana_cost(out, &mana);
@@ -704,25 +699,23 @@ fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
 
 fn write_prevent_next_damage_to_recipient(
     out: &mut String,
-    amount: DamageAmount,
-    recipient: PreventionRecipient,
+    prevention: DamagePrevention<PreventionRecipient>,
 ) {
     out.push_str("Prevent the next ");
-    write_damage_amount(out, amount);
+    write_damage_amount(out, prevention.amount);
     out.push_str(" damage that would be dealt to ");
-    write_prevention_recipient(out, recipient);
+    write_prevention_recipient(out, prevention.recipient);
     out.push_str(" this turn.");
 }
 
 fn write_prevent_next_damage_to_recipient_lowercase(
     out: &mut String,
-    amount: DamageAmount,
-    recipient: PreventionRecipient,
+    prevention: DamagePrevention<PreventionRecipient>,
 ) {
     out.push_str("prevent the next ");
-    write_damage_amount(out, amount);
+    write_damage_amount(out, prevention.amount);
     out.push_str(" damage that would be dealt to ");
-    write_prevention_recipient(out, recipient);
+    write_prevention_recipient(out, prevention.recipient);
     out.push_str(" this turn.");
 }
 
@@ -730,6 +723,16 @@ fn write_damage_amount(out: &mut String, amount: DamageAmount) {
     match amount {
         DamageAmount::Number(n) => write!(out, "{n}").expect("write to String never fails"),
         DamageAmount::Variable(variable) => out.push_str(variable_name(variable)),
+        DamageAmount::ThatPermanentsToughness(permanent_type) => {
+            out.push_str("equal to that ");
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str("'s toughness");
+        }
+        DamageAmount::NumberOfBasicLandsTheyControl(basic_land_type) => {
+            out.push_str("equal to the number of ");
+            out.push_str(basic_land_type_plural_name(basic_land_type));
+            out.push_str(" they control");
+        }
     }
 }
 
@@ -1636,26 +1639,6 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             write_mana_symbol(out, *mana);
             out.push('.');
         }
-        TriggerEffect::SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {
-            source,
-            permanent_type,
-        } => {
-            write_source_object(out, *source);
-            out.push_str(" deals damage equal to that ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str("'s toughness to the ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str("'s controller.");
-        }
-        TriggerEffect::SourceDealsDamageEqualToNumberOfBasicLandsTheyControlToThatPlayer {
-            source,
-            basic_land_type,
-        } => {
-            write_source_object(out, *source);
-            out.push_str(" deals damage to that player equal to the number of ");
-            out.push_str(basic_land_type_plural_name(*basic_land_type));
-            out.push_str(" they control.");
-        }
         TriggerEffect::RemoveCounterFromIt { counter } => {
             out.push_str("remove a ");
             write_pt_modifier(out, *counter);
@@ -1741,8 +1724,7 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str("you may put this card onto the battlefield.");
         }
         TriggerEffect::IfYouDoGainLife { amount } => {
-            write!(out, "If you do, you gain {amount} life.")
-                .expect("write to String never fails");
+            write!(out, "If you do, you gain {amount} life.").expect("write to String never fails");
         }
         TriggerEffect::UnlessYouPayManaDoActions { cost, actions } => {
             out.push_str("unless you pay ");
@@ -1756,7 +1738,9 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             permanent_type,
             source,
         } => {
-            out.push_str("at the beginning of each of your upkeeps for the rest of the game, remove all ");
+            out.push_str(
+                "at the beginning of each of your upkeeps for the rest of the game, remove all ",
+            );
             out.push_str(counter_name);
             out.push_str(" counters from a ");
             out.push_str(permanent_type_name(*permanent_type));
@@ -1779,19 +1763,25 @@ fn write_triggered_damage(out: &mut String, damage: &TriggeredDamage, terminal: 
         TriggerDamageSource::It => out.push_str("it"),
     }
     out.push_str(" deals ");
-    write_damage_amount(out, damage.amount);
-    out.push_str(" damage to ");
-    match damage.recipient {
-        TriggerDamageRecipient::You => out.push_str("you"),
-        TriggerDamageRecipient::ThatPlayer => out.push_str("that player"),
-        TriggerDamageRecipient::ThatPermanent(permanent_type) => {
-            out.push_str("that ");
-            out.push_str(permanent_type_name(permanent_type));
+    match damage.amount {
+        DamageAmount::Number(_) | DamageAmount::Variable(_) => {
+            let amount = damage.amount;
+            write_damage_amount(out, amount);
+            out.push_str(" damage to ");
+            write_trigger_damage_recipient(out, damage.recipient);
         }
-        TriggerDamageRecipient::ThatPermanentController(permanent_type) => {
-            out.push_str("that ");
+        DamageAmount::ThatPermanentsToughness(permanent_type) => {
+            out.push_str("damage equal to that ");
             out.push_str(permanent_type_name(permanent_type));
-            out.push_str("'s controller");
+            out.push_str("'s toughness to ");
+            write_trigger_damage_recipient(out, damage.recipient);
+        }
+        DamageAmount::NumberOfBasicLandsTheyControl(basic_land_type) => {
+            out.push_str("damage to ");
+            write_trigger_damage_recipient(out, damage.recipient);
+            out.push_str(" equal to the number of ");
+            out.push_str(basic_land_type_plural_name(basic_land_type));
+            out.push_str(" they control");
         }
     }
     if let Some(condition) = &damage.condition {
@@ -1808,10 +1798,28 @@ fn write_triggered_damage(out: &mut String, damage: &TriggeredDamage, terminal: 
             write_variable_definitions(out, &damage.definitions);
             out.push('.');
         }
-        DamageAmount::Number(_) => {
+        DamageAmount::Number(_)
+        | DamageAmount::ThatPermanentsToughness(_)
+        | DamageAmount::NumberOfBasicLandsTheyControl(_) => {
             if terminal {
                 out.push('.');
             }
+        }
+    }
+}
+
+fn write_trigger_damage_recipient(out: &mut String, recipient: TriggerDamageRecipient) {
+    match recipient {
+        TriggerDamageRecipient::You => out.push_str("you"),
+        TriggerDamageRecipient::ThatPlayer => out.push_str("that player"),
+        TriggerDamageRecipient::ThatPermanent(permanent_type) => {
+            out.push_str("that ");
+            out.push_str(permanent_type_name(permanent_type));
+        }
+        TriggerDamageRecipient::ThatPermanentController(permanent_type) => {
+            out.push_str("that ");
+            out.push_str(permanent_type_name(permanent_type));
+            out.push_str("'s controller");
         }
     }
 }
@@ -1836,13 +1844,11 @@ fn write_activated_damage_effect(out: &mut String, effect: ActivatedDamageEffect
             write_activated_damage_event_effect(out, effect);
             out.push('.');
         }
-        ActivatedDamageEffect::PreventNextDamageThisTurn { amount, recipient } => {
-            write!(
-                out,
-                "Prevent the next {amount} damage that would be dealt to "
-            )
-            .expect("writing to String cannot fail");
-            write_activated_damage_recipient(out, recipient);
+        ActivatedDamageEffect::PreventNextDamageThisTurn { prevention } => {
+            out.push_str("Prevent the next ");
+            write_damage_amount(out, prevention.amount);
+            out.push_str(" damage that would be dealt to ");
+            write_activated_damage_recipient(out, prevention.recipient);
             out.push_str(" this turn.");
         }
     }

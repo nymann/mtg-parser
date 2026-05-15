@@ -1,0 +1,41 @@
+cargo test failed with exit status: 101
+    |                                                                                       ^^^^^^^^^ `ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn` does not have this field
+    |
+    = note: available fields are: `prevention`
+
+error[E0559]: variant `Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn` has no field named `amount`
+   --> crates/mtg-semantic/tests/prop.rs:263:79
+    |
+263 |             Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient }
+    |                                                                               ^^^^^^ `Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn` does not have this field
+    |
+    = note: available fields are: `prevention`
+
+error[E0559]: variant `Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn` has no field named `recipient`
+   --> crates/mtg-semantic/tests/prop.rs:263:87
+    |
+263 |             Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient }
+    |                                                                                       ^^^^^^^^^ `Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn` does not have this field
+    |
+    = note: available fields are: `prevention`
+
+error[E0559]: variant `Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn` has no field named `amount`
+   --> crates/mtg-semantic/tests/prop.rs:267:17
+    |
+267 |                 amount,
+    |                 ^^^^^^ `Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn` does not have this field
+    |
+    = note: available fields are: `prevention`
+
+error[E0559]: variant `Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn` has no field named `recipient`
+   --> crates/mtg-semantic/tests/prop.rs:268:17
+    |
+268 |                 recipient,
+    |                 ^^^^^^^^^ `Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn` does not have this field
+    |
+    = note: available fields are: `prevention`
+
+For more information about this error, try `rustc --explain E0559`.
+error: could not compile `mtg-semantic` (test "prop") due to 6 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `mtg-grammar` (test "prop") due to 2 previous errors

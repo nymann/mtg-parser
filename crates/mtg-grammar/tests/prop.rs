@@ -7,10 +7,10 @@
 
 use mtg_grammar::{
     parse, unparse, ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount,
-    Color, DamageAmount, DamageLifeGainCap, DamageRecipient, DamageRecipients, EachPlayerAction,
-    EnchantedObject, ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode, PermanentType,
-    PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SourceObject, SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent,
+    Color, DamageAmount, DamageLifeGainCap, DamagePrevention, DamageRecipient, DamageRecipients,
+    EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode,
+    PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent,
     TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
@@ -148,7 +148,9 @@ fn arb_modal_mode() -> impl Strategy<Value = ModalMode> {
         arb_color().prop_map(|color| ModalMode::DestroyTargetColoredPermanent { color }),
         (1u32..=10).prop_map(|amount| ModalMode::TargetPlayerGainsLife { amount }),
         (arb_damage_amount(), arb_prevention_recipient()).prop_map(|(amount, recipient)| {
-            ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient }
+            ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                prevention: DamagePrevention { amount, recipient },
+            }
         }),
     ]
 }

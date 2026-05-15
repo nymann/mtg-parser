@@ -11,10 +11,10 @@
 
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount, Color,
-    DamageAmount, DamageLifeGainCap, DamageRecipient, DamageRecipients, EachPlayerAction,
-    EnchantedObject, ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode, PermanentType,
-    PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SourceObject, SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent,
+    DamageAmount, DamageLifeGainCap, DamagePrevention, DamageRecipient, DamageRecipients,
+    EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, ManaCost, ManaSymbol, ModalMode,
+    PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, TriggerEffect, TriggerEvent,
     TriggeredAbility, Variable, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
@@ -143,7 +143,9 @@ fn arb_modal_mode() -> impl Strategy<Value = ModalMode> {
         arb_color().prop_map(|color| ModalMode::DestroyTargetColoredPermanent { color }),
         (1u32..=10).prop_map(|amount| ModalMode::TargetPlayerGainsLife { amount }),
         (arb_damage_amount(), arb_prevention_recipient()).prop_map(|(amount, recipient)| {
-            ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient }
+            ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                prevention: DamagePrevention { amount, recipient },
+            }
         }),
     ]
 }
@@ -260,12 +262,13 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         }),
         Just(Statement::PreventAllCombatDamageThisTurn),
         (arb_damage_amount(), arb_prevention_recipient()).prop_map(|(amount, recipient)| {
-            Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient }
+            Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                prevention: DamagePrevention { amount, recipient },
+            }
         }),
         (arb_damage_amount(), arb_prevention_recipient()).prop_map(|(amount, recipient)| {
             Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-                amount,
-                recipient,
+                prevention: DamagePrevention { amount, recipient },
             }
         }),
         (arb_color(), arb_variable()).prop_map(|(color, variable)| {
