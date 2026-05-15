@@ -603,6 +603,14 @@ pub enum OptionalCost {
     PayMana { mana: ManaCost },
 }
 
+/// The condition part of a triggered ability:
+/// "<event>, [if <intervening-if>,]".
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TriggerCondition {
+    pub event: TriggerEvent,
+    pub intervening_if: Option<InterveningIf>,
+}
+
 /// "When/Whenever <event>, [if <intervening-if>,] <effect>[. <effect>]*."
 ///
 /// Triggered abilities are stored in the same order as printed: the
@@ -613,6 +621,23 @@ pub struct TriggeredAbility {
     pub event: TriggerEvent,
     pub intervening_if: Option<InterveningIf>,
     pub effects: Vec<TriggerEffect>,
+}
+
+impl TriggeredAbility {
+    pub fn condition(&self) -> TriggerCondition {
+        TriggerCondition {
+            event: self.event,
+            intervening_if: self.intervening_if,
+        }
+    }
+
+    pub fn from_parts(condition: TriggerCondition, effects: Vec<TriggerEffect>) -> Self {
+        Self {
+            event: condition.event,
+            intervening_if: condition.intervening_if,
+            effects,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

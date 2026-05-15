@@ -12,9 +12,9 @@ use crate::ast::{
     MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost, PermanentController,
     PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TargetPermanentEndOfTurnEffect, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
+    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
+    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -1449,7 +1449,12 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
 }
 
 fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
-    out.push_str(match ta.event {
+    write_trigger_condition(out, ta.condition());
+    write_trigger_effect_sequence(out, &ta.effects);
+}
+
+fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
+    out.push_str(match condition.event {
         TriggerEvent::PermanentEnters { .. }
         | TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { .. }
         | TriggerEvent::YouPlayPermanent { .. }
@@ -1475,14 +1480,13 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::SourcePutIntoGraveyardFromBattlefield { .. } => "When ",
         TriggerEvent::EnchantedPermanentDies { .. } => "When ",
     });
-    write_trigger_event(out, ta.event);
+    write_trigger_event(out, condition.event);
     out.push_str(", ");
-    if let Some(iif) = ta.intervening_if {
+    if let Some(iif) = condition.intervening_if {
         out.push_str("if ");
         write_intervening_if(out, iif);
         out.push_str(", ");
     }
-    write_trigger_effect_sequence(out, &ta.effects);
 }
 
 fn write_trigger_effect_sequence(out: &mut String, effects: &[TriggerEffect]) {

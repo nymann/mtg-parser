@@ -14,7 +14,7 @@ use crate::ast::{
     ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost,
     PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
     Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
-    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerDamageCondition,
+    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
@@ -1296,34 +1296,44 @@ fn semicolon_keyword_list_from_pair(pair: Pair<Rule>) -> Result<Statement, Parse
 }
 
 fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, ParseError> {
-    let mut event: Option<TriggerEvent> = None;
-    let mut intervening_if: Option<InterveningIf> = None;
+    let mut condition: Option<TriggerCondition> = None;
     let mut effects: Vec<TriggerEffect> = Vec::new();
     for child in pair.into_inner() {
         match child.as_rule() {
-            Rule::triggered_event_clause => event = Some(trigger_event_from_pair(child)?),
-            Rule::triggered_intervening_if_clause => {
-                intervening_if = Some(triggered_intervening_if_from_pair(child)?);
-            }
+            Rule::trigger_condition => condition = Some(trigger_condition_from_pair(child)?),
             Rule::trigger_effect_sequence | Rule::trigger_effect_fragment_sequence => {
                 effects.extend(trigger_effect_sequence_from_pair(child)?);
             }
             _ => return Err(ParseError::Internal("triggered_ability child")),
         }
     }
-    let event = event.ok_or(ParseError::Internal("triggered_ability missing event"))?;
+    let condition = condition.ok_or(ParseError::Internal("triggered_ability missing condition"))?;
     if effects.is_empty() {
         return Err(ParseError::Internal("triggered_ability missing effect"));
     }
-    Ok(TriggeredAbility {
-        event,
+    Ok(TriggeredAbility::from_parts(condition, effects))
+}
+
+fn trigger_condition_from_pair(pair: Pair<Rule>) -> Result<TriggerCondition, ParseError> {
+    let mut event: Option<TriggerEvent> = None;
+    let mut intervening_if: Option<InterveningIf> = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::trigger_event_clause => event = Some(trigger_event_from_pair(child)?),
+            Rule::trigger_intervening_if_clause => {
+                intervening_if = Some(triggered_intervening_if_from_pair(child)?);
+            }
+            _ => return Err(ParseError::Internal("trigger_condition child")),
+        }
+    }
+    Ok(TriggerCondition {
+        event: event.ok_or(ParseError::Internal("trigger_condition missing event"))?,
         intervening_if,
-        effects,
     })
 }
 
 fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
-    let event_pair = only_inner(pair, "triggered_event_clause missing event")?;
+    let event_pair = only_inner(pair, "trigger_event_clause missing event")?;
     match event_pair.as_rule() {
         Rule::aura_enters => Ok(TriggerEvent::ThisAuraEnters),
         Rule::aura_leaves_battlefield => Ok(TriggerEvent::ThisAuraLeavesTheBattlefield),
@@ -1376,7 +1386,7 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
 }
 
 fn triggered_intervening_if_from_pair(pair: Pair<Rule>) -> Result<InterveningIf, ParseError> {
-    let condition_pair = only_inner(pair, "triggered_intervening_if_clause missing condition")?;
+    let condition_pair = only_inner(pair, "trigger_intervening_if_clause missing condition")?;
     match condition_pair.as_rule() {
         Rule::its_on_the_battlefield => Ok(InterveningIf::ItsOnTheBattlefield),
         Rule::source_attacked_or_blocked_this_combat => {

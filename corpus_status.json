@@ -556,11 +556,11 @@
     },
     "lea/Orcish Oriflamme": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:3\n  |\n1 | Attacking creatures you control get +1/+0.\n  |   ^---\n  |\n  = expected triggered_event_clause"
+      "error": "parse: parse error:  --> 1:3\n  |\n1 | Attacking creatures you control get +1/+0.\n  |   ^---\n  |\n  = expected trigger_event_clause"
     },
     "lea/Paralyze": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:24\n  |\n2 | When this Aura enters, tap enchanted creature.\n  |                        ^---\n  |\n  = expected triggered_intervening_if_clause, trigger_effect_sequence, or you_may_pay_mana"
+      "error": "parse: parse error:  --> 2:24\n  |\n2 | When this Aura enters, tap enchanted creature.\n  |                        ^---\n  |\n  = expected trigger_intervening_if_clause, trigger_effect_sequence, or you_may_pay_mana"
     },
     "lea/Pearled Unicorn": {
       "status": "fail",
@@ -572,7 +572,7 @@
     },
     "lea/Pestilence": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of the end step, if no creatures are on the battlefield, sacrifice this enchantment.\n  |    ^---\n  |\n  = expected triggered_event_clause"
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of the end step, if no creatures are on the battlefield, sacrifice this enchantment.\n  |    ^---\n  |\n  = expected trigger_event_clause"
     },
     "lea/Phantasmal Forces": {
       "status": "pass"
@@ -602,7 +602,7 @@
     },
     "lea/Power Leak": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:71\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  |                                                                       ^---\n  |\n  = expected triggered_intervening_if_clause, trigger_effect_sequence, or you_may_pay_mana"
+      "error": "parse: parse error:  --> 2:71\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  |                                                                       ^---\n  |\n  = expected trigger_intervening_if_clause, trigger_effect_sequence, or you_may_pay_mana"
     },
     "lea/Power Sink": {
       "status": "fail",
@@ -628,7 +628,7 @@
     },
     "lea/Raging River": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever one or more creatures you control attack, each defending player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile. Then, for each attacking creature you control, choose \"left\" or \"right.\" That creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label.\n  |          ^---\n  |\n  = expected triggered_event_clause"
+      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever one or more creatures you control attack, each defending player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile. Then, for each attacking creature you control, choose \"left\" or \"right.\" That creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label.\n  |          ^---\n  |\n  = expected trigger_event_clause"
     },
     "lea/Raise Dead": {
       "status": "fail",
@@ -696,7 +696,7 @@
     },
     "lea/Scavenging Ghoul": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each end step, put a corpse counter on this creature for each creature that died this turn.\n  |    ^---\n  |\n  = expected triggered_event_clause"
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each end step, put a corpse counter on this creature for each creature that died this turn.\n  |    ^---\n  |\n  = expected trigger_event_clause"
     },
     "lea/Scrubland": {
       "status": "fail",
@@ -869,7 +869,7 @@
     },
     "lea/Verduran Enchantress": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever you cast an enchantment spell, you may draw a card.\n  |          ^---\n  |\n  = expected triggered_event_clause"
+      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever you cast an enchantment spell, you may draw a card.\n  |          ^---\n  |\n  = expected trigger_event_clause"
     },
     "lea/Vesuvan Doppelganger": {
       "status": "fail",
@@ -942,7 +942,7 @@
     },
     "lea/Wild Growth": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever enchanted land is tapped for mana, its controller adds an additional {G}.\n  |          ^---\n  |\n  = expected triggered_event_clause"
+      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever enchanted land is tapped for mana, its controller adds an additional {G}.\n  |          ^---\n  |\n  = expected trigger_event_clause"
     },
     "lea/Will-o'-the-Wisp": {
       "status": "pass"
