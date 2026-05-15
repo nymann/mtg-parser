@@ -279,3 +279,5 @@ mod power_surge;
 mod psionic_blast;
 #[path = "generated_patterns/raging_river.rs"]
 mod raging_river;
+#[path = "generated_patterns/raise_dead.rs"]
+mod raise_dead;

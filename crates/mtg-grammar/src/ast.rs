@@ -123,6 +123,12 @@ pub enum Statement {
     YouOwnTargetCardInZone {
         zone: Zone,
     },
+    /// "Return target <card_type> card from your <zone> to your <zone>."
+    ReturnTargetCardFromYourZoneToYourZone {
+        card_type: PermanentType,
+        from: Zone,
+        to: Zone,
+    },
     /// "Exchange that card with the top card of your library."
     ExchangeThatCardWithTopCardOfYourLibrary,
     /// "Copy target <spell_type> [or <spell_type>] spell, except that the
@@ -1428,6 +1434,7 @@ pub enum EnchantObject {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Zone {
     Graveyard,
+    Hand,
     Ante,
 }
 

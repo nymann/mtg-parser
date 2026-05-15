@@ -183,6 +183,19 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(zone_name(*zone));
             out.push('.');
         }
+        Statement::ReturnTargetCardFromYourZoneToYourZone {
+            card_type,
+            from,
+            to,
+        } => {
+            out.push_str("Return target ");
+            out.push_str(permanent_type_name(*card_type));
+            out.push_str(" card from your ");
+            out.push_str(zone_name(*from));
+            out.push_str(" to your ");
+            out.push_str(zone_name(*to));
+            out.push('.');
+        }
         Statement::ExchangeThatCardWithTopCardOfYourLibrary => {
             out.push_str("Exchange that card with the top card of your library.");
         }
@@ -1094,6 +1107,7 @@ fn write_enchant_object(out: &mut String, object: EnchantObject) {
 fn zone_name(zone: Zone) -> &'static str {
     match zone {
         Zone::Graveyard => "graveyard",
+        Zone::Hand => "hand",
         Zone::Ante => "ante",
     }
 }
@@ -1101,6 +1115,7 @@ fn zone_name(zone: Zone) -> &'static str {
 fn zone_article(zone: Zone) -> &'static str {
     match zone {
         Zone::Graveyard => "a",
+        Zone::Hand => "a",
         Zone::Ante => "the",
     }
 }

@@ -84,6 +84,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::cast_restriction => cast_restriction_from_pair(pair),
         Rule::ante_play_restriction => Ok(Statement::AntePlayRestriction),
         Rule::you_own_target_card_in_zone => you_own_target_card_in_zone_from_pair(pair),
+        Rule::return_target_card_from_your_zone_to_your_zone => {
+            return_target_card_from_your_zone_to_your_zone_from_pair(pair)
+        }
         Rule::exchange_that_card_with_top_card_of_your_library => {
             Ok(Statement::ExchangeThatCardWithTopCardOfYourLibrary)
         }
@@ -386,6 +389,26 @@ fn you_own_target_card_in_zone_from_pair(pair: Pair<Rule>) -> Result<Statement, 
     let zone_pair = only_inner(pair, "you_own_target_card_in_zone missing zone")?;
     Ok(Statement::YouOwnTargetCardInZone {
         zone: zone_from_pair(zone_pair)?,
+    })
+}
+
+fn return_target_card_from_your_zone_to_your_zone_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let card_type_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("return target card missing card_type"))?;
+    let from_pair = inner.next().ok_or(ParseError::Internal(
+        "return target card missing source zone",
+    ))?;
+    let to_pair = inner.next().ok_or(ParseError::Internal(
+        "return target card missing destination zone",
+    ))?;
+    Ok(Statement::ReturnTargetCardFromYourZoneToYourZone {
+        card_type: permanent_type_from_pair(card_type_pair)?,
+        from: zone_from_pair(from_pair)?,
+        to: zone_from_pair(to_pair)?,
     })
 }
 
@@ -2868,11 +2891,12 @@ fn enchant_object_from_pair(pair: Pair<Rule>) -> Result<EnchantObject, ParseErro
 }
 
 fn zone_from_pair(pair: Pair<Rule>) -> Result<Zone, ParseError> {
-    if pair.as_rule() != Rule::zone {
+    if !matches!(pair.as_rule(), Rule::zone | Rule::owned_zone) {
         return Err(ParseError::Internal("zone"));
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
         "graveyard" => Ok(Zone::Graveyard),
+        "hand" => Ok(Zone::Hand),
         "ante" => Ok(Zone::Ante),
         _ => Err(ParseError::Internal("zone variant")),
     }
