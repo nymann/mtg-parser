@@ -503,28 +503,80 @@ fn run_one_iteration(
         total: TOTAL_STEPS,
         label: "cargo xtask test --tier 2".into(),
     });
-    let tests_ok = run_xtask(&["test", "--tier", "2"])?;
+    let mut tests_ok = run_xtask(&["test", "--tier", "2"])?;
     sink.emit(FlowEvent::StepFinished {
         index: 10,
         ok: tests_ok,
         summary: None,
     });
     if !tests_ok {
-        let reason = if agent_ran {
-            "cargo xtask test --tier 2 failed after the agent's pass"
+        let repair_ok =
+            invoke_downstream_repair(opts, sink, &card, &normalized, &log_dir, iter_index)?;
+        if repair_ok {
+            sink.emit(FlowEvent::StepStarted {
+                index: 9,
+                total: TOTAL_STEPS,
+                label: "focused validation after downstream repair".into(),
+            });
+            let focused_after_repair = run_focused_generated_tests(&card)?;
+            std::fs::write(
+                log_dir.join("focused_after_downstream_repair.txt"),
+                focused_after_repair.summary_text(),
+            )?;
+            sink.emit(FlowEvent::StepFinished {
+                index: 9,
+                ok: focused_after_repair.success(),
+                summary: Some(focused_after_repair.short_summary()),
+            });
+            if focused_after_repair.success() {
+                sink.emit(FlowEvent::StepStarted {
+                    index: 10,
+                    total: TOTAL_STEPS,
+                    label: "cargo xtask test --tier 2 after downstream repair".into(),
+                });
+                tests_ok = run_xtask(&["test", "--tier", "2"])?;
+                sink.emit(FlowEvent::StepFinished {
+                    index: 10,
+                    ok: tests_ok,
+                    summary: None,
+                });
+                if tests_ok {
+                    sink.emit(FlowEvent::Note {
+                        level: NoteLevel::Info,
+                        text: "downstream repair validated; continuing".into(),
+                    });
+                } else {
+                    let reason = "cargo xtask test --tier 2 still failed after downstream repair"
+                        .to_string();
+                    sink.emit(FlowEvent::IterationFinished {
+                        index: iter_index,
+                        outcome: IterationOutcomeSummary::SurfacedToHuman {
+                            reason: reason.clone(),
+                        },
+                    });
+                    return Ok(IterationOutcome::SurfaceToHuman(reason));
+                }
+            } else {
+                let reason = "focused generated tests failed after downstream repair".to_string();
+                sink.emit(FlowEvent::IterationFinished {
+                    index: iter_index,
+                    outcome: IterationOutcomeSummary::SurfacedToHuman {
+                        reason: reason.clone(),
+                    },
+                });
+                return Ok(IterationOutcome::SurfaceToHuman(reason));
+            }
         } else {
-            "cargo xtask test --tier 2 failed after focused tests passed"
+            let reason = "downstream repair agent could not repair tier-2 failure".to_string();
+            sink.emit(FlowEvent::IterationFinished {
+                index: iter_index,
+                outcome: IterationOutcomeSummary::SurfacedToHuman {
+                    reason: reason.clone(),
+                },
+            });
+            return Ok(IterationOutcome::SurfaceToHuman(reason));
         }
-        .to_string();
-        sink.emit(FlowEvent::IterationFinished {
-            index: iter_index,
-            outcome: IterationOutcomeSummary::SurfacedToHuman {
-                reason: reason.clone(),
-            },
-        });
-        return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
-
     // Step 11 — corpus regression gate.
     sink.emit(FlowEvent::StepStarted {
         index: 11,
@@ -1386,6 +1438,17 @@ fn render_semantic_context() -> String {
     out
 }
 
+fn render_file_excerpt(path: &Path, max_lines: usize) -> String {
+    let rel = path.strip_prefix(repo_root()).unwrap_or(path);
+    let text = std::fs::read_to_string(path).unwrap_or_else(|_| "(unable to read file)\n".into());
+    let mut out = format!("### {}\n\n```text\n", rel.display());
+    for (idx, line) in text.lines().take(max_lines).enumerate() {
+        out.push_str(&format!("{:>4}: {}\n", idx + 1, line));
+    }
+    out.push_str("```\n\n");
+    out
+}
+
 fn build_supervisor_prompt(error: &anyhow::Error, iter_index: u32, attempt: u8) -> Result<String> {
     let git_status = command_stdout("git", &["status", "--short"])?;
     let recent_log_dirs = recent_grammar_fix_logs(8);
@@ -1414,10 +1477,70 @@ fn build_supervisor_prompt(error: &anyhow::Error, iter_index: u32, attempt: u8) 
     ))
 }
 
+fn build_downstream_repair_prompt(
+    card: &Card,
+    normalized: &str,
+    tier2_output: &str,
+) -> Result<String> {
+    let git_status = command_stdout("git", &["status", "--short"])?;
+    let generated_test = generated_test_path(card);
+    let generated_pattern_test = generated_pattern_test_path(card);
+    Ok(format!(
+        "{intro}\n\n\
+         ## Situation\n\n\
+         The focused generated grammar tests for this card pass, but the orchestrator's downstream \
+         `cargo xtask test --tier 2` gate failed. This usually means the grammar-side AST change \
+         needs follow-up wiring in another crate, commonly `mtg-semantic`, or the property-test \
+         strategies no longer cover the parser-produced AST.\n\n\
+         ## Card\n\n\
+         - Name        : {name}\n\
+         - Set         : {set}\n\
+         - Collector # : {collector}\n\n\
+         Normalized oracle text:\n```text\n{normalized}\n```\n\n\
+         ## Tier-2 Output\n\n```text\n{tier2_output}\n```\n\n\
+         ## Current Git Status\n\n```text\n{git_status}```\n\n\
+         ## Generated Test Context\n\n\
+         {generated_tests}\n\
+         ## Relevant Source Context\n\n\
+         {semantic_ir}\n\
+         {semantic_lower}\n\
+         {grammar_ast}\n\
+         ## Mission\n\n\
+         Make the downstream tier-2 gate recover from this parser/AST extension. Prefer the \
+         repository's established pattern: when the semantic IR does not yet perform deeper \
+         resolution, mirror grammar AST nodes through the IR and lowering layer. Keep the patch \
+         tightly scoped to the downstream failure.\n\n\
+         ## Rules\n\n\
+         1. Do not undo the grammar/parser/unparser repair that made the focused generated tests pass.\n\
+         2. Do not weaken or disable tests.\n\
+         3. Update focused tests or property strategies when they claim coverage over parser-produced ASTs.\n\
+         4. Run the narrowest relevant checks before exiting successfully. The orchestrator will rerun \
+         focused generated tests, tier 2, corpus, and commit.\n",
+        intro = DOWNSTREAM_REPAIR_PROMPT_INTRO,
+        name = card.name,
+        set = card.set_code,
+        collector = card.collector_number,
+        normalized = normalized,
+        tier2_output = trim(tier2_output, 24_000),
+        git_status = git_status,
+        generated_tests =
+            render_generated_test_context(&[generated_test.as_path(), generated_pattern_test.as_path()]),
+        semantic_ir = render_file_excerpt(&repo_root().join("crates/mtg-semantic/src/ir.rs"), 220),
+        semantic_lower = render_file_excerpt(&lower_rs_path(), 220),
+        grammar_ast = render_file_excerpt(&ast_rs_path(), 220),
+    ))
+}
+
 const SUPERVISOR_PROMPT_INTRO: &str = "\
 You are the grammar-fix supervisor. The normal card-solving agent or deterministic
 orchestrator flow encountered an unknown infrastructure problem. Your job is to mend
 the automation itself so the outer process can retry without human intervention.";
+
+const DOWNSTREAM_REPAIR_PROMPT_INTRO: &str = "\
+You are the grammar-fix downstream repair agent. The card-specific grammar repair has
+passed focused validation, but a later deterministic gate exposed required follow-up
+wiring. Your job is to make the existing change pass the downstream gate without
+weakening the gate.";
 
 const PROMPT_INTRO: &str = "\
 You are extending the mtg-parser grammar to handle one specific
@@ -1517,6 +1640,64 @@ struct AgentOutcome {
     exit_code: i32,
     assistant_text: String,
     assistant_blocks: usize,
+}
+
+fn invoke_downstream_repair(
+    opts: &Options,
+    sink: &mut dyn FlowSink,
+    card: &Card,
+    normalized: &str,
+    parent_log_dir: &Path,
+    iter_index: u32,
+) -> Result<bool> {
+    let log_dir = parent_log_dir.join("downstream-repair-attempt-1");
+    std::fs::create_dir_all(&log_dir).with_context(|| format!("create {}", log_dir.display()))?;
+
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Warn,
+        text: format!(
+            "tier-2 failed in iteration {iter_index}; invoking {} downstream repair",
+            opts.agent.label()
+        ),
+    });
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: format!("downstream repair log dir: {}", log_dir.display()),
+    });
+
+    let tier2_output = command_output_allow_failure("cargo", &["xtask", "test", "--tier", "2"])?;
+    std::fs::write(log_dir.join("tier2_failure.txt"), &tier2_output)?;
+    let prompt = build_downstream_repair_prompt(card, normalized, &tier2_output)?;
+    std::fs::write(log_dir.join("prompt.md"), &prompt)?;
+
+    let transcript_path = log_dir.join("transcript.ndjson");
+    let outcome = invoke_agent(opts.agent, &prompt, &transcript_path, sink)?;
+    std::fs::write(log_dir.join("response.md"), &outcome.assistant_text)?;
+    if !outcome.success {
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Error,
+            text: format!(
+                "{} downstream repair exited with status {}",
+                opts.agent.label(),
+                outcome.exit_code
+            ),
+        });
+        return Ok(false);
+    }
+
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: "downstream repair finished; running cargo fmt".into(),
+    });
+    if !run_cargo_fmt()? {
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Error,
+            text: "cargo fmt failed after downstream repair".into(),
+        });
+        return Ok(false);
+    }
+
+    Ok(true)
 }
 
 fn invoke_supervisor(
@@ -1824,6 +2005,32 @@ fn command_stdout(program: &str, args: &[&str]) -> Result<String> {
     let text = String::from_utf8_lossy(&out.stdout).into_owned();
     if text.is_empty() {
         Ok("(empty)\n".to_string())
+    } else {
+        Ok(text)
+    }
+}
+
+fn command_output_allow_failure(program: &str, args: &[&str]) -> Result<String> {
+    let out = Command::new(program)
+        .args(args)
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("run {program} {}", args.join(" ")))?;
+    let mut text = String::new();
+    if !out.stdout.is_empty() {
+        text.push_str(&String::from_utf8_lossy(&out.stdout));
+    }
+    if !out.stderr.is_empty() {
+        if !text.ends_with('\n') && !text.is_empty() {
+            text.push('\n');
+        }
+        text.push_str(&String::from_utf8_lossy(&out.stderr));
+    }
+    if text.is_empty() {
+        Ok(format!(
+            "(empty output; exit status {})\n",
+            out.status.code().unwrap_or(1)
+        ))
     } else {
         Ok(text)
     }

@@ -72,3 +72,5 @@ mod cockatrice;
 mod consecrate_land;
 #[path = "generated/conservator.rs"]
 mod conservator;
+#[path = "generated/contract_from_below.rs"]
+mod contract_from_below;

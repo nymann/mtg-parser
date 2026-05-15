@@ -9,7 +9,7 @@
 // into a feature-gated `mtg_grammar::testing` module and update the
 // xtask runner to enable that feature for tier 2.
 
-use mtg_grammar::{ManaCost, ManaSymbol, Statement};
+use mtg_grammar::{CardCount, ImperativeAction, ManaCost, ManaSymbol, Statement};
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
 
@@ -29,10 +29,25 @@ fn arb_mana_cost() -> impl Strategy<Value = ManaCost> {
     prop::collection::vec(arb_mana_symbol(), 1..16).prop_map(|symbols| ManaCost { symbols })
 }
 
+fn arb_card_count() -> impl Strategy<Value = CardCount> {
+    (1u32..=10).prop_map(CardCount::Number)
+}
+
+fn arb_imperative_action() -> impl Strategy<Value = ImperativeAction> {
+    prop_oneof![
+        Just(ImperativeAction::DiscardYourHand),
+        Just(ImperativeAction::AnteTopCardOfYourLibrary),
+        arb_card_count().prop_map(|count| ImperativeAction::DrawCards { count }),
+    ]
+}
+
 fn arb_statement() -> impl Strategy<Value = Statement> {
     prop_oneof![
         arb_mana_cost().prop_map(Statement::ManaCost),
         Just(Statement::DestroyTargetCreature),
+        Just(Statement::AntePlayRestriction),
+        prop::collection::vec(arb_imperative_action(), 2..5)
+            .prop_map(|actions| Statement::ImperativeActionSequence { actions }),
     ]
 }
 

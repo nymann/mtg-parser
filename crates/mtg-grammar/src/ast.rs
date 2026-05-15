@@ -14,6 +14,13 @@ pub enum Statement {
     TargetPlayerDrawsCards {
         count: CardCount,
     },
+    /// "Remove this card from your deck before playing if you're not
+    /// playing for ante."
+    AntePlayRestriction,
+    /// "<action>, [<action>, ]then <action>."
+    ImperativeActionSequence {
+        actions: Vec<ImperativeAction>,
+    },
     /// "Until end of turn, <timing>, you may <cost>."
     UntilEndOfTurnYouMayPayCostAtTiming {
         timing: ActionTiming,
@@ -110,6 +117,16 @@ pub enum BalanceSameWayAction {
     DiscardCards,
     /// "sacrifice <permanent_type>s"
     SacrificePermanents { permanent_type: PermanentType },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ImperativeAction {
+    /// "discard your hand"
+    DiscardYourHand,
+    /// "ante the top card of your library"
+    AnteTopCardOfYourLibrary,
+    /// "draw N cards"
+    DrawCards { count: CardCount },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

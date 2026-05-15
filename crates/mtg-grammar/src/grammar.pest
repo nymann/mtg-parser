@@ -35,6 +35,8 @@ sentence_chain     = _{ sentence_statement+ }
 sentence_statement = _{
     modal_mode
   | cast_restriction
+  | ante_play_restriction
+  | imperative_action_sequence
   | destroy_all
   | destroy
   | draw_cards
@@ -106,6 +108,27 @@ number_word = @{
     ^"one" | ^"two" | ^"three" | ^"four" | ^"five"
   | ^"six" | ^"seven" | ^"eight" | ^"nine" | ^"ten"
 }
+
+ante_play_restriction = {
+    ^"remove" ~ ^"this" ~ ^"card" ~ ^"from" ~ ^"your" ~ ^"deck"
+  ~ ^"before" ~ ^"playing" ~ ^"if" ~ ^"you're" ~ ^"not"
+  ~ ^"playing" ~ ^"for" ~ ^"ante" ~ "."
+}
+
+imperative_action_sequence = {
+    imperative_action ~ ("," ~ imperative_action)* ~ "," ~ ^"then" ~ imperative_action ~ "."
+}
+
+imperative_action = _{
+    discard_your_hand_action
+  | ante_top_card_of_your_library_action
+  | draw_cards_action
+}
+discard_your_hand_action = { ^"discard" ~ ^"your" ~ ^"hand" }
+ante_top_card_of_your_library_action = {
+    ^"ante" ~ ^"the" ~ ^"top" ~ ^"card" ~ ^"of" ~ ^"your" ~ ^"library"
+}
+draw_cards_action = { ^"draw" ~ draw_count ~ ^"cards" }
 
 until_eot_you_may_pay_cost_at_timing = {
     ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "," ~ action_timing

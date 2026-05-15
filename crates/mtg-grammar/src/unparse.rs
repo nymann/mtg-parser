@@ -3,11 +3,11 @@ use std::fmt::Write;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus,
-    CreatureType, EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
-    Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    CreatureType, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
+    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
+    Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
+    Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -31,6 +31,14 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str("Target player draws ");
             write_card_count(out, *count);
             out.push_str(" cards.");
+        }
+        Statement::AntePlayRestriction => {
+            out.push_str(
+                "Remove this card from your deck before playing if you're not playing for ante.",
+            );
+        }
+        Statement::ImperativeActionSequence { actions } => {
+            write_imperative_action_sequence(out, actions);
         }
         Statement::UntilEndOfTurnYouMayPayCostAtTiming { timing, cost } => {
             out.push_str("Until end of turn, ");
@@ -166,6 +174,34 @@ fn write_cast_restriction(out: &mut String, restriction: CastRestriction) {
         }
         CastRestriction::DuringCombatBeforeBlockersAreDeclared => {
             out.push_str("during combat before blockers are declared.");
+        }
+    }
+}
+
+fn write_imperative_action_sequence(out: &mut String, actions: &[ImperativeAction]) {
+    for (i, action) in actions.iter().enumerate() {
+        if i > 0 {
+            if i + 1 == actions.len() {
+                out.push_str(", then ");
+            } else {
+                out.push_str(", ");
+            }
+        }
+        write_imperative_action(out, *action);
+    }
+    out.push('.');
+}
+
+fn write_imperative_action(out: &mut String, action: ImperativeAction) {
+    match action {
+        ImperativeAction::DiscardYourHand => out.push_str("Discard your hand"),
+        ImperativeAction::AnteTopCardOfYourLibrary => {
+            out.push_str("ante the top card of your library");
+        }
+        ImperativeAction::DrawCards { count } => {
+            out.push_str("draw ");
+            write_card_count(out, count);
+            out.push_str(" cards");
         }
     }
 }

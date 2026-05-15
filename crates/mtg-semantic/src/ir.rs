@@ -1,7 +1,7 @@
 use mtg_grammar::{
     ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Color,
-    Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
-    PtModifier, SourceObject, StaticAbility, TriggeredAbility, VariableDefinition,
+    ImperativeAction, Keyword, ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType,
+    PhysicalAction, PtModifier, SourceObject, StaticAbility, TriggeredAbility, VariableDefinition,
 };
 use serde::{Deserialize, Serialize};
 
@@ -23,6 +23,12 @@ pub enum CardEffect {
     Keyword(Keyword),
     /// "Target player draws N cards."
     TargetPlayerDrawsCards { count: CardCount },
+    /// "Remove this card from your deck before playing if you're not
+    /// playing for ante."
+    AntePlayRestriction,
+    /// Ordered imperative actions such as "discard your hand, ante the
+    /// top card of your library, then draw seven cards."
+    ImperativeActionSequence { actions: Vec<ImperativeAction> },
     /// "Until end of turn, <timing>, you may <cost>."
     UntilEndOfTurnYouMayPayCostAtTiming {
         timing: ActionTiming,

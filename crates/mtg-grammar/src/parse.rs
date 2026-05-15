@@ -5,11 +5,11 @@ use pest_derive::Parser;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
     BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus,
-    CreatureType, EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction, PtModifier, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility,
-    Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    CreatureType, EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, OptionalCost, PermanentType, PhysicalAction,
+    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
+    Statement, StaticAbility, Step, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
+    Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -55,6 +55,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             modes: vec![modal_mode_from_pair(pair)?],
         }),
         Rule::cast_restriction => cast_restriction_from_pair(pair),
+        Rule::ante_play_restriction => Ok(Statement::AntePlayRestriction),
+        Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),
@@ -192,6 +194,36 @@ fn step_from_pair(pair: Pair<Rule>) -> Result<Step, ParseError> {
         "combat damage" => Ok(Step::CombatDamage),
         "declare attackers" => Ok(Step::DeclareAttackers),
         _ => Err(ParseError::Internal("step variant")),
+    }
+}
+
+fn imperative_action_sequence_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let actions = pair
+        .into_inner()
+        .map(imperative_action_from_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    if actions.len() < 2 {
+        return Err(ParseError::Internal("imperative action sequence"));
+    }
+    Ok(Statement::ImperativeActionSequence { actions })
+}
+
+fn imperative_action_from_pair(pair: Pair<Rule>) -> Result<ImperativeAction, ParseError> {
+    match pair.as_rule() {
+        Rule::discard_your_hand_action => Ok(ImperativeAction::DiscardYourHand),
+        Rule::ante_top_card_of_your_library_action => {
+            Ok(ImperativeAction::AnteTopCardOfYourLibrary)
+        }
+        Rule::draw_cards_action => {
+            let count_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("draw action missing count"))?;
+            Ok(ImperativeAction::DrawCards {
+                count: card_count_from_pair(count_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("imperative action")),
     }
 }
 
@@ -343,6 +375,12 @@ fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         .into_inner()
         .next()
         .expect("draw_cards always contains a draw_count");
+    Ok(Statement::TargetPlayerDrawsCards {
+        count: card_count_from_pair(count_pair)?,
+    })
+}
+
+fn card_count_from_pair(count_pair: Pair<Rule>) -> Result<CardCount, ParseError> {
     let count = match count_pair.as_rule() {
         Rule::number_word => {
             let count = number_word_to_u32(count_pair.as_str())
@@ -352,7 +390,7 @@ fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::variable_name => CardCount::Variable(variable_from_str(count_pair.as_str())?),
         _ => return Err(ParseError::Internal("draw_count")),
     };
-    Ok(Statement::TargetPlayerDrawsCards { count })
+    Ok(count)
 }
 
 fn until_eot_you_may_pay_cost_at_timing_from_pair(
