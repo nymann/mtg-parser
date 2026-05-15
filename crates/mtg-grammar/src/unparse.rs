@@ -5,9 +5,9 @@ use crate::ast::{
     BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
     ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap,
     DamageRecipient, DamageRecipients, EachPlayerAction, EnchantObject, EnchantedObject,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost,
+    ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
     Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -209,21 +209,22 @@ fn write_statement(out: &mut String, statement: &Statement) {
             amount,
             recipient,
         } => {
-            out.push_str("If you do, ");
-            write_prevent_next_damage_to_recipient_lowercase(out, *amount, *recipient);
+            write_if_you_do_effect(
+                out,
+                IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                    amount: *amount,
+                    recipient: *recipient,
+                },
+            );
         }
         Statement::IfYouDoAddMana { mana } => {
-            out.push_str("If you do, add ");
-            write_mana_cost(out, mana);
-            out.push('.');
+            write_if_you_do_effect(out, IfYouDoEffect::AddMana { mana: mana.clone() });
         }
         Statement::IfYouDoUntap { source } => {
-            out.push_str("If you do, untap ");
-            write_source_object(out, *source);
-            out.push('.');
+            write_if_you_do_effect(out, IfYouDoEffect::Untap { source: *source });
         }
         Statement::IfYouDoGainLife { amount } => {
-            write!(out, "If you do, you gain {amount} life.").expect("write to String never fails");
+            write_if_you_do_effect(out, IfYouDoEffect::GainLife { amount: *amount });
         }
         Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
             keywords,
@@ -671,6 +672,29 @@ fn write_optional_cost(out: &mut String, cost: &OptionalCost) {
         OptionalCost::PayMana { mana } => {
             out.push_str("pay ");
             write_mana_cost(out, mana);
+        }
+    }
+}
+
+fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
+    out.push_str("If you do, ");
+    match effect {
+        IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+            amount,
+            recipient,
+        } => write_prevent_next_damage_to_recipient_lowercase(out, amount, recipient),
+        IfYouDoEffect::AddMana { mana } => {
+            out.push_str("add ");
+            write_mana_cost(out, &mana);
+            out.push('.');
+        }
+        IfYouDoEffect::Untap { source } => {
+            out.push_str("untap ");
+            write_source_object(out, source);
+            out.push('.');
+        }
+        IfYouDoEffect::GainLife { amount } => {
+            write!(out, "you gain {amount} life.").expect("write to String never fails");
         }
     }
 }

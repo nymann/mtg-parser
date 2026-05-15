@@ -7,12 +7,12 @@ use crate::ast::{
     BasicLandType, CardCount, CastRestriction, Color, ColoredTargetEffect, Condition,
     ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount, DamageLifeGainCap,
     DamageRecipient, DamageRecipients, DestroyAllTarget, EachPlayerAction, EnchantObject,
-    EnchantedObject, ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost,
-    ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TargetPermanentEndOfTurnEffect, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
-    Variable, VariableDefinition, VariablePtModifier, Zone,
+    EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus, OptionalCost,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TargetPermanentEndOfTurnEffect, TriggerEffect, TriggerEvent,
+    TriggeredAbility, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -148,18 +148,13 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
             prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(pair)
         }
-        Rule::if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
-            if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(pair)
-        }
-        Rule::if_you_do_untap_source => if_you_do_untap_source_from_pair(pair),
+        Rule::if_you_do_effect => if_you_do_effect_from_pair(pair),
         Rule::if_you_do_cast_that_card_face_down_without_paying_mana_cost => {
             if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(pair)
         }
         Rule::if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead => {
             Ok(Statement::IfFaceDownSpellCreatureWouldAssignOrDealDamageOrTapTurnFaceUpInstead)
         }
-        Rule::if_you_do_add_mana => if_you_do_add_mana_from_pair(pair),
-        Rule::if_you_do_gain_life => if_you_do_gain_life_from_pair(pair),
         Rule::if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords => {
             if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords_from_pair(pair)
         }
@@ -987,19 +982,6 @@ fn prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(
     Ok(Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn { amount, recipient })
 }
 
-fn if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn_from_pair(
-    pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
-    let inner = only_inner(pair, "if_you_do prevent missing prevention effect")?;
-    let (amount, recipient) = prevent_next_damage_parts_from_pair(inner)?;
-    Ok(
-        Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
-            amount,
-            recipient,
-        },
-    )
-}
-
 fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
@@ -1080,34 +1062,6 @@ fn prevention_recipient_from_pair(pair: Pair<Rule>) -> Result<PreventionRecipien
     }
 }
 
-fn if_you_do_add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let mana_pair = pair
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal("if_you_do_add_mana missing add_mana"))?
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal("add_mana missing mana_cost"))?;
-    Ok(Statement::IfYouDoAddMana {
-        mana: mana_cost_from_pair(mana_pair),
-    })
-}
-
-fn if_you_do_untap_source_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let source_pair = pair
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal(
-            "if_you_do_untap_source missing untap_source",
-        ))?
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal("untap_source missing source_object"))?;
-    Ok(Statement::IfYouDoUntap {
-        source: source_object_from_pair(source_pair)?,
-    })
-}
-
 fn add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let mana_pair = pair
         .into_inner()
@@ -1118,10 +1072,41 @@ fn add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     })
 }
 
-fn if_you_do_gain_life_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    Ok(Statement::IfYouDoGainLife {
-        amount: if_you_do_gain_life_amount_from_pair(pair)?,
-    })
+fn if_you_do_effect_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let effect_pair = only_inner(pair, "if_you_do missing effect")?;
+    Ok(Statement::if_you_do(if_you_do_effect_from_inner_pair(
+        effect_pair,
+    )?))
+}
+
+fn if_you_do_effect_from_inner_pair(pair: Pair<Rule>) -> Result<IfYouDoEffect, ParseError> {
+    match pair.as_rule() {
+        Rule::add_mana => {
+            let mana_pair = only_inner(pair, "if_you_do add_mana missing mana_cost")?;
+            Ok(IfYouDoEffect::AddMana {
+                mana: mana_cost_from_pair(mana_pair),
+            })
+        }
+        Rule::untap_source => {
+            let source_pair = only_inner(pair, "if_you_do untap missing source_object")?;
+            Ok(IfYouDoEffect::Untap {
+                source: source_object_from_pair(source_pair)?,
+            })
+        }
+        Rule::gain_life_effect => Ok(IfYouDoEffect::GainLife {
+            amount: if_you_do_gain_life_amount_from_pair(pair)?,
+        }),
+        Rule::prevent_next_damage_that_would_be_dealt_to_recipient_this_turn => {
+            let (amount, recipient) = prevent_next_damage_parts_from_pair(pair)?;
+            Ok(
+                IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                    amount,
+                    recipient,
+                },
+            )
+        }
+        _ => Err(ParseError::Internal("if_you_do effect")),
+    }
 }
 
 fn if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords_from_pair(
@@ -1140,14 +1125,19 @@ fn if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_
 }
 
 fn if_you_do_gain_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, ParseError> {
-    let amount_pair = pair
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal("if_you_do_gain_life missing amount"))?;
-    amount_pair
-        .as_str()
-        .parse::<u32>()
-        .map_err(|_| ParseError::Internal("if_you_do_gain_life amount"))
+    if pair.as_rule() == Rule::unsigned_number {
+        return pair
+            .as_str()
+            .parse::<u32>()
+            .map_err(|_| ParseError::Internal("if_you_do_gain_life amount"));
+    }
+
+    for child in pair.into_inner() {
+        if let Ok(amount) = if_you_do_gain_life_amount_from_pair(child) {
+            return Ok(amount);
+        }
+    }
+    Err(ParseError::Internal("if_you_do_gain_life missing amount"))
 }
 
 fn you_gain_life_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {

@@ -69,14 +69,11 @@ sentence_statement = _{
   | add_mana
   | if_you_cant_source_deals_damage_to_you
   | until_eot_you_may_pay_cost_at_timing
-  // Gain-life must precede add-mana because both share the "If you do," prefix.
-  | if_you_do_gain_life
+  // Shared "If you do," wrapper; the payload decides the concrete effect.
+  | if_you_do_effect
   | if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords
   | if_you_do_cast_that_card_face_down_without_paying_mana_cost
   | if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead
-  | if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
-  | if_you_do_untap_source
-  | if_you_do_add_mana
   | if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step
   | change_text_of_target_spell_or_permanent_replacing_basic_land_type
   | target_spell_or_permanent_becomes_color
@@ -428,20 +425,21 @@ optional_cost = _{ pay_life_cost | pay_mana_cost }
 pay_life_cost = { ^"pay" ~ unsigned_number ~ ^"life" }
 pay_mana_cost = { ^"pay" ~ mana_cost }
 
-if_you_do_add_mana = { ^"if" ~ ^"you" ~ ^"do" ~ "," ~ add_mana }
-if_you_do_untap_source = { ^"if" ~ ^"you" ~ ^"do" ~ "," ~ untap_source }
-if_you_do_gain_life = {
-    ^"if" ~ ^"you" ~ ^"do" ~ "," ~ ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "."
+if_you_do_effect = { ^"if" ~ ^"you" ~ ^"do" ~ "," ~ if_you_do_effect_body }
+if_you_do_effect_body = _{
+    add_mana
+  | untap_source
+  | gain_life_effect
+  | prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
 }
+if_you_do_gain_life = { ^"if" ~ ^"you" ~ ^"do" ~ "," ~ gain_life_effect }
+gain_life_effect = { ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "." }
 if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords = {
     ^"if" ~ ^"you" ~ ^"do" ~ "," ~ ^"until" ~ ^"your" ~ ^"next"
   ~ ^"turn" ~ "," ~ ^"you" ~ ^"can't" ~ ^"be" ~ ^"attacked"
   ~ ^"except" ~ ^"by" ~ ^"creatures" ~ ^"with" ~ keyword_and_or_list ~ "."
 }
 keyword_and_or_list = { keyword ~ (^"and/or" ~ keyword)* }
-if_you_do_prevent_next_damage_that_would_be_dealt_to_recipient_this_turn = {
-    ^"if" ~ ^"you" ~ ^"do" ~ "," ~ prevent_next_damage_that_would_be_dealt_to_recipient_this_turn
-}
 
 // Balance-style resource equalization:
 // each player keeps a count of objects matching the least-stocked player,

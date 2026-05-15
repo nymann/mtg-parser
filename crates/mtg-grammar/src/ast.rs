@@ -328,6 +328,38 @@ impl Statement {
             },
         }
     }
+
+    pub(crate) fn if_you_do(effect: IfYouDoEffect) -> Self {
+        match effect {
+            IfYouDoEffect::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                amount,
+                recipient,
+            } => Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+                amount,
+                recipient,
+            },
+            IfYouDoEffect::AddMana { mana } => Statement::IfYouDoAddMana { mana },
+            IfYouDoEffect::Untap { source } => Statement::IfYouDoUntap { source },
+            IfYouDoEffect::GainLife { amount } => Statement::IfYouDoGainLife { amount },
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) enum IfYouDoEffect {
+    PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+        amount: DamageAmount,
+        recipient: PreventionRecipient,
+    },
+    AddMana {
+        mana: ManaCost,
+    },
+    Untap {
+        source: SourceObject,
+    },
+    GainLife {
+        amount: u32,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
