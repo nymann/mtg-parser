@@ -43,8 +43,7 @@ sentence_statement = _{
   | you_may_choose_new_targets_for_the_copy
   | imperative_action_sequence
   | counter_target_spell
-  | destroy_all
-  | destroy_target_permanent
+  | destroy
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
   | regenerate_target_creature
   | damage_event_statement
@@ -188,13 +187,11 @@ this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first = {
   ~ ^"first" ~ "."
 }
 
-destroy_all = {
-    ^"destroy" ~ ^"all" ~ (basic_land_type_plural | permanent_type_plural_list) ~ "."
-}
+destroy = { ^"destroy" ~ (destroy_each_target | target_permanent_choice) ~ "." }
+destroy_each_target = { ^"all" ~ (basic_land_type_plural | permanent_type_plural_list) }
 permanent_type_plural_list = {
     permanent_type_plural ~ (("," ~ permanent_type_plural)* ~ ","? ~ ^"and" ~ permanent_type_plural)?
 }
-destroy_target_permanent = { ^"destroy" ~ target_permanent_choice ~ "." }
 counter_target_spell = { ^"counter" ~ ^"target" ~ ^"spell" ~ "." }
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
 
@@ -873,8 +870,7 @@ activated_effect = _{
   | target_permanent_becomes_basic_land_type_until_source_leaves
   | regenerate_source
   | destroy_target_creature_type
-  | destroy_target_permanent
-  | destroy_all
+  | destroy
   | counter_target_colored_spell
   | untap_target_permanent
   | untap_source

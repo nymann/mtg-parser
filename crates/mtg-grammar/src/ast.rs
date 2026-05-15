@@ -272,27 +272,28 @@ pub enum Statement {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum DestroyAllTarget {
-    /// "<permanent_type>s[, <permanent_type>s, and <permanent_type>s]"
-    PermanentTypes(Vec<PermanentType>),
-    /// "<basic_land_type>s"
-    BasicLandType(BasicLandType),
+pub enum DestroyTarget {
+    /// "target <permanent_type> [or <permanent_type>]"
+    TargetPermanents(Vec<PermanentType>),
+    /// "all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]"
+    AllPermanents(Vec<PermanentType>),
+    /// "all <basic_land_type>s"
+    AllBasicLands(BasicLandType),
 }
 
 impl Statement {
-    pub(crate) fn destroy_all(target: DestroyAllTarget) -> Self {
+    pub(crate) fn destroy(target: DestroyTarget) -> Self {
         match target {
-            DestroyAllTarget::PermanentTypes(permanent_types) => {
+            DestroyTarget::TargetPermanents(permanent_types) => {
+                Statement::DestroyTargetPermanents { permanent_types }
+            }
+            DestroyTarget::AllPermanents(permanent_types) => {
                 Statement::DestroyAll { permanent_types }
             }
-            DestroyAllTarget::BasicLandType(basic_land_type) => {
+            DestroyTarget::AllBasicLands(basic_land_type) => {
                 Statement::DestroyAllBasicLands { basic_land_type }
             }
         }
-    }
-
-    pub(crate) fn destroy_target_permanents(permanent_types: Vec<PermanentType>) -> Self {
-        Statement::DestroyTargetPermanents { permanent_types }
     }
 
     pub(crate) fn target_permanent_until_end_of_turn(
@@ -1040,12 +1041,15 @@ pub enum ActivatedDamageEventEffect {
 }
 
 impl ActivatedEffect {
-    pub(crate) fn destroy_all(target: DestroyAllTarget) -> Self {
+    pub(crate) fn destroy(target: DestroyTarget) -> Self {
         match target {
-            DestroyAllTarget::PermanentTypes(permanent_types) => {
+            DestroyTarget::TargetPermanents(permanent_types) => {
+                ActivatedEffect::DestroyTargetPermanents { permanent_types }
+            }
+            DestroyTarget::AllPermanents(permanent_types) => {
                 ActivatedEffect::DestroyAll { permanent_types }
             }
-            DestroyAllTarget::BasicLandType(basic_land_type) => {
+            DestroyTarget::AllBasicLands(basic_land_type) => {
                 ActivatedEffect::DestroyAllBasicLands { basic_land_type }
             }
         }

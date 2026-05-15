@@ -7,10 +7,10 @@ use crate::ast::{
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
     DamageKind, DamageLifeGainCap, DamagePrevention, DamagePreventionAmount,
     DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
-    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
-    InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    NamedDamageEvent, ObjectStatus, OptionalCost, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
+    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost, ManaSymbol,
+    MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost, PermanentController,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
     TargetPermanentEndOfTurnEffect, TriggerDamageCondition, TriggerDamageRecipient,
     TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
@@ -80,7 +80,10 @@ fn write_statement(out: &mut String, statement: &Statement) {
             );
         }
         Statement::DestroyTargetPermanents { permanent_types } => {
-            write_destroy_target_permanent_choice(out, permanent_types);
+            write_destroy(
+                out,
+                &DestroyTarget::TargetPermanents(permanent_types.clone()),
+            );
         }
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of,
@@ -95,14 +98,10 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" of their choice.");
         }
         Statement::DestroyAll { permanent_types } => {
-            out.push_str("Destroy all ");
-            write_permanent_type_plural_list(out, permanent_types);
-            out.push('.');
+            write_destroy(out, &DestroyTarget::AllPermanents(permanent_types.clone()));
         }
         Statement::DestroyAllBasicLands { basic_land_type } => {
-            out.push_str("Destroy all ");
-            out.push_str(basic_land_type_plural_name(*basic_land_type));
-            out.push('.');
+            write_destroy(out, &DestroyTarget::AllBasicLands(*basic_land_type));
         }
         Statement::Keyword(kw) => write_keyword(out, *kw),
         Statement::KeywordList(keywords) => write_keyword_list(out, keywords),
@@ -965,17 +964,13 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_colored_target_effect(out, ColoredTargetEffect::CounterSpell { color: *color });
         }
         ActivatedEffect::DestroyTargetPermanents { permanent_types } => {
-            write_destroy_target_permanent_choice(out, permanent_types);
+            write_destroy(out, &DestroyTarget::TargetPermanents(permanent_types.clone()));
         }
         ActivatedEffect::DestroyAll { permanent_types } => {
-            out.push_str("Destroy all ");
-            write_permanent_type_plural_list(out, permanent_types);
-            out.push('.');
+            write_destroy(out, &DestroyTarget::AllPermanents(permanent_types.clone()));
         }
         ActivatedEffect::DestroyAllBasicLands { basic_land_type } => {
-            out.push_str("Destroy all ");
-            out.push_str(basic_land_type_plural_name(*basic_land_type));
-            out.push('.');
+            write_destroy(out, &DestroyTarget::AllBasicLands(*basic_land_type));
         }
         ActivatedEffect::DestroyTargetCreatureType { creature_type } => {
             out.push_str("Destroy target ");
@@ -2189,9 +2184,22 @@ fn write_permanent_type_choice(out: &mut String, permanent_types: &[PermanentTyp
     }
 }
 
-fn write_destroy_target_permanent_choice(out: &mut String, permanent_types: &[PermanentType]) {
-    out.push_str("Destroy target ");
-    write_permanent_type_choice(out, permanent_types);
+fn write_destroy(out: &mut String, target: &DestroyTarget) {
+    out.push_str("Destroy ");
+    match target {
+        DestroyTarget::TargetPermanents(permanent_types) => {
+            out.push_str("target ");
+            write_permanent_type_choice(out, permanent_types);
+        }
+        DestroyTarget::AllPermanents(permanent_types) => {
+            out.push_str("all ");
+            write_permanent_type_plural_list(out, permanent_types);
+        }
+        DestroyTarget::AllBasicLands(basic_land_type) => {
+            out.push_str("all ");
+            out.push_str(basic_land_type_plural_name(*basic_land_type));
+        }
+    }
     out.push('.');
 }
 

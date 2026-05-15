@@ -9,7 +9,7 @@ use crate::ast::{
     Condition, ContinuousEffect, CopyException, CreatureStatus, CreatureType, DamageAmount,
     DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap, DamagePrevention,
     DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect, DamageRecipient,
-    DamageRecipients, DestroyAllTarget, EachPlayerAction, EnchantObject, EnchantedObject,
+    DamageRecipients, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
     IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, ManaCost,
     ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, ObjectStatus, OptionalCost,
     PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding,
@@ -94,7 +94,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first => {
             this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair(pair)
         }
-        Rule::destroy_target_permanent => destroy_target_permanent_from_pair(pair),
+        Rule::destroy => destroy_from_pair(pair),
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
         Rule::damage_event_statement => damage_event_statement_from_pair(pair),
         Rule::damage_prevention_effect => damage_prevention_effect_statement_from_pair(pair),
@@ -119,7 +119,6 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 pair,
             )
         }
-        Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana => {
             tap_all_permanents_target_player_controls_and_that_player_loses_unspent_mana_from_pair(
                 pair,
@@ -664,13 +663,6 @@ fn balance_same_way_action_from_pair(pair: Pair<Rule>) -> Result<BalanceSameWayA
     }
 }
 
-fn destroy_all_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let target_pair = only_inner(pair, "destroy_all missing target")?;
-    Ok(Statement::destroy_all(destroy_all_target_from_pair(
-        target_pair,
-    )?))
-}
-
 fn permanent_type_choice_from_pair(pair: Pair<Rule>) -> Result<Vec<PermanentType>, ParseError> {
     pair.into_inner().map(permanent_type_from_pair).collect()
 }
@@ -683,26 +675,28 @@ fn target_permanent_choice_from_pair(pair: Pair<Rule>) -> Result<Vec<PermanentTy
     permanent_type_choice_from_pair(choice_pair)
 }
 
-fn destroy_all_target_from_pair(pair: Pair<Rule>) -> Result<DestroyAllTarget, ParseError> {
-    match pair.as_rule() {
-        Rule::permanent_type_plural_list => Ok(DestroyAllTarget::PermanentTypes(
-            permanent_type_plural_list_from_pair(pair)?,
-        )),
-        Rule::basic_land_type_plural => Ok(DestroyAllTarget::BasicLandType(
-            basic_land_type_from_plural_pair(pair)?,
-        )),
-        _ => Err(ParseError::Internal("destroy_all target")),
-    }
+fn destroy_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let target_pair = only_inner(pair, "destroy missing target")?;
+    Ok(Statement::destroy(destroy_target_from_pair(target_pair)?))
 }
 
-fn destroy_target_permanent_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let choice_pair = only_inner(
-        pair,
-        "destroy_target_permanent missing target_permanent_choice",
-    )?;
-    Ok(Statement::destroy_target_permanents(
-        target_permanent_choice_from_pair(choice_pair)?,
-    ))
+fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseError> {
+    match pair.as_rule() {
+        Rule::target_permanent_choice => Ok(DestroyTarget::TargetPermanents(
+            target_permanent_choice_from_pair(pair)?,
+        )),
+        Rule::destroy_each_target => {
+            let target_pair = only_inner(pair, "destroy_each_target missing target")?;
+            destroy_target_from_pair(target_pair)
+        }
+        Rule::permanent_type_plural_list => Ok(DestroyTarget::AllPermanents(
+            permanent_type_plural_list_from_pair(pair)?,
+        )),
+        Rule::basic_land_type_plural => Ok(DestroyTarget::AllBasicLands(
+            basic_land_type_from_plural_pair(pair)?,
+        )),
+        _ => Err(ParseError::Internal("destroy target")),
+    }
 }
 
 fn that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice_from_pair(
@@ -2989,17 +2983,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 }
             }
         }
-        Rule::destroy_target_permanent => {
-            let choice_pair = only_inner(pair, "destroy target missing target_permanent_choice")?;
-            let permanent_types = target_permanent_choice_from_pair(choice_pair)?;
-            Ok(ActivatedEffect::DestroyTargetPermanents { permanent_types })
-        }
-        Rule::destroy_all => {
-            let target_pair = only_inner(pair, "destroy all missing target")?;
-            Ok(ActivatedEffect::destroy_all(destroy_all_target_from_pair(
-                target_pair,
-            )?))
-        }
+        Rule::destroy => activated_destroy_from_pair(pair),
         Rule::destroy_target_creature_type => {
             let creature_type_pair = pair
                 .into_inner()
@@ -3225,6 +3209,13 @@ fn discard_count_from_pair(pair: Pair<Rule>) -> Result<CardCount, ParseError> {
         }
         _ => Err(ParseError::Internal("discard count")),
     }
+}
+
+fn activated_destroy_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, ParseError> {
+    let target_pair = only_inner(pair, "destroy missing target")?;
+    Ok(ActivatedEffect::destroy(destroy_target_from_pair(
+        target_pair,
+    )?))
 }
 
 fn physical_action_from_pair(pair: Pair<Rule>) -> Result<PhysicalAction, ParseError> {
