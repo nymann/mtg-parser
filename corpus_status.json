@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 82,
+  "passing": 83,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -142,8 +142,7 @@
       "status": "pass"
     },
     "lea/Copper Tablet": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each player's upkeep, this artifact deals 1 damage to that player.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "status": "pass"
     },
     "lea/Copy Artifact": {
       "status": "fail",
@@ -159,7 +158,7 @@
     },
     "lea/Creature Bond": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | When enchanted creature dies, this Aura deals damage equal to that creature's toughness to the creature's controller.\n  |      ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | When enchanted creature dies, this Aura deals damage equal to that creature's toughness to the creature's controller.\n  |      ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Crusade": {
       "status": "pass"
@@ -170,7 +169,7 @@
     },
     "lea/Cursed Land": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:4\n  |\n2 | At the beginning of the upkeep of enchanted land's controller, this Aura deals 1 damage to that player.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:4\n  |\n2 | At the beginning of the upkeep of enchanted land's controller, this Aura deals 1 damage to that player.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Cyclopean Tomb": {
       "status": "fail",
@@ -209,7 +208,7 @@
     },
     "lea/Dingus Egg": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever a land is put into a graveyard from the battlefield, this artifact deals 2 damage to that land's controller.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever a land is put into a graveyard from the battlefield, this artifact deals 2 damage to that land's controller.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Disenchant": {
       "status": "fail",
@@ -284,7 +283,7 @@
     },
     "lea/Feedback": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:4\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:4\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Fire Elemental": {
       "status": "fail",
@@ -330,7 +329,7 @@
     },
     "lea/Fungusaur": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever this creature is dealt damage, put a +1/+1 counter on it.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, source_blocks_or_becomes_blocked_by_non_creature_type_creature, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, or beginning_of_your_upkeep"
+      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever this creature is dealt damage, put a +1/+1 counter on it.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, source_blocks_or_becomes_blocked_by_non_creature_type_creature, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, or beginning_of_your_upkeep"
     },
     "lea/Gaea's Liege": {
       "status": "fail",
@@ -407,7 +406,7 @@
     },
     "lea/Howling Mine": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each player's draw step, if this artifact is untapped, that player draws an additional card.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each player's draw step, if this artifact is untapped, that player draws an additional card.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Hurloon Minotaur": {
       "status": "fail",
@@ -419,7 +418,7 @@
     },
     "lea/Hypnotic Specter": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever this creature deals damage to an opponent, that player discards a card at random.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, source_blocks_or_becomes_blocked_by_non_creature_type_creature, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, or beginning_of_your_upkeep"
+      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever this creature deals damage to an opponent, that player discards a card at random.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, source_blocks_or_becomes_blocked_by_non_creature_type_creature, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, or beginning_of_your_upkeep"
     },
     "lea/Ice Storm": {
       "status": "fail",
@@ -487,7 +486,7 @@
     },
     "lea/Karma": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each player's upkeep, this enchantment deals damage to that player equal to the number of Swamps they control.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 1:66\n  |\n1 | At the beginning of each player's upkeep, this enchantment deals damage to that player equal to the number of Swamps they control.\n  |                                                                  ^---\n  |\n  = expected variable_name or damage_amount"
     },
     "lea/Keldon Warlord": {
       "status": "fail",
@@ -499,7 +498,7 @@
     },
     "lea/Kudzu": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:6\n  |\n2 | When enchanted land becomes tapped, destroy it. That land's controller may attach this Aura to a land of their choice.\n  |      ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | When enchanted land becomes tapped, destroy it. That land's controller may attach this Aura to a land of their choice.\n  |      ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Lance": {
       "status": "pass"
@@ -533,7 +532,7 @@
     },
     "lea/Living Artifact": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever you're dealt damage, put that many vitality counters on this Aura.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever you're dealt damage, put that many vitality counters on this Aura.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Living Lands": {
       "status": "fail",
@@ -654,7 +653,7 @@
     },
     "lea/Orcish Oriflamme": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:3\n  |\n1 | Attacking creatures you control get +1/+0.\n  |   ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 1:3\n  |\n1 | Attacking creatures you control get +1/+0.\n  |   ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Paralyze": {
       "status": "fail",
@@ -670,7 +669,7 @@
     },
     "lea/Pestilence": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of the end step, if no creatures are on the battlefield, sacrifice this enchantment.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of the end step, if no creatures are on the battlefield, sacrifice this enchantment.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Phantasmal Forces": {
       "status": "pass"
@@ -700,7 +699,7 @@
     },
     "lea/Power Leak": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:4\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:4\n  |\n2 | At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X is the amount of mana that player paid this way.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Power Sink": {
       "status": "fail",
@@ -708,7 +707,7 @@
     },
     "lea/Power Surge": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each player's upkeep, this enchantment deals X damage to that player, where X is the number of untapped lands they controlled at the beginning of this turn.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 1:102\n  |\n1 | At the beginning of each player's upkeep, this enchantment deals X damage to that player, where X is the number of untapped lands they controlled at the beginning of this turn.\n  |                                                                                                      ^---\n  |\n  = expected half_number_of_basic_lands_you_control, number_of_cards_in_their_hand_minus, or its_power"
     },
     "lea/Prodigal Sorcerer": {
       "status": "fail",
@@ -720,14 +719,14 @@
     },
     "lea/Psychic Venom": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever enchanted land becomes tapped, this Aura deals 2 damage to that land's controller.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever enchanted land becomes tapped, this Aura deals 2 damage to that land's controller.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Purelace": {
       "status": "pass"
     },
     "lea/Raging River": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever one or more creatures you control attack, each defending player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile. Then, for each attacking creature you control, choose \"left\" or \"right.\" That creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever one or more creatures you control attack, each defending player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile. Then, for each attacking creature you control, choose \"left\" or \"right.\" That creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Raise Dead": {
       "status": "fail",
@@ -796,7 +795,7 @@
     },
     "lea/Scavenging Ghoul": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each end step, put a corpse counter on this creature for each creature that died this turn.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of each end step, put a corpse counter on this creature for each creature that died this turn.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Scrubland": {
       "status": "fail",
@@ -815,7 +814,7 @@
     },
     "lea/Sengir Vampire": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever a creature dealt damage by this creature this turn dies, put a +1/+1 counter on this creature.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever a creature dealt damage by this creature this turn dies, put a +1/+1 counter on this creature.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Serra Angel": {
       "status": "fail",
@@ -858,7 +857,7 @@
     },
     "lea/Soul Net": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever a creature dies, you may pay {1}. If you do, you gain 1 life.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever a creature dies, you may pay {1}. If you do, you gain 1 life.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Spell Blast": {
       "status": "fail",
@@ -976,7 +975,7 @@
     },
     "lea/Verduran Enchantress": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever you cast an enchantment spell, you may draw a card.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever you cast an enchantment spell, you may draw a card.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Vesuvan Doppelganger": {
       "status": "fail",
@@ -1024,14 +1023,14 @@
     },
     "lea/Wanderlust": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:4\n  |\n2 | At the beginning of the upkeep of enchanted creature's controller, this Aura deals 1 damage to that player.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:4\n  |\n2 | At the beginning of the upkeep of enchanted creature's controller, this Aura deals 1 damage to that player.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/War Mammoth": {
       "status": "pass"
     },
     "lea/Warp Artifact": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:4\n  |\n2 | At the beginning of the upkeep of enchanted artifact's controller, this Aura deals 1 damage to that player.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:4\n  |\n2 | At the beginning of the upkeep of enchanted artifact's controller, this Aura deals 1 damage to that player.\n  |    ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Water Elemental": {
       "status": "fail",
@@ -1056,7 +1055,7 @@
     },
     "lea/Wild Growth": {
       "status": "fail",
-      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever enchanted land is tapped for mana, its controller adds an additional {G}.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_your_upkeep, or source_object"
+      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever enchanted land is tapped for mana, its controller adds an additional {G}.\n  |          ^---\n  |\n  = expected aura_enters, aura_leaves_battlefield, permanent_enters, end_of_combat, beginning_of_the_next_end_step, beginning_of_chosen_players_upkeep, beginning_of_each_players_upkeep, beginning_of_your_upkeep, or source_object"
     },
     "lea/Will-o'-the-Wisp": {
       "status": "fail",

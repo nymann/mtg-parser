@@ -585,6 +585,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
+        | TriggerEvent::BeginningOfEachPlayersUpkeep
         | TriggerEvent::BeginningOfYourUpkeep
         | TriggerEvent::EndOfCombat => "At ",
         TriggerEvent::ThisAuraEnters | TriggerEvent::ThisAuraLeavesTheBattlefield => "When ",
@@ -621,6 +622,9 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         }
         TriggerEvent::BeginningOfChosenPlayersUpkeep => {
             out.push_str("the beginning of the chosen player's upkeep");
+        }
+        TriggerEvent::BeginningOfEachPlayersUpkeep => {
+            out.push_str("the beginning of each player's upkeep");
         }
         TriggerEvent::BeginningOfYourUpkeep => {
             out.push_str("the beginning of your upkeep");
@@ -670,6 +674,11 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
             write!(out, " deals {amount} damage to that ").expect("write to String never fails");
             out.push_str(permanent_type_name(*recipient));
             out.push_str("'s controller.");
+        }
+        TriggerEffect::SourceDealsDamageToThatPlayer { source, amount } => {
+            write_source_object(out, *source);
+            write!(out, " deals {amount} damage to that player.")
+                .expect("write to String never fails");
         }
         TriggerEffect::SourceDealsVariableDamageToThatPlayer {
             source,

@@ -517,6 +517,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::beginning_of_chosen_players_upkeep => {
                 event = Some(TriggerEvent::BeginningOfChosenPlayersUpkeep);
             }
+            Rule::beginning_of_each_players_upkeep => {
+                event = Some(TriggerEvent::BeginningOfEachPlayersUpkeep);
+            }
             Rule::beginning_of_your_upkeep => {
                 event = Some(TriggerEvent::BeginningOfYourUpkeep);
             }
@@ -563,6 +566,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
                 effects.push(source_deals_damage_to_that_permanents_controller_from_pair(
                     child,
                 )?);
+            }
+            Rule::source_deals_damage_to_that_player => {
+                effects.push(source_deals_damage_to_that_player_from_pair(child)?);
             }
             Rule::source_deals_variable_damage_to_that_player => {
                 effects.push(source_deals_variable_damage_to_that_player_from_pair(
@@ -704,6 +710,26 @@ fn source_deals_damage_to_that_permanents_controller_from_pair(
         source: source_object_from_pair(source_pair)?,
         amount,
         recipient: that_permanents_controller_from_pair(recipient_pair)?,
+    })
+}
+
+fn source_deals_damage_to_that_player_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "damage-to-player effect missing source",
+    ))?;
+    let amount_pair = inner.next().ok_or(ParseError::Internal(
+        "damage-to-player effect missing amount",
+    ))?;
+    let amount = amount_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("damage-to-player amount"))?;
+    Ok(TriggerEffect::SourceDealsDamageToThatPlayer {
+        source: source_object_from_pair(source_pair)?,
+        amount,
     })
 }
 

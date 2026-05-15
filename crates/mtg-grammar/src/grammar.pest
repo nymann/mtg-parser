@@ -524,6 +524,7 @@ trigger_event = _{
   | aura_enters
   | source_blocks_or_becomes_blocked_by_non_creature_type_creature
   | end_of_combat
+  | beginning_of_each_players_upkeep
   | beginning_of_your_upkeep
   | beginning_of_chosen_players_upkeep
   | beginning_of_the_next_end_step
@@ -543,6 +544,9 @@ beginning_of_the_next_end_step = {
 beginning_of_chosen_players_upkeep = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"chosen" ~ ^"player's" ~ ^"upkeep"
 }
+beginning_of_each_players_upkeep = {
+    ^"the" ~ ^"beginning" ~ ^"of" ~ ^"each" ~ ^"player's" ~ ^"upkeep"
+}
 beginning_of_your_upkeep = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"your" ~ ^"upkeep"
 }
@@ -561,6 +565,7 @@ trigger_effect = _{
   | return_enchanted_card_and_attach
   | sacrifice_source_unless_you_pay
   | source_deals_variable_damage_to_that_player
+  | source_deals_damage_to_that_player
   | source_deals_damage_to_that_permanents_controller
   | that_creatures_controller_sacrifices_it
 }
@@ -614,6 +619,9 @@ remove_pt_counter_from_it = {
 source_deals_damage_to_that_permanents_controller = {
     source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to"
   ~ that_permanents_controller ~ "."
+}
+source_deals_damage_to_that_player = {
+    source_object ~ ^"deals" ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"that" ~ ^"player" ~ "."
 }
 source_deals_variable_damage_to_that_player = {
     source_object ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"

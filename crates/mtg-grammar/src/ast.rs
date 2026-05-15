@@ -167,6 +167,8 @@ pub enum TriggerEvent {
     BeginningOfTheNextEndStep,
     /// "the beginning of the chosen player's upkeep"
     BeginningOfChosenPlayersUpkeep,
+    /// "the beginning of each player's upkeep"
+    BeginningOfEachPlayersUpkeep,
     /// "the beginning of your upkeep"
     BeginningOfYourUpkeep,
     /// "end of combat"
@@ -201,6 +203,8 @@ pub enum TriggerEffect {
         amount: u32,
         recipient: PermanentType,
     },
+    /// "this <source> deals N damage to that player"
+    SourceDealsDamageToThatPlayer { source: SourceObject, amount: u32 },
     /// "this <source> deals X damage to that player, where X is <expr>"
     SourceDealsVariableDamageToThatPlayer {
         source: SourceObject,

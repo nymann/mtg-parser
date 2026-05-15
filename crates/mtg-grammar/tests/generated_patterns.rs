@@ -67,3 +67,5 @@ mod contract_from_below;
 mod control_magic;
 #[path = "generated_patterns/conversion.rs"]
 mod conversion;
+#[path = "generated_patterns/copper_tablet.rs"]
+mod copper_tablet;
