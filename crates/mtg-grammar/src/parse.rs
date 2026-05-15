@@ -1574,6 +1574,14 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 source_pair,
             )?))
         }
+        Rule::regenerate_source => {
+            let source_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "regenerate_source missing source_object",
+            ))?;
+            Ok(ActivatedEffect::Regenerate(source_object_from_pair(
+                source_pair,
+            )?))
+        }
         Rule::counter_target_colored_spell => {
             let color_pair = pair
                 .into_inner()

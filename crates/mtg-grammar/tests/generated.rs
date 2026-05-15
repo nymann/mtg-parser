@@ -120,3 +120,5 @@ mod dragon_whelp;
 mod drain_life;
 #[path = "generated/drain_power.rs"]
 mod drain_power;
+#[path = "generated/drudge_skeletons.rs"]
+mod drudge_skeletons;

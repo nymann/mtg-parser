@@ -384,6 +384,8 @@ pub enum ActivatedEffect {
     },
     /// "Untap this <permanent_type>."
     Untap(SourceObject),
+    /// "Regenerate this <permanent_type>."
+    Regenerate(SourceObject),
     /// "Counter target <color> spell."
     CounterTargetColoredSpell {
         color: Color,

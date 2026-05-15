@@ -541,6 +541,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_source_object(out, *source);
             out.push('.');
         }
+        ActivatedEffect::Regenerate(source) => {
+            out.push_str("Regenerate ");
+            write_source_object(out, *source);
+            out.push('.');
+        }
         ActivatedEffect::CounterTargetColoredSpell { color } => {
             out.push_str("Counter target ");
             out.push_str(color_name(*color));
