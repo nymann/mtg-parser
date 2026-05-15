@@ -880,6 +880,8 @@ pub enum StaticAbility {
     EffectDoesntRemoveThisAura,
     /// "This <permanent_type> doesn't untap during your untap step."
     SourceDoesntUntapDuringYourUntapStep { source: SourceObject },
+    /// "This <permanent_type> can't block creatures with power N or greater."
+    SourceCantBlockCreaturesWithPowerOrGreater { source: SourceObject, power: u32 },
     /// "All <basic_land_type>s are <basic_land_type>s."
     BasicLandsAreBasicLands {
         from: BasicLandType,

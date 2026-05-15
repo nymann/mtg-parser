@@ -174,6 +174,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns
         | Rule::static_you_may_have_source_enter_as_copy
         | Rule::static_source_doesnt_untap_during_your_untap_step
+        | Rule::static_source_cant_block_creatures_with_power_or_greater
         | Rule::static_basic_lands_are_basic_lands
         | Rule::static_that_permanent_is_basic_land_type_while_has_named_counter
         | Rule::remove_target_creature_defending_player_controls_from_combat
@@ -2101,6 +2102,23 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 .expect("static untap restriction begins with a source object");
             Ok(StaticAbility::SourceDoesntUntapDuringYourUntapStep {
                 source: source_object_from_pair(source_pair)?,
+            })
+        }
+        Rule::static_source_cant_block_creatures_with_power_or_greater => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner
+                .next()
+                .expect("static block restriction begins with a source object");
+            let power_pair = inner
+                .next()
+                .expect("static block restriction names power threshold");
+            let power = power_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("static block restriction power"))?;
+            Ok(StaticAbility::SourceCantBlockCreaturesWithPowerOrGreater {
+                source: source_object_from_pair(source_pair)?,
+                power,
             })
         }
         Rule::static_basic_lands_are_basic_lands => {

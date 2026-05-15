@@ -1104,6 +1104,14 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_source_object_capitalized(out, *source);
             out.push_str(" doesn't untap during your untap step.");
         }
+        StaticAbility::SourceCantBlockCreaturesWithPowerOrGreater { source, power } => {
+            write_source_object_capitalized(out, *source);
+            write!(
+                out,
+                " can't block creatures with power {power} or greater."
+            )
+            .expect("writing to String cannot fail");
+        }
         StaticAbility::BasicLandsAreBasicLands { from, to } => {
             out.push_str("All ");
             out.push_str(basic_land_type_plural_name(*from));

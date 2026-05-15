@@ -183,3 +183,5 @@ mod illusionary_mask;
 mod instill_energy;
 #[path = "generated_patterns/invisibility.rs"]
 mod invisibility;
+#[path = "generated_patterns/ironclaw_orcs.rs"]
+mod ironclaw_orcs;

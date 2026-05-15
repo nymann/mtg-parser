@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 162,
+  "passing": 163,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -384,8 +384,7 @@
       "status": "pass"
     },
     "lea/Ironclaw Orcs": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | This creature can't block creatures with power 2 or greater.\n  |      ^---\n  |\n  = expected aura_source_object"
+      "status": "pass"
     },
     "lea/Ironroot Treefolk": {
       "status": "fail",
