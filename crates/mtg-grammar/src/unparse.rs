@@ -1587,6 +1587,16 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
         TriggerEffect::ThatPlayerDiscardsCardAtRandom => {
             out.push_str("that player discards a card at random.");
         }
+        TriggerEffect::ThatPlayerAddsManaOfAnyTypeThatPermanentProduced {
+            amount,
+            permanent_type,
+        } => {
+            out.push_str("that player adds ");
+            out.push_str(u32_to_number_word(*amount));
+            out.push_str(" mana of any type that ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" produced.");
+        }
         TriggerEffect::ItsControllerAddsAdditionalMana { mana } => {
             out.push_str("its controller adds an additional ");
             write_mana_symbol(out, *mana);

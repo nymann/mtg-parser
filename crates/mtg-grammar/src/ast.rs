@@ -524,6 +524,11 @@ pub enum TriggerEffect {
     ThatPlayerDrawsAnAdditionalCard,
     /// "that player discards a card at random"
     ThatPlayerDiscardsCardAtRandom,
+    /// "that player adds N mana of any type that <permanent_type> produced"
+    ThatPlayerAddsManaOfAnyTypeThatPermanentProduced {
+        amount: u32,
+        permanent_type: PermanentType,
+    },
     /// "this <source> deals damage equal to that <permanent_type>'s
     /// toughness to the <permanent_type>'s controller"
     SourceDealsDamageEqualToThatPermanentsToughnessToThePermanentsController {

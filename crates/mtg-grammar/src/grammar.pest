@@ -1156,6 +1156,7 @@ trigger_effect = _{
   | source_deals_damage_to_that_player
   | source_deals_damage_to_that_permanents_controller
   | source_deals_damage_to_that_permanent
+  | that_player_adds_mana_of_any_type_that_permanent_produced
   | that_player_discards_card_at_random
   | that_player_draws_an_additional_card
   | its_controller_adds_an_additional_mana
@@ -1337,6 +1338,10 @@ source_deals_damage_to_that_permanent = {
 source_deals_variable_damage_to_that_player = {
     source_object ~ ^"deals" ~ variable_name ~ ^"damage" ~ ^"to"
   ~ ^"that" ~ ^"player" ~ "," ~ where_clause ~ "."
+}
+that_player_adds_mana_of_any_type_that_permanent_produced = {
+    ^"that" ~ ^"player" ~ ^"adds" ~ number_word ~ ^"mana" ~ ^"of"
+  ~ ^"any" ~ ^"type" ~ ^"that" ~ permanent_type ~ ^"produced" ~ "."
 }
 that_player_draws_an_additional_card = {
     ^"that" ~ ^"player" ~ ^"draws" ~ article ~ ^"additional" ~ ^"card" ~ "."

@@ -1418,6 +1418,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::that_player_discards_card_at_random => {
                 effects.push(TriggerEffect::ThatPlayerDiscardsCardAtRandom);
             }
+            Rule::that_player_adds_mana_of_any_type_that_permanent_produced => {
+                effects.push(that_player_adds_mana_of_any_type_that_permanent_produced_from_pair(child)?);
+            }
             Rule::its_controller_adds_an_additional_mana => {
                 effects.push(its_controller_adds_an_additional_mana_from_pair(child)?);
             }
@@ -1618,6 +1621,26 @@ fn source_blocks_or_becomes_blocked_by_non_creature_type_creature_from_pair(
         TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature {
             source: source_object_from_pair(source_pair)?,
             excluded_type: creature_type_from_pair(excluded_type_pair)?,
+        },
+    )
+}
+
+fn that_player_adds_mana_of_any_type_that_permanent_produced_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("mana-produced effect missing amount"))?;
+    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+        "mana-produced effect missing permanent type",
+    ))?;
+    let amount = number_word_to_u32(amount_pair.as_str())
+        .ok_or(ParseError::Internal("mana-produced effect amount"))?;
+    Ok(
+        TriggerEffect::ThatPlayerAddsManaOfAnyTypeThatPermanentProduced {
+            amount,
+            permanent_type: permanent_type_from_pair(permanent_type_pair)?,
         },
     )
 }
