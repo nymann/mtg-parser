@@ -2062,6 +2062,9 @@ fn activated_damage_effect_from_pair(
             let mut recipient = None;
             for child in pair.into_inner() {
                 match child.as_rule() {
+                    Rule::damage_prevention_amount_axis => {
+                        amount = Some(next_damage_prevention_amount_axis_from_pair(child)?);
+                    }
                     Rule::damage_prevention_next_amount => {
                         amount = Some(damage_prevention_next_amount_from_pair(child)?);
                     }
@@ -2082,6 +2085,17 @@ fn activated_damage_effect_from_pair(
             })
         }
         _ => Err(ParseError::Internal("activated damage effect")),
+    }
+}
+
+fn next_damage_prevention_amount_axis_from_pair(
+    pair: Pair<Rule>,
+) -> Result<DamageAmount, ParseError> {
+    match damage_prevention_amount_axis_from_pair(pair)? {
+        DamagePreventionAmount::Next(amount) => Ok(amount),
+        DamagePreventionAmount::All => Err(ParseError::Internal(
+            "activated prevent next damage amount must be next",
+        )),
     }
 }
 

@@ -494,9 +494,13 @@ pub struct DamagePrevention<R, A = DamageAmount> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DamagePreventionEffect<R = PreventionRecipient> {
+    /// The prevented replacement event's amount axis: "all" or "the next N".
     pub amount: DamagePreventionAmount,
+    /// The prevented replacement event's optional damage kind, such as "combat".
     pub kind: Option<DamageKind>,
+    /// The optional object or player the prevented damage would be dealt to.
     pub recipient: Option<R>,
+    /// The effect's printed duration.
     pub duration: DamagePreventionDuration,
 }
 

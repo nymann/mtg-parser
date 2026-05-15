@@ -731,19 +731,7 @@ fn write_damage_prevention_effect_with_prefix(
     effect: DamagePreventionEffect<PreventionRecipient>,
     prefix: &str,
 ) {
-    out.push_str(prefix);
-    match effect.amount {
-        DamagePreventionAmount::All => out.push_str("all "),
-        DamagePreventionAmount::Next(amount) => {
-            out.push_str("the next ");
-            write_damage_amount(out, amount);
-            out.push(' ');
-        }
-    }
-    if let Some(kind) = effect.kind {
-        write_damage_kind_prefix(out, kind);
-    }
-    out.push_str("damage that would be dealt");
+    write_damage_prevention_replacement_event(out, prefix, effect.amount, effect.kind);
     if let Some(recipient) = effect.recipient {
         out.push_str(" to ");
         write_prevention_recipient(out, recipient);
@@ -751,6 +739,27 @@ fn write_damage_prevention_effect_with_prefix(
     match effect.duration {
         DamagePreventionDuration::ThisTurn => out.push_str(" this turn."),
     }
+}
+
+fn write_damage_prevention_replacement_event(
+    out: &mut String,
+    prefix: &str,
+    amount: DamagePreventionAmount,
+    kind: Option<DamageKind>,
+) {
+    out.push_str(prefix);
+    match amount {
+        DamagePreventionAmount::All => out.push_str("all "),
+        DamagePreventionAmount::Next(amount) => {
+            out.push_str("the next ");
+            write_damage_amount(out, amount);
+            out.push(' ');
+        }
+    }
+    if let Some(kind) = kind {
+        write_damage_kind_prefix(out, kind);
+    }
+    out.push_str("damage that would be dealt");
 }
 
 fn write_damage_kind_prefix(out: &mut String, kind: DamageKind) {
