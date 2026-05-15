@@ -691,6 +691,8 @@ pub enum TriggerEvent {
     YouAreDealtDamage,
     /// "this <source> deals damage to an opponent"
     SourceDealsDamageToAnOpponent { source: SourceObject },
+    /// "you control no <basic_land_type>s"
+    YouControlNoBasicLands { land_type: BasicLandType },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1529,6 +1531,12 @@ pub enum StaticAbility {
     EffectDoesntRemoveThisAura,
     /// "This <permanent_type> attacks each combat if able."
     SourceAttacksEachCombatIfAble { source: SourceObject },
+    /// "This <permanent_type> can't attack unless defending player controls
+    /// a/an <basic_land_type>."
+    SourceCantAttackUnlessDefendingPlayerControlsBasicLand {
+        source: SourceObject,
+        land_type: BasicLandType,
+    },
     /// "This <permanent_type> can't be blocked by <creature_type>s."
     SourceCantBeBlockedByCreatureType {
         source: SourceObject,

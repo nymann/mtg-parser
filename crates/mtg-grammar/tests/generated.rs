@@ -276,3 +276,5 @@ mod personal_incarnation;
 mod pestilence;
 #[path = "generated/phantasmal_terrain.rs"]
 mod phantasmal_terrain;
+#[path = "generated/pirate_ship.rs"]
+mod pirate_ship;

@@ -118,6 +118,7 @@ sentence_statement = _{
   | static_you_may_have_source_enter_as_copy
   | static_source_enters_tapped
   | static_source_attacks_each_combat_if_able
+  | static_source_cant_attack_unless_defending_player_controls_basic_land
   | static_source_cant_be_blocked_by_creature_type
   | static_source_doesnt_untap_during_your_untap_step
   | static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
@@ -618,6 +619,7 @@ static_ability = _{
   | static_you_may_have_source_enter_as_copy
   | static_source_enters_tapped
   | static_source_attacks_each_combat_if_able
+  | static_source_cant_attack_unless_defending_player_controls_basic_land
   | static_source_cant_be_blocked_by_creature_type
   | static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
   | static_source_cant_block_creatures_with_power_or_greater
@@ -754,6 +756,11 @@ static_effect_doesnt_remove_this_aura = {
 
 static_source_attacks_each_combat_if_able = {
     source_object ~ ^"attacks" ~ ^"each" ~ ^"combat" ~ ^"if" ~ ^"able" ~ "."
+}
+
+static_source_cant_attack_unless_defending_player_controls_basic_land = {
+    source_object ~ ^"can't" ~ ^"attack" ~ ^"unless" ~ ^"defending"
+  ~ ^"player" ~ ^"controls" ~ article ~ basic_land_type ~ "."
 }
 
 static_source_cant_be_blocked_by_creature_type = {
@@ -1199,6 +1206,7 @@ trigger_event = _{
   | enchanted_permanent_dies
   | source_blocks_or_becomes_blocked_by_non_creature_type_creature
   | enchanted_object_becomes_status
+  | you_control_no_basic_lands
   | end_of_combat
   | beginning_of_each_players_draw_step
   | beginning_of_your_draw_step
@@ -1235,6 +1243,7 @@ source_dies = { source_object ~ ^"dies" }
 enchanted_object_becomes_status = {
     ^"enchanted" ~ enchanted_object ~ ^"becomes" ~ object_status
 }
+you_control_no_basic_lands = { ^"you" ~ ^"control" ~ ^"no" ~ basic_land_type_plural }
 permanent_enters        = { article ~ permanent_type ~ ^"enters" }
 basic_land_type_is_tapped_for_mana = {
     article ~ basic_land_type ~ ^"is" ~ ^"tapped" ~ ^"for" ~ ^"mana"

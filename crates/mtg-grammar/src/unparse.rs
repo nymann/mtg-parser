@@ -1408,6 +1408,17 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_source_object_capitalized(out, *source);
             out.push_str(" attacks each combat if able.");
         }
+        StaticAbility::SourceCantAttackUnlessDefendingPlayerControlsBasicLand {
+            source,
+            land_type,
+        } => {
+            write_source_object_capitalized(out, *source);
+            out.push_str(" can't attack unless defending player controls ");
+            out.push_str(indefinite_article_for_basic_land_type(*land_type));
+            out.push(' ');
+            out.push_str(basic_land_type_name(*land_type));
+            out.push('.');
+        }
         StaticAbility::SourceCantBeBlockedByCreatureType { source, blocked_by } => {
             write_source_object_capitalized(out, *source);
             out.push_str(" can't be blocked by ");
@@ -1559,7 +1570,8 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         TriggerEvent::ThisAuraEnters
         | TriggerEvent::ThisAuraLeavesTheBattlefield
         | TriggerEvent::SourcePutIntoGraveyardFromBattlefield { .. }
-        | TriggerEvent::SourceDies { .. } => "When ",
+        | TriggerEvent::SourceDies { .. }
+        | TriggerEvent::YouControlNoBasicLands { .. } => "When ",
         TriggerEvent::EnchantedPermanentDies { .. } => "When ",
     });
     write_trigger_event(out, condition.event);
@@ -1704,6 +1716,10 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::SourceDealsDamageToAnOpponent { source } => {
             write_source_object(out, source);
             out.push_str(" deals damage to an opponent");
+        }
+        TriggerEvent::YouControlNoBasicLands { land_type } => {
+            out.push_str("you control no ");
+            out.push_str(basic_land_type_plural_name(land_type));
         }
     }
 }
@@ -2671,6 +2687,16 @@ fn basic_land_type_plural_name(land_type: BasicLandType) -> &'static str {
         BasicLandType::Swamp => "Swamps",
         BasicLandType::Mountain => "Mountains",
         BasicLandType::Forest => "Forests",
+    }
+}
+
+fn indefinite_article_for_basic_land_type(land_type: BasicLandType) -> &'static str {
+    match land_type {
+        BasicLandType::Island => "an",
+        BasicLandType::Plains
+        | BasicLandType::Swamp
+        | BasicLandType::Mountain
+        | BasicLandType::Forest => "a",
     }
 }
 

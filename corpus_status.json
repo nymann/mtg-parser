@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 209,
+  "passing": 211,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -577,8 +577,7 @@
       "status": "pass"
     },
     "lea/Pirate Ship": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | This creature can't attack unless defending player controls an Island.\n  |      ^---\n  |\n  = expected aura_source_object"
+      "status": "pass"
     },
     "lea/Plague Rats": {
       "status": "fail",
@@ -696,8 +695,7 @@
       "status": "pass"
     },
     "lea/Sea Serpent": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:6\n  |\n1 | This creature can't attack unless defending player controls an Island.\n  |      ^---\n  |\n  = expected aura_source_object"
+      "status": "pass"
     },
     "lea/Sedge Troll": {
       "status": "fail",

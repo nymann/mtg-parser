@@ -229,6 +229,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_you_may_have_source_enter_as_copy
         | Rule::static_source_enters_tapped
         | Rule::static_source_attacks_each_combat_if_able
+        | Rule::static_source_cant_attack_unless_defending_player_controls_basic_land
         | Rule::static_source_cant_be_blocked_by_creature_type
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
@@ -1459,6 +1460,7 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
         Rule::source_deals_damage_to_an_opponent => {
             source_deals_damage_to_an_opponent_from_pair(event_pair)
         }
+        Rule::you_control_no_basic_lands => you_control_no_basic_lands_from_pair(event_pair),
         Rule::permanent_put_into_graveyard_from_battlefield => {
             permanent_put_into_graveyard_from_battlefield_from_pair(event_pair)
         }
@@ -1650,6 +1652,13 @@ fn player_taps_permanent_for_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerE
     )?;
     Ok(TriggerEvent::PlayerTapsPermanentForMana {
         permanent_type: permanent_type_from_pair(permanent_type)?,
+    })
+}
+
+fn you_control_no_basic_lands_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let land_type_pair = only_inner(pair, "you_control_no_basic_lands missing land type")?;
+    Ok(TriggerEvent::YouControlNoBasicLands {
+        land_type: basic_land_type_from_plural_pair(land_type_pair)?,
     })
 }
 
@@ -2930,6 +2939,21 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::SourceAttacksEachCombatIfAble {
                 source: source_object_from_pair(source_pair)?,
             })
+        }
+        Rule::static_source_cant_attack_unless_defending_player_controls_basic_land => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner
+                .next()
+                .expect("static attack restriction begins with a source object");
+            let land_type_pair = inner
+                .next()
+                .expect("static attack restriction names a basic land type");
+            Ok(
+                StaticAbility::SourceCantAttackUnlessDefendingPlayerControlsBasicLand {
+                    source: source_object_from_pair(source_pair)?,
+                    land_type: basic_land_type_from_pair(land_type_pair)?,
+                },
+            )
         }
         Rule::static_source_cant_be_blocked_by_creature_type => {
             let mut inner = pair.into_inner();
