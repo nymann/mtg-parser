@@ -53,6 +53,11 @@ pub enum Statement {
     },
     /// "If you can't, you lose the game."
     IfYouCantYouLoseTheGame,
+    /// "If you can't, this <source> deals N damage to you."
+    IfYouCantSourceDealsDamageToYou {
+        source: SourceObject,
+        amount: DamageAmount,
+    },
     /// "If it's a <type>, it can't be regenerated this turn, and if it
     /// would die this turn, exile it instead."
     IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
@@ -81,6 +86,8 @@ pub enum Statement {
         basic_land_type: BasicLandType,
     },
     Keyword(Keyword),
+    /// "<keyword>, <keyword>[, ...]"
+    KeywordList(Vec<Keyword>),
     TargetPlayerDrawsCards {
         count: CardCount,
     },
@@ -557,6 +564,11 @@ pub enum TriggerEffect {
     SacrificeSourceUnlessYouPay {
         source: SourceObject,
         cost: ManaCost,
+    },
+    /// "sacrifice a/an <permanent_type> other than this <source>"
+    SacrificePermanentOtherThanSource {
+        permanent_type: PermanentType,
+        source: SourceObject,
     },
     /// "sacrifice that many nontoken permanents"
     SacrificeThatManyNontokenPermanents,

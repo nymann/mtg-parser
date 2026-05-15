@@ -96,6 +96,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             you_gain_life_equal_damage_dealt_capped_from_pair(pair)
         }
         Rule::if_you_cant_you_lose_the_game => Ok(Statement::IfYouCantYouLoseTheGame),
+        Rule::if_you_cant_source_deals_damage_to_you => {
+            if_you_cant_source_deals_damage_to_you_from_pair(pair)
+        }
         Rule::if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn => {
             if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(
                 pair,
@@ -175,6 +178,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::activate_only_during_your_turn => Ok(Statement::ActivateOnlyDuringYourTurn),
         Rule::activate_only_as_sorcery => Ok(Statement::ActivateOnlyAsSorcery),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
+        Rule::keyword_ability_list => keyword_list_from_pair(pair),
         Rule::static_as_long_as
         | Rule::static_colored_spells_cost_mana_more_to_cast
         | Rule::static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
@@ -1016,7 +1020,7 @@ fn prevent_next_damage_parts_from_pair(
 
 fn damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
     match pair.as_rule() {
-        Rule::unsigned_number => {
+        Rule::unsigned_number | Rule::damage_amount => {
             let amount = pair
                 .as_str()
                 .parse::<u32>()
@@ -1026,6 +1030,22 @@ fn damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError>
         Rule::variable_name => Ok(DamageAmount::Variable(variable_from_str(pair.as_str())?)),
         _ => Err(ParseError::Internal("damage amount")),
     }
+}
+
+fn if_you_cant_source_deals_damage_to_you_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("if-you-cant damage missing source"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("if-you-cant damage missing amount"))?;
+    Ok(Statement::IfYouCantSourceDealsDamageToYou {
+        source: source_object_from_pair(source_pair)?,
+        amount: damage_amount_from_pair(amount_pair)?,
+    })
 }
 
 fn prevention_recipient_from_pair(pair: Pair<Rule>) -> Result<PreventionRecipient, ParseError> {
@@ -1166,6 +1186,17 @@ fn keyword_from_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         .next()
         .expect("keyword_ability always contains a keyword");
     keyword_from_inner_pair(inner)
+}
+
+fn keyword_list_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let keywords = pair
+        .into_inner()
+        .map(keyword_from_inner_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    if keywords.len() < 2 {
+        return Err(ParseError::Internal("keyword_ability_list"));
+    }
+    Ok(Statement::KeywordList(keywords))
 }
 
 fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, ParseError> {
@@ -1311,6 +1342,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::sacrifice_source_unless_you_pay => {
                 effects.push(sacrifice_source_unless_you_pay_from_pair(child)?);
+            }
+            Rule::sacrifice_permanent_other_than_source => {
+                effects.push(sacrifice_permanent_other_than_source_from_pair(child)?);
             }
             Rule::sacrifice_that_many_nontoken_permanents => {
                 effects.push(TriggerEffect::SacrificeThatManyNontokenPermanents);
@@ -1654,6 +1688,22 @@ fn sacrifice_source_unless_you_pay_from_pair(
     Ok(TriggerEffect::SacrificeSourceUnlessYouPay {
         source: source_object_from_pair(source_pair)?,
         cost: mana_cost_from_pair(cost_pair),
+    })
+}
+
+fn sacrifice_permanent_other_than_source_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let mut inner = pair.into_inner();
+    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+        "sacrifice other permanent missing permanent_type",
+    ))?;
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "sacrifice other permanent missing source",
+    ))?;
+    Ok(TriggerEffect::SacrificePermanentOtherThanSource {
+        permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+        source: source_object_from_pair(source_pair)?,
     })
 }
 

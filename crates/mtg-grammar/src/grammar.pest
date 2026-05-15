@@ -69,6 +69,7 @@ sentence_statement = _{
   | if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw
   | draw_cards
   | add_mana
+  | if_you_cant_source_deals_damage_to_you
   | until_eot_you_may_pay_cost_at_timing
   // Gain-life must precede add-mana because both share the "If you do," prefix.
   | if_you_do_gain_life
@@ -143,6 +144,7 @@ sentence_statement = _{
 phrase_statement = _{
     modal_choice
   | mana_cost
+  | keyword_ability_list
   | keyword_ability
   | triggered_ability_fragment
   | static_enchanted_loses_keyword_fragment
@@ -430,6 +432,7 @@ discard_cards_action = { ^"discard" ~ ^"cards" }
 sacrifice_permanents_action = { ^"sacrifice" ~ permanent_type_plural }
 
 keyword_ability = { keyword }
+keyword_ability_list = { keyword ~ ("," ~ keyword)+ }
 keyword         = _{ enchant | first_strike | protection | flying | reach | haste | defender | banding | trample | islandwalk | mountainwalk | swampwalk | indestructible | fear }
 first_strike    = { ^"first" ~ ^"strike" }
 protection      = { ^"protection" ~ ^"from" ~ color_word }
@@ -1121,6 +1124,7 @@ trigger_effect = _{
     destroy_that_creature_if_it_attacked_this_turn
   | destroy_it
   | destroy_that_creature_at_end_of_combat
+  | sacrifice_permanent_other_than_source
   | delayed_remove_all_named_counters_from_linked_land
   | put_that_many_named_counters_on_source
   | you_may_remove_named_counter_from_source
@@ -1233,6 +1237,10 @@ that_creatures_controller_sacrifices_it = {
     ^"that" ~ ^"creature's" ~ ^"controller" ~ ^"sacrifices" ~ ^"it" ~ "."
 }
 
+sacrifice_permanent_other_than_source = {
+    ^"sacrifice" ~ article ~ permanent_type ~ ^"other" ~ ^"than" ~ source_object ~ "."
+}
+
 sacrifice_source_unless_you_pay = {
     ^"sacrifice" ~ source_object ~ ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ "."
 }
@@ -1248,6 +1256,11 @@ you_gain_life = { ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "." }
 you_may_pay_mana = { ^"you" ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
 if_you_do_gain_life_fragment = {
     ^"if" ~ ^"you" ~ ^"do" ~ "," ~ ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life"
+}
+
+if_you_cant_source_deals_damage_to_you = {
+    ^"if" ~ ^"you" ~ ^"can't" ~ "," ~ source_object ~ ^"deals"
+  ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"you" ~ "."
 }
 
 unless_you_pay_mana_do_actions = {

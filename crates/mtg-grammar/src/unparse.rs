@@ -94,6 +94,13 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::IfYouCantYouLoseTheGame => {
             out.push_str("If you can't, you lose the game.");
         }
+        Statement::IfYouCantSourceDealsDamageToYou { source, amount } => {
+            out.push_str("If you can't, ");
+            write_source_object(out, *source);
+            out.push_str(" deals ");
+            write_damage_amount(out, *amount);
+            out.push_str(" damage to you.");
+        }
         Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
             permanent_type,
         } => {
@@ -138,6 +145,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push('.');
         }
         Statement::Keyword(kw) => write_keyword(out, *kw),
+        Statement::KeywordList(keywords) => write_keyword_list(out, keywords),
         Statement::TargetPlayerDrawsCards { count } => {
             out.push_str("Target player draws ");
             write_card_count(out, *count);
@@ -694,6 +702,17 @@ fn write_keyword(out: &mut String, kw: Keyword) {
         Keyword::Enchant(object) => {
             out.push_str("Enchant ");
             write_enchant_object(out, object);
+        }
+    }
+}
+
+fn write_keyword_list(out: &mut String, keywords: &[Keyword]) {
+    for (index, keyword) in keywords.iter().enumerate() {
+        if index == 0 {
+            write_keyword(out, *keyword);
+        } else {
+            out.push_str(", ");
+            write_keyword_lowercase(out, *keyword);
         }
     }
 }
@@ -1630,6 +1649,18 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             write_source_object(out, *source);
             out.push_str(" unless you pay ");
             write_mana_cost(out, cost);
+            out.push('.');
+        }
+        TriggerEffect::SacrificePermanentOtherThanSource {
+            permanent_type,
+            source,
+        } => {
+            out.push_str("sacrifice ");
+            out.push_str(indefinite_article(*permanent_type));
+            out.push(' ');
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" other than ");
+            write_source_object(out, *source);
             out.push('.');
         }
         TriggerEffect::SacrificeThatManyNontokenPermanents => {

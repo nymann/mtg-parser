@@ -153,6 +153,15 @@ fn arb_evasion_keyword() -> impl Strategy<Value = Keyword> {
     prop_oneof![Just(Keyword::Flying), Just(Keyword::Islandwalk)]
 }
 
+fn arb_simple_keyword() -> impl Strategy<Value = Keyword> {
+    prop_oneof![
+        Just(Keyword::FirstStrike),
+        Just(Keyword::Flying),
+        Just(Keyword::Trample),
+        Just(Keyword::Islandwalk),
+    ]
+}
+
 fn arb_imperative_action() -> impl Strategy<Value = ImperativeAction> {
     prop_oneof![
         Just(ImperativeAction::DiscardYourHand),
@@ -261,6 +270,11 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         prop::collection::vec(arb_damage_life_gain_cap(), 2..5)
             .prop_map(|caps| Statement::YouGainLifeEqualToDamageDealtCapped { caps }),
         Just(Statement::IfYouCantYouLoseTheGame),
+        (1u32..=10).prop_map(|amount| Statement::IfYouCantSourceDealsDamageToYou {
+            source: SourceObject::This(PermanentType::Creature),
+            amount: DamageAmount::Number(amount),
+        }),
+        prop::collection::vec(arb_simple_keyword(), 2..5).prop_map(Statement::KeywordList),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
                 permanent_type,

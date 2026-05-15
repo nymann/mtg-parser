@@ -66,6 +66,12 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             CardEffect::YouGainLifeEqualToDamageDealtCapped { caps: caps.clone() }
         }
         Statement::IfYouCantYouLoseTheGame => CardEffect::IfYouCantYouLoseTheGame,
+        Statement::IfYouCantSourceDealsDamageToYou { source, amount } => {
+            CardEffect::IfYouCantSourceDealsDamageToYou {
+                source: *source,
+                amount: *amount,
+            }
+        }
         Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
             permanent_type,
         } => CardEffect::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
@@ -95,6 +101,7 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             basic_land_type: *basic_land_type,
         },
         Statement::Keyword(kw) => CardEffect::Keyword(*kw),
+        Statement::KeywordList(keywords) => CardEffect::KeywordList(keywords.clone()),
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }

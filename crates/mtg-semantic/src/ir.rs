@@ -54,6 +54,11 @@ pub enum CardEffect {
     YouGainLifeEqualToDamageDealtCapped { caps: Vec<DamageLifeGainCap> },
     /// "If you can't, you lose the game."
     IfYouCantYouLoseTheGame,
+    /// "If you can't, this <source> deals N damage to you."
+    IfYouCantSourceDealsDamageToYou {
+        source: SourceObject,
+        amount: DamageAmount,
+    },
     /// "If it's a <type>, it can't be regenerated this turn, and if it
     /// would die this turn, exile it instead."
     IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn { permanent_type: PermanentType },
@@ -73,6 +78,8 @@ pub enum CardEffect {
     DestroyAllBasicLands { basic_land_type: BasicLandType },
     /// A single keyword ability such as `Flying` or `Enchant artifact`.
     Keyword(Keyword),
+    /// Multiple keyword abilities printed as one comma-separated line.
+    KeywordList(Vec<Keyword>),
     /// "Target player draws N cards."
     TargetPlayerDrawsCards { count: CardCount },
     /// "If you would draw a card during your draw step, instead you may

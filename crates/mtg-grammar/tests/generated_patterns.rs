@@ -221,3 +221,5 @@ mod living_artifact;
 mod living_lands;
 #[path = "generated_patterns/lord_of_atlantis.rs"]
 mod lord_of_atlantis;
+#[path = "generated_patterns/lord_of_the_pit.rs"]
+mod lord_of_the_pit;
