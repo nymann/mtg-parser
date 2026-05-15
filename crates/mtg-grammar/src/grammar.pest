@@ -299,7 +299,7 @@ discard_cards_action = { ^"discard" ~ ^"cards" }
 sacrifice_permanents_action = { ^"sacrifice" ~ permanent_type_plural }
 
 keyword_ability = { keyword }
-keyword         = _{ enchant | first_strike | protection | flying | defender | banding | trample | mountainwalk | swampwalk | indestructible }
+keyword         = _{ enchant | first_strike | protection | flying | defender | banding | trample | mountainwalk | swampwalk | indestructible | fear }
 first_strike    = { ^"first" ~ ^"strike" }
 protection      = { ^"protection" ~ ^"from" ~ color_word }
 flying          = @{ ^"flying" }
@@ -309,6 +309,7 @@ trample         = @{ ^"trample" }
 mountainwalk    = @{ ^"mountainwalk" }
 swampwalk       = @{ ^"swampwalk" }
 indestructible  = @{ ^"indestructible" }
+fear            = @{ ^"fear" }
 
 cast_restriction = {
     ^"cast" ~ ^"this" ~ ^"spell" ~ ^"only" ~ cast_timing ~ "."

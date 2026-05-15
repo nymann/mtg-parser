@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 130,
+  "passing": 131,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -249,8 +249,7 @@
       "status": "pass"
     },
     "lea/Fear": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:24\n  |\n2 | Enchanted creature has fear.\n  |                        ^---\n  |\n  = expected first_strike, protection, flying, defender, banding, trample, mountainwalk, swampwalk, indestructible, or enchant"
+      "status": "pass"
     },
     "lea/Feedback": {
       "status": "pass"

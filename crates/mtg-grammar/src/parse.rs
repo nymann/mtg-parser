@@ -1051,6 +1051,7 @@ fn keyword_from_inner_pair(pair: Pair<Rule>) -> Result<Keyword, ParseError> {
         Rule::mountainwalk => Ok(Keyword::Mountainwalk),
         Rule::swampwalk => Ok(Keyword::Swampwalk),
         Rule::indestructible => Ok(Keyword::Indestructible),
+        Rule::fear => Ok(Keyword::Fear),
         Rule::protection => {
             let color = pair
                 .into_inner()

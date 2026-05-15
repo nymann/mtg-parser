@@ -138,3 +138,5 @@ mod false_orders;
 mod farmstead;
 #[path = "generated/fastbond.rs"]
 mod fastbond;
+#[path = "generated/fear.rs"]
+mod fear;

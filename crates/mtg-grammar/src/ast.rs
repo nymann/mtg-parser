@@ -508,6 +508,7 @@ pub enum Keyword {
     Mountainwalk,
     Swampwalk,
     Indestructible,
+    Fear,
     Protection(Color),
     Enchant(EnchantObject),
 }

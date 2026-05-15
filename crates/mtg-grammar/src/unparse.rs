@@ -469,6 +469,7 @@ fn write_keyword(out: &mut String, kw: Keyword) {
         Keyword::Mountainwalk => out.push_str("Mountainwalk"),
         Keyword::Swampwalk => out.push_str("Swampwalk"),
         Keyword::Indestructible => out.push_str("Indestructible"),
+        Keyword::Fear => out.push_str("Fear"),
         Keyword::Protection(color) => {
             out.push_str("Protection from ");
             out.push_str(color_name(color));
@@ -1194,6 +1195,7 @@ fn write_keyword_lowercase(out: &mut String, kw: Keyword) {
         Keyword::Mountainwalk => out.push_str("mountainwalk"),
         Keyword::Swampwalk => out.push_str("swampwalk"),
         Keyword::Indestructible => out.push_str("indestructible"),
+        Keyword::Fear => out.push_str("fear"),
         Keyword::Protection(color) => {
             out.push_str("protection from ");
             out.push_str(color_name(color));
