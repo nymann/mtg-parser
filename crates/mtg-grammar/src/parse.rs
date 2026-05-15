@@ -153,6 +153,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step_from_pair(pair)
         }
         Rule::activate_only_during_your_upkeep => Ok(Statement::ActivateOnlyDuringYourUpkeep),
+        Rule::activate_only_during_combat => Ok(Statement::ActivateOnlyDuringCombat),
         Rule::activate_only_during_your_turn_and_only_once_each_turn => {
             Ok(Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn)
         }
@@ -2414,6 +2415,42 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 keyword: keyword_from_inner_pair(keyword_pair)?,
             })
         }
+        Rule::activated_source_becomes_pt_creature_until_end_of_combat => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner.next().ok_or(ParseError::Internal(
+                "activated source becomes missing source",
+            ))?;
+            let power_pair = inner.next().ok_or(ParseError::Internal(
+                "activated source becomes missing power",
+            ))?;
+            let toughness_pair = inner.next().ok_or(ParseError::Internal(
+                "activated source becomes missing toughness",
+            ))?;
+            let creature_type_pair = inner.next().ok_or(ParseError::Internal(
+                "activated source becomes missing creature_type",
+            ))?;
+            let permanent_types = inner
+                .map(permanent_type_from_pair)
+                .collect::<Result<Vec<_>, _>>()?;
+            if permanent_types.is_empty() {
+                return Err(ParseError::Internal(
+                    "activated source becomes missing permanent types",
+                ));
+            }
+            Ok(ActivatedEffect::SourceBecomesCreatureUntilEndOfCombat {
+                source: source_object_from_pair(source_pair)?,
+                power: power_pair
+                    .as_str()
+                    .parse::<u32>()
+                    .map_err(|_| ParseError::Internal("activated source becomes power"))?,
+                toughness: toughness_pair
+                    .as_str()
+                    .parse::<u32>()
+                    .map_err(|_| ParseError::Internal("activated source becomes toughness"))?,
+                creature_type: creature_type_from_pair(creature_type_pair)?,
+                permanent_types,
+            })
+        }
         Rule::prevent_next_damage_from_colored_source => {
             let color_pair = pair
                 .into_inner()
@@ -2967,6 +3004,7 @@ fn creature_type_from_pair(pair: Pair<Rule>) -> Result<CreatureType, ParseError>
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
         "goblin" => Ok(CreatureType::Goblin),
+        "golem" => Ok(CreatureType::Golem),
         "wall" => Ok(CreatureType::Wall),
         _ => Err(ParseError::Internal("creature_type variant")),
     }
@@ -2978,6 +3016,7 @@ fn creature_type_from_plural_pair(pair: Pair<Rule>) -> Result<CreatureType, Pars
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
         "goblins" => Ok(CreatureType::Goblin),
+        "golems" => Ok(CreatureType::Golem),
         "walls" => Ok(CreatureType::Wall),
         _ => Err(ParseError::Internal("creature_type_plural variant")),
     }

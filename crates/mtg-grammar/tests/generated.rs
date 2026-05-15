@@ -200,3 +200,5 @@ mod ironclaw_orcs;
 mod island_sanctuary;
 #[path = "generated/jade_monolith.rs"]
 mod jade_monolith;
+#[path = "generated/jade_statue.rs"]
+mod jade_statue;

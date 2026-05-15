@@ -287,6 +287,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::ActivateOnlyDuringYourTurn),
+        Just(Statement::ActivateOnlyDuringCombat),
         Just(Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn),
         Just(Statement::ActivateOnlyAsSorcery),
         (1u32..=10, 1u32..=10).prop_map(|(power, toughness)| {

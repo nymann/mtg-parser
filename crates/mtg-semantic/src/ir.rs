@@ -177,6 +177,8 @@ pub enum CardEffect {
     },
     /// "Activate only during your upkeep."
     ActivateOnlyDuringYourUpkeep,
+    /// "Activate only during combat."
+    ActivateOnlyDuringCombat,
     /// "Activate only during your turn."
     ActivateOnlyDuringYourTurn,
     /// "Activate only during your turn and only once each turn."

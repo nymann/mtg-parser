@@ -221,6 +221,7 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             source: *source,
         },
         Statement::ActivateOnlyDuringYourUpkeep => CardEffect::ActivateOnlyDuringYourUpkeep,
+        Statement::ActivateOnlyDuringCombat => CardEffect::ActivateOnlyDuringCombat,
         Statement::ActivateOnlyDuringYourTurn => CardEffect::ActivateOnlyDuringYourTurn,
         Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn => {
             CardEffect::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn

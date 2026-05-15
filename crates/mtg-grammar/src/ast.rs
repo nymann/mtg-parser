@@ -206,6 +206,8 @@ pub enum Statement {
     },
     /// "Activate only during your upkeep."
     ActivateOnlyDuringYourUpkeep,
+    /// "Activate only during combat."
+    ActivateOnlyDuringCombat,
     /// "Activate only during your turn."
     ActivateOnlyDuringYourTurn,
     /// "Activate only during your turn and only once each turn."
@@ -610,6 +612,15 @@ pub enum ActivatedEffect {
         source: SourceObject,
         keyword: Keyword,
     },
+    /// "This <source> becomes a N/N <creature_type> <permanent_type>+
+    /// until end of combat."
+    SourceBecomesCreatureUntilEndOfCombat {
+        source: SourceObject,
+        power: u32,
+        toughness: u32,
+        creature_type: CreatureType,
+        permanent_types: Vec<PermanentType>,
+    },
     /// "The next time a/an <color> source of your choice would deal
     /// damage to you this turn, prevent that damage."
     PreventNextDamageFromColoredSource {
@@ -743,6 +754,7 @@ pub enum SpellType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CreatureType {
     Goblin,
+    Golem,
     Wall,
 }
 

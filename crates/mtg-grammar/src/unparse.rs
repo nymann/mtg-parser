@@ -310,6 +310,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::ActivateOnlyDuringYourUpkeep => {
             out.push_str("Activate only during your upkeep.");
         }
+        Statement::ActivateOnlyDuringCombat => {
+            out.push_str("Activate only during combat.");
+        }
         Statement::ActivateOnlyDuringYourTurn => {
             out.push_str("Activate only during your turn.");
         }
@@ -829,6 +832,22 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(" gains ");
             write_keyword_lowercase(out, *keyword);
             out.push_str(" until end of turn.");
+        }
+        ActivatedEffect::SourceBecomesCreatureUntilEndOfCombat {
+            source,
+            power,
+            toughness,
+            creature_type,
+            permanent_types,
+        } => {
+            write_source_object_capitalized(out, *source);
+            write!(out, " becomes a {power}/{toughness} ").expect("writing to String cannot fail");
+            write_creature_type(out, *creature_type);
+            for permanent_type in permanent_types {
+                out.push(' ');
+                out.push_str(permanent_type_name(*permanent_type));
+            }
+            out.push_str(" until end of combat.");
         }
         ActivatedEffect::PreventNextDamageFromColoredSource { color } => {
             out.push_str("The next time ");
@@ -1790,6 +1809,7 @@ fn object_status_name(status: ObjectStatus) -> &'static str {
 fn creature_type_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Goblin => "Goblin",
+        CreatureType::Golem => "Golem",
         CreatureType::Wall => "Wall",
     }
 }
@@ -1797,6 +1817,7 @@ fn creature_type_name(ct: CreatureType) -> &'static str {
 fn creature_type_plural_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Goblin => "Goblins",
+        CreatureType::Golem => "Golems",
         CreatureType::Wall => "Walls",
     }
 }
