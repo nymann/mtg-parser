@@ -1552,8 +1552,8 @@ pub enum StaticAbility {
     /// "This <permanent_type> can't block creatures with power N or greater."
     SourceCantBlockCreaturesWithPowerOrGreater { source: SourceObject, power: u32 },
     /// "<source name>'s power and toughness are each equal to the number
-    /// of <counted objects> you control."
-    NamedSourcePowerToughnessEachEqualToCountYouControl {
+    /// of <counted objects>."
+    NamedSourcePowerToughnessEachEqualToCount {
         source_name: String,
         count: NamedSourcePowerToughnessCount,
     },
@@ -1636,6 +1636,8 @@ pub enum NamedSourcePowerToughnessCount {
     NonCreatureTypeCreatures { excluded_type: CreatureType },
     /// "<basic_land_type>s you control"
     BasicLands { land_type: BasicLandType },
+    /// "creatures named <card name> on the battlefield"
+    CreaturesNamedOnTheBattlefield { name: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

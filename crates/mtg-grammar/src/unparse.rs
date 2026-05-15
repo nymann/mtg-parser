@@ -1451,7 +1451,7 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             )
             .expect("writing to String cannot fail");
         }
-        StaticAbility::NamedSourcePowerToughnessEachEqualToCountYouControl {
+        StaticAbility::NamedSourcePowerToughnessEachEqualToCount {
             source_name,
             count,
         } => {
@@ -1466,8 +1466,20 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
                 NamedSourcePowerToughnessCount::BasicLands { land_type } => {
                     out.push_str(basic_land_type_plural_name(*land_type));
                 }
+                NamedSourcePowerToughnessCount::CreaturesNamedOnTheBattlefield { name } => {
+                    out.push_str("creatures named ");
+                    out.push_str(name);
+                    out.push_str(" on the battlefield");
+                }
             }
-            out.push_str(" you control.");
+            match count {
+                NamedSourcePowerToughnessCount::NonCreatureTypeCreatures { .. }
+                | NamedSourcePowerToughnessCount::BasicLands { .. } => {
+                    out.push_str(" you control");
+                }
+                NamedSourcePowerToughnessCount::CreaturesNamedOnTheBattlefield { .. } => {}
+            }
+            out.push('.');
         }
         StaticAbility::BasicLandsAreBasicLands { from, to } => {
             out.push_str("All ");

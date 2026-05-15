@@ -278,3 +278,5 @@ mod pestilence;
 mod phantasmal_terrain;
 #[path = "generated/pirate_ship.rs"]
 mod pirate_ship;
+#[path = "generated/plague_rats.rs"]
+mod plague_rats;

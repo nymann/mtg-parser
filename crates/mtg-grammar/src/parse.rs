@@ -234,7 +234,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
         | Rule::static_source_cant_block_creatures_with_power_or_greater
-        | Rule::static_named_source_pt_equal_to_count_you_control
+        | Rule::static_named_source_pt_equal_to_count
         | Rule::static_basic_lands_are_basic_lands
         | Rule::static_basic_lands_are_pt_colored_creatures_still_lands
         | Rule::static_that_permanent_is_basic_land_type_while_has_named_counter
@@ -3017,7 +3017,7 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 power,
             })
         }
-        Rule::static_named_source_pt_equal_to_count_you_control => {
+        Rule::static_named_source_pt_equal_to_count => {
             let mut inner = pair.into_inner();
             let source_pair = inner
                 .next()
@@ -3044,9 +3044,18 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                         land_type: basic_land_type_from_plural_pair(land_type_pair)?,
                     }
                 }
+                Rule::creatures_named_on_battlefield => {
+                    let name_pair = count_pair
+                        .into_inner()
+                        .next()
+                        .expect("named creature count names a card");
+                    NamedSourcePowerToughnessCount::CreaturesNamedOnTheBattlefield {
+                        name: name_pair.as_str().to_string(),
+                    }
+                }
                 _ => return Err(ParseError::Internal("named source P/T count objects")),
             };
-            Ok(StaticAbility::NamedSourcePowerToughnessEachEqualToCountYouControl {
+            Ok(StaticAbility::NamedSourcePowerToughnessEachEqualToCount {
                 source_name: source_pair.as_str().to_string(),
                 count,
             })
