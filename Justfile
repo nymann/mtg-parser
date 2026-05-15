@@ -63,7 +63,7 @@ rules-index-refresh:
 
 # Generate the local churn-vs-LOC audit report. Override refs with a
 # comma-separated list of REF:Label entries if you want a different window.
-audit-page out="audit-churn-complexity.html" refs="d6cb122:Baseline,59bef24:Semantic collapse,b23fa54:Damage refactor,c8e346e:Parse refactor,HEAD:Current":
+audit-page out="audit-churn-complexity.html" refs="d6cb122:Baseline,HEAD:Current":
 	python3 scripts/generate_audit_page.py --out "{{out}}" --refs "{{refs}}"
 
 # Run the autonomous refactor workflow. With no args, xtask picks the top

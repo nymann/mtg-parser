@@ -23,13 +23,7 @@ FILES = [
 ]
 
 
-DEFAULT_REFS = (
-    "d6cb122:Baseline,"
-    "59bef24:Semantic collapse,"
-    "b23fa54:Damage refactor,"
-    "c8e346e:Parse refactor,"
-    "HEAD:Current"
-)
+DEFAULT_REFS = "d6cb122:Baseline,HEAD:Current"
 
 
 def git(*args: str) -> str:
@@ -51,6 +45,34 @@ def loc_at(ref: str, path: str) -> int:
 def churn_at(ref: str, path: str) -> int:
     names = git("log", "--format=", "--name-only", "-n", "200", ref, "--", path).splitlines()
     return sum(1 for name in names if name == path)
+
+
+def history(path: str) -> list[dict[str, int | str]]:
+    """Cumulative LOC per commit that touched `path`, oldest first."""
+    out = git("log", "--follow", "--reverse", "--format=__C__ %H %at", "--numstat", "--", path)
+    points: list[dict[str, int | str]] = []
+    loc = 0
+    cur_sha: str | None = None
+    cur_ts = 0
+    added = 0
+    deleted = 0
+    for line in out.splitlines():
+        if line.startswith("__C__ "):
+            if cur_sha is not None:
+                loc += added - deleted
+                points.append({"sha": cur_sha[:7], "ts": cur_ts, "loc": loc})
+            _, cur_sha, ts_str = line.split(maxsplit=2)
+            cur_ts = int(ts_str)
+            added = deleted = 0
+        elif line.strip() and cur_sha is not None:
+            parts = line.split("\t")
+            if len(parts) >= 2 and parts[0] != "-":
+                added += int(parts[0])
+                deleted += int(parts[1])
+    if cur_sha is not None:
+        loc += added - deleted
+        points.append({"sha": cur_sha[:7], "ts": cur_ts, "loc": loc})
+    return points
 
 
 def parse_refs(raw: str) -> list[dict[str, str]]:
@@ -83,7 +105,15 @@ def collect(refs: list[dict[str, str]]) -> list[dict[str, object]]:
                     "loc": loc_at(ref["ref"], path),
                 }
             )
-        rows.append({"file": display, "path": path, "group": group, "points": points})
+        rows.append(
+            {
+                "file": display,
+                "path": path,
+                "group": group,
+                "points": points,
+                "history": history(path),
+            }
+        )
     return rows
 
 
@@ -169,6 +199,12 @@ def render(refs: list[dict[str, str]], rows: list[dict[str, object]]) -> str:
     <svg id="bars" viewBox="0 0 1080 430" role="img" aria-label="Bar chart of LOC deltas"></svg>
   </section>
   <section>
+    <h2>LOC Over Time (per commit)</h2>
+    <div class="legend" id="series-legend"></div>
+    <svg id="series" viewBox="0 0 1080 520" role="img" aria-label="Per-file LOC over commit history"></svg>
+    <p class="note">Each line is a file's LOC at every commit that touched it. Dashed lines are linear regressions over each file's full history — a flat or downward trend means the cleanup is winning.</p>
+  </section>
+  <section>
     <h2>Raw Data</h2>
     <table><thead id="head"></thead><tbody id="rows"></tbody></table>
   </section>
@@ -243,6 +279,63 @@ function drawBars() {{
     add(svg, "text", {{ class: "label", x: delta < 0 ? zero - w - 8 : zero + w + 8, y: y + 14, "text-anchor": delta < 0 ? "end" : "start" }}, `${{delta > 0 ? "+" : ""}}${{delta}}`);
   }});
 }}
+const filePalette = ["#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706", "#0891b2", "#db2777", "#65a30d", "#475569"];
+function linreg(xs, ys) {{
+  const n = xs.length;
+  if (n < 2) return null;
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) {{ num += (xs[i] - mx) * (ys[i] - my); den += (xs[i] - mx) ** 2; }}
+  if (den === 0) return null;
+  const slope = num / den;
+  return {{ slope, intercept: my - slope * mx }};
+}}
+function drawSeries() {{
+  const svg = document.getElementById("series");
+  const W = 1080, H = 520, L = 78, R = 32, T = 28, B = 56;
+  const all = data.rows.flatMap(r => r.history);
+  if (all.length === 0) return;
+  const minTs = Math.min(...all.map(p => p.ts));
+  const maxTs = Math.max(...all.map(p => p.ts));
+  const maxLoc = Math.max(100, ...all.map(p => p.loc));
+  const x = ts => L + ((ts - minTs) / (maxTs - minTs || 1)) * (W - L - R);
+  const y = loc => T + (1 - loc / maxLoc) * (H - T - B);
+  const ticks = 5;
+  for (let i = 0; i <= ticks; i++) {{
+    const loc = Math.round((maxLoc / ticks) * i);
+    add(svg, "line", {{ class: "grid", x1: L, x2: W - R, y1: y(loc), y2: y(loc) }});
+    add(svg, "text", {{ class: "label", x: 18, y: y(loc) + 4 }}, String(loc));
+  }}
+  const months = 6;
+  for (let i = 0; i <= months; i++) {{
+    const ts = minTs + ((maxTs - minTs) / months) * i;
+    add(svg, "line", {{ class: "grid", x1: x(ts), x2: x(ts), y1: T, y2: H - B }});
+    const d = new Date(ts * 1000);
+    const label = `${{d.getFullYear()}}-${{String(d.getMonth() + 1).padStart(2, "0")}}`;
+    add(svg, "text", {{ class: "label", x: x(ts), y: H - B + 20, "text-anchor": "middle" }}, label);
+  }}
+  add(svg, "line", {{ class: "axis", x1: L, x2: W - R, y1: H - B, y2: H - B }});
+  add(svg, "line", {{ class: "axis", x1: L, x2: L, y1: T, y2: H - B }});
+  add(svg, "text", {{ class: "label", x: 20, y: 22 }}, "LOC");
+  const legend = document.getElementById("series-legend");
+  data.rows.forEach((row, i) => {{
+    const color = filePalette[i % filePalette.length];
+    if (row.history.length === 0) return;
+    const path = row.history.map((p, idx) => `${{idx === 0 ? "M" : "L"}} ${{x(p.ts).toFixed(1)}} ${{y(p.loc).toFixed(1)}}`).join(" ");
+    add(svg, "path", {{ d: path, fill: "none", stroke: color, "stroke-width": 1.6, "stroke-opacity": 0.85 }});
+    const reg = linreg(row.history.map(p => p.ts), row.history.map(p => p.loc));
+    if (reg) {{
+      const x1 = row.history[0].ts, x2 = row.history[row.history.length - 1].ts;
+      const y1 = reg.slope * x1 + reg.intercept;
+      const y2 = reg.slope * x2 + reg.intercept;
+      add(svg, "line", {{ x1: x(x1), x2: x(x2), y1: y(y1), y2: y(y2), stroke: color, "stroke-width": 1.2, "stroke-dasharray": "4 4", "stroke-opacity": 0.65 }});
+    }}
+    const span = document.createElement("span");
+    span.innerHTML = `<i class="dot" style="background:${{color}}"></i>${{row.file}}`;
+    legend.appendChild(span);
+  }});
+}}
 function fillTable() {{
   const head = document.getElementById("head");
   head.innerHTML = `<tr><th>File</th>${{data.refs.map(r => `<th>${{r.label}}<br>churn / LOC</th>`).join("")}}<th>LOC delta</th></tr>`;
@@ -255,7 +348,7 @@ function fillTable() {{
     rows.appendChild(tr);
   }});
 }}
-drawLegend(); drawScatter(); drawBars(); fillTable();
+drawLegend(); drawScatter(); drawBars(); drawSeries(); fillTable();
 </script>
 </body>
 </html>
