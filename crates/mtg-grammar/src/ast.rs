@@ -107,6 +107,8 @@ pub enum Statement {
     },
     /// "Activate only during your upkeep."
     ActivateOnlyDuringYourUpkeep,
+    /// "Activate only during your turn."
+    ActivateOnlyDuringYourTurn,
     /// "Choose one —" followed by one or more bullet-pointed modes.
     ModalChoice {
         modes: Vec<ModalMode>,
@@ -356,6 +358,10 @@ pub enum ActivatedEffect {
     /// "Destroy target <permanent_type>."
     DestroyTargetPermanent {
         permanent_type: PermanentType,
+    },
+    /// "Target player discards N cards."
+    TargetPlayerDiscardsCards {
+        count: CardCount,
     },
     /// "Enchanted <type> gets <modifier> until end of turn."
     EnchantedGetsUntilEndOfTurn {

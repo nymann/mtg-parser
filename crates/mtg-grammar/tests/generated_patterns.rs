@@ -101,3 +101,5 @@ mod dingus_egg;
 mod disenchant;
 #[path = "generated_patterns/disintegrate.rs"]
 mod disintegrate;
+#[path = "generated_patterns/disrupting_scepter.rs"]
+mod disrupting_scepter;

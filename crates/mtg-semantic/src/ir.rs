@@ -94,6 +94,8 @@ pub enum CardEffect {
     },
     /// "Activate only during your upkeep."
     ActivateOnlyDuringYourUpkeep,
+    /// "Activate only during your turn."
+    ActivateOnlyDuringYourTurn,
     /// A modal spell choice with one or more printed modes.
     ModalChoice { modes: Vec<ModalMode> },
     /// A static ability with a conditional continuous effect. The

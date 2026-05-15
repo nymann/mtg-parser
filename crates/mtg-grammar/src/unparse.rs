@@ -169,6 +169,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::ActivateOnlyDuringYourUpkeep => {
             out.push_str("Activate only during your upkeep.");
         }
+        Statement::ActivateOnlyDuringYourTurn => {
+            out.push_str("Activate only during your turn.");
+        }
         Statement::ModalChoice { modes } => write_modal_choice(out, modes),
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
         Statement::ActivatedAbility(aa) => write_activated_ability(out, aa),
@@ -484,6 +487,11 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(permanent_type_name(*permanent_type));
             out.push('.');
         }
+        ActivatedEffect::TargetPlayerDiscardsCards { count } => {
+            out.push_str("Target player discards ");
+            write_discard_count(out, *count);
+            out.push('.');
+        }
         ActivatedEffect::EnchantedGetsUntilEndOfTurn {
             permanent_type,
             modifier,
@@ -534,6 +542,20 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(" land.");
         }
         ActivatedEffect::PhysicalAction(action) => write_physical_action(out, *action),
+    }
+}
+
+fn write_discard_count(out: &mut String, count: CardCount) {
+    match count {
+        CardCount::Number(1) => out.push_str("a card"),
+        CardCount::Number(n) => {
+            out.push_str(u32_to_number_word(n));
+            out.push_str(" cards");
+        }
+        CardCount::Variable(variable) => {
+            out.push_str(variable_name(variable));
+            out.push_str(" cards");
+        }
     }
 }
 

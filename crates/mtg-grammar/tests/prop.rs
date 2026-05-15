@@ -6,8 +6,9 @@
 // budget thanks to the trivial parser/unparser.
 
 use mtg_grammar::{
-    parse, unparse, CardCount, Color, EachPlayerAction, ImperativeAction, ManaCost, ManaSymbol,
-    PermanentType, Statement, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
+    parse, unparse, ActivatedAbility, ActivatedCost, ActivatedEffect, CardCount, Color,
+    EachPlayerAction, ImperativeAction, ManaCost, ManaSymbol, PermanentType, Statement,
+    TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -70,6 +71,20 @@ fn arb_player_casts_colored_spell_pay_mana_trigger() -> impl Strategy<Value = St
     })
 }
 
+fn arb_target_player_discards_activated_ability() -> impl Strategy<Value = Statement> {
+    arb_card_count().prop_map(|count| {
+        Statement::ActivatedAbility(ActivatedAbility {
+            costs: vec![
+                ActivatedCost::Mana(ManaCost {
+                    symbols: vec![ManaSymbol::Generic(3)],
+                }),
+                ActivatedCost::Tap,
+            ],
+            effect: ActivatedEffect::TargetPlayerDiscardsCards { count },
+        })
+    })
+}
+
 fn arb_statement() -> impl Strategy<Value = Statement> {
     prop_oneof![
         arb_mana_cost().prop_map(Statement::ManaCost),
@@ -91,6 +106,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             }
         }),
         Just(Statement::RegenerateTargetCreature),
+        Just(Statement::ActivateOnlyDuringYourTurn),
         Just(Statement::AntePlayRestriction),
         Just(Statement::EachPlayerPerformsAction {
             action: EachPlayerAction::AnteTopCardOfTheirLibrary
@@ -102,6 +118,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             }
         ),
         arb_player_casts_colored_spell_pay_mana_trigger(),
+        arb_target_player_discards_activated_ability(),
         prop::collection::vec(arb_imperative_action(), 2..5)
             .prop_map(|actions| Statement::ImperativeActionSequence { actions }),
     ]

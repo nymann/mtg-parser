@@ -83,6 +83,7 @@ sentence_statement = _{
   | source_enters_with_pt_counters
   | this_ability_cant_cause_total_pt_counters_greater_than
   | activate_only_during_your_upkeep
+  | activate_only_during_your_turn
 }
 
 phrase_statement = _{
@@ -468,6 +469,7 @@ activated_effect = _{
   | destroy_target_permanent
   | counter_target_colored_spell
   | untap_source
+  | target_player_discards_cards
   | activated_enchanted_gets_until_eot
   | prevent_next_damage_from_colored_source
   | prevent_next_damage_to_you_this_turn
@@ -482,6 +484,12 @@ add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"col
 add_mana = { ^"add" ~ mana_cost ~ "." }
 destroy_target_permanent = { ^"destroy" ~ ^"target" ~ permanent_type ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
+target_player_discards_cards = {
+    ^"target" ~ ^"player" ~ ^"discards"
+  ~ (discard_one_card | discard_counted_cards) ~ "."
+}
+discard_one_card = { article ~ ^"card" }
+discard_counted_cards = { draw_count ~ ^"cards" }
 activated_enchanted_gets_until_eot = {
     ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier
   ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
@@ -709,6 +717,9 @@ this_ability_cant_cause_total_pt_counters_greater_than = {
 
 activate_only_during_your_upkeep = {
     ^"activate" ~ ^"only" ~ ^"during" ~ ^"your" ~ ^"upkeep" ~ "."
+}
+activate_only_during_your_turn = {
+    ^"activate" ~ ^"only" ~ ^"during" ~ ^"your" ~ ^"turn" ~ "."
 }
 
 destroy_that_creature_if_it_attacked_this_turn = {

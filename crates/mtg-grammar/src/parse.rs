@@ -101,6 +101,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             this_ability_cant_cause_total_pt_counters_greater_than_from_pair(pair)
         }
         Rule::activate_only_during_your_upkeep => Ok(Statement::ActivateOnlyDuringYourUpkeep),
+        Rule::activate_only_during_your_turn => Ok(Statement::ActivateOnlyDuringYourTurn),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::static_as_long_as
         | Rule::static_colored_permanents_get
@@ -1507,6 +1508,15 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 permanent_type: permanent_type_from_pair(permanent_type_pair)?,
             })
         }
+        Rule::target_player_discards_cards => {
+            let count_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("target player discards missing count"))?;
+            Ok(ActivatedEffect::TargetPlayerDiscardsCards {
+                count: discard_count_from_pair(count_pair)?,
+            })
+        }
         Rule::activated_enchanted_gets_until_eot => {
             let mut inner = pair.into_inner();
             let pt_pair = inner.next().ok_or(ParseError::Internal(
@@ -1586,6 +1596,20 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             physical_action_from_pair(pair)?,
         )),
         _ => Err(ParseError::Internal("activated_effect")),
+    }
+}
+
+fn discard_count_from_pair(pair: Pair<Rule>) -> Result<CardCount, ParseError> {
+    match pair.as_rule() {
+        Rule::discard_one_card => Ok(CardCount::Number(1)),
+        Rule::discard_counted_cards => {
+            let count_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("discard counted cards missing count"))?;
+            card_count_from_pair(count_pair)
+        }
+        _ => Err(ParseError::Internal("discard count")),
     }
 }
 

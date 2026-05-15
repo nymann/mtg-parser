@@ -109,6 +109,7 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             maximum: *maximum,
         },
         Statement::ActivateOnlyDuringYourUpkeep => CardEffect::ActivateOnlyDuringYourUpkeep,
+        Statement::ActivateOnlyDuringYourTurn => CardEffect::ActivateOnlyDuringYourTurn,
         Statement::ModalChoice { modes } => CardEffect::ModalChoice {
             modes: modes.clone(),
         },
