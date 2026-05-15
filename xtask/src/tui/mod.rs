@@ -163,6 +163,11 @@ fn run_event_loop(
                     terminal.autoresize()?;
                     terminal.clear()?;
                 }
+                Event::Mouse(mouse) => match input::handle_mouse(mouse, &mut state) {
+                    input::Action::Quit => break,
+                    input::Action::Copy(target) => copy_target_to_clipboard(&mut state, target),
+                    input::Action::None => {}
+                },
                 _ => {}
             }
         }

@@ -1,6 +1,6 @@
 //! Key-event handling for the TUI. Pure transitions on [`AppState`].
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent, MouseEventKind};
 
 use crate::agent_events;
 use crate::flow::AgentProvider;
@@ -140,6 +140,39 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
 
         _ => Action::None,
     }
+}
+
+pub fn handle_mouse(mouse: MouseEvent, state: &mut AppState) -> Action {
+    let scroll_step = 3u16;
+    match mouse.kind {
+        MouseEventKind::ScrollUp => {
+            if state.history.open {
+                state.history.selected = state.history.selected.saturating_sub(1);
+            } else {
+                state.autoscroll = false;
+                scroll_focused(state, false, scroll_step);
+                if state.visual.active {
+                    state.visual.cursor = state.scroll;
+                }
+            }
+        }
+        MouseEventKind::ScrollDown => {
+            if state.history.open {
+                if !state.history.entries.is_empty() {
+                    state.history.selected =
+                        (state.history.selected + 1).min(state.history.entries.len() - 1);
+                }
+            } else {
+                state.autoscroll = false;
+                scroll_focused(state, true, scroll_step);
+                if state.visual.active {
+                    state.visual.cursor = state.scroll;
+                }
+            }
+        }
+        _ => {}
+    }
+    Action::None
 }
 
 fn handle_visual_key(key: KeyEvent, state: &mut AppState) -> Action {
@@ -362,4 +395,40 @@ fn load_history_entries() -> Vec<HistoryEntry> {
 fn history_card(path: &std::path::Path) -> Option<mtg_scryfall::Card> {
     let text = std::fs::read_to_string(path.join("card.json")).ok()?;
     serde_json::from_str(&text).ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn wheel(kind: MouseEventKind) -> MouseEvent {
+        MouseEvent {
+            kind,
+            column: 0,
+            row: 0,
+            modifiers: KeyModifiers::empty(),
+        }
+    }
+
+    #[test]
+    fn mouse_wheel_scrolls_focused_output_and_disables_autoscroll() {
+        let mut state = AppState::new();
+        state.autoscroll = true;
+
+        handle_mouse(wheel(MouseEventKind::ScrollDown), &mut state);
+
+        assert!(!state.autoscroll);
+        assert_eq!(state.scroll, 3);
+    }
+
+    #[test]
+    fn mouse_wheel_scrolls_card_when_card_pane_is_focused() {
+        let mut state = AppState::new();
+        state.focus = FocusPane::Card;
+
+        handle_mouse(wheel(MouseEventKind::ScrollDown), &mut state);
+
+        assert_eq!(state.card_scroll, 3);
+        assert_eq!(state.scroll, 0);
+    }
 }
