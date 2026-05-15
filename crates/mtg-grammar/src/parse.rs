@@ -684,14 +684,18 @@ fn destroy_all_basic_lands_from_pair(pair: Pair<Rule>) -> Result<Statement, Pars
     })
 }
 
-fn target_permanent_types_from_pair(pair: Pair<Rule>) -> Result<Vec<PermanentType>, ParseError> {
+fn permanent_type_choice_from_pair(pair: Pair<Rule>) -> Result<Vec<PermanentType>, ParseError> {
     pair.into_inner().map(permanent_type_from_pair).collect()
 }
 
 fn destroy_target_permanent_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let target_pair = only_inner(pair, "destroy_target_permanent missing target types")?;
-    let permanent_types = target_permanent_types_from_pair(target_pair)?;
-    Ok(Statement::destroy_target_permanent_types(permanent_types))
+    let choice_pair = only_inner(
+        pair,
+        "destroy_target_permanent missing permanent_type_choice",
+    )?;
+    Ok(Statement::destroy_target_permanent_choice(
+        permanent_type_choice_from_pair(choice_pair)?,
+    ))
 }
 
 fn that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice_from_pair(
@@ -2753,10 +2757,11 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             Ok(ActivatedEffect::AddManaOfAnyOneColor { amount })
         }
         Rule::tap_target_permanent_choice => {
-            let permanent_types = pair
-                .into_inner()
-                .map(permanent_type_from_pair)
-                .collect::<Result<Vec<_>, _>>()?;
+            let choice_pair = only_inner(
+                pair,
+                "tap_target_permanent_choice missing permanent_type_choice",
+            )?;
+            let permanent_types = permanent_type_choice_from_pair(choice_pair)?;
             Ok(ActivatedEffect::TapTargetPermanentChoice { permanent_types })
         }
         Rule::untap_source => {
@@ -2797,8 +2802,8 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             })
         }
         Rule::destroy_target_permanent => {
-            let target_pair = only_inner(pair, "destroy target missing target types")?;
-            let permanent_types = target_permanent_types_from_pair(target_pair)?;
+            let choice_pair = only_inner(pair, "destroy target missing permanent_type_choice")?;
+            let permanent_types = permanent_type_choice_from_pair(choice_pair)?;
             Ok(ActivatedEffect::DestroyTargetPermanents { permanent_types })
         }
         Rule::destroy_all => {

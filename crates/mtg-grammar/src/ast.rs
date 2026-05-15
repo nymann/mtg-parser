@@ -273,7 +273,7 @@ pub enum Statement {
 }
 
 impl Statement {
-    pub(crate) fn destroy_target_permanent_types(permanent_types: Vec<PermanentType>) -> Self {
+    pub(crate) fn destroy_target_permanent_choice(permanent_types: Vec<PermanentType>) -> Self {
         match permanent_types.as_slice() {
             [PermanentType::Creature] => Statement::DestroyTargetCreature,
             [permanent_type] => Statement::DestroyTargetPermanent {

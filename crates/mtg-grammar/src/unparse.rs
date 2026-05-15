@@ -30,7 +30,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" more to cast for each target beyond the first.");
         }
         Statement::DestroyTargetCreature => {
-            write_destroy_target_permanent_types(out, &[PermanentType::Creature]);
+            write_destroy_target_permanent_choice(out, &[PermanentType::Creature]);
         }
         Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
         Statement::NamedSourceDealsDamage {
@@ -87,10 +87,10 @@ fn write_statement(out: &mut String, statement: &Statement) {
             );
         }
         Statement::DestroyTargetPermanentChoice { permanent_types } => {
-            write_destroy_target_permanent_types(out, permanent_types);
+            write_destroy_target_permanent_choice(out, permanent_types);
         }
         Statement::DestroyTargetPermanent { permanent_type } => {
-            write_destroy_target_permanent_types(out, &[*permanent_type]);
+            write_destroy_target_permanent_choice(out, &[*permanent_type]);
         }
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of,
@@ -875,7 +875,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(" spell.");
         }
         ActivatedEffect::DestroyTargetPermanents { permanent_types } => {
-            write_destroy_target_permanent_types(out, permanent_types);
+            write_destroy_target_permanent_choice(out, permanent_types);
         }
         ActivatedEffect::DestroyAll { permanent_types } => {
             out.push_str("Destroy all ");
@@ -2060,7 +2060,7 @@ fn write_permanent_type_choice(out: &mut String, permanent_types: &[PermanentTyp
     }
 }
 
-fn write_destroy_target_permanent_types(out: &mut String, permanent_types: &[PermanentType]) {
+fn write_destroy_target_permanent_choice(out: &mut String, permanent_types: &[PermanentType]) {
     out.push_str("Destroy target ");
     write_permanent_type_choice(out, permanent_types);
     out.push('.');
