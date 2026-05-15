@@ -23,6 +23,7 @@ pub enum Statement {
         actions: Vec<BalanceSameWayAction>,
     },
     StaticAbility(StaticAbility),
+    ActivatedAbility(ActivatedAbility),
     TriggeredAbility(TriggeredAbility),
     /// Two or more abilities printed on one card, in source order,
     /// separated by newlines on the printed face. A single-ability
@@ -88,6 +89,28 @@ pub enum TriggerEffect {
 pub enum SourceObject {
     /// "this <permanent_type>"
     This(PermanentType),
+}
+
+/// "<cost>: <effect>." — an activated ability with explicit printed
+/// costs before the colon.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ActivatedAbility {
+    pub costs: Vec<ActivatedCost>,
+    pub effect: ActivatedEffect,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActivatedCost {
+    Mana(ManaCost),
+    Tap,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActivatedEffect {
+    /// "Add <mana>."
+    AddMana(ManaCost),
+    /// "Untap this <permanent_type>."
+    Untap(SourceObject),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -199,6 +222,8 @@ pub enum StaticAbility {
         object: EnchantedObject,
         keyword: Keyword,
     },
+    /// "This <permanent_type> doesn't untap during your untap step."
+    SourceDoesntUntapDuringYourUntapStep { source: SourceObject },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,4 +1,6 @@
-use mtg_grammar::{BalanceSameWayAction, Keyword, PermanentType, StaticAbility, TriggeredAbility};
+use mtg_grammar::{
+    ActivatedAbility, BalanceSameWayAction, Keyword, PermanentType, StaticAbility, TriggeredAbility,
+};
 use serde::{Deserialize, Serialize};
 
 /// Semantic IR for one Oracle-text effect. The grammar's syntactic
@@ -31,6 +33,9 @@ pub enum CardEffect {
     /// grammar AST until the IR needs to resolve `this Aura`,
     /// `that creature` and similar references.
     TriggeredAbility(TriggeredAbility),
+    /// An activated ability ("<cost>: <effect>."). Reused from the
+    /// grammar AST until the IR grows cost payment and effect lowering.
+    ActivatedAbility(ActivatedAbility),
     /// Two or more lowered effects, in source order — the lowering of
     /// a multi-ability card.
     Compound(Vec<CardEffect>),

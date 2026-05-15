@@ -11,3 +11,5 @@ mod aspect_of_wolf;
 mod bad_moon;
 #[path = "generated_patterns/balance.rs"]
 mod balance;
+#[path = "generated_patterns/basalt_monolith.rs"]
+mod basalt_monolith;

@@ -22,3 +22,5 @@ mod aspect_of_wolf;
 mod bad_moon;
 #[path = "generated/balance.rs"]
 mod balance;
+#[path = "generated/basalt_monolith.rs"]
+mod basalt_monolith;

@@ -36,11 +36,13 @@ sentence_statement = _{
     destroy_all
   | destroy
   | draw_cards
+  | activated_ability
   | static_as_long_as
   | static_colored_permanents_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
   | static_enchanted_can_attack_as_though
+  | static_source_doesnt_untap_during_your_untap_step
   | triggered_ability
   | each_player_equalizes_controlled_permanents
   | players_do_actions_the_same_way
@@ -56,6 +58,7 @@ mana_symbol = ${ "{" ~ mana_body ~ "}" }
 mana_body   = _{ generic | color }
 generic     = @{ ASCII_DIGIT+ }
 color       = @{ "W" | "U" | "B" | "R" | "G" | "C" }
+tap_symbol  = ${ "{" ~ "T" ~ "}" }
 
 destroy = { ^"destroy" ~ ^"target" ~ ^"creature" ~ "." }
 destroy_all = { ^"destroy" ~ ^"all" ~ permanent_type_plural ~ "." }
@@ -176,7 +179,22 @@ static_enchanted_can_attack_as_though = {
   ~ ^"as" ~ ^"though" ~ ^"it" ~ ^"didn't" ~ ^"have" ~ keyword ~ "."
 }
 
+static_source_doesnt_untap_during_your_untap_step = {
+    source_object ~ ^"doesn't" ~ ^"untap" ~ ^"during" ~ ^"your"
+  ~ ^"untap" ~ ^"step" ~ "."
+}
+
 enchanted_object = _{ permanent_type | creature_type }
+
+// Activated abilities have a printed cost before the colon and one or
+// more effects after it. The cost pieces are kept explicit because tap
+// symbols are costs but not mana symbols.
+activated_ability = { activated_cost ~ ":" ~ activated_effect }
+activated_cost = { activated_cost_component+ }
+activated_cost_component = _{ mana_symbol | tap_symbol }
+activated_effect = _{ add_mana | untap_source }
+add_mana = { ^"add" ~ mana_cost ~ "." }
+untap_source = { ^"untap" ~ source_object ~ "." }
 
 condition      = _{ enchanted_isnt }
 enchanted_isnt = {

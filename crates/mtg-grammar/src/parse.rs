@@ -3,11 +3,11 @@ use pest::Parser;
 use pest_derive::Parser;
 
 use crate::ast::{
-    BalanceSameWayAction, BasicLandType, Color, Condition, ContinuousEffect, CreatureType,
-    EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, PermanentType,
-    PtModifier, Rounding, Sign, SignedNumber, SignedVariable, SourceObject, Statement,
-    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType, Color,
+    Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject, InterveningIf,
+    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Rounding, Sign, SignedNumber,
+    SignedVariable, SourceObject, Statement, StaticAbility, TriggerEffect, TriggerEvent,
+    TriggeredAbility, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -60,9 +60,13 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_colored_permanents_get
         | Rule::static_enchanted_gets_with_definitions
         | Rule::static_enchanted_gets
-        | Rule::static_enchanted_can_attack_as_though => {
+        | Rule::static_enchanted_can_attack_as_though
+        | Rule::static_source_doesnt_untap_during_your_untap_step => {
             Ok(Statement::StaticAbility(static_ability_from_pair(pair)?))
         }
+        Rule::activated_ability => Ok(Statement::ActivatedAbility(activated_ability_from_pair(
+            pair,
+        )?)),
         Rule::triggered_ability => Ok(Statement::TriggeredAbility(triggered_ability_from_pair(
             pair,
         )?)),
@@ -433,7 +437,72 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 keyword: keyword_from_inner_pair(keyword_pair)?,
             })
         }
+        Rule::static_source_doesnt_untap_during_your_untap_step => {
+            let source_pair = pair
+                .into_inner()
+                .next()
+                .expect("static untap restriction begins with a source object");
+            Ok(StaticAbility::SourceDoesntUntapDuringYourUntapStep {
+                source: source_object_from_pair(source_pair)?,
+            })
+        }
         _ => Err(ParseError::Internal("static_ability variant")),
+    }
+}
+
+fn activated_ability_from_pair(pair: Pair<Rule>) -> Result<ActivatedAbility, ParseError> {
+    let mut inner = pair.into_inner();
+    let cost_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("activated_ability missing cost"))?;
+    let effect_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("activated_ability missing effect"))?;
+    Ok(ActivatedAbility {
+        costs: activated_cost_from_pair(cost_pair)?,
+        effect: activated_effect_from_pair(effect_pair)?,
+    })
+}
+
+fn activated_cost_from_pair(pair: Pair<Rule>) -> Result<Vec<ActivatedCost>, ParseError> {
+    if pair.as_rule() != Rule::activated_cost {
+        return Err(ParseError::Internal("activated_cost"));
+    }
+    let costs = pair
+        .into_inner()
+        .map(|child| match child.as_rule() {
+            Rule::mana_symbol => Ok(ActivatedCost::Mana(ManaCost {
+                symbols: vec![mana_symbol_from_pair(child)],
+            })),
+            Rule::tap_symbol => Ok(ActivatedCost::Tap),
+            _ => Err(ParseError::Internal("activated_cost component")),
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if costs.is_empty() {
+        return Err(ParseError::Internal("activated_cost empty"));
+    }
+    Ok(costs)
+}
+
+fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, ParseError> {
+    match pair.as_rule() {
+        Rule::add_mana => {
+            let mana_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("add_mana missing mana_cost"))?;
+            Ok(ActivatedEffect::AddMana(mana_cost_from_pair(mana_pair)))
+        }
+        Rule::untap_source => {
+            let source_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("untap_source missing source_object"))?;
+            Ok(ActivatedEffect::Untap(source_object_from_pair(
+                source_pair,
+            )?))
+        }
+        _ => Err(ParseError::Internal("activated_effect")),
     }
 }
 

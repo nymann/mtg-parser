@@ -1,11 +1,11 @@
 use std::fmt::Write;
 
 use crate::ast::{
-    BalanceSameWayAction, BasicLandType, Color, Condition, ContinuousEffect, CreatureType,
-    EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, PermanentType,
-    PtModifier, Rounding, Sign, SignedNumber, SignedVariable, SourceObject, Statement,
-    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType, Color,
+    Condition, ContinuousEffect, CreatureType, EnchantObject, EnchantedObject, InterveningIf,
+    Keyword, ManaCost, ManaSymbol, PermanentType, PtModifier, Rounding, Sign, SignedNumber,
+    SignedVariable, SourceObject, Statement, StaticAbility, TriggerEffect, TriggerEvent,
+    TriggeredAbility, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -47,6 +47,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" the same way.");
         }
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
+        Statement::ActivatedAbility(aa) => write_activated_ability(out, aa),
         Statement::TriggeredAbility(ta) => write_triggered_ability(out, ta),
         Statement::Compound(stmts) => {
             for (i, s) in stmts.iter().enumerate() {
@@ -157,6 +158,36 @@ fn write_mana_symbol(out: &mut String, sym: ManaSymbol) {
     }
 }
 
+fn write_activated_ability(out: &mut String, aa: &ActivatedAbility) {
+    for cost in &aa.costs {
+        write_activated_cost(out, cost);
+    }
+    out.push_str(": ");
+    write_activated_effect(out, &aa.effect);
+}
+
+fn write_activated_cost(out: &mut String, cost: &ActivatedCost) {
+    match cost {
+        ActivatedCost::Mana(mana) => write_mana_cost(out, mana),
+        ActivatedCost::Tap => out.push_str("{T}"),
+    }
+}
+
+fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
+    match effect {
+        ActivatedEffect::AddMana(mana) => {
+            out.push_str("Add ");
+            write_mana_cost(out, mana);
+            out.push('.');
+        }
+        ActivatedEffect::Untap(source) => {
+            out.push_str("Untap ");
+            write_source_object(out, *source);
+            out.push('.');
+        }
+    }
+}
+
 fn write_static_ability(out: &mut String, sa: &StaticAbility) {
     match sa {
         StaticAbility::Conditional { condition, effect } => {
@@ -207,6 +238,10 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str(" can attack as though it didn't have ");
             write_keyword_lowercase(out, *keyword);
             out.push('.');
+        }
+        StaticAbility::SourceDoesntUntapDuringYourUntapStep { source } => {
+            write_source_object_capitalized(out, *source);
+            out.push_str(" doesn't untap during your untap step.");
         }
     }
 }
@@ -286,6 +321,15 @@ fn write_source_object(out: &mut String, source: SourceObject) {
     match source {
         SourceObject::This(pt) => {
             out.push_str("this ");
+            out.push_str(permanent_type_name(pt));
+        }
+    }
+}
+
+fn write_source_object_capitalized(out: &mut String, source: SourceObject) {
+    match source {
+        SourceObject::This(pt) => {
+            out.push_str("This ");
             out.push_str(permanent_type_name(pt));
         }
     }
