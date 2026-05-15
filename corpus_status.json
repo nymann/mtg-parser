@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 218,
+  "passing": 219,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -624,8 +624,7 @@
       "status": "pass"
     },
     "lea/Regeneration": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:17\n  |\n2 | {G}: Regenerate enchanted creature.\n  |                 ^---\n  |\n  = expected source_object"
+      "status": "pass"
     },
     "lea/Regrowth": {
       "status": "fail",

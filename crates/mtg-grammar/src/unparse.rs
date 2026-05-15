@@ -13,9 +13,9 @@ use crate::ast::{
     LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
     NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
     OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step,
-    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TriggerCondition,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, RegenerateRecipient, Rounding,
+    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TriggerCondition,
     TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
     TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
     VariablePtModifier, Zone,
@@ -1209,9 +1209,9 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_enchanted_object(out, *object);
             out.push('.');
         }
-        ActivatedEffect::Regenerate(source) => {
+        ActivatedEffect::Regenerate(recipient) => {
             out.push_str("Regenerate ");
-            write_source_object(out, *source);
+            write_regenerate_recipient(out, *recipient);
             out.push('.');
         }
         ActivatedEffect::CounterTargetColoredSpell { color } => {
@@ -2405,6 +2405,16 @@ fn write_source_object(out: &mut String, source: SourceObject) {
             out.push_str(permanent_type_name(pt));
         }
         SourceObject::ThisAura => out.push_str("this Aura"),
+    }
+}
+
+fn write_regenerate_recipient(out: &mut String, recipient: RegenerateRecipient) {
+    match recipient {
+        RegenerateRecipient::Source(source) => write_source_object(out, source),
+        RegenerateRecipient::Enchanted(object) => {
+            out.push_str("enchanted ");
+            write_enchanted_object(out, object);
+        }
     }
 }
 

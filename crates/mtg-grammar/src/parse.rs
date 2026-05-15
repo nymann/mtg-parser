@@ -16,8 +16,8 @@ use crate::ast::{
     ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedDamageEvent, NamedKeywordAbility,
     NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer,
     PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject,
-    SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
+    PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SourceObject, SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
     TargetPermanentEndOfTurnEffect, TriggerCondition, TriggerDamageCondition,
     TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
     TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
@@ -3553,10 +3553,17 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             )?))
         }
         Rule::regenerate_source => {
-            let source_pair = only_inner(pair, "regenerate_source missing source_object")?;
-            Ok(ActivatedEffect::Regenerate(source_object_from_pair(
-                source_pair,
-            )?))
+            let object_pair = only_inner(pair, "regenerate_source missing object")?;
+            let recipient = match object_pair.as_rule() {
+                Rule::source_object => {
+                    RegenerateRecipient::Source(source_object_from_pair(object_pair)?)
+                }
+                Rule::permanent_type | Rule::creature_type => {
+                    RegenerateRecipient::Enchanted(enchanted_object_from_pair(object_pair)?)
+                }
+                _ => return Err(ParseError::Internal("regenerate_source object")),
+            };
+            Ok(ActivatedEffect::Regenerate(recipient))
         }
         Rule::colored_target_effect => match colored_target_effect_from_pair(pair)? {
             ColoredTargetEffect::CounterSpell { color } => {

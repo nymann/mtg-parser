@@ -1016,7 +1016,7 @@ target_permanent_becomes_basic_land_type_until_source_leaves = {
     ^"target" ~ permanent_type ~ ^"becomes" ~ article ~ basic_land_type
   ~ ^"until" ~ source_object ~ ^"leaves" ~ ^"the" ~ ^"battlefield" ~ "."
 }
-regenerate_source = { ^"regenerate" ~ source_object ~ "." }
+regenerate_source = { ^"regenerate" ~ (source_object | (^"enchanted" ~ enchanted_object)) ~ "." }
 untap_target_permanent = { ^"untap" ~ ^"target" ~ permanent_type ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
 untap_enchanted_object = { ^"untap" ~ ^"enchanted" ~ enchanted_object ~ "." }

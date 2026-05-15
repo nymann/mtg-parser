@@ -1032,6 +1032,14 @@ pub enum ActivatedCost {
     Sacrifice(SourceObject),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RegenerateRecipient {
+    /// "this <permanent_type>"
+    Source(SourceObject),
+    /// "enchanted <object>"
+    Enchanted(EnchantedObject),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActivatedEffect {
     /// "Add <mana>."
@@ -1054,8 +1062,8 @@ pub enum ActivatedEffect {
     },
     /// "Untap enchanted <object>."
     UntapEnchanted(EnchantedObject),
-    /// "Regenerate this <permanent_type>."
-    Regenerate(SourceObject),
+    /// "Regenerate <permanent>." — CR 701.15 regenerate keyword action.
+    Regenerate(RegenerateRecipient),
     /// "Counter target <color> spell."
     CounterTargetColoredSpell {
         color: Color,

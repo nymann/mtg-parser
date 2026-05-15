@@ -281,3 +281,5 @@ mod psionic_blast;
 mod raging_river;
 #[path = "generated_patterns/raise_dead.rs"]
 mod raise_dead;
+#[path = "generated_patterns/regeneration.rs"]
+mod regeneration;
