@@ -54,3 +54,5 @@ mod burrowing;
 mod camouflage;
 #[path = "generated/castle.rs"]
 mod castle;
+#[path = "generated/channel.rs"]
+mod channel;

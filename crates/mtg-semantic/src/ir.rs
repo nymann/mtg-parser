@@ -1,6 +1,7 @@
 use mtg_grammar::{
-    ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Keyword, MixedPtModifier,
-    ModalMode, PermanentType, StaticAbility, TriggeredAbility, VariableDefinition,
+    ActionTiming, ActivatedAbility, BalanceSameWayAction, CardCount, CastRestriction, Keyword,
+    ManaCost, MixedPtModifier, ModalMode, OptionalCost, PermanentType, StaticAbility,
+    TriggeredAbility, VariableDefinition,
 };
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +23,13 @@ pub enum CardEffect {
     Keyword(Keyword),
     /// "Target player draws N cards."
     TargetPlayerDrawsCards { count: CardCount },
+    /// "Until end of turn, <timing>, you may <cost>."
+    UntilEndOfTurnYouMayPayCostAtTiming {
+        timing: ActionTiming,
+        cost: OptionalCost,
+    },
+    /// "If you do, add <mana>."
+    IfYouDoAddMana { mana: ManaCost },
     /// "Target <type> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
     TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {

@@ -38,6 +38,8 @@ sentence_statement = _{
   | destroy_all
   | destroy
   | draw_cards
+  | until_eot_you_may_pay_cost_at_timing
+  | if_you_do_add_mana
   | target_permanent_gains_keyword_and_gets_eot
   | target_creature_defending_player_controls_can_block_any_number
   | it_blocks_each_attacking_creature_if_able
@@ -97,6 +99,22 @@ number_word = @{
     ^"one" | ^"two" | ^"three" | ^"four" | ^"five"
   | ^"six" | ^"seven" | ^"eight" | ^"nine" | ^"ten"
 }
+
+until_eot_you_may_pay_cost_at_timing = {
+    ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "," ~ action_timing
+  ~ "," ~ ^"you" ~ ^"may" ~ optional_cost ~ "."
+}
+
+action_timing = _{ any_time_you_could_activate_a_mana_ability }
+any_time_you_could_activate_a_mana_ability = {
+    ^"any" ~ ^"time" ~ ^"you" ~ ^"could" ~ ^"activate" ~ article
+  ~ ^"mana" ~ ^"ability"
+}
+
+optional_cost = _{ pay_life_cost }
+pay_life_cost = { ^"pay" ~ unsigned_number ~ ^"life" }
+
+if_you_do_add_mana = { ^"if" ~ ^"you" ~ ^"do" ~ "," ~ add_mana }
 
 // Balance-style resource equalization:
 // each player keeps a count of objects matching the least-stocked player,

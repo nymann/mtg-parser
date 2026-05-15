@@ -1,12 +1,13 @@
 use std::fmt::Write;
 
 use crate::ast::{
-    ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType,
-    CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus, CreatureType,
-    EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier,
-    ModalMode, PermanentType, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent,
-    TriggeredAbility, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
+    BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus,
+    CreatureType, EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol,
+    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PtModifier, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility, Step,
+    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -30,6 +31,18 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str("Target player draws ");
             write_card_count(out, *count);
             out.push_str(" cards.");
+        }
+        Statement::UntilEndOfTurnYouMayPayCostAtTiming { timing, cost } => {
+            out.push_str("Until end of turn, ");
+            write_action_timing(out, *timing);
+            out.push_str(", you may ");
+            write_optional_cost(out, *cost);
+            out.push('.');
+        }
+        Statement::IfYouDoAddMana { mana } => {
+            out.push_str("If you do, add ");
+            write_mana_cost(out, mana);
+            out.push('.');
         }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             permanent_type,
@@ -166,6 +179,22 @@ fn write_card_count(out: &mut String, count: CardCount) {
     match count {
         CardCount::Number(n) => out.push_str(u32_to_number_word(n)),
         CardCount::Variable(variable) => out.push_str(variable_name(variable)),
+    }
+}
+
+fn write_action_timing(out: &mut String, timing: ActionTiming) {
+    match timing {
+        ActionTiming::AnyTimeYouCouldActivateAManaAbility => {
+            out.push_str("any time you could activate a mana ability");
+        }
+    }
+}
+
+fn write_optional_cost(out: &mut String, cost: OptionalCost) {
+    match cost {
+        OptionalCost::PayLife { amount } => {
+            write!(out, "pay {amount} life").expect("write to String never fails");
+        }
     }
 }
 

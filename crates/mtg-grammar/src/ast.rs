@@ -14,6 +14,15 @@ pub enum Statement {
     TargetPlayerDrawsCards {
         count: CardCount,
     },
+    /// "Until end of turn, <timing>, you may <cost>."
+    UntilEndOfTurnYouMayPayCostAtTiming {
+        timing: ActionTiming,
+        cost: OptionalCost,
+    },
+    /// "If you do, add <mana>."
+    IfYouDoAddMana {
+        mana: ManaCost,
+    },
     /// "Target <type> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
     TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
@@ -86,6 +95,18 @@ pub enum BalanceSameWayAction {
 pub enum CardCount {
     Number(u32),
     Variable(Variable),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActionTiming {
+    /// "any time you could activate a mana ability"
+    AnyTimeYouCouldActivateAManaAbility,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum OptionalCost {
+    /// "pay N life"
+    PayLife { amount: u32 },
 }
 
 /// "When/Whenever <event>, [if <intervening-if>,] <effect>[. <effect>]*."

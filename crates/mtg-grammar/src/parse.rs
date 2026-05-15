@@ -3,12 +3,13 @@ use pest::Parser;
 use pest_derive::Parser;
 
 use crate::ast::{
-    ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction, BasicLandType,
-    CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus, CreatureType,
-    EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol, MixedPtModifier,
-    ModalMode, PermanentType, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, Statement, StaticAbility, Step, TriggerEffect, TriggerEvent,
-    TriggeredAbility, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    ActionTiming, ActivatedAbility, ActivatedCost, ActivatedEffect, BalanceSameWayAction,
+    BasicLandType, CardCount, CastRestriction, Color, Condition, ContinuousEffect, CreatureStatus,
+    CreatureType, EnchantObject, EnchantedObject, InterveningIf, Keyword, ManaCost, ManaSymbol,
+    MixedPtModifier, ModalMode, OptionalCost, PermanentType, PtModifier, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, Statement, StaticAbility, Step,
+    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -57,6 +58,10 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::destroy => Ok(Statement::DestroyTargetCreature),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::draw_cards => draw_cards_from_pair(pair),
+        Rule::until_eot_you_may_pay_cost_at_timing => {
+            until_eot_you_may_pay_cost_at_timing_from_pair(pair)
+        }
+        Rule::if_you_do_add_mana => if_you_do_add_mana_from_pair(pair),
         Rule::target_permanent_gains_keyword_and_gets_eot => {
             target_permanent_gains_keyword_and_gets_eot_from_pair(pair)
         }
@@ -279,6 +284,61 @@ fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         _ => return Err(ParseError::Internal("draw_count")),
     };
     Ok(Statement::TargetPlayerDrawsCards { count })
+}
+
+fn until_eot_you_may_pay_cost_at_timing_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let timing_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("until_eot missing action timing"))?;
+    let cost_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("until_eot missing optional cost"))?;
+    Ok(Statement::UntilEndOfTurnYouMayPayCostAtTiming {
+        timing: action_timing_from_pair(timing_pair)?,
+        cost: optional_cost_from_pair(cost_pair)?,
+    })
+}
+
+fn if_you_do_add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mana_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("if_you_do_add_mana missing add_mana"))?
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("add_mana missing mana_cost"))?;
+    Ok(Statement::IfYouDoAddMana {
+        mana: mana_cost_from_pair(mana_pair),
+    })
+}
+
+fn action_timing_from_pair(pair: Pair<Rule>) -> Result<ActionTiming, ParseError> {
+    match pair.as_rule() {
+        Rule::any_time_you_could_activate_a_mana_ability => {
+            Ok(ActionTiming::AnyTimeYouCouldActivateAManaAbility)
+        }
+        _ => Err(ParseError::Internal("action_timing")),
+    }
+}
+
+fn optional_cost_from_pair(pair: Pair<Rule>) -> Result<OptionalCost, ParseError> {
+    match pair.as_rule() {
+        Rule::pay_life_cost => {
+            let amount_pair = pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("pay_life_cost missing amount"))?;
+            let amount = amount_pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("pay_life_cost amount"))?;
+            Ok(OptionalCost::PayLife { amount })
+        }
+        _ => Err(ParseError::Internal("optional_cost")),
+    }
 }
 
 fn number_word_to_u32(word: &str) -> Option<u32> {

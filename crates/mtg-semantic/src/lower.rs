@@ -20,6 +20,13 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
         Statement::TargetPlayerDrawsCards { count } => {
             CardEffect::TargetPlayerDrawsCards { count: *count }
         }
+        Statement::UntilEndOfTurnYouMayPayCostAtTiming { timing, cost } => {
+            CardEffect::UntilEndOfTurnYouMayPayCostAtTiming {
+                timing: *timing,
+                cost: *cost,
+            }
+        }
+        Statement::IfYouDoAddMana { mana } => CardEffect::IfYouDoAddMana { mana: mana.clone() },
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             permanent_type,
             keyword,
