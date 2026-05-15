@@ -40,3 +40,5 @@ mod black_vise;
 mod black_ward;
 #[path = "generated/blaze_of_glory.rs"]
 mod blaze_of_glory;
+#[path = "generated/blessing.rs"]
+mod blessing;

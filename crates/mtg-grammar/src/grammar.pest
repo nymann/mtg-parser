@@ -243,13 +243,23 @@ activated_ability = { activated_cost ~ ":" ~ activated_effect }
 // Multiple non-mana activated costs are printed comma-separated.
 activated_cost = { activated_cost_component ~ ("," ~ activated_cost_component)* }
 activated_cost_component = _{ sacrifice_source | mana_symbol | tap_symbol }
-activated_effect = _{ add_mana_of_any_one_color | add_one_mana_of_any_color | add_mana | untap_source }
+activated_effect = _{
+    add_mana_of_any_one_color
+  | add_one_mana_of_any_color
+  | add_mana
+  | untap_source
+  | activated_enchanted_gets_until_eot
+}
 add_mana_of_any_one_color = {
     ^"add" ~ number_word ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"one" ~ ^"color" ~ "."
 }
 add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"color" ~ "." }
 add_mana = { ^"add" ~ mana_cost ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
+activated_enchanted_gets_until_eot = {
+    ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier
+  ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
+}
 sacrifice_source = { ^"sacrifice" ~ source_object }
 
 condition      = _{ enchanted_isnt }

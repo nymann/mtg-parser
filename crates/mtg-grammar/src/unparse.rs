@@ -244,6 +244,16 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_source_object(out, *source);
             out.push('.');
         }
+        ActivatedEffect::EnchantedGetsUntilEndOfTurn {
+            permanent_type,
+            modifier,
+        } => {
+            out.push_str("Enchanted ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" gets ");
+            write_pt_modifier(out, *modifier);
+            out.push_str(" until end of turn.");
+        }
     }
 }
 

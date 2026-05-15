@@ -29,3 +29,5 @@ mod black_vise;
 mod black_ward;
 #[path = "generated_patterns/blaze_of_glory.rs"]
 mod blaze_of_glory;
+#[path = "generated_patterns/blessing.rs"]
+mod blessing;

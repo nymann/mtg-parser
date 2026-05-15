@@ -156,6 +156,11 @@ pub enum ActivatedEffect {
     AddManaOfAnyOneColor { amount: u32 },
     /// "Untap this <permanent_type>."
     Untap(SourceObject),
+    /// "Enchanted <type> gets <modifier> until end of turn."
+    EnchantedGetsUntilEndOfTurn {
+        permanent_type: PermanentType,
+        modifier: PtModifier,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

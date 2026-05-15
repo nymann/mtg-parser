@@ -686,6 +686,19 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 source_pair,
             )?))
         }
+        Rule::activated_enchanted_gets_until_eot => {
+            let mut inner = pair.into_inner();
+            let pt_pair = inner.next().ok_or(ParseError::Internal(
+                "activated enchanted gets missing permanent_type",
+            ))?;
+            let modifier_pair = inner.next().ok_or(ParseError::Internal(
+                "activated enchanted gets missing modifier",
+            ))?;
+            Ok(ActivatedEffect::EnchantedGetsUntilEndOfTurn {
+                permanent_type: permanent_type_from_pair(pt_pair)?,
+                modifier: pt_modifier_from_pair(modifier_pair)?,
+            })
+        }
         _ => Err(ParseError::Internal("activated_effect")),
     }
 }
