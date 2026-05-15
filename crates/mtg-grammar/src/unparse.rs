@@ -756,10 +756,10 @@ fn write_damage_prevention_effect_lowercase(
 fn write_damage_prevention_effect_with_prefix<R: Copy>(
     out: &mut String,
     effect: DamagePreventionEffect<R>,
-    prefix: &str,
+    prevention_verb: &str,
     mut write_recipient: impl FnMut(&mut String, R),
 ) {
-    write_damage_prevention_replacement_event(out, prefix, effect.amount, effect.kind);
+    write_damage_prevention_replacement_event(out, prevention_verb, effect.amount, effect.kind);
     if let Some(recipient) = effect.recipient {
         out.push_str(" to ");
         write_recipient(out, recipient);
@@ -775,11 +775,11 @@ fn write_damage_prevention_duration(out: &mut String, duration: DamagePrevention
 
 fn write_damage_prevention_replacement_event(
     out: &mut String,
-    prefix: &str,
+    prevention_verb: &str,
     amount: DamagePreventionAmount,
     kind: Option<DamageKind>,
 ) {
-    out.push_str(prefix);
+    out.push_str(prevention_verb);
     match amount {
         DamagePreventionAmount::All => out.push_str("all "),
         DamagePreventionAmount::Next(amount) => {

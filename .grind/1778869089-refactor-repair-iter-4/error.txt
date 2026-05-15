@@ -1,0 +1,41 @@
+cargo test failed with exit status: 101
+help: there is a variant with a similar name
+    |
+276 -         Just(Statement::PreventAllCombatDamageThisTurn),
+276 +         Just(Statement::PreventDamageThisTurn { effect: /* value */ }),
+    |
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `mtg-grammar` (test "prop") due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error[E0599]: no variant named `PreventNextDamageThatWouldBeDealtToRecipientThisTurn` found for enum `ModalMode`
+   --> crates/mtg-semantic/tests/prop.rs:146:24
+    |
+146 |             ModalMode::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ variant not found in `ModalMode`
+
+error[E0599]: no variant or associated item named `PreventAllCombatDamageThisTurn` found for enum `Statement` in the current scope
+   --> crates/mtg-semantic/tests/prop.rs:271:25
+    |
+271 |         Just(Statement::PreventAllCombatDamageThisTurn),
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ variant or associated item not found in `Statement`
+    |
+help: there is a variant with a similar name
+    |
+271 -         Just(Statement::PreventAllCombatDamageThisTurn),
+271 +         Just(Statement::PreventDamageThisTurn { effect: /* value */ }),
+    |
+
+error[E0599]: no variant named `PreventNextDamageThatWouldBeDealtToRecipientThisTurn` found for enum `Statement`
+   --> crates/mtg-semantic/tests/prop.rs:273:24
+    |
+273 |             Statement::PreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ variant not found in `Statement`
+
+error[E0599]: no variant named `IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn` found for enum `Statement`
+   --> crates/mtg-semantic/tests/prop.rs:278:24
+    |
+278 |             Statement::IfYouDoPreventNextDamageThatWouldBeDealtToRecipientThisTurn {
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ variant not found in `Statement`
+
+error: could not compile `mtg-semantic` (test "prop") due to 4 previous errors

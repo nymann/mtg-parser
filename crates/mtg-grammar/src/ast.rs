@@ -18,7 +18,9 @@ pub enum Statement {
         #[serde(flatten)]
         event: NamedDamageEvent,
     },
-    /// "Prevent <amount> [combat] damage that would be dealt [to <recipient>] this turn."
+    /// Damage prevention effect whose replacement event is "prevent
+    /// <amount> [combat] damage that would be dealt" and whose duration
+    /// is "this turn".
     PreventDamageThisTurn {
         #[serde(flatten)]
         effect: DamagePreventionEffect<PreventionRecipient>,
@@ -142,7 +144,7 @@ pub enum Statement {
         timing: ActionTiming,
         cost: OptionalCost,
     },
-    /// "If you do, prevent <amount> [combat] damage that would be dealt [to <recipient>] this turn."
+    /// "If you do," followed by a this-turn damage prevention effect.
     IfYouDoPreventDamageThisTurn {
         #[serde(flatten)]
         effect: DamagePreventionEffect<PreventionRecipient>,
@@ -476,6 +478,8 @@ pub struct DamagePrevention<R, A = DamageAmount> {
     pub recipient: R,
 }
 
+/// A CR 615 prevention effect: the CR 614 replacement event being
+/// created, plus the context-specific recipient and duration axes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DamagePreventionEffect<R = PreventionRecipient> {
     /// The prevented replacement event's amount axis: "all" or "the next N".
@@ -1019,7 +1023,7 @@ pub enum ActivatedDamageEffect {
         event: DamageEventPattern<ActivatedDamageSource, ActivatedDamageRecipient>,
         effect: ActivatedDamageEventEffect,
     },
-    /// "Prevent <amount> [combat] damage that would be dealt to <recipient> this turn."
+    /// This-turn damage prevention effect with activated-ability recipient vocabulary.
     PreventDamageThisTurn {
         #[serde(flatten)]
         effect: DamagePreventionEffect<ActivatedDamageRecipient>,

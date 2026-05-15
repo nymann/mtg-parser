@@ -286,8 +286,8 @@ fn modal_mode_from_pair(pair: Pair<Rule>) -> Result<ModalMode, ParseError> {
         Rule::target_player_gains_life => Ok(ModalMode::TargetPlayerGainsLife {
             amount: target_player_gains_life_amount_from_pair(effect)?,
         }),
-        Rule::prevent_damage_this_turn => {
-            let effect = damage_prevention_effect_from_timed_prevention_pair(effect)?;
+        Rule::damage_prevention_effect_this_turn => {
+            let effect = damage_prevention_effect_from_this_turn_pair(effect)?;
             Ok(ModalMode::PreventDamageThisTurn { effect })
         }
         _ => Err(ParseError::Internal("modal_effect")),
@@ -997,12 +997,12 @@ fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
     )
 }
 
-fn damage_prevention_effect_from_timed_prevention_pair(
+fn damage_prevention_effect_from_this_turn_pair(
     pair: Pair<Rule>,
 ) -> Result<DamagePreventionEffect<PreventionRecipient>, ParseError> {
-    damage_prevention_effect_from_timed_prevention_pair_with_recipient(
+    damage_prevention_effect_from_this_turn_pair_with_recipient(
         pair,
-        Rule::damage_prevention_recipient,
+        Rule::damage_prevention_recipient_clause,
         |recipient_pair| {
             prevention_recipient_from_pair(only_inner(
                 recipient_pair,
@@ -1013,7 +1013,7 @@ fn damage_prevention_effect_from_timed_prevention_pair(
     )
 }
 
-fn damage_prevention_effect_from_timed_prevention_pair_with_recipient<R>(
+fn damage_prevention_effect_from_this_turn_pair_with_recipient<R>(
     pair: Pair<Rule>,
     recipient_rule: Rule,
     mut recipient_from_pair: impl FnMut(Pair<Rule>) -> Result<R, ParseError>,
@@ -1053,8 +1053,8 @@ fn damage_prevention_effect_from_pair(
 ) -> Result<DamagePreventionEffect<PreventionRecipient>, ParseError> {
     let inner = only_inner(pair, "damage prevention effect missing inner rule")?;
     match inner.as_rule() {
-        Rule::prevent_damage_this_turn => {
-            damage_prevention_effect_from_timed_prevention_pair(inner)
+        Rule::damage_prevention_effect_this_turn => {
+            damage_prevention_effect_from_this_turn_pair(inner)
         }
         _ => Err(ParseError::Internal("damage prevention effect")),
     }
@@ -1169,8 +1169,8 @@ fn if_you_do_effect_from_inner_pair(pair: Pair<Rule>) -> Result<IfYouDoEffect, P
         Rule::gain_life_effect => Ok(IfYouDoEffect::GainLife {
             amount: if_you_do_gain_life_amount_from_pair(pair)?,
         }),
-        Rule::prevent_damage_this_turn => {
-            let effect = damage_prevention_effect_from_timed_prevention_pair(pair)?;
+        Rule::damage_prevention_effect_this_turn => {
+            let effect = damage_prevention_effect_from_this_turn_pair(pair)?;
             Ok(IfYouDoEffect::PreventDamageThisTurn { effect })
         }
         _ => Err(ParseError::Internal("if_you_do effect")),
@@ -2118,7 +2118,7 @@ fn activated_damage_assignment_from_pair(
 fn activated_damage_prevention_effect_from_pair(
     pair: Pair<Rule>,
 ) -> Result<DamagePreventionEffect<ActivatedDamageRecipient>, ParseError> {
-    damage_prevention_effect_from_timed_prevention_pair_with_recipient(
+    damage_prevention_effect_from_this_turn_pair_with_recipient(
         pair,
         Rule::activated_damage_prevention_recipient_clause,
         |recipient_pair| {

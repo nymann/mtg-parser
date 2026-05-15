@@ -159,7 +159,7 @@ modal_mode    = { "•" ~ modal_effect }
 modal_effect  = _{
     colored_target_effect
   | target_player_gains_life
-  | prevent_damage_this_turn
+  | damage_prevention_effect_this_turn
 }
 colored_target_effect = { colored_target_action ~ "." }
 colored_target_action = _{
@@ -227,9 +227,9 @@ damage_event_recipient_list = {
     ^"to" ~ damage_recipient ~ (^"and" ~ damage_recipient)+
 }
 damage_prevention_effect = {
-    prevent_damage_this_turn
+    damage_prevention_effect_this_turn
 }
-prevent_damage_this_turn = {
+damage_prevention_effect_this_turn = {
     damage_prevention_replacement_effect ~ damage_prevention_duration
 }
 // Comprehensive Rules 614/615 split: a prevention effect replaces a
@@ -237,7 +237,7 @@ prevent_damage_this_turn = {
 // This replacement event is shared by sentence, modal, and activated
 // prevention effects; only the recipient vocabulary varies by context.
 damage_prevention_replacement_effect = _{
-    damage_prevention_replacement_event ~ damage_prevention_recipient?
+    damage_prevention_replacement_event ~ damage_prevention_recipient_clause?
 }
 damage_prevention_replacement_event = _{
     ^"prevent" ~ damage_prevention_amount_axis ~ damage_kind? ~ ^"damage"
@@ -249,7 +249,7 @@ damage_prevention_next_amount = { ^"the" ~ ^"next" ~ damage_prevention_amount }
 damage_prevention_event = _{
     ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"
 }
-damage_prevention_recipient = { ^"to" ~ prevention_recipient }
+damage_prevention_recipient_clause = { ^"to" ~ prevention_recipient }
 damage_prevention_duration = _{ this_turn_period }
 this_turn_period = _{ ^"this" ~ ^"turn" ~ "." }
 damage_prevention_amount = _{ damage_amount_expression }
@@ -447,7 +447,7 @@ if_you_do_effect_body = _{
   | untap_source
   | untap_referenced_permanent
   | gain_life_effect
-  | prevent_damage_this_turn
+  | damage_prevention_effect_this_turn
 }
 if_you_do_gain_life = { ^"if" ~ ^"you" ~ ^"do" ~ "," ~ gain_life_effect }
 gain_life_effect = { ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "." }
