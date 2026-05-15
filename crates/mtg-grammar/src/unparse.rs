@@ -53,6 +53,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_mana_cost(out, mana);
             out.push('.');
         }
+        Statement::IfYouDoGainLife { amount } => {
+            write!(out, "If you do, you gain {amount} life.").expect("write to String never fails");
+        }
         Statement::TargetSpellOrPermanentBecomesColor { color } => {
             out.push_str("Target spell or permanent becomes ");
             out.push_str(color_name(*color));
@@ -588,6 +591,7 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
 fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
     out.push_str(match ta.event {
         TriggerEvent::PermanentEnters { .. }
+        | TriggerEvent::PlayerCastsColoredSpell { .. }
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
@@ -623,6 +627,11 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push(' ');
             out.push_str(permanent_type_name(permanent_type));
             out.push_str(" enters");
+        }
+        TriggerEvent::PlayerCastsColoredSpell { color } => {
+            out.push_str("a player casts a ");
+            out.push_str(color_name(color));
+            out.push_str(" spell");
         }
         TriggerEvent::EnchantedPermanentDies { permanent_type } => {
             out.push_str("enchanted ");
@@ -736,6 +745,11 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect) {
             out.push_str("sacrifice ");
             write_source_object(out, *source);
             out.push_str(" unless you pay ");
+            write_mana_cost(out, cost);
+            out.push('.');
+        }
+        TriggerEffect::YouMayPayMana { cost } => {
+            out.push_str("you may pay ");
             write_mana_cost(out, cost);
             out.push('.');
         }

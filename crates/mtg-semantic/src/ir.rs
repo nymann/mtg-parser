@@ -38,6 +38,8 @@ pub enum CardEffect {
     },
     /// "If you do, add <mana>."
     IfYouDoAddMana { mana: ManaCost },
+    /// "If you do, you gain N life."
+    IfYouDoGainLife { amount: u32 },
     /// "Target spell or permanent becomes <color>."
     TargetSpellOrPermanentBecomesColor { color: Color },
     /// "Target <type> gains <keyword> and gets <modifier> until end of

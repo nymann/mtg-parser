@@ -43,6 +43,7 @@ sentence_statement = _{
   | draw_cards
   | until_eot_you_may_pay_cost_at_timing
   | if_you_do_add_mana
+  | if_you_do_gain_life
   | target_spell_or_permanent_becomes_color
   | target_permanent_gains_keyword_and_gets_eot
   | target_creature_defending_player_controls_can_block_any_number
@@ -149,6 +150,9 @@ optional_cost = _{ pay_life_cost }
 pay_life_cost = { ^"pay" ~ unsigned_number ~ ^"life" }
 
 if_you_do_add_mana = { ^"if" ~ ^"you" ~ ^"do" ~ "," ~ add_mana }
+if_you_do_gain_life = {
+    ^"if" ~ ^"you" ~ ^"do" ~ "," ~ ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "."
+}
 
 // Balance-style resource equalization:
 // each player keeps a count of objects matching the least-stocked player,
@@ -536,12 +540,14 @@ trigger_event = _{
   | beginning_of_your_upkeep
   | beginning_of_chosen_players_upkeep
   | beginning_of_the_next_end_step
+  | player_casts_colored_spell
   | permanent_enters
 }
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
 aura_leaves_battlefield = { ^"this" ~ ^"aura" ~ ^"leaves" ~ ^"the" ~ ^"battlefield" }
 enchanted_permanent_dies = { ^"enchanted" ~ permanent_type ~ ^"dies" }
 permanent_enters        = { article ~ permanent_type ~ ^"enters" }
+player_casts_colored_spell = { article ~ ^"player" ~ ^"casts" ~ article ~ color_word ~ ^"spell" }
 source_blocks_or_becomes_blocked_by_non_creature_type_creature = {
     source_object ~ ^"blocks" ~ ^"or" ~ ^"becomes" ~ ^"blocked"
   ~ ^"by" ~ article ~ ^"non-" ~ creature_type ~ ^"creature"
@@ -572,6 +578,7 @@ trigger_effect = _{
   | remove_pt_counter_from_it
   | loses_and_gains_keyword
   | return_enchanted_card_and_attach
+  | you_may_pay_mana
   | sacrifice_source_unless_you_pay
   | source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller
   | source_deals_variable_damage_to_that_player
@@ -621,6 +628,8 @@ that_creatures_controller_sacrifices_it = {
 sacrifice_source_unless_you_pay = {
     ^"sacrifice" ~ source_object ~ ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ "."
 }
+
+you_may_pay_mana = { ^"you" ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
 
 remove_pt_counter_from_it = {
     ^"remove" ~ article ~ pt_counter ~ ^"from" ~ ^"it" ~ "."

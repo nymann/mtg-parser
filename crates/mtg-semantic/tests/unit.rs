@@ -24,6 +24,14 @@ fn lowers_counter_target_spell() {
 }
 
 #[test]
+fn lowers_if_you_do_gain_life() {
+    assert_eq!(
+        lower(&Statement::IfYouDoGainLife { amount: 1 }).unwrap(),
+        CardEffect::IfYouDoGainLife { amount: 1 },
+    );
+}
+
+#[test]
 fn lowers_pure_generic_mana_cost() {
     assert_eq!(
         lower(&mc(vec![ManaSymbol::Generic(2)])).unwrap(),

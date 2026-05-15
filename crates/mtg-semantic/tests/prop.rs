@@ -9,7 +9,10 @@
 // into a feature-gated `mtg_grammar::testing` module and update the
 // xtask runner to enable that feature for tier 2.
 
-use mtg_grammar::{CardCount, ImperativeAction, ManaCost, ManaSymbol, Statement};
+use mtg_grammar::{
+    CardCount, Color, ImperativeAction, ManaCost, ManaSymbol, Statement, TriggerEffect,
+    TriggerEvent, TriggeredAbility,
+};
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
 
@@ -33,6 +36,16 @@ fn arb_card_count() -> impl Strategy<Value = CardCount> {
     (1u32..=10).prop_map(CardCount::Number)
 }
 
+fn arb_color() -> impl Strategy<Value = Color> {
+    prop_oneof![
+        Just(Color::White),
+        Just(Color::Blue),
+        Just(Color::Black),
+        Just(Color::Red),
+        Just(Color::Green),
+    ]
+}
+
 fn arb_imperative_action() -> impl Strategy<Value = ImperativeAction> {
     prop_oneof![
         Just(ImperativeAction::DiscardYourHand),
@@ -41,12 +54,29 @@ fn arb_imperative_action() -> impl Strategy<Value = ImperativeAction> {
     ]
 }
 
+fn arb_player_casts_colored_spell_pay_mana_trigger() -> impl Strategy<Value = Statement> {
+    (arb_color(), arb_mana_cost()).prop_map(|(color, cost)| {
+        Statement::TriggeredAbility(TriggeredAbility {
+            event: TriggerEvent::PlayerCastsColoredSpell { color },
+            intervening_if: None,
+            effects: vec![TriggerEffect::YouMayPayMana { cost }],
+        })
+    })
+}
+
 fn arb_statement() -> impl Strategy<Value = Statement> {
     prop_oneof![
         arb_mana_cost().prop_map(Statement::ManaCost),
         Just(Statement::CounterTargetSpell),
         Just(Statement::DestroyTargetCreature),
         Just(Statement::AntePlayRestriction),
+        (1u32..=10).prop_map(|amount| Statement::IfYouDoGainLife { amount }),
+        (arb_player_casts_colored_spell_pay_mana_trigger(), 1u32..=10,).prop_map(
+            |(trigger, amount)| {
+                Statement::Compound(vec![trigger, Statement::IfYouDoGainLife { amount }])
+            }
+        ),
+        arb_player_casts_colored_spell_pay_mana_trigger(),
         prop::collection::vec(arb_imperative_action(), 2..5)
             .prop_map(|actions| Statement::ImperativeActionSequence { actions }),
     ]

@@ -32,6 +32,10 @@ pub enum Statement {
     IfYouDoAddMana {
         mana: ManaCost,
     },
+    /// "If you do, you gain N life."
+    IfYouDoGainLife {
+        amount: u32,
+    },
     /// "Target spell or permanent becomes <color>."
     TargetSpellOrPermanentBecomesColor {
         color: Color,
@@ -165,6 +169,8 @@ pub enum TriggerEvent {
     ThisAuraLeavesTheBattlefield,
     /// "a/an <permanent_type> enters"
     PermanentEnters { permanent_type: PermanentType },
+    /// "a player casts a/an <color> spell"
+    PlayerCastsColoredSpell { color: Color },
     /// "enchanted <permanent_type> dies"
     EnchantedPermanentDies { permanent_type: PermanentType },
     /// "the beginning of the next end step"
@@ -237,6 +243,8 @@ pub enum TriggerEffect {
         source: SourceObject,
         cost: ManaCost,
     },
+    /// "you may pay <mana_cost>"
+    YouMayPayMana { cost: ManaCost },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

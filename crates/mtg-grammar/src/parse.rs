@@ -65,6 +65,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             until_eot_you_may_pay_cost_at_timing_from_pair(pair)
         }
         Rule::if_you_do_add_mana => if_you_do_add_mana_from_pair(pair),
+        Rule::if_you_do_gain_life => if_you_do_gain_life_from_pair(pair),
         Rule::target_spell_or_permanent_becomes_color => {
             target_spell_or_permanent_becomes_color_from_pair(pair)
         }
@@ -428,6 +429,18 @@ fn if_you_do_add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseErro
     })
 }
 
+fn if_you_do_gain_life_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let amount_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("if_you_do_gain_life missing amount"))?;
+    let amount = amount_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("if_you_do_gain_life amount"))?;
+    Ok(Statement::IfYouDoGainLife { amount })
+}
+
 fn action_timing_from_pair(pair: Pair<Rule>) -> Result<ActionTiming, ParseError> {
     match pair.as_rule() {
         Rule::any_time_you_could_activate_a_mana_ability => {
@@ -515,6 +528,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::permanent_enters => {
                 event = Some(permanent_enters_from_pair(child)?);
             }
+            Rule::player_casts_colored_spell => {
+                event = Some(player_casts_colored_spell_from_pair(child)?);
+            }
             Rule::enchanted_permanent_dies => {
                 event = Some(enchanted_permanent_dies_from_pair(child)?);
             }
@@ -569,6 +585,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::sacrifice_source_unless_you_pay => {
                 effects.push(sacrifice_source_unless_you_pay_from_pair(child)?);
             }
+            Rule::you_may_pay_mana => {
+                effects.push(you_may_pay_mana_from_pair(child)?);
+            }
             Rule::source_deals_damage_to_that_permanents_controller => {
                 effects.push(source_deals_damage_to_that_permanents_controller_from_pair(
                     child,
@@ -608,6 +627,15 @@ fn permanent_enters_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseErr
     ))?;
     Ok(TriggerEvent::PermanentEnters {
         permanent_type: permanent_type_from_pair(pt)?,
+    })
+}
+
+fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let color = pair.into_inner().next().ok_or(ParseError::Internal(
+        "player_casts_colored_spell missing color",
+    ))?;
+    Ok(TriggerEvent::PlayerCastsColoredSpell {
+        color: color_from_pair(color)?,
     })
 }
 
@@ -704,6 +732,16 @@ fn sacrifice_source_unless_you_pay_from_pair(
         .ok_or(ParseError::Internal("sacrifice unless missing cost"))?;
     Ok(TriggerEffect::SacrificeSourceUnlessYouPay {
         source: source_object_from_pair(source_pair)?,
+        cost: mana_cost_from_pair(cost_pair),
+    })
+}
+
+fn you_may_pay_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let cost_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("you_may_pay_mana missing cost"))?;
+    Ok(TriggerEffect::YouMayPayMana {
         cost: mana_cost_from_pair(cost_pair),
     })
 }

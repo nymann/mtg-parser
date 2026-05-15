@@ -86,3 +86,5 @@ mod copy_artifact;
 mod counterspell;
 #[path = "generated/creature_bond.rs"]
 mod creature_bond;
+#[path = "generated/crystal_rod.rs"]
+mod crystal_rod;
