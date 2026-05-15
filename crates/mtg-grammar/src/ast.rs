@@ -367,6 +367,8 @@ pub enum TriggerEffect {
     },
     /// "you may pay <mana_cost>"
     YouMayPayMana { cost: ManaCost },
+    /// "If you do, you gain N life."
+    IfYouDoGainLife { amount: u32 },
     /// "unless you pay <mana_cost>, <action>[ and <action>]*"
     UnlessYouPayManaDoActions {
         cost: ManaCost,
@@ -617,6 +619,12 @@ pub enum StaticAbility {
     EnchantedHasKeyword {
         object: EnchantedObject,
         keyword: Keyword,
+    },
+    /// "Enchanted <object> has \"<triggered ability>\"." — grants quoted
+    /// triggered rules text to the enchanted object.
+    EnchantedHasTriggeredAbility {
+        object: EnchantedObject,
+        ability: TriggeredAbility,
     },
     /// "Enchanted <object> loses <keyword>." — keyword-removing effect
     /// on the enchanted object.

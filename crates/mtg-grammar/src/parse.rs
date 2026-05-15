@@ -124,6 +124,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_status_creatures_you_control_get
         | Rule::static_enchanted_gets_with_definitions
         | Rule::static_enchanted_gets
+        | Rule::static_enchanted_has_triggered_ability
         | Rule::static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
         | Rule::static_enchanted_has_keyword
         | Rule::static_enchanted_loses_keyword
@@ -150,9 +151,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::activated_ability => Ok(Statement::ActivatedAbility(activated_ability_from_pair(
             pair,
         )?)),
-        Rule::triggered_ability => Ok(Statement::TriggeredAbility(triggered_ability_from_pair(
-            pair,
-        )?)),
+        Rule::triggered_ability | Rule::triggered_ability_fragment => Ok(
+            Statement::TriggeredAbility(triggered_ability_from_pair(pair)?),
+        ),
         Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
         | Rule::if_source_turns_over_destroy_touched_nontoken_permanents
         | Rule::then_destroy_source => {
@@ -691,15 +692,20 @@ fn add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
 }
 
 fn if_you_do_gain_life_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    Ok(Statement::IfYouDoGainLife {
+        amount: if_you_do_gain_life_amount_from_pair(pair)?,
+    })
+}
+
+fn if_you_do_gain_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, ParseError> {
     let amount_pair = pair
         .into_inner()
         .next()
         .ok_or(ParseError::Internal("if_you_do_gain_life missing amount"))?;
-    let amount = amount_pair
+    amount_pair
         .as_str()
         .parse::<u32>()
-        .map_err(|_| ParseError::Internal("if_you_do_gain_life amount"))?;
-    Ok(Statement::IfYouDoGainLife { amount })
+        .map_err(|_| ParseError::Internal("if_you_do_gain_life amount"))
 }
 
 fn action_timing_from_pair(pair: Pair<Rule>) -> Result<ActionTiming, ParseError> {
@@ -850,6 +856,11 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::you_may_pay_mana => {
                 effects.push(you_may_pay_mana_from_pair(child)?);
+            }
+            Rule::if_you_do_gain_life | Rule::if_you_do_gain_life_fragment => {
+                effects.push(TriggerEffect::IfYouDoGainLife {
+                    amount: if_you_do_gain_life_amount_from_pair(child)?,
+                });
             }
             Rule::unless_you_pay_mana_do_actions => {
                 effects.push(unless_you_pay_mana_do_actions_from_pair(child)?);
@@ -1457,6 +1468,19 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::EnchantedHasKeyword {
                 object: enchanted_object_from_pair(object_pair)?,
                 keyword: keyword_from_inner_pair(keyword_pair)?,
+            })
+        }
+        Rule::static_enchanted_has_triggered_ability => {
+            let mut inner = pair.into_inner();
+            let object_pair = inner
+                .next()
+                .expect("static_enchanted_has_triggered_ability begins with enchanted object");
+            let ability_pair = inner
+                .next()
+                .expect("static_enchanted_has_triggered_ability names granted ability");
+            Ok(StaticAbility::EnchantedHasTriggeredAbility {
+                object: enchanted_object_from_pair(object_pair)?,
+                ability: triggered_ability_from_pair(ability_pair)?,
             })
         }
         Rule::static_enchanted_loses_keyword | Rule::static_enchanted_loses_keyword_fragment => {

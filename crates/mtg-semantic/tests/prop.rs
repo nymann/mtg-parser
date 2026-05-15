@@ -11,9 +11,9 @@
 
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, CardCount, Color, DamageLifeGainCap,
-    DamageRecipient, EachPlayerAction, ImperativeAction, Keyword, ManaCost, ManaSymbol,
-    PermanentType, SourceObject, Statement, TriggerEffect, TriggerEvent, TriggeredAbility,
-    Variable, Zone,
+    DamageRecipient, EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, ManaCost,
+    ManaSymbol, PermanentType, SourceObject, Statement, StaticAbility, TriggerEffect, TriggerEvent,
+    TriggeredAbility, Variable, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -84,6 +84,35 @@ fn arb_player_casts_colored_spell_pay_mana_trigger() -> impl Strategy<Value = St
             event: TriggerEvent::PlayerCastsColoredSpell { color },
             intervening_if: None,
             effects: vec![TriggerEffect::YouMayPayMana { cost }],
+        })
+    })
+}
+
+fn arb_player_casts_colored_spell_pay_mana_gain_life_trigger() -> impl Strategy<Value = Statement> {
+    (arb_color(), arb_mana_cost(), 1u32..=10).prop_map(|(color, cost, amount)| {
+        Statement::TriggeredAbility(TriggeredAbility {
+            event: TriggerEvent::PlayerCastsColoredSpell { color },
+            intervening_if: None,
+            effects: vec![
+                TriggerEffect::YouMayPayMana { cost },
+                TriggerEffect::IfYouDoGainLife { amount },
+            ],
+        })
+    })
+}
+
+fn arb_enchanted_land_has_upkeep_pay_mana_gain_life() -> impl Strategy<Value = Statement> {
+    (arb_mana_cost(), 1u32..=10).prop_map(|(cost, amount)| {
+        Statement::StaticAbility(StaticAbility::EnchantedHasTriggeredAbility {
+            object: EnchantedObject::Permanent(PermanentType::Land),
+            ability: TriggeredAbility {
+                event: TriggerEvent::BeginningOfYourUpkeep,
+                intervening_if: None,
+                effects: vec![
+                    TriggerEffect::YouMayPayMana { cost },
+                    TriggerEffect::IfYouDoGainLife { amount },
+                ],
+            },
         })
     })
 }
@@ -164,6 +193,8 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             }
         ),
         arb_player_casts_colored_spell_pay_mana_trigger(),
+        arb_player_casts_colored_spell_pay_mana_gain_life_trigger(),
+        arb_enchanted_land_has_upkeep_pay_mana_gain_life(),
         arb_target_player_discards_activated_ability(),
         prop::collection::vec(arb_imperative_action(), 2..5)
             .prop_map(|actions| Statement::ImperativeActionSequence { actions }),

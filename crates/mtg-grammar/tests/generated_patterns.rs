@@ -123,3 +123,5 @@ mod earthquake;
 mod evil_presence;
 #[path = "generated_patterns/false_orders.rs"]
 mod false_orders;
+#[path = "generated_patterns/farmstead.rs"]
+mod farmstead;

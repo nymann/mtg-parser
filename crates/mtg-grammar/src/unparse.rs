@@ -768,6 +768,13 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_keyword_lowercase(out, *keyword);
             out.push('.');
         }
+        StaticAbility::EnchantedHasTriggeredAbility { object, ability } => {
+            out.push_str("Enchanted ");
+            write_enchanted_object(out, *object);
+            out.push_str(" has \"");
+            write_triggered_ability(out, ability);
+            out.push('"');
+        }
         StaticAbility::EnchantedLosesKeyword { object, keyword } => {
             out.push_str("Enchanted ");
             write_enchanted_object(out, *object);
@@ -1087,6 +1094,10 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             out.push_str("you may pay ");
             write_mana_cost(out, cost);
             out.push('.');
+        }
+        TriggerEffect::IfYouDoGainLife { amount } => {
+            write!(out, "If you do, you gain {amount} life.")
+                .expect("write to String never fails");
         }
         TriggerEffect::UnlessYouPayManaDoActions { cost, actions } => {
             out.push_str("unless you pay ");

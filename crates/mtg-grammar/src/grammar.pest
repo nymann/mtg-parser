@@ -54,8 +54,9 @@ sentence_statement = _{
   | draw_cards
   | add_mana
   | until_eot_you_may_pay_cost_at_timing
-  | if_you_do_add_mana
+  // Gain-life must precede add-mana because both share the "If you do," prefix.
   | if_you_do_gain_life
+  | if_you_do_add_mana
   | if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step
   | target_spell_or_permanent_becomes_color
   | target_permanent_gains_keyword_and_gets_eot
@@ -76,6 +77,7 @@ sentence_statement = _{
   | static_status_creatures_you_control_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
+  | static_enchanted_has_triggered_ability
   | static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
   | static_enchanted_has_keyword
   | static_enchanted_loses_keyword
@@ -87,6 +89,7 @@ sentence_statement = _{
   | static_effect_doesnt_remove_this_aura
   | static_basic_lands_are_basic_lands
   | static_that_permanent_is_basic_land_type_while_has_named_counter
+  | triggered_ability_fragment
   | triggered_ability
   | physical_action
   | each_player_equalizes_controlled_permanents
@@ -101,6 +104,7 @@ phrase_statement = _{
     modal_choice
   | mana_cost
   | keyword_ability
+  | triggered_ability_fragment
   | static_enchanted_loses_keyword_fragment
 }
 
@@ -392,6 +396,7 @@ static_ability = _{
   | static_status_creatures_you_control_get
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
+  | static_enchanted_has_triggered_ability
   | static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
   | static_enchanted_has_keyword
   | static_enchanted_loses_keyword
@@ -429,6 +434,10 @@ static_enchanted_gets_with_definitions = {
 
 static_enchanted_has_keyword = {
     ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword ~ "."
+}
+
+static_enchanted_has_triggered_ability = {
+    ^"enchanted" ~ enchanted_object ~ ^"has" ~ quoted_triggered_ability
 }
 
 static_enchanted_loses_keyword = {
@@ -719,6 +728,11 @@ triggered_ability = {
   ~ trigger_effect ~ (^"and"? ~ trigger_effect)*
 }
 
+triggered_ability_fragment = {
+    trigger_word ~ trigger_event ~ ","
+  ~ you_may_pay_mana ~ if_you_do_gain_life_fragment ~ !"."
+}
+
 // "Whenever" is listed first because "When" is its prefix.
 trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
 
@@ -789,6 +803,7 @@ trigger_effect = _{
   | return_enchanted_card_and_attach
   | unless_you_pay_mana_do_actions
   | you_may_pay_mana
+  | if_you_do_gain_life
   | sacrifice_source_unless_you_pay
   | source_deals_damage_equal_to_that_permanents_toughness_to_the_permanents_controller
   | source_deals_variable_damage_to_that_player
@@ -851,6 +866,9 @@ sacrifice_source_unless_you_pay = {
 }
 
 you_may_pay_mana = { ^"you" ~ ^"may" ~ ^"pay" ~ mana_cost ~ "." }
+if_you_do_gain_life_fragment = {
+    ^"if" ~ ^"you" ~ ^"do" ~ "," ~ ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life"
+}
 
 unless_you_pay_mana_do_actions = {
     ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ ","
@@ -910,6 +928,7 @@ quoted_keyword                   = _{ "\"" ~ keyword ~ "\"" }
 quoted_keyword_with_inner_period = _{ "\"" ~ keyword ~ "." ~ "\"" }
 source_gains_static_ability      = { source_object ~ ^"gains" ~ quoted_static_ability }
 quoted_static_ability            = _{ "\"" ~ static_enchanted_loses_keyword ~ "\"" }
+quoted_triggered_ability         = _{ "\"" ~ triggered_ability ~ "\"" }
 
 // "Return enchanted <type> card to the battlefield under your control
 // and attach this Aura to it."
