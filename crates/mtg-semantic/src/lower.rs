@@ -70,6 +70,13 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
                 permanent_type: *permanent_type,
             }
         }
+        Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
+            controller_of,
+            attach_to,
+        } => CardEffect::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
+            controller_of: *controller_of,
+            attach_to: *attach_to,
+        },
         Statement::DestroyAll { permanent_type } => CardEffect::DestroyAll {
             permanent_type: *permanent_type,
         },

@@ -55,6 +55,12 @@ pub enum CardEffect {
     DestroyTargetPermanentChoice { permanent_types: Vec<PermanentType> },
     /// "Destroy target <permanent_type>."
     DestroyTargetPermanent { permanent_type: PermanentType },
+    /// "That <permanent_type>'s controller may attach this Aura to a/an
+    /// <permanent_type> of their choice."
+    ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
+        controller_of: PermanentType,
+        attach_to: PermanentType,
+    },
     /// "Destroy all <permanent_type>s."
     DestroyAll { permanent_type: PermanentType },
     /// "Destroy all <basic_land_type>s."

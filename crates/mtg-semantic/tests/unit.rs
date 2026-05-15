@@ -53,6 +53,23 @@ fn lowers_destroy_target_permanent() {
 }
 
 #[test]
+fn lowers_that_permanents_controller_may_attach_this_aura() {
+    assert_eq!(
+        lower(
+            &Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
+                controller_of: PermanentType::Land,
+                attach_to: PermanentType::Land,
+            }
+        )
+        .unwrap(),
+        CardEffect::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
+            controller_of: PermanentType::Land,
+            attach_to: PermanentType::Land,
+        },
+    );
+}
+
+#[test]
 fn lowers_destroy_all_basic_lands() {
     assert_eq!(
         lower(&Statement::DestroyAllBasicLands {

@@ -98,6 +98,18 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(permanent_type_name(*permanent_type));
             out.push('.');
         }
+        Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
+            controller_of,
+            attach_to,
+        } => {
+            out.push_str("That ");
+            out.push_str(permanent_type_name(*controller_of));
+            out.push_str("'s controller may attach this Aura to ");
+            out.push_str(indefinite_article(*attach_to));
+            out.push(' ');
+            out.push_str(permanent_type_name(*attach_to));
+            out.push_str(" of their choice.");
+        }
         Statement::DestroyAll { permanent_type } => {
             out.push_str("Destroy all ");
             out.push_str(permanent_type_plural_name(*permanent_type));
@@ -1260,6 +1272,7 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
         | TriggerEvent::BasicLandTypeIsTappedForMana { .. }
         | TriggerEvent::SourceIsDealtDamage { .. }
         | TriggerEvent::SourceDealsDamageToAnOpponent { .. }
+        | TriggerEvent::EnchantedObjectBecomesStatus { .. }
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
@@ -1324,6 +1337,12 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str("enchanted ");
             out.push_str(permanent_type_name(permanent_type));
             out.push_str(" dies");
+        }
+        TriggerEvent::EnchantedObjectBecomesStatus { object, status } => {
+            out.push_str("enchanted ");
+            write_enchanted_object(out, object);
+            out.push_str(" becomes ");
+            out.push_str(object_status_name(status));
         }
         TriggerEvent::BeginningOfTheNextEndStep => {
             out.push_str("the beginning of the next end step");
@@ -1408,6 +1427,9 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
     match eff {
         TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn => {
             out.push_str("destroy that creature if it attacked this turn.");
+        }
+        TriggerEffect::DestroyIt => {
+            out.push_str("destroy it.");
         }
         TriggerEffect::DestroyThatCreatureAtEndOfCombat => {
             out.push_str("destroy that creature at end of combat.");

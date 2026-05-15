@@ -96,6 +96,11 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::destroy_target_permanent_choice => destroy_target_permanent_choice_from_pair(pair),
         Rule::destroy_target_permanent => destroy_target_permanent_from_pair(pair),
+        Rule::that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice => {
+            that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice_from_pair(
+                pair,
+            )
+        }
         Rule::destroy_all_basic_lands => destroy_all_basic_lands_from_pair(pair),
         Rule::destroy_all => destroy_all_from_pair(pair),
         Rule::target_player_activates_mana_ability_of_each_permanent_they_control => {
@@ -659,6 +664,30 @@ fn destroy_target_permanent_from_pair(pair: Pair<Rule>) -> Result<Statement, Par
     })
 }
 
+fn that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let controller_pair = inner.next().ok_or(ParseError::Internal(
+        "controller attach effect missing controlled permanent_type",
+    ))?;
+    let controller_type_pair = controller_pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal(
+            "controller attach effect missing controller permanent_type",
+        ))?;
+    let attach_to_pair = inner.next().ok_or(ParseError::Internal(
+        "controller attach effect missing destination permanent_type",
+    ))?;
+    Ok(
+        Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
+            controller_of: permanent_type_from_pair(controller_type_pair)?,
+            attach_to: permanent_type_from_pair(attach_to_pair)?,
+        },
+    )
+}
+
 fn this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
@@ -1109,6 +1138,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             Rule::enchanted_permanent_dies => {
                 event = Some(enchanted_permanent_dies_from_pair(child)?);
             }
+            Rule::enchanted_object_becomes_status => {
+                event = Some(enchanted_object_becomes_status_from_pair(child)?);
+            }
             Rule::beginning_of_the_next_end_step => {
                 event = Some(TriggerEvent::BeginningOfTheNextEndStep);
             }
@@ -1200,6 +1232,9 @@ fn triggered_ability_from_pair(pair: Pair<Rule>) -> Result<TriggeredAbility, Par
             }
             Rule::destroy_that_creature_if_it_attacked_this_turn => {
                 effects.push(TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn);
+            }
+            Rule::destroy_it => {
+                effects.push(TriggerEffect::DestroyIt);
             }
             Rule::destroy_that_creature_at_end_of_combat => {
                 effects.push(TriggerEffect::DestroyThatCreatureAtEndOfCombat);
@@ -1336,6 +1371,20 @@ fn enchanted_permanent_dies_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, 
     ))?;
     Ok(TriggerEvent::EnchantedPermanentDies {
         permanent_type: permanent_type_from_pair(pt)?,
+    })
+}
+
+fn enchanted_object_becomes_status_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let mut inner = pair.into_inner();
+    let object_pair = inner.next().ok_or(ParseError::Internal(
+        "enchanted_object_becomes_status missing object",
+    ))?;
+    let status_pair = inner.next().ok_or(ParseError::Internal(
+        "enchanted_object_becomes_status missing status",
+    ))?;
+    Ok(TriggerEvent::EnchantedObjectBecomesStatus {
+        object: enchanted_object_from_pair(object_pair)?,
+        status: object_status_from_pair(status_pair)?,
     })
 }
 

@@ -48,6 +48,7 @@ sentence_statement = _{
   | destroy_target_permanent_choice
   | destroy
   | destroy_target_permanent
+  | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
   | regenerate_target_creature
   | named_source_deals_variable_damage_divided_evenly_rounded_down_among_any_number_of_targets
   | named_source_deals_variable_damage_to_damage_recipients
@@ -986,6 +987,7 @@ trigger_event = _{
   | aura_enters
   | enchanted_permanent_dies
   | source_blocks_or_becomes_blocked_by_non_creature_type_creature
+  | enchanted_object_becomes_status
   | end_of_combat
   | beginning_of_each_players_draw_step
   | beginning_of_each_players_upkeep
@@ -1013,6 +1015,9 @@ permanent_put_into_graveyard_from_battlefield = {
   ~ ^"from" ~ ^"the" ~ ^"battlefield"
 }
 enchanted_permanent_dies = { ^"enchanted" ~ permanent_type ~ ^"dies" }
+enchanted_object_becomes_status = {
+    ^"enchanted" ~ enchanted_object ~ ^"becomes" ~ object_status
+}
 permanent_enters        = { article ~ permanent_type ~ ^"enters" }
 basic_land_type_is_tapped_for_mana = {
     article ~ basic_land_type ~ ^"is" ~ ^"tapped" ~ ^"for" ~ ^"mana"
@@ -1059,6 +1064,7 @@ object_status = @{ ^"tapped" | ^"untapped" }
 
 trigger_effect = _{
     destroy_that_creature_if_it_attacked_this_turn
+  | destroy_it
   | destroy_that_creature_at_end_of_combat
   | delayed_remove_all_named_counters_from_linked_land
   | put_pt_counter_on_it
@@ -1157,6 +1163,8 @@ destroy_that_creature_if_it_attacked_this_turn = {
   ~ ^"attacked" ~ ^"this" ~ ^"turn" ~ "."
 }
 
+destroy_it = { ^"destroy" ~ ^"it" ~ "." }
+
 destroy_that_creature_at_end_of_combat = {
     ^"destroy" ~ ^"that" ~ ^"creature" ~ ^"at" ~ ^"end" ~ ^"of" ~ ^"combat" ~ "."
 }
@@ -1238,6 +1246,10 @@ source_object = { ^"this" ~ source_object_kind }
 source_object_kind = _{ aura_source_object | permanent_type }
 aura_source_object = { ^"aura" }
 that_permanents_controller = { ^"that" ~ permanent_type ~ "'s" ~ ^"controller" }
+that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice = {
+    that_permanents_controller ~ ^"may" ~ ^"attach" ~ ^"this" ~ ^"aura"
+  ~ ^"to" ~ article ~ permanent_type ~ ^"of" ~ ^"their" ~ ^"choice" ~ "."
+}
 that_permanents_toughness = { ^"that" ~ permanent_type ~ "'s" ~ ^"toughness" }
 the_permanents_controller = { ^"the" ~ permanent_type ~ "'s" ~ ^"controller" }
 damage_amount = @{ ASCII_DIGIT+ }

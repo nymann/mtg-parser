@@ -55,6 +55,12 @@ pub enum Statement {
     DestroyTargetPermanent {
         permanent_type: PermanentType,
     },
+    /// "That <permanent_type>'s controller may attach this Aura to a/an
+    /// <permanent_type> of their choice."
+    ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
+        controller_of: PermanentType,
+        attach_to: PermanentType,
+    },
     /// "Destroy all <permanent_type>s."
     DestroyAll {
         permanent_type: PermanentType,
@@ -383,6 +389,11 @@ pub enum TriggerEvent {
     YouPlayPermanent { permanent_type: PermanentType },
     /// "enchanted <permanent_type> dies"
     EnchantedPermanentDies { permanent_type: PermanentType },
+    /// "enchanted <object> becomes <status>"
+    EnchantedObjectBecomesStatus {
+        object: EnchantedObject,
+        status: ObjectStatus,
+    },
     /// "the beginning of the next end step"
     BeginningOfTheNextEndStep,
     /// "the beginning of the chosen player's upkeep"
@@ -438,6 +449,8 @@ pub enum InterveningIf {
 pub enum TriggerEffect {
     /// "destroy that creature if it attacked this turn"
     DestroyThatCreatureIfItAttackedThisTurn,
+    /// "destroy it"
+    DestroyIt,
     /// "destroy that creature at end of combat"
     DestroyThatCreatureAtEndOfCombat,
     /// "that creature's controller sacrifices it"

@@ -203,3 +203,5 @@ mod karma;
 mod keldon_warlord;
 #[path = "generated_patterns/kormus_bell.rs"]
 mod kormus_bell;
+#[path = "generated_patterns/kudzu.rs"]
+mod kudzu;
