@@ -818,6 +818,7 @@ fn damage_event_recipients_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient
 fn damage_recipient_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient, ParseError> {
     let inner = only_inner(pair, "damage recipient missing inner rule")?;
     match inner.as_rule() {
+        Rule::each_creature_damage_recipient => Ok(DamageRecipient::EachCreature),
         Rule::each_creature_with_keyword => {
             let keyword_pair = only_inner(inner, "creature damage recipient missing keyword")?;
             Ok(DamageRecipient::EachCreatureWithKeyword {
@@ -1434,6 +1435,7 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
             enchanted_object_becomes_status_from_pair(event_pair)
         }
         Rule::beginning_of_the_next_end_step => Ok(TriggerEvent::BeginningOfTheNextEndStep),
+        Rule::beginning_of_the_end_step => Ok(TriggerEvent::BeginningOfTheEndStep),
         Rule::beginning_of_chosen_players_upkeep => {
             Ok(TriggerEvent::BeginningOfChosenPlayersUpkeep)
         }
@@ -1469,6 +1471,13 @@ fn triggered_intervening_if_from_pair(pair: Pair<Rule>) -> Result<InterveningIf,
     let condition_pair = only_inner(pair, "trigger_intervening_if_clause missing condition")?;
     match condition_pair.as_rule() {
         Rule::its_on_the_battlefield => Ok(InterveningIf::ItsOnTheBattlefield),
+        Rule::no_permanents_are_on_the_battlefield => {
+            let permanent_type_pair =
+                only_inner(condition_pair, "no permanents condition missing type")?;
+            Ok(InterveningIf::NoPermanentsAreOnTheBattlefield {
+                permanent_type: permanent_type_from_plural_pair(permanent_type_pair)?,
+            })
+        }
         Rule::source_attacked_or_blocked_this_combat => {
             let source_pair = only_inner(
                 condition_pair,
@@ -1541,6 +1550,7 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         }
         Rule::loses_and_gains_keyword => loses_and_gains_keyword_from_pair(pair),
         Rule::return_enchanted_card_and_attach => return_enchanted_card_and_attach_from_pair(pair),
+        Rule::sacrifice_source_effect => sacrifice_source_effect_from_pair(pair),
         Rule::sacrifice_source_unless_you_pay => sacrifice_source_unless_you_pay_from_pair(pair),
         Rule::sacrifice_permanent_other_than_source => {
             sacrifice_permanent_other_than_source_from_pair(pair)
@@ -1907,6 +1917,13 @@ fn sacrifice_source_unless_you_pay_from_pair(
     })
 }
 
+fn sacrifice_source_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let source_pair = only_inner(pair, "sacrifice source effect missing source")?;
+    Ok(TriggerEffect::SacrificeSource {
+        source: source_object_from_pair(source_pair)?,
+    })
+}
+
 fn sacrifice_permanent_other_than_source_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEffect, ParseError> {
@@ -2168,8 +2185,11 @@ fn activated_direct_damage_effect_from_pair(
     let source_pair = next_inner(&mut inner, "activated direct damage missing source")?;
     let source = source_object_from_pair(source_pair)?;
     let assignments = inner
-        .map(activated_damage_assignment_from_pair)
-        .collect::<Result<Vec<_>, _>>()?;
+        .map(activated_damage_assignments_from_pair)
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
     if assignments.is_empty() {
         return Err(ParseError::Internal(
             "activated direct damage missing assignment",
@@ -2181,19 +2201,28 @@ fn activated_direct_damage_effect_from_pair(
     })
 }
 
-fn activated_damage_assignment_from_pair(
+fn activated_damage_assignments_from_pair(
     pair: Pair<Rule>,
-) -> Result<DamageAssignment<ActivatedDamageRecipient>, ParseError> {
+) -> Result<Vec<DamageAssignment<ActivatedDamageRecipient>>, ParseError> {
     if pair.as_rule() != Rule::damage_assignment {
         return Err(ParseError::Internal("activated damage assignment"));
     }
     let mut inner = pair.into_inner();
     let amount_pair = next_inner(&mut inner, "activated damage assignment missing amount")?;
-    let recipient_pair = next_inner(&mut inner, "activated damage assignment missing recipient")?;
-    Ok(DamageAssignment {
-        amount: damage_event_amount_from_pair(amount_pair)?,
-        recipient: activated_damage_recipient_from_pair(recipient_pair)?,
-    })
+    let recipient_list_pair = next_inner(
+        &mut inner,
+        "activated damage assignment missing recipient list",
+    )?;
+    let amount = damage_event_amount_from_pair(amount_pair)?;
+    recipient_list_pair
+        .into_inner()
+        .map(|recipient_pair| {
+            Ok(DamageAssignment {
+                amount: amount.clone(),
+                recipient: activated_damage_recipient_from_pair(recipient_pair)?,
+            })
+        })
+        .collect()
 }
 
 fn activated_damage_prevention_effect_from_pair(
@@ -2323,6 +2352,8 @@ fn activated_damage_recipient_from_pair(
     match pair.as_rule() {
         Rule::you_damage_recipient => Ok(ActivatedDamageRecipient::You),
         Rule::any_target_prevention_recipient => Ok(ActivatedDamageRecipient::AnyTarget),
+        Rule::each_creature_damage_recipient => Ok(ActivatedDamageRecipient::EachCreature),
+        Rule::each_player_damage_recipient => Ok(ActivatedDamageRecipient::EachPlayer),
         Rule::source_object_damage_recipient => {
             let source_pair = only_inner(pair, "source damage recipient missing source")?;
             Ok(ActivatedDamageRecipient::Source(source_object_from_pair(

@@ -486,6 +486,7 @@ fn write_named_damage_event(out: &mut String, event: &NamedDamageEvent) {
 
 fn write_damage_recipient(out: &mut String, recipient: DamageRecipient) {
     match recipient {
+        DamageRecipient::EachCreature => out.push_str("each creature"),
         DamageRecipient::EachCreatureWithKeyword { keyword } => {
             out.push_str("each creature with ");
             write_keyword(out, keyword);
@@ -1549,6 +1550,7 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::BeginningOfYourDrawStep
         | TriggerEvent::BeginningOfEachPlayersUpkeep
         | TriggerEvent::BeginningOfYourUpkeep
+        | TriggerEvent::BeginningOfTheEndStep
         | TriggerEvent::BeginningOfUpkeepOfEnchantedPermanentController { .. }
         | TriggerEvent::EndOfCombat => "At ",
         TriggerEvent::ThisAuraEnters
@@ -1644,6 +1646,9 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::BeginningOfTheNextEndStep => {
             out.push_str("the beginning of the next end step");
         }
+        TriggerEvent::BeginningOfTheEndStep => {
+            out.push_str("the beginning of the end step");
+        }
         TriggerEvent::BeginningOfChosenPlayersUpkeep => {
             out.push_str("the beginning of the chosen player's upkeep");
         }
@@ -1703,6 +1708,11 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
 fn write_intervening_if(out: &mut String, iif: InterveningIf) {
     match iif {
         InterveningIf::ItsOnTheBattlefield => out.push_str("it's on the battlefield"),
+        InterveningIf::NoPermanentsAreOnTheBattlefield { permanent_type } => {
+            out.push_str("no ");
+            out.push_str(permanent_type_plural_name(permanent_type));
+            out.push_str(" are on the battlefield");
+        }
         InterveningIf::EnchantedHasKeyword { object, keyword } => {
             out.push_str("enchanted ");
             write_enchanted_object(out, object);
@@ -1830,6 +1840,11 @@ fn write_trigger_effect(out: &mut String, eff: &TriggerEffect, terminal: bool) {
             write_source_object(out, *source);
             out.push_str(" unless you pay ");
             write_mana_cost(out, cost);
+            out.push('.');
+        }
+        TriggerEffect::SacrificeSource { source } => {
+            out.push_str("sacrifice ");
+            write_source_object(out, *source);
             out.push('.');
         }
         TriggerEffect::SacrificePermanentOtherThanSource {
@@ -2000,13 +2015,24 @@ fn write_activated_damage_effect(out: &mut String, effect: &ActivatedDamageEffec
             if !assignments.is_empty() {
                 write_source_object_capitalized(out, *source);
                 out.push_str(" deals ");
-                for (idx, assignment) in assignments.iter().enumerate() {
+                let mut idx = 0;
+                while idx < assignments.len() {
                     if idx > 0 {
                         out.push_str(" and ");
                     }
+                    let assignment = &assignments[idx];
                     write_damage_amount(out, assignment.amount);
                     out.push_str(" damage to ");
                     write_activated_damage_recipient(out, assignment.recipient);
+                    let mut next_idx = idx + 1;
+                    while next_idx < assignments.len()
+                        && assignments[next_idx].amount == assignment.amount
+                    {
+                        out.push_str(" and ");
+                        write_activated_damage_recipient(out, assignments[next_idx].recipient);
+                        next_idx += 1;
+                    }
+                    idx = next_idx;
                 }
                 out.push('.');
             }
@@ -2077,6 +2103,8 @@ fn write_activated_damage_recipient(out: &mut String, recipient: ActivatedDamage
     match recipient {
         ActivatedDamageRecipient::You => out.push_str("you"),
         ActivatedDamageRecipient::AnyTarget => out.push_str("any target"),
+        ActivatedDamageRecipient::EachCreature => out.push_str("each creature"),
+        ActivatedDamageRecipient::EachPlayer => out.push_str("each player"),
         ActivatedDamageRecipient::TargetPermanent { permanent_type } => {
             out.push_str("target ");
             out.push_str(permanent_type_name(permanent_type));

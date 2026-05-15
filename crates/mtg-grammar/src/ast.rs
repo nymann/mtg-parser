@@ -439,6 +439,8 @@ pub enum DamageLifeGainCap {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DamageRecipient {
+    /// "each creature"
+    EachCreature,
     /// "each creature with <keyword>"
     EachCreatureWithKeyword { keyword: Keyword },
     /// "each creature without <keyword>"
@@ -654,6 +656,8 @@ pub enum TriggerEvent {
     },
     /// "the beginning of the next end step"
     BeginningOfTheNextEndStep,
+    /// "the beginning of the end step"
+    BeginningOfTheEndStep,
     /// "the beginning of the chosen player's upkeep"
     BeginningOfChosenPlayersUpkeep,
     /// "the beginning of each player's upkeep"
@@ -691,6 +695,8 @@ pub enum TriggerEvent {
 pub enum InterveningIf {
     /// "if it's on the battlefield"
     ItsOnTheBattlefield,
+    /// "if no <permanent_type>s are on the battlefield"
+    NoPermanentsAreOnTheBattlefield { permanent_type: PermanentType },
     /// "if enchanted <object> has <keyword>"
     EnchantedHasKeyword {
         object: EnchantedObject,
@@ -775,6 +781,8 @@ pub enum TriggerEffect {
         source: SourceObject,
         cost: ManaCost,
     },
+    /// "sacrifice this <source>"
+    SacrificeSource { source: SourceObject },
     /// "sacrifice a/an <permanent_type> other than this <source>"
     SacrificePermanentOtherThanSource {
         permanent_type: PermanentType,
@@ -1078,6 +1086,10 @@ pub enum ActivatedDamageRecipient {
     You,
     /// "any target"
     AnyTarget,
+    /// "each creature"
+    EachCreature,
+    /// "each player"
+    EachPlayer,
     /// "target <permanent_type>"
     TargetPermanent { permanent_type: PermanentType },
     /// "this <source>"

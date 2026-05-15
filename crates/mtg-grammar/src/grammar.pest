@@ -266,8 +266,10 @@ that_permanent_or_player_prevention_recipient = { ^"that" ~ ^"permanent" ~ ^"or"
 damage_recipient = {
     each_creature_with_keyword
   | each_creature_without_keyword
+  | each_creature_damage_recipient
   | each_player_damage_recipient
 }
+each_creature_damage_recipient = { ^"each" ~ ^"creature" }
 each_creature_with_keyword = { ^"each" ~ ^"creature" ~ ^"with" ~ keyword }
 each_creature_without_keyword = { ^"each" ~ ^"creature" ~ ^"without" ~ keyword }
 each_player_damage_recipient = { ^"each" ~ ^"player" }
@@ -978,12 +980,17 @@ activated_direct_damage_effect = {
   ~ (^"and" ~ damage_assignment)* ~ "."
 }
 damage_assignment = {
-    damage_event_amount ~ ^"damage" ~ ^"to" ~ activated_direct_damage_recipient
+    damage_event_amount ~ ^"damage" ~ ^"to" ~ activated_damage_recipient_list
+}
+activated_damage_recipient_list = {
+    activated_direct_damage_recipient ~ (^"and" ~ activated_direct_damage_recipient)*
 }
 activated_direct_damage_recipient = _{
     you_damage_recipient
   | any_target_prevention_recipient
   | target_permanent_damage_recipient
+  | each_creature_damage_recipient
+  | each_player_damage_recipient
 }
 next_damage_event_effect = {
     ^"the" ~ ^"next" ~ ^"time" ~ activated_damage_source
@@ -1193,6 +1200,7 @@ trigger_event = _{
   | beginning_of_your_upkeep
   | beginning_of_upkeep_of_enchanted_permanent_controller
   | beginning_of_chosen_players_upkeep
+  | beginning_of_the_end_step
   | beginning_of_the_next_end_step
   | you_play_permanent
   | player_taps_permanent_for_mana
@@ -1242,6 +1250,9 @@ end_of_combat           = { ^"end" ~ ^"of" ~ ^"combat" }
 beginning_of_the_next_end_step = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"next" ~ ^"end" ~ ^"step"
 }
+beginning_of_the_end_step = {
+    ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"end" ~ ^"step"
+}
 beginning_of_chosen_players_upkeep = {
     ^"the" ~ ^"beginning" ~ ^"of" ~ ^"the" ~ ^"chosen" ~ ^"player's" ~ ^"upkeep"
 }
@@ -1262,8 +1273,11 @@ beginning_of_upkeep_of_enchanted_permanent_controller = {
   ~ ^"enchanted" ~ permanent_type ~ "'s" ~ ^"controller"
 }
 
-intervening_if         = _{ this_card_in_your_graveyard_with_cards_above_it | its_on_the_battlefield | enchanted_has_keyword | it_wasnt_first_permanent_you_played_this_turn | source_attacked_or_blocked_this_combat | source_object_is_status }
+intervening_if         = _{ this_card_in_your_graveyard_with_cards_above_it | its_on_the_battlefield | no_permanents_are_on_the_battlefield | enchanted_has_keyword | it_wasnt_first_permanent_you_played_this_turn | source_attacked_or_blocked_this_combat | source_object_is_status }
 its_on_the_battlefield = { ^"it's" ~ ^"on" ~ ^"the" ~ ^"battlefield" }
+no_permanents_are_on_the_battlefield = {
+    ^"no" ~ permanent_type_plural ~ ^"are" ~ ^"on" ~ ^"the" ~ ^"battlefield"
+}
 this_card_in_your_graveyard_with_cards_above_it = {
     ^"this" ~ ^"card" ~ ^"is" ~ ^"in" ~ ^"your" ~ zone
   ~ ^"with" ~ number_word ~ ^"or" ~ ^"more" ~ permanent_type ~ ^"cards"
@@ -1297,6 +1311,7 @@ trigger_effect = _{
   | player_may_pay_mana
   | tap_enchanted_object
   | if_you_do_gain_life
+  | sacrifice_source_effect
   | sacrifice_source_unless_you_pay
   | source_deals_damage
   | that_player_adds_mana_of_any_type_that_permanent_produced
@@ -1419,6 +1434,10 @@ sacrifice_permanent_other_than_source = {
 
 sacrifice_source_unless_you_pay = {
     ^"sacrifice" ~ source_object ~ ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ "."
+}
+
+sacrifice_source_effect = {
+    ^"sacrifice" ~ source_object ~ "."
 }
 
 sacrifice_that_many_nontoken_permanents = {

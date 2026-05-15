@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-15",
   "total": 290,
-  "passing": 207,
+  "passing": 208,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -565,8 +565,7 @@
       "status": "pass"
     },
     "lea/Pestilence": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of the end step, if no creatures are on the battlefield, sacrifice this enchantment.\n  |    ^---\n  |\n  = expected trigger_event_clause"
+      "status": "pass"
     },
     "lea/Phantasmal Forces": {
       "status": "pass"

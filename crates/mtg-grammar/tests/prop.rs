@@ -6,13 +6,14 @@
 // budget thanks to the trivial parser/unparser.
 
 use mtg_grammar::{
-    parse, unparse, ActivatedAbility, ActivatedCost, ActivatedEffect, BasicLandType, CardCount,
-    Color, DamageAmount, DamageEvent, DamageKind, DamageLifeGainCap, DamagePreventionAmount,
+    parse, unparse, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
+    ActivatedDamageRecipient, ActivatedEffect, BasicLandType, CardCount, Color, DamageAmount,
+    DamageAssignment, DamageEvent, DamageKind, DamageLifeGainCap, DamagePreventionAmount,
     DamagePreventionDuration, DamagePreventionEffect, DamageRecipient, DamageRecipients,
-    DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, ManaCost,
-    ManaSymbol, ModalMode, PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement, StaticAbility,
-    TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
+    DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
+    ManaCost, ManaSymbol, ModalMode, PermanentType, PreventionRecipient, PtModifier, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellType, Statement,
+    StaticAbility, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -279,6 +280,35 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 ]),
             },
         }),
+        Just(Statement::Compound(vec![
+            Statement::TriggeredAbility(TriggeredAbility {
+                event: TriggerEvent::BeginningOfTheEndStep,
+                intervening_if: Some(InterveningIf::NoPermanentsAreOnTheBattlefield {
+                    permanent_type: PermanentType::Creature,
+                }),
+                effects: vec![TriggerEffect::SacrificeSource {
+                    source: SourceObject::This(PermanentType::Enchantment),
+                }],
+            }),
+            Statement::ActivatedAbility(ActivatedAbility {
+                costs: vec![ActivatedCost::Mana(ManaCost {
+                    symbols: vec![ManaSymbol::Black],
+                })],
+                effect: ActivatedEffect::DamageEffect(ActivatedDamageEffect::SourceDealsDamage {
+                    source: SourceObject::This(PermanentType::Enchantment),
+                    assignments: vec![
+                        DamageAssignment {
+                            amount: DamageAmount::Number(1),
+                            recipient: ActivatedDamageRecipient::EachCreature,
+                        },
+                        DamageAssignment {
+                            amount: DamageAmount::Number(1),
+                            recipient: ActivatedDamageRecipient::EachPlayer,
+                        },
+                    ],
+                }),
+            }),
+        ])),
         Just(Statement::PreventDamageThisTurn {
             effect: DamagePreventionEffect {
                 amount: DamagePreventionAmount::All,

@@ -272,3 +272,5 @@ mod orcish_oriflamme;
 mod paralyze;
 #[path = "generated/personal_incarnation.rs"]
 mod personal_incarnation;
+#[path = "generated/pestilence.rs"]
+mod pestilence;
