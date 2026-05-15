@@ -166,6 +166,16 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(u32_to_number_word(*maximum));
             out.push('.');
         }
+        Statement::IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
+            threshold,
+            source,
+        } => {
+            out.push_str("If this ability has been activated ");
+            out.push_str(u32_to_number_word(*threshold));
+            out.push_str(" or more times this turn, sacrifice ");
+            write_source_object(out, *source);
+            out.push_str(" at the beginning of the next end step.");
+        }
         Statement::ActivateOnlyDuringYourUpkeep => {
             out.push_str("Activate only during your upkeep.");
         }
@@ -498,6 +508,12 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
         } => {
             out.push_str("Enchanted ");
             out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" gets ");
+            write_pt_modifier(out, *modifier);
+            out.push_str(" until end of turn.");
+        }
+        ActivatedEffect::SourceGetsUntilEndOfTurn { source, modifier } => {
+            write_source_object_capitalized(out, *source);
             out.push_str(" gets ");
             write_pt_modifier(out, *modifier);
             out.push_str(" until end of turn.");

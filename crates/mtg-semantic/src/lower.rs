@@ -108,6 +108,13 @@ pub fn lower(ast: &Statement) -> Result<CardEffect, SemanticError> {
             source: *source,
             maximum: *maximum,
         },
+        Statement::IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
+            threshold,
+            source,
+        } => CardEffect::IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
+            threshold: *threshold,
+            source: *source,
+        },
         Statement::ActivateOnlyDuringYourUpkeep => CardEffect::ActivateOnlyDuringYourUpkeep,
         Statement::ActivateOnlyDuringYourTurn => CardEffect::ActivateOnlyDuringYourTurn,
         Statement::ModalChoice { modes } => CardEffect::ModalChoice {

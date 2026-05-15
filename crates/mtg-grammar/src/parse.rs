@@ -100,6 +100,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::this_ability_cant_cause_total_pt_counters_greater_than => {
             this_ability_cant_cause_total_pt_counters_greater_than_from_pair(pair)
         }
+        Rule::if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step => {
+            if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step_from_pair(pair)
+        }
         Rule::activate_only_during_your_upkeep => Ok(Statement::ActivateOnlyDuringYourUpkeep),
         Rule::activate_only_during_your_turn => Ok(Statement::ActivateOnlyDuringYourTurn),
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
@@ -421,6 +424,26 @@ fn this_ability_cant_cause_total_pt_counters_greater_than_from_pair(
         source: source_object_from_pair(source_pair)?,
         maximum,
     })
+}
+
+fn if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let threshold_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("activation threshold missing count"))?;
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("activation threshold missing source"))?;
+    let threshold =
+        number_word_to_u32(threshold_pair.as_str()).ok_or(ParseError::Internal("number_word"))?;
+    Ok(
+        Statement::IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
+            threshold,
+            source: source_object_from_pair(source_pair)?,
+        },
+    )
 }
 
 fn balance_same_way_action_from_pair(pair: Pair<Rule>) -> Result<BalanceSameWayAction, ParseError> {
@@ -1527,6 +1550,19 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             ))?;
             Ok(ActivatedEffect::EnchantedGetsUntilEndOfTurn {
                 permanent_type: permanent_type_from_pair(pt_pair)?,
+                modifier: pt_modifier_from_pair(modifier_pair)?,
+            })
+        }
+        Rule::activated_source_gets_until_eot => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("activated source gets missing source"))?;
+            let modifier_pair = inner.next().ok_or(ParseError::Internal(
+                "activated source gets missing modifier",
+            ))?;
+            Ok(ActivatedEffect::SourceGetsUntilEndOfTurn {
+                source: source_object_from_pair(source_pair)?,
                 modifier: pt_modifier_from_pair(modifier_pair)?,
             })
         }

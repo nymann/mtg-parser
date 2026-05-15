@@ -1,6 +1,6 @@
 // Tier 1 lowering unit tests. Hand-written AST → expected IR.
 
-use mtg_grammar::{ManaCost, ManaSymbol, PermanentType, Statement};
+use mtg_grammar::{ManaCost, ManaSymbol, PermanentType, SourceObject, Statement};
 use mtg_semantic::{lower, CardEffect, ManaValue};
 
 fn mc(symbols: Vec<ManaSymbol>) -> Statement {
@@ -52,6 +52,23 @@ fn lowers_if_you_do_gain_life() {
     assert_eq!(
         lower(&Statement::IfYouDoGainLife { amount: 1 }).unwrap(),
         CardEffect::IfYouDoGainLife { amount: 1 },
+    );
+}
+
+#[test]
+fn lowers_activation_threshold_sacrifice_delayed_trigger() {
+    assert_eq!(
+        lower(
+            &Statement::IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
+                threshold: 4,
+                source: SourceObject::This(PermanentType::Creature),
+            }
+        )
+        .unwrap(),
+        CardEffect::IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
+            threshold: 4,
+            source: SourceObject::This(PermanentType::Creature),
+        },
     );
 }
 

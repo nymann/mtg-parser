@@ -103,3 +103,5 @@ mod disenchant;
 mod disintegrate;
 #[path = "generated_patterns/disrupting_scepter.rs"]
 mod disrupting_scepter;
+#[path = "generated_patterns/dragon_whelp.rs"]
+mod dragon_whelp;

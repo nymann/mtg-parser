@@ -7,8 +7,8 @@
 
 use mtg_grammar::{
     parse, unparse, ActivatedAbility, ActivatedCost, ActivatedEffect, CardCount, Color,
-    EachPlayerAction, ImperativeAction, ManaCost, ManaSymbol, PermanentType, Statement,
-    TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
+    EachPlayerAction, ImperativeAction, ManaCost, ManaSymbol, PermanentType, SourceObject,
+    Statement, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -107,6 +107,12 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         }),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::ActivateOnlyDuringYourTurn),
+        (1u32..=10).prop_map(|threshold| {
+            Statement::IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
+                threshold,
+                source: SourceObject::This(PermanentType::Creature),
+            }
+        }),
         Just(Statement::AntePlayRestriction),
         Just(Statement::EachPlayerPerformsAction {
             action: EachPlayerAction::AnteTopCardOfTheirLibrary

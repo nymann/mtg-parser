@@ -92,6 +92,12 @@ pub enum CardEffect {
         source: SourceObject,
         maximum: u32,
     },
+    /// "If this ability has been activated N or more times this turn,
+    /// sacrifice this <source> at the beginning of the next end step."
+    IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
+        threshold: u32,
+        source: SourceObject,
+    },
     /// "Activate only during your upkeep."
     ActivateOnlyDuringYourUpkeep,
     /// "Activate only during your turn."

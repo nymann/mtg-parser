@@ -105,6 +105,12 @@ pub enum Statement {
         source: SourceObject,
         maximum: u32,
     },
+    /// "If this ability has been activated N or more times this turn,
+    /// sacrifice this <source> at the beginning of the next end step."
+    IfThisAbilityActivatedAtLeastTimesThisTurnSacrificeSourceAtNextEndStep {
+        threshold: u32,
+        source: SourceObject,
+    },
     /// "Activate only during your upkeep."
     ActivateOnlyDuringYourUpkeep,
     /// "Activate only during your turn."
@@ -366,6 +372,11 @@ pub enum ActivatedEffect {
     /// "Enchanted <type> gets <modifier> until end of turn."
     EnchantedGetsUntilEndOfTurn {
         permanent_type: PermanentType,
+        modifier: PtModifier,
+    },
+    /// "This <source> gets <modifier> until end of turn."
+    SourceGetsUntilEndOfTurn {
+        source: SourceObject,
         modifier: PtModifier,
     },
     /// "The next time a/an <color> source of your choice would deal
