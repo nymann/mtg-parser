@@ -556,6 +556,8 @@ enum PlumbingCooldownRelationship {
     Equal,
     Wrapper,
     Child,
+    SamePrefix,
+    Neighbor,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -2212,7 +2214,7 @@ fn is_shared_grammar_stop_rule(rule_name: &str) -> bool {
 
 fn is_shared_plumbing_block_reason(reason: &str) -> bool {
     let reason = reason.trim().to_ascii_lowercase();
-    reason.starts_with("shared") || reason.starts_with("shared/plumbing")
+    reason.starts_with("shared") || reason.contains("plumbing")
 }
 
 fn plumbing_cooldown_selection(
@@ -2269,6 +2271,7 @@ fn derive_plumbing_cooldown_from_rules(
         .iter()
         .cloned()
         .collect();
+    let blocked_neighborhood = rule_neighborhood(rules, blocked_target_rule);
     let mut cooled_target_rules = Vec::new();
 
     for candidate in &report.unmapped_rules {
@@ -2287,9 +2290,18 @@ fn derive_plumbing_cooldown_from_rules(
             .iter()
             .cloned()
             .collect();
-        let Some(relationship_type) =
+        let relationship_type =
             plumbing_cooldown_relationship(&blocked_leaf_set, &candidate_leaf_set)
-        else {
+                .or_else(|| same_prefix_cooldown_relationship(blocked_target_rule, &candidate.name))
+                .or_else(|| {
+                    same_neighborhood_cooldown_relationship(
+                        rules,
+                        &blocked_neighborhood,
+                        blocked_target_rule,
+                        &candidate.name,
+                    )
+                });
+        let Some(relationship_type) = relationship_type else {
             continue;
         };
         cooled_target_rules.push(PlumbingCooldownCandidate {
@@ -2330,6 +2342,58 @@ fn plumbing_cooldown_relationship(
         return Some(PlumbingCooldownRelationship::Child);
     }
     None
+}
+
+fn same_prefix_cooldown_relationship(
+    blocked_target_rule: &str,
+    candidate_rule: &str,
+) -> Option<PlumbingCooldownRelationship> {
+    if candidate_rule
+        .strip_prefix(blocked_target_rule)
+        .is_some_and(|suffix| suffix.starts_with('_'))
+        || blocked_target_rule
+            .strip_prefix(candidate_rule)
+            .is_some_and(|suffix| suffix.starts_with('_'))
+    {
+        return Some(PlumbingCooldownRelationship::SamePrefix);
+    }
+
+    let shared_prefix_len = blocked_target_rule
+        .split('_')
+        .zip(candidate_rule.split('_'))
+        .take_while(|(left, right)| left == right)
+        .count();
+    (shared_prefix_len >= 2).then_some(PlumbingCooldownRelationship::SamePrefix)
+}
+
+fn same_neighborhood_cooldown_relationship(
+    rules: &[grammar_query_engine::GrammarRuleDefinition],
+    blocked_neighborhood: &BTreeSet<String>,
+    blocked_target_rule: &str,
+    candidate_rule: &str,
+) -> Option<PlumbingCooldownRelationship> {
+    let candidate_neighborhood = rule_neighborhood(rules, candidate_rule);
+    if candidate_neighborhood.is_empty() || blocked_neighborhood.is_empty() {
+        return None;
+    }
+    if candidate_neighborhood.contains(blocked_target_rule)
+        || blocked_neighborhood.contains(candidate_rule)
+        || !candidate_neighborhood.is_disjoint(blocked_neighborhood)
+    {
+        return Some(PlumbingCooldownRelationship::Neighbor);
+    }
+    None
+}
+
+fn rule_neighborhood(
+    rules: &[grammar_query_engine::GrammarRuleDefinition],
+    rule_name: &str,
+) -> BTreeSet<String> {
+    grammar_query_engine::direct_dependencies(rules, rule_name)
+        .into_iter()
+        .chain(grammar_query_engine::reverse_dependencies(rules, rule_name))
+        .filter(|rule| !is_shared_grammar_stop_rule(rule))
+        .collect()
 }
 
 fn expand_rule_leaf_set(
@@ -4732,6 +4796,17 @@ mod tests {
     }
 
     #[test]
+    fn plumbing_cooldown_triggers_for_shared_or_plumbing_block_reasons() {
+        assert!(is_shared_plumbing_block_reason("shared wrapper family"));
+        assert!(is_shared_plumbing_block_reason(
+            "boundary is common grammar plumbing, not a concept"
+        ));
+        assert!(!is_shared_plumbing_block_reason(
+            "outside current concept boundary"
+        ));
+    }
+
+    #[test]
     fn explicit_concept_does_not_fall_back_to_unrelated_rule() {
         let report = ExistingGrammarMapReport {
             rule_count: 1,
@@ -4872,6 +4947,10 @@ nested_wrapper = { nested_leaf }
 nested_leaf = { "nested" }
 extra_leaf = { "extra" }
 unrelated_rule = { "unrelated" }
+blocked_shared_prefix_variant = { "prefix" }
+alpha_neighborhood = { shared_neighbor_leaf ~ "a" }
+beta_neighborhood = { shared_neighbor_leaf ~ "b" }
+shared_neighbor_leaf = { "neighbor" }
 "#,
         )
         .expect("grammar parses");
@@ -4926,6 +5005,16 @@ unrelated_rule = { "unrelated" }
                     line: 12,
                     suggested_concept: None,
                 },
+                UnmappedGrammarRule {
+                    name: "blocked_shared_prefix_variant".to_string(),
+                    line: 13,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "beta_neighborhood".to_string(),
+                    line: 15,
+                    suggested_concept: None,
+                },
             ],
         };
 
@@ -4944,6 +5033,10 @@ unrelated_rule = { "unrelated" }
                 ("equal_alias", PlumbingCooldownRelationship::Equal),
                 ("larger_wrapper", PlumbingCooldownRelationship::Wrapper),
                 ("child_wrapper", PlumbingCooldownRelationship::Child),
+                (
+                    "blocked_shared_prefix_variant",
+                    PlumbingCooldownRelationship::SamePrefix
+                ),
             ]
         );
         assert!(derivation
@@ -4951,6 +5044,16 @@ unrelated_rule = { "unrelated" }
             .children
             .iter()
             .any(|child| child.rule == "target_wrapper" && !child.children.is_empty()));
+
+        let neighbor_derivation =
+            derive_plumbing_cooldown_from_rules(&report, &rules, "alpha_neighborhood");
+        assert!(neighbor_derivation
+            .cooled_target_rules
+            .iter()
+            .any(|candidate| {
+                candidate.target_rule == "beta_neighborhood"
+                    && candidate.relationship_type == PlumbingCooldownRelationship::Neighbor
+            }));
     }
 
     #[test]
