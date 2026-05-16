@@ -1,0 +1,79 @@
+[[axis]]
+name = "reference"
+values = [
+    "damage_dealt_capped",
+    "damage_prevented_this_way",
+    "damage_dealt_to_you_this_turn",
+]
+
+[[axis]]
+name = "cap_basis"
+values = [
+    "player_life_total_before_damage_dealt",
+    "planeswalker_loyalty_before_damage_dealt",
+    "creature_toughness",
+]
+
+[boundary]
+excludes = [
+    "Named-source damage instructions owned by damage_event.",
+    "Prevention effects that prevent damage but do not gain life.",
+    "Ordinary fixed life-gain instructions that are not damage-referenced.",
+]
+includes = [
+    "You-gain-life instructions whose amount is equal to a referenced damage amount.",
+    "Damage-dealt capped life gain with player life total, planeswalker loyalty, and creature toughness cap bases.",
+    "Life gain equal to damage prevented this way or damage dealt to you this turn.",
+]
+
+[concept]
+name = "life_gain_equal_to_damage"
+pest_rules = ["you_gain_life_equal_damage"]
+rules_queries = [
+    "lex: gain life equal to damage dealt",
+    "lex: gain life equal to damage prevented this way",
+    "lex: gain life equal to damage dealt to you this turn",
+]
+rules_terms = [
+    "life gain",
+    "damage",
+    "prevention effect",
+]
+
+[[counterexample]]
+reason = "Named-source damage event, owned by damage_event."
+text = "Lightning Bolt deals 3 damage to any target."
+
+[[counterexample]]
+reason = "Prevention effect, not life gain."
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+
+[[counterexample]]
+reason = "Ordinary fixed life gain, not damage-referenced life gain."
+text = "Target player gains 3 life."
+
+[[example]]
+text = "You gain life equal to the damage dealt, but not more life than the player's life total before the damage was dealt or the creature's toughness."
+
+[[example]]
+text = "You gain life equal to the damage dealt, but not more life than the player's life total before the damage was dealt, the planeswalker's loyalty before the damage was dealt, or the creature's toughness."
+
+[[example]]
+text = "You gain life equal to the damage prevented this way."
+
+[[example]]
+text = "You gain life equal to the damage dealt to you this turn."
+
+[grammar_query]
+candidate_rules = [
+    "you_gain_life_equal_damage",
+    "you_gain_life_equal_damage_dealt_capped",
+    "you_gain_life_equal_damage_prevented_this_way",
+    "you_gain_life_equal_damage_dealt_to_you_this_turn",
+    "damage_life_gain_cap",
+]
+selected_rule = "you_gain_life_equal_damage"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

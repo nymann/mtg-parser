@@ -1,0 +1,35 @@
+[fixture]
+concept = "life_gain_equal_to_damage"
+rule = "you_gain_life_equal_damage"
+
+[[example]]
+text = "You gain life equal to the damage dealt, but not more life than the player's life total before the damage was dealt or the creature's toughness."
+reason = "Capped damage-dealt reference with player-life-total and creature-toughness cap bases."
+
+[[example]]
+text = "You gain life equal to the damage dealt, but not more life than the player's life total before the damage was dealt, the planeswalker's loyalty before the damage was dealt, or the creature's toughness."
+reason = "Capped damage-dealt reference with all known cap bases."
+
+[[example]]
+text = "You gain life equal to the damage prevented this way."
+reason = "Damage-prevented-this-way reference."
+
+[[example]]
+text = "You gain life equal to the damage dealt to you this turn."
+reason = "Damage-dealt-to-you-this-turn reference."
+
+[[counterexample]]
+text = "Lightning Bolt deals 3 damage to any target."
+reason = "Named-source damage event, owned by damage_event."
+
+[[counterexample]]
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+reason = "Prevention effect, not life gain."
+
+[[counterexample]]
+text = "Target player gains 3 life."
+reason = "Ordinary fixed life gain, not damage-referenced life gain."
+
+[[counterexample]]
+text = "You gain life equal to the damage prevented this way. trailing"
+reason = "Exact-consumption guard."
