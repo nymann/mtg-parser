@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phased Concept Pipeline Plan</title>
+  <style>
+    :root {
+      --bg: #f8f9f6;
+      --ink: #1d252b;
+      --muted: #5a6670;
+      --line: #d7ded7;
+      --panel: #ffffff;
+      --soft: #edf4ef;
+      --code: #17242d;
+      --green: #23724f;
+      --blue: #295f8f;
+      --gold: #946a18;
+      --red: #a33e3e;
+      --violet: #68509b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      background: #18252d;
+      color: #f7fbf7;
+      border-bottom: 1px solid var(--line);
+    }
+    .hero {
+      width: min(1180px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 44px 0 38px;
+    }
+    .eyebrow {
+      margin: 0 0 12px;
+      color: #f0ce75;
+      font-size: 13px;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      max-width: 900px;
+      font-size: clamp(38px, 5vw, 68px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+    .hero p {
+      margin: 18px 0 0;
+      max-width: 880px;
+      color: #dce9e1;
+      font-size: 19px;
+    }
+    main {
+      width: min(1180px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 32px 0 80px;
+    }
+    section {
+      padding: 30px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 {
+      margin: 0 0 15px;
+      font-size: clamp(25px, 3vw, 36px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+    p { margin: 0; color: var(--muted); }
+    ul, ol {
+      margin: 11px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+    li + li { margin-top: 7px; }
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #e7ece8;
+      color: #1d252b;
+      font: 0.92em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    pre {
+      overflow-x: auto;
+      margin: 14px 0 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--code);
+      color: #eef7f0;
+      font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .lead {
+      max-width: 960px;
+      color: #3c474f;
+      font-size: 18px;
+    }
+    .grid { display: grid; gap: 14px; }
+    .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      min-height: 148px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+    }
+    .matrix {
+      overflow-x: auto;
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    table {
+      width: 100%;
+      min-width: 940px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: #2e3740;
+      background: #e8eee8;
+      font-weight: 850;
+    }
+    tr:last-child td { border-bottom: 0; }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .phase {
+      min-height: 160px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--blue);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .phase:nth-child(1) { border-top-color: var(--green); }
+    .phase:nth-child(2) { border-top-color: var(--blue); }
+    .phase:nth-child(3) { border-top-color: var(--violet); }
+    .phase:nth-child(4) { border-top-color: var(--gold); }
+    .phase:nth-child(5) { border-top-color: var(--red); }
+    .callout {
+      margin-top: 16px;
+      padding: 18px;
+      border-left: 5px solid var(--green);
+      border-radius: 8px;
+      background: var(--soft);
+    }
+    .callout p { color: #2d393f; }
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .tag {
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: #303941;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    footer {
+      padding: 26px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    @media (max-width: 920px) {
+      .cols-2, .cols-3, .flow { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hero">
+      <p class="eyebrow">phased parser development</p>
+      <h1>Separate concept grammar, parser binding, unparse, lowering, and card enablement.</h1>
+      <p>
+        This plan defines the long-running phases after the grammar-first shift. Each phase consumes mature artifacts from the previous phase and has its own gates. A concept can be useful before any card passes.
+      </p>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Principle</h2>
+      <p class="lead">
+        Do not force one patch to complete every layer. The vertical card pipeline created pressure to hack grammar, AST, parser, unparser, and lowering at the same time. The new model matures concepts horizontally through layers.
+      </p>
+      <pre>old:
+  one card -> grammar + AST + parse + unparse + lowering + corpus pass
+
+new:
+  one concept -> grammar maturity
+  grammar-mature concept -> AST/parser maturity
+  parser-mature concept -> unparse/round-trip maturity
+  round-trip mature concept -> semantic lowering maturity
+  fully mature concepts -> card enablement</pre>
+    </section>
+
+    <section>
+      <h2>Phases</h2>
+      <div class="flow">
+        <div class="phase">
+          <h3>1. PEST Grammar</h3>
+          <p>Recognize concept syntax with examples and counterexamples. No AST requirement.</p>
+        </div>
+        <div class="phase">
+          <h3>2. Parser / AST</h3>
+          <p>Bind matched grammar into structured AST fields. No unparse or semantic requirement yet.</p>
+        </div>
+        <div class="phase">
+          <h3>3. Unparse / Round-Trip</h3>
+          <p>Define canonical text and satisfy <code>parse(unparse(ast)) == ast</code>.</p>
+        </div>
+        <div class="phase">
+          <h3>4. Semantic Lowering</h3>
+          <p>Map AST into semantic IR and preserve meaning across equivalent surface forms.</p>
+        </div>
+        <div class="phase">
+          <h3>5. Card Enablement</h3>
+          <p>Only now run corpus/card fixtures and mark cards passing in batches.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Maturity Model</h2>
+      <div class="matrix">
+        <table>
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Input</th>
+              <th>Output</th>
+              <th>Gate</th>
+              <th>Does A Card Need To Pass?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>PEST Grammar</td>
+              <td>Rules concepts, corpus examples, grammar neighbours.</td>
+              <td>Grammar rules and concept fixtures.</td>
+              <td>Examples match, counterexamples reject, grammar audit clean.</td>
+              <td>No.</td>
+            </tr>
+            <tr>
+              <td>Parser / AST</td>
+              <td>Grammar-mature concept.</td>
+              <td>AST variant or widened fields plus parse branches.</td>
+              <td>Grammar fixture parses into expected AST snapshot.</td>
+              <td>No.</td>
+            </tr>
+            <tr>
+              <td>Unparse / Round-Trip</td>
+              <td>Parser-mature concept.</td>
+              <td>Canonical unparse and prop strategy.</td>
+              <td>Round-trip property tests and concept snapshots pass.</td>
+              <td>No.</td>
+            </tr>
+            <tr>
+              <td>Semantic Lowering</td>
+              <td>Round-trip mature concept.</td>
+              <td>IR lowering and semantic fixtures.</td>
+              <td>Lowering totality and semantic equivalence tests pass.</td>
+              <td>No.</td>
+            </tr>
+            <tr>
+              <td>Card Enablement</td>
+              <td>Concepts mature across all required layers.</td>
+              <td>Generated card tests and corpus status updates.</td>
+              <td>Focused tests and corpus regression pass.</td>
+              <td>Yes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Concept Registry</h2>
+      <p class="lead">
+        The central artifact is a concept registry that records maturity by layer. It replaces the assumption that parser support equals card support.
+      </p>
+      <pre>concepts/prevention_effect.toml
+
+[concept]
+name = "prevention_effect"
+rules_terms = ["prevention effect", "damage"]
+
+[maturity]
+pest_grammar = "green"
+parser_ast = "pending"
+unparse_roundtrip = "pending"
+semantic_lowering = "pending"
+card_enablement = "blocked_on_semantic_lowering"
+
+[artifacts]
+grammar_fixtures = "concept_fixtures/prevention_effect.toml"
+ast_snapshots = ""
+semantic_fixtures = ""
+cards_enabled = []</pre>
+    </section>
+
+    <section>
+      <h2>Pipeline Details</h2>
+      <div class="matrix">
+        <table>
+          <thead>
+            <tr>
+              <th>Pipeline</th>
+              <th>Reviewer Steps</th>
+              <th>Agent Role</th>
+              <th>Tools</th>
+              <th>Artifacts</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Concept-to-PEST</td>
+              <td>Discover concept, collect examples, bound concept, design axes, implement PEST, run grammar fixtures.</td>
+              <td>Boundary design and grammar-only patching.</td>
+              <td><code>rules_search</code>, <code>corpus_cluster</code>, <code>grammar_query</code>, <code>grammar_fixture_run</code>.</td>
+              <td>Concept file, grammar fixtures, PEST patch report.</td>
+            </tr>
+            <tr>
+              <td>PEST-to-AST</td>
+              <td>Choose AST shape, map grammar captures, parse examples, compare AST snapshots.</td>
+              <td>AST design and parser wiring.</td>
+              <td><code>grammar_slice</code>, <code>ast_surface_map</code>, AST snapshot runner.</td>
+              <td>AST plan, parser patch, AST snapshots.</td>
+            </tr>
+            <tr>
+              <td>AST-to-Unparse</td>
+              <td>Choose canonical text, implement unparse, generate strategies, run round-trip.</td>
+              <td>Canonicalization and strategy implementation.</td>
+              <td>Round-trip tests, prop strategy checks.</td>
+              <td>Unparse patch, prop strategy patch, round-trip report.</td>
+            </tr>
+            <tr>
+              <td>AST-to-IR</td>
+              <td>Choose semantic model, implement lowering, test equivalence.</td>
+              <td>Semantic design and lowering implementation.</td>
+              <td>Semantic fixtures, lowering totality tests.</td>
+              <td>IR patch, lowering patch, semantic fixture report.</td>
+            </tr>
+            <tr>
+              <td>Concepts-to-Cards</td>
+              <td>Find cards whose required concepts are mature, enable card tests, run corpus regression.</td>
+              <td>Usually none; repair agent only if a mature concept fails unexpectedly.</td>
+              <td>Corpus scanner, generated test templates, corpus regression gate.</td>
+              <td>Generated tests, corpus status, card enablement commit.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Commands</h2>
+      <pre># Phase 1: grammar only.
+cargo xtask concept-discover --from rules,cards
+cargo xtask concept-grammar prevention_effect
+cargo xtask concept-grammar-test prevention_effect
+
+# Phase 2: parser and AST.
+cargo xtask concept-parse prevention_effect
+cargo xtask concept-ast-test prevention_effect
+
+# Phase 3: unparse and round-trip.
+cargo xtask concept-unparse prevention_effect
+cargo xtask concept-roundtrip prevention_effect
+
+# Phase 4: semantic lowering.
+cargo xtask concept-lower prevention_effect
+cargo xtask concept-semantic-test prevention_effect
+
+# Phase 5: card enablement.
+cargo xtask concept-enable-cards prevention_effect
+cargo xtask corpus</pre>
+      <div class="callout">
+        <p>The exact command names can change. The important design is that each layer is independently runnable, inspectable, and replayable.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>How Cards Become Passing Later</h2>
+      <p class="lead">
+        A card should pass only when every concept it uses is mature across all required layers.
+      </p>
+      <pre>card: example prevention card
+required_concepts:
+  - activated_ability      mature: all layers green
+  - prevention_effect      mature: all layers green
+  - target_any_target      mature: all layers green
+
+if all required concepts green:
+  generate/enable card tests
+  run focused
+  run corpus regression
+  commit card enablement</pre>
+      <div class="callout">
+        <p>Card enablement becomes confirmation that concept layers compose. It is no longer the driver of grammar design.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Acceptance Criteria</h2>
+      <ul>
+        <li>Each phase can run without pretending later phases are done.</li>
+        <li>Concept maturity is visible in a registry and future UI.</li>
+        <li>Grammar-only concepts do not update corpus status.</li>
+        <li>Parser work consumes grammar-mature concepts instead of raw failing cards.</li>
+        <li>Card enablement is batched from fully mature concepts.</li>
+        <li>Regression gates still protect old cards when card enablement finally runs.</li>
+      </ul>
+      <div class="tag-row">
+        <span class="tag">horizontal phases</span>
+        <span class="tag">concept maturity</span>
+        <span class="tag">cards last</span>
+        <span class="tag">independent gates</span>
+      </div>
+    </section>
+
+    <footer>
+      Phased concept pipeline plan. This decomposes parser development into grammar, AST, unparse, semantic, and card enablement phases.
+    </footer>
+  </main>
+</body>
+</html>

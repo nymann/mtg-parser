@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Concept-To-PEST Grammar Plan</title>
+  <style>
+    :root {
+      --bg: #f8f9f6;
+      --ink: #1d252b;
+      --muted: #5a6670;
+      --line: #d7ded7;
+      --panel: #ffffff;
+      --soft: #edf4ef;
+      --code: #17242d;
+      --green: #23724f;
+      --blue: #295f8f;
+      --gold: #946a18;
+      --red: #a33e3e;
+      --violet: #68509b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      background: #18252d;
+      color: #f7fbf7;
+      border-bottom: 1px solid var(--line);
+    }
+    .hero {
+      width: min(1180px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 44px 0 38px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+      gap: 34px;
+      align-items: end;
+    }
+    .eyebrow {
+      margin: 0 0 12px;
+      color: #f0ce75;
+      font-size: 13px;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      max-width: 840px;
+      font-size: clamp(38px, 5vw, 68px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+    .hero p {
+      margin: 18px 0 0;
+      max-width: 820px;
+      color: #dce9e1;
+      font-size: 19px;
+    }
+    .hero-card {
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.07);
+    }
+    .hero-card strong {
+      display: block;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero-card span {
+      color: #c9d8d0;
+      font-size: 14px;
+    }
+    main {
+      width: min(1180px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 32px 0 80px;
+    }
+    section {
+      padding: 30px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 {
+      margin: 0 0 15px;
+      font-size: clamp(25px, 3vw, 36px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+    p { margin: 0; color: var(--muted); }
+    ul, ol {
+      margin: 11px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+    li + li { margin-top: 7px; }
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #e7ece8;
+      color: #1d252b;
+      font: 0.92em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    pre {
+      overflow-x: auto;
+      margin: 14px 0 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--code);
+      color: #eef7f0;
+      font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .lead {
+      max-width: 960px;
+      color: #3c474f;
+      font-size: 18px;
+    }
+    .grid { display: grid; gap: 14px; }
+    .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      min-height: 148px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+    }
+    .callout {
+      margin-top: 16px;
+      padding: 18px;
+      border-left: 5px solid var(--green);
+      border-radius: 8px;
+      background: var(--soft);
+    }
+    .callout p { color: #2d393f; }
+    .matrix {
+      overflow-x: auto;
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    table {
+      width: 100%;
+      min-width: 900px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: #2e3740;
+      background: #e8eee8;
+      font-weight: 850;
+    }
+    tr:last-child td { border-bottom: 0; }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .node {
+      min-height: 132px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--blue);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .node.agent { border-top-color: var(--violet); }
+    .node.gate { border-top-color: var(--gold); }
+    .node.done { border-top-color: var(--green); }
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .tag {
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: #303941;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    footer {
+      padding: 26px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    @media (max-width: 920px) {
+      .hero, .cols-2, .cols-3, .flow { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hero">
+      <div>
+        <p class="eyebrow">grammar-first pipeline</p>
+        <h1>Concept-to-PEST grammar coverage before card passing.</h1>
+        <p>
+          This plan builds the PEST grammar as a concept inventory using Comprehensive Rules vocabulary and full-corpus Oracle text. It intentionally does not try to make cards pass.
+        </p>
+      </div>
+      <div class="hero-card">
+        <strong>Primary output</strong>
+        <span>Grammar concepts with examples, counterexamples, axes, pest rules, and grammar-level fixtures. Parser, unparser, lowering, and card enablement are later phases.</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Core Shift</h2>
+      <p class="lead">
+        The old unit was one card. That forced every patch to change grammar, AST, parse logic, unparse logic, IR, lowering, tests, and corpus status at once. The new unit is one grammar concept. A concept may be syntactically mature before any card passes.
+      </p>
+      <div class="callout">
+        <p><strong>Rule:</strong> this pipeline stops at PEST grammar coverage. It may compile grammar-level tests, but it does not require full AST construction, round-trip, lowering, or card corpus success.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Discovery Sources</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>Rules-First Discovery</h3>
+          <p>Use qmd over the Comprehensive Rules to identify concept names and boundaries: activated abilities, triggered abilities, replacement effects, prevention effects, costs, targets, zones, counters, damage, durations, and keyword actions.</p>
+        </div>
+        <div class="card">
+          <h3>Corpus-First Discovery</h3>
+          <p>Use all Oracle text to find actual wording shapes, frequency, examples, counterexamples, and variable axes. The rules give meaning; the corpus gives syntax.</p>
+        </div>
+      </div>
+      <pre>rules_search("lex: prevention effect prevent damage")
+  -> concept name and CR boundary
+
+corpus_cluster("prevent damage")
+  -> "prevent the next N damage"
+  -> "prevent all damage that would be dealt by SOURCE"
+  -> "prevent all combat damage that would be dealt to RECIPIENT"</pre>
+    </section>
+
+    <section>
+      <h2>Reviewer Flow</h2>
+      <div class="flow">
+        <div class="node">
+          <h3>1. Discover Concept</h3>
+          <p>Combine qmd rules concepts with corpus phrase clusters.</p>
+        </div>
+        <div class="node">
+          <h3>2. Collect Examples</h3>
+          <p>Gather representative clauses and nearby non-examples from the corpus.</p>
+        </div>
+        <div class="node agent">
+          <h3>3. Bound Concept</h3>
+          <p>Use rules terminology to decide what belongs in the concept and what does not.</p>
+        </div>
+        <div class="node agent">
+          <h3>4. Design Grammar Axes</h3>
+          <p>Name variable axes such as amount, source, recipient, target, condition, duration, controller, and zone.</p>
+        </div>
+        <div class="node">
+          <h3>5. Query Existing Grammar</h3>
+          <p>Use <code>grammar_query</code> to find existing rules and safe edit scopes.</p>
+        </div>
+        <div class="node agent">
+          <h3>6. Implement PEST</h3>
+          <p>Widen or add grammar rules for the concept only.</p>
+        </div>
+        <div class="node gate">
+          <h3>7. Run Grammar Fixtures</h3>
+          <p>Check examples, counterexamples, ambiguity, and duplicate-shape drift.</p>
+        </div>
+        <div class="node done">
+          <h3>8. Mark Maturity</h3>
+          <p>Record grammar maturity and leave parser/unparse/lowering as pending phases.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Artifacts</h2>
+      <pre>grammar-concepts/
+  prevention_effect.toml
+  replacement_effect.toml
+  counter_placement.toml
+  damage_event.toml
+
+.grammar-concept-runs/&lt;ts&gt;-&lt;concept&gt;/
+  rules_context.json       # qmd queries, hits, selected terms
+  corpus_examples.json     # examples and counterexamples
+  grammar_neighbours.json  # grammar_query results
+  grammar_axes.json        # concept axes and rejected boundaries
+  pest_recipe.md           # agent task for grammar only
+  pest_patch_report.json   # new/widened/removed pest rules
+  grammar_fixture_result.json
+  maturity.json</pre>
+      <div class="matrix">
+        <table>
+          <thead>
+            <tr>
+              <th>Concept File Field</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>name</code></td>
+              <td>Rules-grounded concept name, such as <code>prevention_effect</code>.</td>
+            </tr>
+            <tr>
+              <td><code>rules_terms</code></td>
+              <td>Comprehensive Rules vocabulary and qmd query evidence.</td>
+            </tr>
+            <tr>
+              <td><code>axes</code></td>
+              <td>Variable grammar dimensions: amount, event, source, recipient, duration, condition, zone, controller.</td>
+            </tr>
+            <tr>
+              <td><code>examples</code></td>
+              <td>Corpus clauses that should match this grammar concept.</td>
+            </tr>
+            <tr>
+              <td><code>counterexamples</code></td>
+              <td>Nearby clauses that should not match this concept.</td>
+            </tr>
+            <tr>
+              <td><code>pest_rules</code></td>
+              <td>Rules owned or widened for this grammar concept.</td>
+            </tr>
+            <tr>
+              <td><code>maturity</code></td>
+              <td><code>discovered</code>, <code>bounded</code>, <code>grammar_drafted</code>, <code>grammar_fixture_green</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Tools</h2>
+      <div class="matrix">
+        <table>
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>Purpose</th>
+              <th>Deterministic Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>rules_search</code></td>
+              <td>Find rules concepts and terminology.</td>
+              <td><code>qmd query "lex: ..." -c mtg-rules --no-rerank</code></td>
+            </tr>
+            <tr>
+              <td><code>corpus_cluster</code></td>
+              <td>Cluster all Oracle clauses by wording and concept hints.</td>
+              <td>Corpus card JSON and normalized Oracle text.</td>
+            </tr>
+            <tr>
+              <td><code>grammar_query</code></td>
+              <td>Find existing PEST rules, dependencies, reverse dependencies, and edit scopes.</td>
+              <td>Indexed <code>grammar.pest</code>.</td>
+            </tr>
+            <tr>
+              <td><code>grammar_fixture_run</code></td>
+              <td>Parse examples and counterexamples at PEST-rule level.</td>
+              <td>A grammar-only test harness over <code>pest</code> rules.</td>
+            </tr>
+            <tr>
+              <td><code>grammar_debt_audit</code></td>
+              <td>Detect card-shaped rules, duplicate RHS shapes, and excessive rule growth.</td>
+              <td>Existing grammar audit plus concept fixture metadata.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Agent Conversations</h2>
+      <pre>BOUNDARY PROMPT
+You are defining a PEST grammar concept, not making a card pass.
+Given qmd rules hits and corpus examples/counterexamples:
+- choose the Comprehensive Rules term
+- define what belongs in this concept
+- define what is out of scope
+- name the grammar axes
+Return CONCEPT_BOUNDARY only.
+
+PEST PATCH PROMPT
+You are editing only grammar syntax for one approved concept.
+You receive grammar_query slices, examples, counterexamples, and axes.
+Do not edit AST, parse.rs, unparse.rs, semantic lowering, generated tests,
+or corpus status.
+Prefer widening existing rules. New rules require a reason tied to the
+concept axes, not to one card.
+Return PEST_PATCH_REPORT.</pre>
+    </section>
+
+    <section>
+      <h2>Grammar Fixture Tests</h2>
+      <p class="lead">
+        Because this pipeline does not make full cards pass, it needs grammar-level tests.
+      </p>
+      <pre>[[example]]
+rule = "prevention_effect"
+text = "prevent the next 1 damage that would be dealt to any target this turn"
+expect = "match"
+
+[[counterexample]]
+rule = "prevention_effect"
+text = "destroy target creature"
+expect = "reject"</pre>
+      <div class="callout">
+        <p>The grammar fixture harness should prove that the rule recognizes the concept family without requiring AST construction or semantic lowering.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Acceptance Criteria</h2>
+      <ul>
+        <li>The concept has qmd-backed naming or an explicit reason no rules term applies.</li>
+        <li>The concept has at least three corpus examples unless it is intentionally rare.</li>
+        <li>The concept has counterexamples that protect against over-broad grammar.</li>
+        <li>The PEST patch touches only grammar files or grammar fixture metadata.</li>
+        <li>Examples match and counterexamples reject at grammar-rule level.</li>
+        <li>Grammar audit does not flag new card-shaped rule drift.</li>
+        <li>Maturity is recorded as grammar-only; no card is marked passing by this pipeline.</li>
+      </ul>
+      <div class="tag-row">
+        <span class="tag">rules plus corpus</span>
+        <span class="tag">PEST only</span>
+        <span class="tag">concept fixtures</span>
+        <span class="tag">no card passing</span>
+        <span class="tag">no AST pressure</span>
+      </div>
+    </section>
+
+    <footer>
+      Concept-to-PEST grammar plan. This replaces card-first grammar growth with concept-first grammar coverage.
+    </footer>
+  </main>
+</body>
+</html>
