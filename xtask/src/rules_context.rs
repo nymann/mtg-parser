@@ -5,10 +5,12 @@
 //!    keyword indexes, damage, replacement, prevention). Provides a
 //!    floor of canonical context even when retrieval scores stay low.
 //! 2. **Dynamic top-K** — `qmd query` over the `mtg-rules` collection
-//!    using typed `lex:` queries for the card's normalized oracle text,
-//!    querying each line independently because BM25 doesn't handle long
-//!    mixed-vocabulary phrases well. This uses qmd's query command but
-//!    avoids LLM expansion/reranking so the prompt is deterministic.
+//!    using typed `lex:` queries. The add-card workflow puts a focused
+//!    failure phrase first, then the card's normalized oracle text as
+//!    fallback, querying each line independently because BM25 doesn't
+//!    handle long mixed-vocabulary phrases well. This uses qmd's query
+//!    command but avoids LLM expansion/reranking so the prompt is
+//!    deterministic.
 //!
 //! Failure is per-line, not global: one bad query produces a note in
 //! the block but does not drop the other lines' hits. Notes also
@@ -71,10 +73,25 @@ struct QmdHit {
 }
 
 /// Renders the `## Comprehensive Rules` block to inline in the prompt.
-/// `query` is normally the card's normalized oracle text.
+/// `query` is normally produced by [`rules_query_from_failure`].
 pub fn render_rules_block(query: &str) -> String {
     let (block, _) = render_rules_block_with_search(query);
     block
+}
+
+pub fn rules_query_from_failure(normalized_oracle: &str, parse_error: &str) -> String {
+    let mut queries = Vec::new();
+    if let Some(focused) = focused_failure_query(normalized_oracle, parse_error) {
+        queries.push(focused);
+    }
+    queries.extend(
+        normalized_oracle
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .map(str::to_string),
+    );
+    dedupe_queries(queries).join("\n")
 }
 
 pub fn render_rules_block_with_search(query: &str) -> (String, RulesSearch) {
@@ -127,11 +144,12 @@ where
     let mut notes: Vec<String> = Vec::new();
     let mut queries_attempted: u32 = 0;
     let mut query_logs = Vec::new();
+    let configured_always_paths: Vec<PathBuf> =
+        ALWAYS_LOAD.iter().map(|rel| root.join(rel)).collect();
 
-    for rel in ALWAYS_LOAD {
-        let p = root.join(rel);
+    for (rel, p) in ALWAYS_LOAD.iter().zip(configured_always_paths.iter()) {
         if p.exists() {
-            always_loaded.push(p);
+            always_loaded.push(p.clone());
         } else {
             notes.push(format!("always-load missing: {rel}"));
         }
@@ -155,6 +173,7 @@ where
                     let p = root.join("resources/rules").join(rel);
                     let already_present = always_loaded
                         .iter()
+                        .chain(configured_always_paths.iter())
                         .chain(dynamic_hits.iter())
                         .any(|existing| existing == &p);
                     if already_present {
@@ -251,6 +270,108 @@ fn render_diagnostics(search: &RulesSearch) -> String {
     ));
     for note in &search.notes {
         out.push_str(&format!("_- {note}_\n"));
+    }
+    out
+}
+
+fn focused_failure_query(normalized_oracle: &str, parse_error: &str) -> Option<String> {
+    let (line_no, col_no) = parse_error_line_col(parse_error).unwrap_or((1, 1));
+    let source_line = parse_error_source_line(parse_error).or_else(|| {
+        normalized_oracle
+            .lines()
+            .nth(line_no.saturating_sub(1))
+            .map(str::to_string)
+    })?;
+    let clause = sentence_containing_column(&source_line, col_no);
+    let focused = strip_leading_activated_cost(&clause)
+        .trim()
+        .trim_matches('"')
+        .to_string();
+    if normalize_line_for_query(&focused).is_empty() {
+        None
+    } else {
+        Some(focused)
+    }
+}
+
+fn parse_error_line_col(parse_error: &str) -> Option<(usize, usize)> {
+    for line in parse_error.lines() {
+        let Some(rest) = line.trim().strip_prefix("--> ") else {
+            continue;
+        };
+        let (_, location) = rest.rsplit_once(' ')?;
+        let (line_no, col_no) = location.split_once(':')?;
+        return Some((line_no.parse().ok()?, col_no.parse().ok()?));
+    }
+    None
+}
+
+fn parse_error_source_line(parse_error: &str) -> Option<String> {
+    for line in parse_error.lines() {
+        let Some((left, text)) = line.split_once('|') else {
+            continue;
+        };
+        if left.trim().parse::<usize>().is_ok() {
+            let source = text.trim_start();
+            if !source.is_empty() {
+                return Some(source.to_string());
+            }
+        }
+    }
+    None
+}
+
+fn sentence_containing_column(line: &str, col_no: usize) -> String {
+    let split_at = byte_index_for_column(line, col_no).unwrap_or(0);
+    let prefix = &line[..split_at.min(line.len())];
+    let suffix = &line[split_at.min(line.len())..];
+    let start = prefix
+        .rmatch_indices(['.', '!', '?'])
+        .next()
+        .map(|(idx, ch)| idx + ch.len())
+        .unwrap_or(0);
+    let end = suffix
+        .find(['.', '!', '?'])
+        .map(|idx| split_at + idx + 1)
+        .unwrap_or(line.len());
+    line[start..end].trim().to_string()
+}
+
+fn strip_leading_activated_cost(clause: &str) -> &str {
+    let Some((cost, rest)) = clause.split_once(':') else {
+        return clause;
+    };
+    if cost.len() <= 32 && (cost.contains('{') || cost.contains("Tap")) {
+        rest
+    } else {
+        clause
+    }
+}
+
+fn byte_index_for_column(text: &str, col_no: usize) -> Option<usize> {
+    if col_no == 0 {
+        return Some(0);
+    }
+    text.char_indices()
+        .nth(col_no.saturating_sub(1))
+        .map(|(idx, _)| idx)
+        .or(Some(text.len()))
+}
+
+fn dedupe_queries(queries: Vec<String>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for query in queries {
+        let normalized = normalize_line_for_query(&query);
+        if normalized.is_empty() {
+            continue;
+        }
+        if out
+            .iter()
+            .any(|existing| normalize_line_for_query(existing) == normalized)
+        {
+            continue;
+        }
+        out.push(query);
     }
     out
 }
@@ -575,6 +696,29 @@ mod tests {
         assert!(lines[0].starts_with("_Retrieval:"));
         assert!(lines[1].contains("first thing"));
         assert!(lines[2].contains("second thing"));
+    }
+
+    #[test]
+    fn rules_query_starts_with_counter_failure_clause() {
+        let normalized = "Counter target spell with mana value X.";
+        let error = "parse: parse error:  --> 1:22\n  |\n1 | Counter target spell with mana value X.\n  |                      ^---\n  |\n  = expected counter_unless_cost";
+        let query = rules_query_from_failure(normalized, error);
+        let lines: Vec<&str> = query.lines().collect();
+        assert_eq!(lines[0], "Counter target spell with mana value X.");
+        assert_eq!(lines.len(), 1);
+    }
+
+    #[test]
+    fn rules_query_strips_activated_cost_from_failure_clause() {
+        let normalized = "{T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.";
+        let error = "parse: parse error:  --> 1:36\n  |\n1 | {T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.\n  |                                    ^---\n  |\n  = expected target_permanent_gains_keyword_eot_effect";
+        let query = rules_query_from_failure(normalized, error);
+        let lines: Vec<&str> = query.lines().collect();
+        assert_eq!(
+            lines[0],
+            "Target creature you control with toughness less than this creature's power gains flying until end of turn."
+        );
+        assert_eq!(lines[1], normalized);
     }
 
     #[test]

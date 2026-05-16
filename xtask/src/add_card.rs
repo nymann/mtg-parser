@@ -366,9 +366,11 @@ fn run_one_iteration(
         total: TOTAL_STEPS,
         label: "build prompt".into(),
     });
+    let rules_query = crate::rules_context::rules_query_from_failure(&normalized, &error);
     let (rules_block, rules_search) =
-        crate::rules_context::render_rules_block_with_search(&normalized);
+        crate::rules_context::render_rules_block_with_search(&rules_query);
     let rules_log = crate::rules_context::render_search_log(&rules_search);
+    std::fs::write(log_dir.join("rules_query.txt"), &rules_query)?;
     std::fs::write(log_dir.join("rules_context.md"), &rules_block)?;
     std::fs::write(log_dir.join("qmd_retrieval.txt"), &rules_log)?;
     sink.emit(FlowEvent::Note {
