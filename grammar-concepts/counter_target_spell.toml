@@ -14,6 +14,10 @@ name = "polarity"
 evidence = ["target"]
 name = "recipient"
 
+[[axis]]
+name = "target_qualifier"
+values = ["white", "blue", "black", "red", "green"]
+
 [boundary]
 excludes = [
     "Nearby corpus clauses that do not match the selected PEST rule.",
@@ -21,12 +25,13 @@ excludes = [
 ]
 includes = [
     "Corpus clauses matching the selected PEST rule counter_target_spell.",
+    "Color-qualified target spell countering through the existing counter_target_spell concept.",
     "Rules-grounded wording discovered from qmd and Oracle corpus clustering.",
 ]
 
 [concept]
 name = "counter_target_spell"
-pest_rules = ["counter_target_spell"]
+pest_rules = ["counter_target_spell", "counter_target_colored_spell"]
 rules_queries = ["lex: counter target spell"]
 rules_terms = [
     "counter",
@@ -39,24 +44,16 @@ reason = "Baseline unrelated effect."
 text = "Destroy target creature."
 
 [[counterexample]]
-card = "Blue Elemental Blast"
-reason = "Nearby corpus wording not accepted by the selected grammar rule."
-text = "• Counter target red spell."
+reason = "Copy effect with color-setting exception, not countering a target spell."
+text = "Copy target instant spell, except that the copy is red."
 
 [[counterexample]]
-card = "Deathgrip"
-reason = "Nearby corpus wording not accepted by the selected grammar rule."
-text = "{B}{B}: Counter target green spell."
+reason = "Color-qualified target permanent removal is a destroy concept, not spell countering."
+text = "Destroy target red permanent."
 
 [[counterexample]]
-card = "Lifeforce"
-reason = "Nearby corpus wording not accepted by the selected grammar rule."
-text = "{G}{G}: Counter target black spell."
-
-[[counterexample]]
-card = "Red Elemental Blast"
-reason = "Nearby corpus wording not accepted by the selected grammar rule."
-text = "• Counter target blue spell."
+reason = "Casting-cost target-count wording, not a counter target spell effect."
+text = "This spell costs {1} more to cast for each target beyond the first."
 
 [[example]]
 card = "Counterspell"
@@ -69,6 +66,29 @@ text = "Counter target spell unless its controller pays {X}."
 [[example]]
 card = "Spell Blast"
 text = "Counter target spell with mana value X."
+
+[[example]]
+card = "Blue Elemental Blast"
+text = "Counter target red spell."
+
+[[example]]
+card = "Red Elemental Blast"
+text = "Counter target blue spell."
+
+[[example]]
+text = "Counter target white spell."
+
+[[example]]
+card = "Deathgrip"
+text = "{B}{B}: Counter target green spell."
+
+[[example]]
+card = "Lifeforce"
+text = "{G}{G}: Counter target black spell."
+
+[[example]]
+card = "Blue Elemental Blast"
+text = "• Counter target red spell."
 
 [grammar_query]
 candidate_rules = [

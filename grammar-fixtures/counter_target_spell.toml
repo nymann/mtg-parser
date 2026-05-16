@@ -11,6 +11,27 @@ text = "Counter target spell with mana value X."
 [[example]]
 text = "Counter target spell."
 
+[[example]]
+text = "Counter target red spell."
+
+[[example]]
+text = "Counter target blue spell."
+
+[[example]]
+text = "Counter target white spell."
+
+[[example]]
+rule = "activated_ability"
+text = "{B}{B}: Counter target green spell."
+
+[[example]]
+rule = "activated_ability"
+text = "{G}{G}: Counter target black spell."
+
+[[example]]
+rule = "modal_mode"
+text = "• Counter target red spell."
+
 [[counterexample]]
 text = "Destroy target creature."
 reason = "Baseline unrelated effect."
@@ -20,18 +41,17 @@ text = "Counter target spell unless its controller pays {X}. trailing"
 reason = "Exact-consumption guard."
 
 [[counterexample]]
-text = "{B}{B}: Counter target green spell."
-reason = "Nearby corpus wording not accepted by the selected grammar rule."
+text = "Destroy target red permanent."
+reason = "Color-qualified target permanent removal is a destroy concept, not spell countering."
 
 [[counterexample]]
-text = "{G}{G}: Counter target black spell."
-reason = "Nearby corpus wording not accepted by the selected grammar rule."
+text = "Copy target instant spell, except that the copy is red."
+reason = "Copy effect with a color exception, not countering a target spell."
 
 [[counterexample]]
-text = "• Counter target blue spell."
-reason = "Nearby corpus wording not accepted by the selected grammar rule."
+text = "This spell costs {1} more to cast for each target beyond the first."
+reason = "Casting-cost target-count wording, not a counter target spell effect."
 
 [[counterexample]]
-text = "• Counter target red spell."
-reason = "Nearby corpus wording not accepted by the selected grammar rule."
-
+text = "• Destroy target red permanent."
+reason = "Modal colored permanent destruction remains outside counter_target_spell."

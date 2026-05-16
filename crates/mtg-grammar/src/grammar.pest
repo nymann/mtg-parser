@@ -232,7 +232,7 @@ permanent_type_plural_list = {
     permanent_type_plural ~ (("," ~ permanent_type_plural)* ~ ","? ~ ^"and" ~ permanent_type_plural)?
 }
 counter_target_spell = {
-    ^"counter" ~ ^"target" ~ ^"spell" ~ counter_unless_cost? ~ "."
+    ^"counter" ~ ^"target" ~ color_word? ~ ^"spell" ~ counter_unless_cost? ~ "."
 }
 counter_unless_cost = {
     ^"unless" ~ ^"its" ~ ^"controller" ~ ^"pays" ~ mana_cost
