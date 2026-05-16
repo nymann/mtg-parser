@@ -534,6 +534,7 @@ struct PlumbingCooldownCandidate {
     normalized_leaf_rules: Vec<String>,
     leaf_owning_concepts: BTreeMap<String, Vec<String>>,
     relationship_type: PlumbingCooldownRelationship,
+    derivation_reason: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -557,8 +558,17 @@ struct RuleExpansionNode {
 struct PlumbingCooldownSelection {
     exact_blocked_target_rules: Vec<String>,
     cooled_target_rules: Vec<String>,
+    derived_wrapper_family_skips: Vec<DerivedWrapperFamilySkip>,
     excluded_rules: Vec<String>,
     fallback_status: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct DerivedWrapperFamilySkip {
+    target_rule: String,
+    blocked_target_rule: String,
+    relationship_type: PlumbingCooldownRelationship,
+    derivation_reason: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -584,6 +594,15 @@ struct ConceptGrindMetrics {
 
     #[serde(skip)]
     active_steps: BTreeMap<(u32, u8), ActiveConceptGrindStep>,
+    blocked_boundary_decisions: Vec<BlockedBoundaryMetric>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct BlockedBoundaryMetric {
+    iteration: u32,
+    target_rule: String,
+    reason: String,
+    derived_wrapper_family_skips: Vec<DerivedWrapperFamilySkip>,
 }
 
 #[derive(Debug)]
@@ -2112,11 +2131,6 @@ fn is_shared_grammar_stop_rule(rule_name: &str) -> bool {
     SHARED_GRAMMAR_STOP_RULES.contains(&rule_name)
 }
 
-fn is_shared_plumbing_block_reason(reason: &str) -> bool {
-    let reason = reason.trim().to_ascii_lowercase();
-    reason.starts_with("shared") || reason.starts_with("shared/plumbing")
-}
-
 fn plumbing_cooldown_selection(
     report: &ExistingGrammarMapReport,
     blocked_targets: &BTreeSet<String>,
@@ -2138,6 +2152,21 @@ fn plumbing_cooldown_selection(
     PlumbingCooldownSelection {
         exact_blocked_target_rules: blocked_targets.iter().cloned().collect(),
         cooled_target_rules: cooldown.cooled_target_rules.iter().cloned().collect(),
+        derived_wrapper_family_skips: cooldown
+            .derivations
+            .iter()
+            .flat_map(|derivation| {
+                derivation
+                    .cooled_target_rules
+                    .iter()
+                    .map(|candidate| DerivedWrapperFamilySkip {
+                        target_rule: candidate.target_rule.clone(),
+                        blocked_target_rule: derivation.blocked_target_rule.clone(),
+                        relationship_type: candidate.relationship_type,
+                        derivation_reason: candidate.derivation_reason.clone(),
+                    })
+            })
+            .collect(),
         excluded_rules: excluded_rules.into_iter().collect(),
         fallback_status: fallback_status.to_string(),
     }
@@ -2189,17 +2218,24 @@ fn derive_plumbing_cooldown_from_rules(
             .iter()
             .cloned()
             .collect();
-        let Some(relationship_type) =
-            plumbing_cooldown_relationship(&blocked_leaf_set, &candidate_leaf_set)
-        else {
+        let candidate_owners = leaf_owning_concepts(report, &candidate_leaf_set);
+        let Some((relationship_type, derivation_reason)) = plumbing_cooldown_relationship(
+            blocked_target_rule,
+            &blocked_leaf_set,
+            &candidate.name,
+            &expansion_tree,
+            &candidate_leaf_set,
+            &candidate_owners,
+        ) else {
             continue;
         };
         cooled_target_rules.push(PlumbingCooldownCandidate {
             target_rule: candidate.name.clone(),
-            leaf_owning_concepts: leaf_owning_concepts(report, &candidate_leaf_set),
+            leaf_owning_concepts: candidate_owners,
             normalized_leaf_rules: expansion_tree.normalized_leaf_rules.clone(),
             expansion_tree,
             relationship_type,
+            derivation_reason,
         });
     }
 
@@ -2216,22 +2252,79 @@ fn derive_plumbing_cooldown_from_rules(
 }
 
 fn plumbing_cooldown_relationship(
+    blocked_target_rule: &str,
     blocked_leaf_set: &BTreeSet<String>,
+    candidate_rule: &str,
+    candidate_expansion_tree: &RuleExpansionNode,
     candidate_leaf_set: &BTreeSet<String>,
-) -> Option<PlumbingCooldownRelationship> {
+    candidate_leaf_owners: &BTreeMap<String, Vec<String>>,
+) -> Option<(PlumbingCooldownRelationship, String)> {
     if blocked_leaf_set.is_empty() || candidate_leaf_set.is_empty() {
         return None;
     }
     if candidate_leaf_set == blocked_leaf_set {
-        return Some(PlumbingCooldownRelationship::Equal);
+        return Some((
+            PlumbingCooldownRelationship::Equal,
+            format!(
+                "{candidate_rule} has the same normalized leaf set as blocked target {blocked_target_rule}"
+            ),
+        ));
     }
-    if candidate_leaf_set.is_superset(blocked_leaf_set) {
-        return Some(PlumbingCooldownRelationship::Wrapper);
+    if candidate_leaf_set.is_subset(blocked_leaf_set)
+        && candidate_expansion_tree.pure_wrapper_or_alternation
+    {
+        return Some((
+            PlumbingCooldownRelationship::Child,
+            format!(
+                "{candidate_rule} is a pure wrapper/choice child whose normalized leaves are contained by blocked target {blocked_target_rule}"
+            ),
+        ));
     }
-    if candidate_leaf_set.is_subset(blocked_leaf_set) {
-        return Some(PlumbingCooldownRelationship::Child);
+
+    if candidate_leaf_set.is_superset(blocked_leaf_set)
+        && structural_wrapper_family_member(
+            blocked_leaf_set,
+            candidate_expansion_tree,
+            candidate_leaf_set,
+            candidate_leaf_owners,
+        )
+    {
+        return Some((
+            PlumbingCooldownRelationship::Wrapper,
+            format!(
+                "{candidate_rule} is a structural wrapper around blocked target {blocked_target_rule}; extra normalized leaves, if any, are already concept-owned"
+            ),
+        ));
     }
+
     None
+}
+
+fn structural_wrapper_family_member(
+    blocked_leaf_set: &BTreeSet<String>,
+    candidate_expansion_tree: &RuleExpansionNode,
+    candidate_leaf_set: &BTreeSet<String>,
+    candidate_leaf_owners: &BTreeMap<String, Vec<String>>,
+) -> bool {
+    if !candidate_expansion_tree.pure_wrapper_or_alternation {
+        return false;
+    }
+
+    let single_child_bridge = candidate_expansion_tree.children.len() == 1
+        && candidate_expansion_tree.children[0]
+            .normalized_leaf_rules
+            .iter()
+            .all(|leaf| blocked_leaf_set.contains(leaf));
+    if single_child_bridge {
+        return true;
+    }
+
+    candidate_leaf_set.iter().all(|leaf| {
+        blocked_leaf_set.contains(leaf)
+            || candidate_leaf_owners
+                .get(leaf)
+                .is_some_and(|owners| !owners.is_empty())
+    })
 }
 
 fn expand_rule_leaf_set(
@@ -2291,7 +2384,7 @@ fn expand_rule_leaf_set(
 }
 
 fn is_pure_wrapper_or_alternation_rhs(rhs: &str, dependencies: &[String]) -> bool {
-    if dependencies.is_empty() || rhs.contains('"') || rhs.contains('\'') {
+    if dependencies.is_empty() || !rhs_has_only_punctuation_literals(rhs) {
         return false;
     }
 
@@ -2301,6 +2394,40 @@ fn is_pure_wrapper_or_alternation_rhs(rhs: &str, dependencies: &[String]) -> boo
             continue;
         }
         if !dependency_names.contains(token.as_str()) {
+            return false;
+        }
+    }
+    true
+}
+
+fn rhs_has_only_punctuation_literals(rhs: &str) -> bool {
+    let mut chars = rhs.chars().peekable();
+    while let Some(ch) = chars.next() {
+        if ch != '"' && ch != '\'' {
+            continue;
+        }
+        let quote = ch;
+        let mut literal = String::new();
+        let mut escaped = false;
+        for next in chars.by_ref() {
+            if escaped {
+                literal.push(next);
+                escaped = false;
+                continue;
+            }
+            if next == '\\' {
+                escaped = true;
+                continue;
+            }
+            if next == quote {
+                break;
+            }
+            literal.push(next);
+        }
+        if literal
+            .chars()
+            .any(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        {
             return false;
         }
     }
@@ -2405,8 +2532,11 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             iteration_dir.join("plumbing_cooldown_selection.json"),
             &cooldown_selection,
         )?;
-        let excluded_rules: BTreeSet<String> =
-            cooldown_selection.excluded_rules.iter().cloned().collect();
+        let excluded_rules: BTreeSet<String> = if options.target_rule.is_some() {
+            BTreeSet::new()
+        } else {
+            cooldown_selection.excluded_rules.iter().cloned().collect()
+        };
         let gap = select_concept_gap_excluding(&before, &options, &excluded_rules)?;
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
@@ -2508,31 +2638,48 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     gap.target_rule
                 ),
             });
-            if is_shared_plumbing_block_reason(reason) {
-                let derivation = derive_plumbing_cooldown(&before, &gap.target_rule)?;
-                for candidate in &derivation.cooled_target_rules {
-                    plumbing_cooldown
-                        .cooled_target_rules
-                        .insert(candidate.target_rule.clone());
-                }
-                plumbing_cooldown.derivations.push(derivation.clone());
-                write_json(
-                    iteration_dir.join("plumbing_cooldown_derivation.json"),
-                    &derivation,
-                )?;
-                write_json(
-                    session_dir.join("plumbing_cooldown_state.json"),
-                    &plumbing_cooldown,
-                )?;
-                sink.emit(FlowEvent::Note {
-                    level: NoteLevel::Info,
-                    text: format!(
-                        "cooled {} nested shared/plumbing candidate(s) after blocking {}",
-                        derivation.cooled_target_rules.len(),
-                        gap.target_rule
-                    ),
-                });
+            let derivation = derive_plumbing_cooldown(&before, &gap.target_rule)?;
+            for candidate in &derivation.cooled_target_rules {
+                plumbing_cooldown
+                    .cooled_target_rules
+                    .insert(candidate.target_rule.clone());
             }
+            let derived_wrapper_family_skips = derivation
+                .cooled_target_rules
+                .iter()
+                .map(|candidate| DerivedWrapperFamilySkip {
+                    target_rule: candidate.target_rule.clone(),
+                    blocked_target_rule: derivation.blocked_target_rule.clone(),
+                    relationship_type: candidate.relationship_type,
+                    derivation_reason: candidate.derivation_reason.clone(),
+                })
+                .collect::<Vec<_>>();
+            metrics
+                .blocked_boundary_decisions
+                .push(BlockedBoundaryMetric {
+                    iteration,
+                    target_rule: gap.target_rule.clone(),
+                    reason: reason.clone(),
+                    derived_wrapper_family_skips,
+                });
+            metrics.write(&session_dir)?;
+            plumbing_cooldown.derivations.push(derivation.clone());
+            write_json(
+                iteration_dir.join("plumbing_cooldown_derivation.json"),
+                &derivation,
+            )?;
+            write_json(
+                session_dir.join("plumbing_cooldown_state.json"),
+                &plumbing_cooldown,
+            )?;
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Info,
+                text: format!(
+                    "cooled {} structural wrapper-family candidate(s) after blocking {}",
+                    derivation.cooled_target_rules.len(),
+                    gap.target_rule
+                ),
+            });
             blocked_targets.insert(gap.target_rule);
             continue;
         }
@@ -2751,6 +2898,7 @@ impl ConceptGrindMetrics {
             started_unix_ms: unix_timestamp_ms(),
             iterations: Vec::new(),
             active_steps: BTreeMap::new(),
+            blocked_boundary_decisions: Vec::new(),
         }
     }
 
@@ -4703,11 +4851,13 @@ target_leaf = { "target" }
 replacement_leaf = { "replacement" }
 equal_alias = { target_wrapper | replacement_wrapper }
 larger_wrapper = { blocked_shared | extra_leaf }
+owned_extra_wrapper = { blocked_shared | owned_leaf }
 child_wrapper = { target_wrapper }
 deep_wrapper = { nested_wrapper }
 nested_wrapper = { nested_leaf }
 nested_leaf = { "nested" }
 extra_leaf = { "extra" }
+owned_leaf = { "owned" }
 unrelated_rule = { "unrelated" }
 "#,
         )
@@ -4717,8 +4867,8 @@ unrelated_rule = { "unrelated" }
             concept_count: 1,
             dependency_expansion: true,
             shared_rule_count: 0,
-            mapped_rule_count: 2,
-            unmapped_rule_count: 5,
+            mapped_rule_count: 3,
+            unmapped_rule_count: 6,
             concepts: vec![ConceptRuleMap {
                 concept: "target_concept".to_string(),
                 maturity: "grammar_fixture_green".to_string(),
@@ -4733,6 +4883,10 @@ unrelated_rule = { "unrelated" }
                     RuleLocationSummary {
                         name: "replacement_leaf".to_string(),
                         line: 5,
+                    },
+                    RuleLocationSummary {
+                        name: "owned_leaf".to_string(),
+                        line: 12,
                     },
                 ],
                 missing_rules: Vec::new(),
@@ -4749,18 +4903,23 @@ unrelated_rule = { "unrelated" }
                     suggested_concept: None,
                 },
                 UnmappedGrammarRule {
-                    name: "child_wrapper".to_string(),
+                    name: "owned_extra_wrapper".to_string(),
                     line: 8,
                     suggested_concept: None,
                 },
                 UnmappedGrammarRule {
-                    name: "deep_wrapper".to_string(),
+                    name: "child_wrapper".to_string(),
                     line: 9,
                     suggested_concept: None,
                 },
                 UnmappedGrammarRule {
+                    name: "deep_wrapper".to_string(),
+                    line: 10,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
                     name: "unrelated_rule".to_string(),
-                    line: 12,
+                    line: 13,
                     suggested_concept: None,
                 },
             ],
@@ -4779,10 +4938,18 @@ unrelated_rule = { "unrelated" }
                 .collect::<Vec<_>>(),
             vec![
                 ("equal_alias", PlumbingCooldownRelationship::Equal),
-                ("larger_wrapper", PlumbingCooldownRelationship::Wrapper),
+                ("owned_extra_wrapper", PlumbingCooldownRelationship::Wrapper),
                 ("child_wrapper", PlumbingCooldownRelationship::Child),
             ]
         );
+        assert!(derivation
+            .cooled_target_rules
+            .iter()
+            .all(|candidate| !candidate.derivation_reason.is_empty()));
+        assert!(!derivation
+            .cooled_target_rules
+            .iter()
+            .any(|candidate| candidate.target_rule == "larger_wrapper"));
         assert!(derivation
             .blocked_target_expansion_tree
             .children
