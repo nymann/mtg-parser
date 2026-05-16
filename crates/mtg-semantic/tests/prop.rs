@@ -10,8 +10,9 @@
 // xtask runner to enable that feature for tier 2.
 
 use mtg_grammar::{
-    ActivatedAbility, ActivatedCost, ActivatedEffect, AddManaAmount, BasicLandType, CardCount,
-    Color, CombatRole, CounterTargetSpellCondition, DamageAmount, DamageEvent, DamageKind,
+    ActivatedAbility, ActivatedCost, ActivatedDamageEffect, ActivatedDamageRecipient,
+    ActivatedEffect, AddManaAmount, BasicLandType, CardCount, Color, CombatRole,
+    CounterTargetSpellCondition, DamageAmount, DamageAssignmentGroup, DamageEvent, DamageKind,
     DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, LifeAmount,
@@ -336,6 +337,24 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 ]),
             },
         }),
+        Just(Statement::ActivatedAbility(ActivatedAbility {
+            costs: vec![ActivatedCost::Tap],
+            effect: ActivatedEffect::DamageEffect(
+                ActivatedDamageEffect::SourceDealsDamageAssignmentGroups {
+                    source: SourceObject::This(PermanentType::Creature),
+                    assignments: vec![
+                        DamageAssignmentGroup {
+                            amount: DamageAmount::Number(1),
+                            recipients: vec![ActivatedDamageRecipient::AnyTarget],
+                        },
+                        DamageAssignmentGroup {
+                            amount: DamageAmount::Number(1),
+                            recipients: vec![ActivatedDamageRecipient::AnyTargetOfOpponentsChoice,],
+                        },
+                    ],
+                },
+            ),
+        })),
         Just(Statement::PreventDamageThisTurn {
             effect: DamagePreventionEffect {
                 amount: DamagePreventionAmount::All,

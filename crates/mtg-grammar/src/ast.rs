@@ -1302,6 +1302,12 @@ pub struct DamageAssignment<R> {
     pub recipient: R,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DamageAssignmentGroup<R> {
+    pub amount: DamageAmount,
+    pub recipients: Vec<R>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TriggerDamageSource {
     Source(SourceObject),
@@ -1609,6 +1615,12 @@ pub enum ActivatedDamageEffect {
         source: SourceObject,
         assignments: Vec<DamageAssignment<ActivatedDamageRecipient>>,
     },
+    /// "This <source> deals N damage to <recipient> [and <recipient>]"
+    /// with the original assignment phrase boundaries preserved.
+    SourceDealsDamageAssignmentGroups {
+        source: SourceObject,
+        assignments: Vec<DamageAssignmentGroup<ActivatedDamageRecipient>>,
+    },
     /// "The next time <source> of your choice would deal [combat] damage
     /// to <recipient> this turn, <effect>."
     NextDamageEvent {
@@ -1660,6 +1672,8 @@ pub enum ActivatedDamageRecipient {
     You,
     /// "any target"
     AnyTarget,
+    /// "any target of an opponent's choice"
+    AnyTargetOfOpponentsChoice,
     /// "each creature"
     EachCreature,
     /// "each player"

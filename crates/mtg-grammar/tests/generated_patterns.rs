@@ -99,6 +99,8 @@ mod counterspell;
 mod creature_bond;
 #[path = "generated_patterns/crystal_rod.rs"]
 mod crystal_rod;
+#[path = "generated_patterns/cuombajj_witches.rs"]
+mod cuombajj_witches;
 #[path = "generated_patterns/cursed_land.rs"]
 mod cursed_land;
 #[path = "generated_patterns/cyclopean_tomb.rs"]

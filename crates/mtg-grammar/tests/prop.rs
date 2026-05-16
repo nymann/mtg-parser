@@ -8,7 +8,7 @@
 use mtg_grammar::{
     parse, unparse, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageRecipient, ActivatedEffect, ActivationPermission, AddManaAmount, BasicLandType,
-    CardCount, Color, CounterAmount, DamageAmount, DamageAssignment, DamageEvent, DamageKind,
+    CardCount, Color, CounterAmount, DamageAmount, DamageAssignmentGroup, DamageEvent, DamageKind,
     DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
@@ -358,21 +358,38 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 costs: vec![ActivatedCost::Mana(ManaCost {
                     symbols: vec![ManaSymbol::Black],
                 })],
-                effect: ActivatedEffect::DamageEffect(ActivatedDamageEffect::SourceDealsDamage {
-                    source: SourceObject::This(PermanentType::Enchantment),
-                    assignments: vec![
-                        DamageAssignment {
+                effect: ActivatedEffect::DamageEffect(
+                    ActivatedDamageEffect::SourceDealsDamageAssignmentGroups {
+                        source: SourceObject::This(PermanentType::Enchantment),
+                        assignments: vec![DamageAssignmentGroup {
                             amount: DamageAmount::Number(1),
-                            recipient: ActivatedDamageRecipient::EachCreature,
-                        },
-                        DamageAssignment {
-                            amount: DamageAmount::Number(1),
-                            recipient: ActivatedDamageRecipient::EachPlayer,
-                        },
-                    ],
-                }),
+                            recipients: vec![
+                                ActivatedDamageRecipient::EachCreature,
+                                ActivatedDamageRecipient::EachPlayer,
+                            ],
+                        }],
+                    },
+                ),
             }),
         ])),
+        Just(Statement::ActivatedAbility(ActivatedAbility {
+            costs: vec![ActivatedCost::Tap],
+            effect: ActivatedEffect::DamageEffect(
+                ActivatedDamageEffect::SourceDealsDamageAssignmentGroups {
+                    source: SourceObject::This(PermanentType::Creature),
+                    assignments: vec![
+                        DamageAssignmentGroup {
+                            amount: DamageAmount::Number(1),
+                            recipients: vec![ActivatedDamageRecipient::AnyTarget],
+                        },
+                        DamageAssignmentGroup {
+                            amount: DamageAmount::Number(1),
+                            recipients: vec![ActivatedDamageRecipient::AnyTargetOfOpponentsChoice,],
+                        },
+                    ],
+                },
+            ),
+        })),
         Just(Statement::PreventDamageThisTurn {
             effect: DamagePreventionEffect {
                 amount: DamagePreventionAmount::All,

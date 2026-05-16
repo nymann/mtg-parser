@@ -10,20 +10,20 @@ use crate::ast::{
     ConditionalEffectOrder, ContinuousEffect, ControlPlayerCondition, ControlPlayerController,
     ControlPlayerDuration, ControlPlayerEffect, ControlledPlayer, CopyException,
     CopyGrantedAbility, CounterAmount, CounterTargetSpellCondition, CreatureQuality,
-    CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
-    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
-    DamagePreventionEffect, DamagePreventionEvent, DamagePreventionSource, DamageRecipient,
-    DamageRecipients, DamageRedirectionDestination, DestroyReferencedCreatureCondition,
-    DestroyTarget, DiesWording, DrawReplacementEffect, EachPlayerAction, EnchantObject,
-    EnchantedObject, GrantedAbility, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, LandSubtype, LifeAmount, LifeLossAmount, LifeLossPlayer,
-    LifeTotalFloorCause, LifeTotalFloorPlayer, ManaAbilitySourceLimit, ManaCost,
-    ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
-    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
-    ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PlayRestriction,
-    PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter, PreventionRecipient,
-    PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
+    CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageAssignmentGroup,
+    DamageKind, DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount,
+    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent,
+    DamagePreventionSource, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
+    DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, DrawReplacementEffect,
+    EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LandSubtype, LifeAmount,
+    LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
+    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
+    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
+    ObjectStatus, ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
+    PlayRestriction, PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter,
+    PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
     RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
     SpellType, Statement, StaticAbility, StaticDamagePreventionEffect, StaticDamageSource,
@@ -3157,6 +3157,17 @@ fn write_activated_damage_effect(out: &mut String, effect: &ActivatedDamageEffec
                 out.push('.');
             }
         }
+        ActivatedDamageEffect::SourceDealsDamageAssignmentGroups {
+            source,
+            assignments,
+        } => {
+            if !assignments.is_empty() {
+                write_source_object_capitalized(out, *source);
+                out.push_str(" deals ");
+                write_activated_damage_assignment_groups(out, assignments);
+                out.push('.');
+            }
+        }
         ActivatedDamageEffect::NextDamageEvent { event, effect } => {
             out.push_str("The next time ");
             write_activated_damage_source(out, event.source);
@@ -3194,6 +3205,25 @@ fn write_activated_damage_effect(out: &mut String, effect: &ActivatedDamageEffec
     }
 }
 
+fn write_activated_damage_assignment_groups(
+    out: &mut String,
+    assignments: &[DamageAssignmentGroup<ActivatedDamageRecipient>],
+) {
+    for (idx, assignment) in assignments.iter().enumerate() {
+        if idx > 0 {
+            out.push_str(" and ");
+        }
+        write_damage_amount(out, assignment.amount);
+        out.push_str(" damage to ");
+        for (recipient_idx, recipient) in assignment.recipients.iter().enumerate() {
+            if recipient_idx > 0 {
+                out.push_str(" and ");
+            }
+            write_activated_damage_recipient(out, *recipient);
+        }
+    }
+}
+
 fn write_activated_damage_prevention_effect(
     out: &mut String,
     effect: DamagePreventionEffect<ActivatedDamageRecipient>,
@@ -3223,6 +3253,9 @@ fn write_activated_damage_recipient(out: &mut String, recipient: ActivatedDamage
     match recipient {
         ActivatedDamageRecipient::You => out.push_str("you"),
         ActivatedDamageRecipient::AnyTarget => out.push_str("any target"),
+        ActivatedDamageRecipient::AnyTargetOfOpponentsChoice => {
+            out.push_str("any target of an opponent's choice");
+        }
         ActivatedDamageRecipient::EachCreature => out.push_str("each creature"),
         ActivatedDamageRecipient::EachPlayer => out.push_str("each player"),
         ActivatedDamageRecipient::TargetPermanent { permanent_type } => {

@@ -1386,14 +1386,19 @@ damage_assignment = {
     damage_event_amount ~ ^"damage" ~ ^"to" ~ activated_damage_recipient_list
 }
 activated_damage_recipient_list = {
-    activated_direct_damage_recipient ~ (^"and" ~ activated_direct_damage_recipient)*
+    activated_direct_damage_recipient
+  ~ (^"and" ~ !damage_assignment ~ activated_direct_damage_recipient)*
 }
 activated_direct_damage_recipient = _{
-    you_damage_recipient
+    any_target_of_opponents_choice_damage_recipient
+  | you_damage_recipient
   | any_target_prevention_recipient
   | target_permanent_damage_recipient
   | each_creature_damage_recipient
   | each_player_damage_recipient
+}
+any_target_of_opponents_choice_damage_recipient = {
+    ^"any" ~ ^"target" ~ ^"of" ~ article ~ ^"opponent's" ~ ^"choice"
 }
 next_damage_event_effect = {
     ^"the" ~ ^"next" ~ ^"time" ~ activated_damage_source

@@ -12,14 +12,14 @@ use crate::ast::{
     ConditionalEffectOrder, ContinuousEffect, ControlPlayerCondition, ControlPlayerController,
     ControlPlayerDuration, ControlPlayerEffect, ControlledPlayer, CopyException,
     CopyGrantedAbility, CounterAmount, CounterTargetSpellCondition, CreatureQuality,
-    CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern,
-    DamageKind, DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount,
-    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent,
-    DamagePreventionSource, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, DrawReplacementEffect,
-    EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LandSubtype, LifeAmount,
-    LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
+    CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageAssignmentGroup,
+    DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
+    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
+    DamagePreventionEvent, DamagePreventionSource, DamageRecipient, DamageRecipients,
+    DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
+    DrawReplacementEffect, EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LandSubtype,
+    LifeAmount, LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
     ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
     NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
     ObjectStatus, ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount,
@@ -3413,14 +3413,13 @@ fn activated_direct_damage_effect_from_pair(
         .map(activated_damage_assignments_from_pair)
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()
-        .flatten()
         .collect::<Vec<_>>();
     if assignments.is_empty() {
         return Err(ParseError::Internal(
             "activated direct damage missing assignment",
         ));
     }
-    Ok(ActivatedDamageEffect::SourceDealsDamage {
+    Ok(ActivatedDamageEffect::SourceDealsDamageAssignmentGroups {
         source,
         assignments,
     })
@@ -3428,7 +3427,7 @@ fn activated_direct_damage_effect_from_pair(
 
 fn activated_damage_assignments_from_pair(
     pair: Pair<Rule>,
-) -> Result<Vec<DamageAssignment<ActivatedDamageRecipient>>, ParseError> {
+) -> Result<DamageAssignmentGroup<ActivatedDamageRecipient>, ParseError> {
     if pair.as_rule() != Rule::damage_assignment {
         return Err(ParseError::Internal("activated damage assignment"));
     }
@@ -3439,15 +3438,11 @@ fn activated_damage_assignments_from_pair(
         "activated damage assignment missing recipient list",
     )?;
     let amount = damage_event_amount_from_pair(amount_pair)?;
-    recipient_list_pair
+    let recipients = recipient_list_pair
         .into_inner()
-        .map(|recipient_pair| {
-            Ok(DamageAssignment {
-                amount,
-                recipient: activated_damage_recipient_from_pair(recipient_pair)?,
-            })
-        })
-        .collect()
+        .map(|recipient_pair| activated_damage_recipient_from_pair(recipient_pair))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(DamageAssignmentGroup { amount, recipients })
 }
 
 fn activated_damage_prevention_effect_from_pair(
@@ -3577,6 +3572,9 @@ fn activated_damage_recipient_from_pair(
     match pair.as_rule() {
         Rule::you_damage_recipient => Ok(ActivatedDamageRecipient::You),
         Rule::any_target_prevention_recipient => Ok(ActivatedDamageRecipient::AnyTarget),
+        Rule::any_target_of_opponents_choice_damage_recipient => {
+            Ok(ActivatedDamageRecipient::AnyTargetOfOpponentsChoice)
+        }
         Rule::each_creature_damage_recipient => Ok(ActivatedDamageRecipient::EachCreature),
         Rule::each_player_damage_recipient => Ok(ActivatedDamageRecipient::EachPlayer),
         Rule::source_object_damage_recipient => {
