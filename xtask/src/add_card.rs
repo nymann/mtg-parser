@@ -39,7 +39,7 @@ use crate::paths::{
 /// 0 means unbounded; positive values cap the loop.
 const DEFAULT_MAX_ITERATIONS: u32 = 0;
 const DEFAULT_SUPERVISOR_ATTEMPTS: u8 = 1;
-const TOTAL_STEPS: u8 = 14;
+const TOTAL_STEPS: u8 = 15;
 
 pub fn run(args: &[String]) -> ExitCode {
     let opts = match Options::parse(args) {
@@ -366,7 +366,16 @@ fn run_one_iteration(
         total: TOTAL_STEPS,
         label: "build prompt".into(),
     });
-    let prompt = build_prompt(&card, &error, &normalized, &test_path)?;
+    let (rules_block, rules_search) =
+        crate::rules_context::render_rules_block_with_search(&normalized);
+    let rules_log = crate::rules_context::render_search_log(&rules_search);
+    std::fs::write(log_dir.join("rules_context.md"), &rules_block)?;
+    std::fs::write(log_dir.join("qmd_retrieval.txt"), &rules_log)?;
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: trim(&rules_log, 2_000).to_string(),
+    });
+    let prompt = build_prompt(&card, &error, &normalized, &test_path, &rules_block)?;
     std::fs::write(log_dir.join("prompt.md"), &prompt)?;
     sink.emit(FlowEvent::StepFinished {
         index: 4,
@@ -446,6 +455,7 @@ fn run_one_iteration(
             &pattern_test_path,
             &patterns,
             &focused_before,
+            &rules_block,
         )?;
         std::fs::write(log_dir.join("agent_recipe.md"), &prompt)?;
         Some(prompt)
@@ -545,9 +555,9 @@ fn run_one_iteration(
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
 
-    // Step 10 — report-only grammar drift audit. This deliberately
-    // never blocks phase 1; it writes artifacts for calibration before
-    // the heavier downstream gates run.
+    // Step 10 — grammar drift audit. This writes artifacts for calibration,
+    // and high-confidence findings trigger one bounded generalization pass
+    // before the heavier downstream gates run.
     sink.emit(FlowEvent::StepStarted {
         index: 10,
         total: TOTAL_STEPS,
@@ -566,27 +576,105 @@ fn run_one_iteration(
         ok: true,
         summary: Some(audit_summary.clone()),
     });
-    if audit_report
-        .findings
-        .iter()
-        .any(|f| f.severity == grammar_audit::Severity::BlockCandidate)
-    {
+    // Step 11 — one-pass audit-triggered generalization repair.
+    sink.emit(FlowEvent::StepStarted {
+        index: 11,
+        total: TOTAL_STEPS,
+        label: "audit-triggered generalization repair".into(),
+    });
+    if has_block_candidate(&audit_report) {
+        let repair_ok =
+            invoke_generalization_repair(opts, sink, &card, &normalized, &log_dir, &audit_report)?;
+        if !repair_ok {
+            let reason = "generalization repair agent could not address audit findings".to_string();
+            sink.emit(FlowEvent::StepFinished {
+                index: 11,
+                ok: false,
+                summary: Some(reason.clone()),
+            });
+            sink.emit(FlowEvent::IterationFinished {
+                index: iter_index,
+                outcome: IterationOutcomeSummary::SurfacedToHuman {
+                    reason: reason.clone(),
+                },
+            });
+            return Ok(IterationOutcome::SurfaceToHuman(reason));
+        }
+
+        let focused_after_generalization_repair = run_focused_generated_tests(&card)?;
+        std::fs::write(
+            log_dir.join("focused_after_generalization_repair.txt"),
+            focused_after_generalization_repair.summary_text(),
+        )?;
+        if !focused_after_generalization_repair.success() {
+            let reason = "focused generated tests failed after generalization repair".to_string();
+            sink.emit(FlowEvent::StepFinished {
+                index: 11,
+                ok: false,
+                summary: Some(reason.clone()),
+            });
+            sink.emit(FlowEvent::IterationFinished {
+                index: iter_index,
+                outcome: IterationOutcomeSummary::SurfacedToHuman {
+                    reason: reason.clone(),
+                },
+            });
+            return Ok(IterationOutcome::SurfaceToHuman(reason));
+        }
+
+        let repaired_audit_report = grammar_audit::audit_worktree(&normalized)?;
+        std::fs::write(
+            log_dir.join("grammar_audit_after_generalization_repair.json"),
+            serde_json::to_string_pretty(&repaired_audit_report)?,
+        )?;
+        std::fs::write(
+            log_dir.join("grammar_audit_after_generalization_repair.md"),
+            grammar_audit::report_markdown(&repaired_audit_report),
+        )?;
+        if has_block_candidate(&repaired_audit_report) {
+            let reason = "grammar audit still has block-candidate findings after one generalization repair pass".to_string();
+            sink.emit(FlowEvent::StepFinished {
+                index: 11,
+                ok: false,
+                summary: Some(reason.clone()),
+            });
+            sink.emit(FlowEvent::IterationFinished {
+                index: iter_index,
+                outcome: IterationOutcomeSummary::SurfacedToHuman {
+                    reason: reason.clone(),
+                },
+            });
+            return Ok(IterationOutcome::SurfaceToHuman(reason));
+        }
         sink.emit(FlowEvent::Note {
-            level: NoteLevel::Warn,
-            text: "grammar audit found block-candidate drift signals; continuing report-only"
-                .into(),
+            level: NoteLevel::Info,
+            text: format!(
+                "generalization repair cleared block-candidate findings: {}",
+                grammar_audit_summary(&repaired_audit_report)
+            ),
+        });
+        sink.emit(FlowEvent::StepFinished {
+            index: 11,
+            ok: true,
+            summary: Some("block-candidate findings cleared".into()),
+        });
+    } else {
+        sink.emit(FlowEvent::StepFinished {
+            index: 11,
+            ok: true,
+            summary: Some("skipped; no block-candidate findings".into()),
         });
     }
 
-    // Step 11 — tier 1 + tier 2.
+    // Step 12 — tier 1 + tier 2.
     sink.emit(FlowEvent::StepStarted {
-        index: 11,
+        index: 12,
         total: TOTAL_STEPS,
         label: "cargo xtask test --tier 2".into(),
     });
     let mut tests_ok = run_xtask(&["test", "--tier", "2"])?;
     sink.emit(FlowEvent::StepFinished {
-        index: 11,
+        index: 12,
         ok: tests_ok,
         summary: None,
     });
@@ -595,7 +683,7 @@ fn run_one_iteration(
             invoke_downstream_repair(opts, sink, &card, &normalized, &log_dir, iter_index)?;
         if repair_ok {
             sink.emit(FlowEvent::StepStarted {
-                index: 9,
+                index: 12,
                 total: TOTAL_STEPS,
                 label: "focused validation after downstream repair".into(),
             });
@@ -605,19 +693,19 @@ fn run_one_iteration(
                 focused_after_repair.summary_text(),
             )?;
             sink.emit(FlowEvent::StepFinished {
-                index: 9,
+                index: 12,
                 ok: focused_after_repair.success(),
                 summary: Some(focused_after_repair.short_summary()),
             });
             if focused_after_repair.success() {
                 sink.emit(FlowEvent::StepStarted {
-                    index: 11,
+                    index: 12,
                     total: TOTAL_STEPS,
                     label: "cargo xtask test --tier 2 after downstream repair".into(),
                 });
                 tests_ok = run_xtask(&["test", "--tier", "2"])?;
                 sink.emit(FlowEvent::StepFinished {
-                    index: 11,
+                    index: 12,
                     ok: tests_ok,
                     summary: None,
                 });
@@ -658,15 +746,15 @@ fn run_one_iteration(
             return Ok(IterationOutcome::SurfaceToHuman(reason));
         }
     }
-    // Step 12 — corpus regression gate.
+    // Step 13 — corpus regression gate.
     sink.emit(FlowEvent::StepStarted {
-        index: 12,
+        index: 13,
         total: TOTAL_STEPS,
         label: "cargo xtask corpus (regression gate)".into(),
     });
     let corpus_ok = run_xtask(&["corpus"])?;
     sink.emit(FlowEvent::StepFinished {
-        index: 12,
+        index: 13,
         ok: corpus_ok,
         summary: None,
     });
@@ -681,7 +769,7 @@ fn run_one_iteration(
         return Ok(IterationOutcome::SurfaceToHuman(reason));
     }
 
-    // Step 13 — commit.
+    // Step 14 — commit.
     let new_pass_count = read_corpus_passing(&corpus_status_path()).unwrap_or(baseline_pass_count);
     let total = read_corpus_total(&corpus_status_path()).unwrap_or(0);
     let new_passes = new_pass_count.saturating_sub(baseline_pass_count);
@@ -694,14 +782,14 @@ fn run_one_iteration(
     );
     std::fs::write(log_dir.join("commit_message.txt"), &commit_msg)?;
     sink.emit(FlowEvent::StepStarted {
-        index: 13,
+        index: 14,
         total: TOTAL_STEPS,
         label: "git commit".into(),
     });
     match git_commit(&commit_msg).context("git commit")? {
         CommitOutcome::Committed => {
             sink.emit(FlowEvent::StepFinished {
-                index: 13,
+                index: 14,
                 ok: true,
                 summary: Some(format!(
                     "+{new_passes} pass · status {new_pass_count}/{total}"
@@ -711,7 +799,7 @@ fn run_one_iteration(
         CommitOutcome::NoChanges => {
             let reason = "no changes to commit after successful tests and corpus gate".to_string();
             sink.emit(FlowEvent::StepFinished {
-                index: 13,
+                index: 14,
                 ok: true,
                 summary: Some("no changes to commit".into()),
             });
@@ -723,15 +811,15 @@ fn run_one_iteration(
         std::fs::write(log_dir.join("diff.patch"), diff).ok();
     }
 
-    // Step 14 — push.
+    // Step 15 — push.
     sink.emit(FlowEvent::StepStarted {
-        index: 14,
+        index: 15,
         total: TOTAL_STEPS,
         label: "git push".into(),
     });
     git_push().context("git push")?;
     sink.emit(FlowEvent::StepFinished {
-        index: 14,
+        index: 15,
         ok: true,
         summary: Some("pushed committed changes".into()),
     });
@@ -1278,6 +1366,13 @@ fn grammar_audit_summary(report: &grammar_audit::AuditReport) -> String {
     )
 }
 
+fn has_block_candidate(report: &grammar_audit::AuditReport) -> bool {
+    report
+        .findings
+        .iter()
+        .any(|f| f.severity == grammar_audit::Severity::BlockCandidate)
+}
+
 fn extract_generalization_report(text: &str) -> Option<String> {
     let mut lines = text.lines();
     while let Some(line) = lines.next() {
@@ -1323,6 +1418,7 @@ pub(crate) fn build_prompt(
     error: &str,
     normalized: &str,
     test_path: &Path,
+    rules_block: &str,
 ) -> Result<String> {
     let test_rel = test_path
         .strip_prefix(repo_root())
@@ -1343,7 +1439,7 @@ pub(crate) fn build_prompt(
         card_block = render_card_block(card, normalized),
         error_block = render_error_block(error),
         test_block = render_test_block(&test_rel),
-        context_block = render_context_block(card, error, normalized, &patterns, &[]),
+        context_block = render_context_block(card, error, normalized, &patterns, &[], rules_block),
         workflow_block = WORKFLOW_BLOCK,
         constraints_block = CONSTRAINTS_BLOCK,
     ))
@@ -1357,8 +1453,9 @@ fn build_pattern_prompt(
     pattern_test_path: &Path,
     patterns: &[PatternCase],
     focused: &FocusedTestRun,
+    rules_block: &str,
 ) -> Result<String> {
-    let mut prompt = build_prompt(card, error, normalized, full_test_path)?;
+    let mut prompt = build_prompt(card, error, normalized, full_test_path, rules_block)?;
     prompt.push_str("\n\n");
     prompt.push_str(&render_context_block(
         card,
@@ -1366,6 +1463,7 @@ fn build_pattern_prompt(
         normalized,
         patterns,
         &[pattern_test_path, full_test_path],
+        rules_block,
     ));
     let pattern_rel = pattern_test_path
         .strip_prefix(repo_root())
@@ -1433,13 +1531,14 @@ fn render_context_block(
     normalized: &str,
     patterns: &[PatternCase],
     test_paths: &[&Path],
+    rules_block: &str,
 ) -> String {
     format!(
         "{rules}## Retrieved Context\n\n\
          The orchestrator selected these snippets from the generated tests and likely grammar \
          edit sites. Use this context first; inspect whole files only if it is insufficient.\n\n\
          {tests}{code_map}",
-        rules = crate::rules_context::render_rules_block(normalized),
+        rules = rules_block,
         tests = render_generated_test_context(test_paths),
         code_map = render_code_map(card, error, normalized, patterns)
     )
@@ -1747,10 +1846,77 @@ fn build_downstream_repair_prompt(
     ))
 }
 
+fn build_generalization_repair_prompt(
+    card: &Card,
+    normalized: &str,
+    audit_report: &grammar_audit::AuditReport,
+) -> Result<String> {
+    let git_status = command_stdout("git", &["status", "--short"])?;
+    let grammar_diff = command_stdout(
+        "git",
+        &[
+            "diff",
+            "--",
+            "crates/mtg-grammar/src/grammar.pest",
+            "crates/mtg-grammar/src/ast.rs",
+            "crates/mtg-grammar/src/parse.rs",
+            "crates/mtg-grammar/src/unparse.rs",
+        ],
+    )?;
+    let generated_test = generated_test_path(card);
+    let generated_pattern_test = generated_pattern_test_path(card);
+    Ok(format!(
+        "{intro}\n\n\
+         ## Situation\n\n\
+         The focused generated tests for this card pass, but the report-only grammar audit found \
+         high-confidence specificity drift before tier 2, corpus, commit, and push. This repair pass \
+         exists to reduce card-shaped grammar while preserving the focused behavior.\n\n\
+         ## Card\n\n\
+         - Name        : {name}\n\
+         - Set         : {set}\n\
+         - Collector # : {collector}\n\n\
+         Normalized oracle text:\n```text\n{normalized}\n```\n\n\
+         ## Audit Findings\n\n\
+         {audit_markdown}\n\n\
+         ## Current Grammar Diff\n\n```diff\n{grammar_diff}```\n\n\
+         ## Current Git Status\n\n```text\n{git_status}```\n\n\
+         ## Generated Test Context\n\n\
+         {generated_tests}\n\
+         ## Mission\n\n\
+         Reduce the specificity called out by `BlockCandidate` findings. Prefer widening a \
+         near-neighbour rule, extracting an axis, or turning sentence-shaped names into structured \
+         AST data. Preserve the focused generated tests for this card.\n\n\
+         ## Rules\n\n\
+         1. Do not edit generated tests.\n\
+         2. Do not add support for another card.\n\
+         3. Do not add new sentence-shaped pest rules to replace the flagged ones.\n\
+         4. A good repair may still add small reusable axis/vocabulary rules.\n\
+         5. If a `BlockCandidate` is a false positive, leave the implementation unchanged and explain \
+         the concrete reason in your final response.\n\
+         6. Run only focused checks needed to validate this repair; the orchestrator reruns focused \
+         generated tests, grammar audit, tier 2, corpus, commit, and push.\n",
+        intro = GENERALIZATION_REPAIR_PROMPT_INTRO,
+        name = card.name,
+        set = card.set_code,
+        collector = card.collector_number,
+        normalized = normalized,
+        audit_markdown = grammar_audit::report_markdown(audit_report),
+        grammar_diff = trim(&grammar_diff, 32_000),
+        git_status = git_status,
+        generated_tests =
+            render_generated_test_context(&[generated_test.as_path(), generated_pattern_test.as_path()]),
+    ))
+}
+
 const SUPERVISOR_PROMPT_INTRO: &str = "\
 You are the add-card supervisor. The normal card-solving agent or deterministic
 orchestrator flow encountered an unknown infrastructure problem. Your job is to mend
 the automation itself so the outer process can retry without human intervention.";
+
+const GENERALIZATION_REPAIR_PROMPT_INTRO: &str = "\
+You are the add-card generalization repair agent. The card-specific grammar repair has
+passed focused validation, but the grammar audit found high-confidence evidence that
+the patch encoded card-specific English instead of a reusable grammar phenomenon.";
 
 const DOWNSTREAM_REPAIR_PROMPT_INTRO: &str = "\
 You are the add-card downstream repair agent. The card-specific grammar repair has
@@ -1923,6 +2089,70 @@ enum DownstreamRepairReason {
 struct DownstreamRepairClassification {
     reason: DownstreamRepairReason,
     evidence: String,
+}
+
+fn invoke_generalization_repair(
+    opts: &Options,
+    sink: &mut dyn FlowSink,
+    card: &Card,
+    normalized: &str,
+    parent_log_dir: &Path,
+    audit_report: &grammar_audit::AuditReport,
+) -> Result<bool> {
+    let log_dir = parent_log_dir.join("generalization-repair-attempt-1");
+    std::fs::create_dir_all(&log_dir).with_context(|| format!("create {}", log_dir.display()))?;
+
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Warn,
+        text: format!(
+            "grammar audit found block-candidate drift; invoking {} generalization repair",
+            opts.agent.label()
+        ),
+    });
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: format!("generalization repair log dir: {}", log_dir.display()),
+    });
+
+    std::fs::write(
+        log_dir.join("grammar_audit_before.md"),
+        grammar_audit::report_markdown(audit_report),
+    )?;
+    std::fs::write(
+        log_dir.join("grammar_audit_before.json"),
+        serde_json::to_string_pretty(audit_report)?,
+    )?;
+    let prompt = build_generalization_repair_prompt(card, normalized, audit_report)?;
+    std::fs::write(log_dir.join("prompt.md"), &prompt)?;
+
+    let transcript_path = log_dir.join("transcript.ndjson");
+    let outcome = invoke_agent(opts.agent, &prompt, &transcript_path, sink)?;
+    std::fs::write(log_dir.join("response.md"), &outcome.assistant_text)?;
+    if !outcome.success {
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Error,
+            text: format!(
+                "{} generalization repair exited with status {}",
+                opts.agent.label(),
+                outcome.exit_code
+            ),
+        });
+        return Ok(false);
+    }
+
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: "generalization repair finished; running cargo fmt".into(),
+    });
+    if !run_cargo_fmt()? {
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Error,
+            text: "cargo fmt failed after generalization repair".into(),
+        });
+        return Ok(false);
+    }
+
+    Ok(true)
 }
 
 fn invoke_downstream_repair(

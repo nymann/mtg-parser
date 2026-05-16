@@ -4,11 +4,11 @@
 //! 1. **Always-load** — a small fixed set of high-leverage docs (the
 //!    keyword indexes, damage, replacement, prevention). Provides a
 //!    floor of canonical context even when retrieval scores stay low.
-//! 2. **Dynamic top-K** — `qmd search` over the `mtg-rules` collection
-//!    using the card's normalized oracle text, querying each line
-//!    independently because BM25 doesn't handle long mixed-vocabulary
-//!    phrases well. Pure BM25 (no LLM reranking) so the prompt is
-//!    deterministic.
+//! 2. **Dynamic top-K** — `qmd query` over the `mtg-rules` collection
+//!    using typed `lex:` queries for the card's normalized oracle text,
+//!    querying each line independently because BM25 doesn't handle long
+//!    mixed-vocabulary phrases well. This uses qmd's query command but
+//!    avoids LLM expansion/reranking so the prompt is deterministic.
 //!
 //! Failure is per-line, not global: one bad query produces a note in
 //! the block but does not drop the other lines' hits. Notes also
@@ -48,6 +48,7 @@ pub struct RulesSearch {
     pub dynamic_hits: Vec<PathBuf>,
     pub notes: Vec<String>,
     pub queries_attempted: u32,
+    pub query_logs: Vec<RulesQueryLog>,
 }
 
 impl RulesSearch {
@@ -56,19 +57,62 @@ impl RulesSearch {
     }
 }
 
+pub struct RulesQueryLog {
+    pub query: String,
+    pub hits: Vec<String>,
+    pub error: Option<String>,
+}
+
 #[derive(Deserialize, Clone, Debug)]
 struct QmdHit {
     file: String,
+    #[allow(dead_code)]
+    score: Option<f32>,
 }
 
 /// Renders the `## Comprehensive Rules` block to inline in the prompt.
 /// `query` is normally the card's normalized oracle text.
 pub fn render_rules_block(query: &str) -> String {
-    render_from_search(&build_rules_context(query))
+    let (block, _) = render_rules_block_with_search(query);
+    block
+}
+
+pub fn render_rules_block_with_search(query: &str) -> (String, RulesSearch) {
+    let search = build_rules_context(query);
+    let block = render_from_search(&search);
+    (block, search)
+}
+
+pub fn render_search_log(search: &RulesSearch) -> String {
+    let mut out = String::new();
+    out.push_str(&format!(
+        "qmd retrieval: {} always-loaded, {} dynamic hits, {} queries\n",
+        search.always_loaded.len(),
+        search.dynamic_hits.len(),
+        search.queries_attempted,
+    ));
+    for log in &search.query_logs {
+        out.push_str(&format!("query: {:?}\n", log.query));
+        if let Some(error) = &log.error {
+            out.push_str(&format!("  error: {error}\n"));
+            continue;
+        }
+        if log.hits.is_empty() {
+            out.push_str("  hits: none\n");
+        } else {
+            for hit in &log.hits {
+                out.push_str(&format!("  hit: {hit}\n"));
+            }
+        }
+    }
+    for note in &search.notes {
+        out.push_str(&format!("note: {note}\n"));
+    }
+    out
 }
 
 fn build_rules_context(query: &str) -> RulesSearch {
-    build_rules_context_with(query, qmd_search_one)
+    build_rules_context_with(query, qmd_query_one)
 }
 
 /// Pure-logic core. `qmd` is injected so unit tests can exercise the
@@ -82,6 +126,7 @@ where
     let mut dynamic_hits: Vec<PathBuf> = Vec::new();
     let mut notes: Vec<String> = Vec::new();
     let mut queries_attempted: u32 = 0;
+    let mut query_logs = Vec::new();
 
     for rel in ALWAYS_LOAD {
         let p = root.join(rel);
@@ -100,7 +145,9 @@ where
         queries_attempted += 1;
         match qmd(&normalized) {
             Ok(hits) => {
+                let mut hit_log = Vec::new();
                 for hit in hits {
+                    hit_log.push(hit.file.clone());
                     let Some(rel) = qmd_uri_to_relative(&hit.file) else {
                         notes.push(format!("ignored hit with unresolvable uri: {}", hit.file));
                         continue;
@@ -115,12 +162,27 @@ where
                     }
                     dynamic_hits.push(p);
                     if dynamic_hits.len() >= DYNAMIC_TOTAL_CAP {
+                        query_logs.push(RulesQueryLog {
+                            query: normalized,
+                            hits: hit_log,
+                            error: None,
+                        });
                         break 'outer;
                     }
                 }
+                query_logs.push(RulesQueryLog {
+                    query: normalized,
+                    hits: hit_log,
+                    error: None,
+                });
             }
             Err(e) => {
                 notes.push(format!("qmd failed for {normalized:?}: {e}"));
+                query_logs.push(RulesQueryLog {
+                    query: normalized,
+                    hits: Vec::new(),
+                    error: Some(e),
+                });
             }
         }
     }
@@ -130,6 +192,7 @@ where
         dynamic_hits,
         notes,
         queries_attempted,
+        query_logs,
     }
 }
 
@@ -215,6 +278,39 @@ fn truncate_lines(text: &str, max: usize) -> String {
     out
 }
 
+fn qmd_query_one(query: &str) -> Result<Vec<QmdHit>, String> {
+    ensure_qmd_paths()?;
+    let structured_query = format!("lex: {query}");
+    let output = qmd_command()
+        .args([
+            "query",
+            &structured_query,
+            "-c",
+            QMD_COLLECTION,
+            "--json",
+            "-n",
+            &DYNAMIC_TOP_K_PER_LINE.to_string(),
+            "--no-rerank",
+        ])
+        .output()
+        .map_err(|e| format!("invoke qmd: {e}"))?;
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if let Ok(hits) = parse_qmd_hits(&stdout) {
+            return Ok(filter_min_score(hits));
+        }
+    }
+
+    qmd_search_one(query).map_err(|fallback_error| {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        format!(
+            "qmd query exited with {}: {}; fallback search failed: {fallback_error}",
+            output.status,
+            stderr.trim()
+        )
+    })
+}
+
 fn qmd_search_one(query: &str) -> Result<Vec<QmdHit>, String> {
     ensure_qmd_paths()?;
     let output = qmd_command()
@@ -230,19 +326,30 @@ fn qmd_search_one(query: &str) -> Result<Vec<QmdHit>, String> {
             &DYNAMIC_MIN_SCORE.to_string(),
         ])
         .output()
-        .map_err(|e| format!("invoke qmd: {e}"))?;
+        .map_err(|e| format!("invoke qmd search: {e}"))?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(format!(
-            "qmd exited with {}: {}",
+            "qmd search exited with {}: {}",
             output.status,
             stderr.trim()
         ));
     }
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let hits: Vec<QmdHit> =
-        serde_json::from_str(&stdout).map_err(|e| format!("parse qmd JSON: {e}"))?;
-    Ok(hits)
+    parse_qmd_hits(&stdout)
+}
+
+fn parse_qmd_hits(stdout: &str) -> Result<Vec<QmdHit>, String> {
+    let json_start = stdout
+        .find('[')
+        .ok_or_else(|| "qmd JSON output did not contain an array".to_string())?;
+    serde_json::from_str(&stdout[json_start..]).map_err(|e| format!("parse qmd JSON: {e}"))
+}
+
+fn filter_min_score(hits: Vec<QmdHit>) -> Vec<QmdHit> {
+    hits.into_iter()
+        .filter(|hit| hit.score.unwrap_or(1.0) >= DYNAMIC_MIN_SCORE)
+        .collect()
 }
 
 fn qmd_index_path() -> PathBuf {
@@ -342,6 +449,7 @@ mod tests {
     fn hit(file: &str) -> QmdHit {
         QmdHit {
             file: file.to_string(),
+            score: None,
         }
     }
 
@@ -436,6 +544,7 @@ mod tests {
             dynamic_hits: vec![PathBuf::from("b")],
             notes: vec![],
             queries_attempted: 1,
+            query_logs: vec![],
         };
         let line = render_diagnostics(&one);
         assert!(line.contains("1 always-loaded"));
@@ -446,6 +555,7 @@ mod tests {
             dynamic_hits: vec![PathBuf::from("c"), PathBuf::from("d")],
             notes: vec![],
             queries_attempted: 3,
+            query_logs: vec![],
         };
         let line = render_diagnostics(&many);
         assert!(line.contains("2 dynamic hits · 3 queries_"));
@@ -458,11 +568,21 @@ mod tests {
             dynamic_hits: vec![],
             notes: vec!["first thing".into(), "second thing".into()],
             queries_attempted: 0,
+            query_logs: vec![],
         };
         let text = render_diagnostics(&s);
         let lines: Vec<&str> = text.lines().collect();
         assert!(lines[0].starts_with("_Retrieval:"));
         assert!(lines[1].contains("first thing"));
         assert!(lines[2].contains("second thing"));
+    }
+
+    #[test]
+    fn parses_qmd_query_json_after_progress_lines() {
+        let stdout = "Warning: docs need embeddings\nStructured search: 1 queries\n[{\"file\":\"qmd://mtg-rules/glossary/damage.md\",\"score\":0.7}]";
+        let hits = parse_qmd_hits(stdout).unwrap();
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].file, "qmd://mtg-rules/glossary/damage.md");
+        assert_eq!(hits[0].score, Some(0.7));
     }
 }

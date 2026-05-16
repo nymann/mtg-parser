@@ -45,7 +45,7 @@ When a grammar change depends on Magic rules vocabulary or semantics, query the
 local rules collection instead of guessing. Use:
 
 ```sh
-qmd -c i-forgot-the-collection query "<rules question or oracle phrase>"
+qmd query "lex: <rules question or oracle phrase>" -c mtg-rules --no-rerank
 ```
 
 Use the results to name AST/rule concepts after Comprehensive Rules terms when
