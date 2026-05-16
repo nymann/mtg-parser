@@ -1,0 +1,77 @@
+[[axis]]
+name = "player"
+values = ["that_player"]
+
+[[axis]]
+name = "failure_effect"
+values = ["tap_all_controlled_permanents_and_lose_all_unspent_mana"]
+
+[[axis]]
+name = "permanent_scope"
+values = ["permanent_type_plural"]
+
+[[axis]]
+name = "mana_ability_filter"
+values = [
+    "none",
+    "with_mana_abilities",
+]
+
+[boundary]
+excludes = [
+    "Direct life-loss instructions owned by player_loses_life.",
+    "Mana-loss instructions that are not payment-failure consequences.",
+]
+includes = [
+    "Conditional payment-failure clauses for that player.",
+    "Failure effects where that player taps all controlled permanents of a plural permanent type and loses all unspent mana.",
+    "Permanent scopes with and without a mana-ability filter.",
+]
+
+[concept]
+name = "player_payment_failure"
+pest_rules = [
+    "player_payment_failure",
+    "payment_failure_effect",
+    "payment_failure_tap_mana_sources",
+]
+rules_queries = [
+    "lex: if that player doesn't tap all lands they control lose all unspent mana",
+    "lex: mana abilities lose all unspent mana",
+]
+rules_terms = [
+    "mana ability",
+    "unspent mana",
+    "permanent",
+]
+
+[[counterexample]]
+reason = "Direct life-loss instruction, owned by player_loses_life."
+text = "Its owner loses 3 life."
+
+[[counterexample]]
+reason = "Direct half-life loss instruction, owned by player_loses_life."
+text = "Its owner loses half their life, rounded up."
+
+[[counterexample]]
+reason = "Mana-loss instruction without the payment-failure condition and tap effect."
+text = "then that player loses all unspent mana and you add the mana lost this way."
+
+[[example]]
+text = "if that player doesn't, they tap all lands they control and lose all unspent mana."
+
+[[example]]
+text = "if that player doesn't, they tap all creatures with mana abilities they control and lose all unspent mana."
+
+[grammar_query]
+candidate_rules = [
+    "player_payment_failure",
+    "payment_failure_effect",
+    "payment_failure_tap_mana_sources",
+    "player_loses_life",
+]
+selected_rule = "player_payment_failure"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

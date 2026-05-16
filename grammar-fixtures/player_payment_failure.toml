@@ -1,0 +1,37 @@
+[fixture]
+concept = "player_payment_failure"
+rule = "player_payment_failure"
+
+[[example]]
+text = "if that player doesn't, they tap all lands they control and lose all unspent mana."
+reason = "Payment-failure clause with that-player subject, lands scope, and no mana-ability filter."
+
+[[example]]
+text = "if that player doesn't, they tap all creatures with mana abilities they control and lose all unspent mana."
+reason = "Payment-failure clause with that-player subject, creatures scope, and mana-ability filter."
+
+[[example]]
+text = "they tap all lands they control and lose all unspent mana"
+rule = "payment_failure_tap_mana_sources"
+reason = "Failure-effect body without the conditional wrapper."
+
+[[example]]
+text = "they tap all creatures with mana abilities they control and lose all unspent mana"
+rule = "payment_failure_tap_mana_sources"
+reason = "Failure-effect body with mana-ability filter."
+
+[[counterexample]]
+text = "Its owner loses 3 life."
+reason = "Direct life-loss instruction, owned by player_loses_life."
+
+[[counterexample]]
+text = "Its owner loses half their life, rounded up."
+reason = "Direct half-life loss instruction, owned by player_loses_life."
+
+[[counterexample]]
+text = "then that player loses all unspent mana and you add the mana lost this way."
+reason = "Mana-loss instruction without the payment-failure condition and tap effect."
+
+[[counterexample]]
+text = "if that player doesn't, they tap all lands they control and lose all unspent mana. trailing"
+reason = "Exact-consumption guard."
