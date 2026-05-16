@@ -1,0 +1,36 @@
+[fixture]
+concept = "damage_prevention_effect"
+rule = "damage_prevention_effect_this_turn"
+
+[[example]]
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+
+[[example]]
+text = "Prevent all damage that would be dealt this turn."
+
+[[example]]
+text = "Prevent that damage this turn."
+
+[[example]]
+text = "Prevent X of that damage this turn."
+reason = "Variable amount axis with that-damage prevented event."
+
+[[example]]
+text = "prevent that damage this turn."
+reason = "Modal or if-body fragment shape: damage_prevention_replacement_effect plus damage_prevention_duration."
+
+[[counterexample]]
+text = "Lightning Bolt deals 3 damage to any target."
+reason = "Named-source damage event, owned by damage_event."
+
+[[counterexample]]
+text = "The next time a source of your choice would deal damage to target creature this turn, prevent that damage."
+reason = "Source-choice next-damage wrapper, not this direct prevention-shield shape."
+
+[[counterexample]]
+text = "The next 1 damage that would be dealt to target creature this turn is dealt to you instead."
+reason = "Redirection/replacement, not prevention."
+
+[[counterexample]]
+text = "Prevent the next 1 damage that would be dealt to any target this turn. trailing"
+reason = "Exact-consumption guard."

@@ -312,7 +312,10 @@ damage_prevention_replacement_effect = _{
     damage_prevention_replacement_event ~ damage_prevention_recipient_clause?
 }
 damage_prevention_replacement_event = _{
-    ^"prevent" ~ damage_prevention_amount_axis ~ damage_prevention_event
+    ^"prevent" ~ (
+      damage_prevention_amount_axis ~ damage_prevention_event
+    | damage_prevention_of_that_damage
+    )
 }
 damage_prevention_amount_axis = {
     damage_prevention_all_amount

@@ -1,0 +1,94 @@
+[[axis]]
+name = "amount"
+values = [
+    "next_fixed_number",
+    "all",
+    "variable",
+]
+
+[[axis]]
+name = "prevented_event"
+values = [
+    "damage_that_would_be_dealt",
+    "that_damage",
+]
+
+[[axis]]
+name = "recipient"
+values = [
+    "absent",
+    "target_or_recipient_clause",
+]
+
+[[axis]]
+name = "duration"
+values = [
+    "this_turn",
+    "duration_fragment",
+]
+
+[[axis]]
+name = "surface"
+values = [
+    "full_sentence",
+    "modal_or_if_body_fragment",
+]
+
+[boundary]
+excludes = [
+    "Named-source damage instructions owned by damage_event.",
+    "Source-choice next-damage wrappers whose outer event is the next time a source would deal damage.",
+    "Damage redirection or replacement where damage is dealt somewhere else instead of being prevented.",
+]
+includes = [
+    "Direct prevention shields around damage that would be dealt.",
+    "The next fixed amount, all damage, and variable amount prevention surfaces.",
+    "That-damage prevention bodies used inside modal and conditional effects.",
+]
+
+[concept]
+name = "damage_prevention_effect"
+pest_rules = [
+    "damage_prevention_effect",
+    "damage_prevention_effect_this_turn",
+]
+rules_queries = [
+    "lex: prevention effect prevent damage",
+    "lex: damage would be dealt prevent",
+]
+rules_terms = [
+    "prevention effect",
+    "damage",
+    "event",
+]
+
+[[counterexample]]
+reason = "Named-source damage event, owned by damage_event."
+text = "Lightning Bolt deals 3 damage to any target."
+
+[[counterexample]]
+reason = "Source-choice next-damage wrapper, not this direct prevention-shield shape."
+text = "The next time a source of your choice would deal damage to target creature this turn, prevent that damage."
+
+[[counterexample]]
+reason = "Redirection/replacement, not prevention."
+text = "The next 1 damage that would be dealt to target creature this turn is dealt to you instead."
+
+[[example]]
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+
+[[example]]
+text = "Prevent all damage that would be dealt this turn."
+
+[[example]]
+text = "Prevent that damage this turn."
+
+[[example]]
+text = "Prevent X of that damage this turn."
+
+[[example]]
+text = "prevent that damage this turn."
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
