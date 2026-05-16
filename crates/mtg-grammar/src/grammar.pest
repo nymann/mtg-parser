@@ -780,15 +780,17 @@ color_word = @{
 
 // Creature subtypes that appear as Aura targets, enchanted objects, or
 // creature-type selectors.
-creature_type = @{ ^"goblin" | ^"golem" | ^"insect" | ^"merfolk" | ^"wall" }
-creature_type_plural = @{ ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"walls" }
+creature_type = @{ ^"goblin" | ^"golem" | ^"insect" | ^"merfolk" | ^"wall" | ^"zombie" }
+creature_type_plural = @{ ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"walls" | ^"zombies" }
 
 // Static abilities. Five surface shapes today:
 //   - "As long as <cond>, <effect>." — conditional continuous effect.
 //   - "<Color> <type>s get <pt_modifier>." — P/T modifier on objects
 //     matching a color and permanent type.
-//   - "Other <creature_type>s get <pt_modifier> and have <keyword>." —
-//     lord-style P/T and keyword grant for other creatures of a subtype.
+//   - "Other <creature_type>s get <pt_modifier> and have <ability>." /
+//     "Other <creature_type> creatures have <ability>." — lord-style
+//     ability grants, optionally with a P/T modifier, for other
+//     creatures or objects of a subtype.
 //   - "<Status> creatures you control get <pt_modifier>." — P/T
 //     modifier on controlled creatures matching a tapped/untapped state.
 //   - "Enchanted <type> gets <pt_modifier>." — unconditional P/T
@@ -874,8 +876,21 @@ static_colored_permanents_get = {
 }
 
 static_other_creature_type_get_and_have_keyword = {
-    ^"other" ~ creature_type_plural ~ ^"get" ~ pt_modifier ~ ^"and"
-  ~ ^"have" ~ keyword ~ "."
+    ^"other" ~ other_creature_type_subject
+  ~ (
+      (^"get" ~ pt_modifier ~ ^"and" ~ ^"have" ~ other_creature_type_granted_ability)
+    | (^"have" ~ other_creature_type_granted_ability)
+  )
+}
+
+other_creature_type_subject = {
+    creature_type ~ ^"creatures"
+  | creature_type_plural
+}
+
+other_creature_type_granted_ability = _{
+    ("\"" ~ activated_ability ~ "\"")
+  | (keyword ~ ".")
 }
 
 static_status_creatures_you_control_get = {
@@ -1258,7 +1273,7 @@ target_permanent_becomes_basic_land_type_until_source_leaves = {
     ^"target" ~ permanent_type ~ ^"becomes" ~ article ~ basic_land_type
   ~ ^"until" ~ source_object ~ ^"leaves" ~ ^"the" ~ ^"battlefield" ~ "."
 }
-regenerate_source = { ^"regenerate" ~ (source_object | (^"enchanted" ~ enchanted_object)) ~ "." }
+regenerate_source = { ^"regenerate" ~ (source_object | (^"enchanted" ~ enchanted_object)) ~ "."? }
 untap_target_permanent = { ^"untap" ~ ^"target" ~ permanent_type ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
 untap_enchanted_object = { ^"untap" ~ ^"enchanted" ~ enchanted_object ~ "." }
@@ -2044,8 +2059,9 @@ its_controller_adds_an_additional_mana = {
     ^"its" ~ ^"controller" ~ ^"adds" ~ article ~ ^"additional" ~ mana_symbol ~ "."
 }
 source_object = { ^"this" ~ source_object_kind }
-source_object_kind = _{ aura_source_object | permanent_type }
+source_object_kind = _{ aura_source_object | permanent_object | permanent_type }
 aura_source_object = { ^"aura" }
+permanent_object = { ^"permanent" }
 that_permanents_controller = { ^"that" ~ permanent_type ~ "'s" ~ ^"controller" }
 that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice = {
     that_permanents_controller ~ ^"may" ~ ^"attach" ~ ^"this" ~ ^"aura"

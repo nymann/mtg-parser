@@ -16,22 +16,22 @@ use crate::ast::{
     DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
-    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
-    InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer,
-    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
-    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
-    ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
-    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
-    ReferencedCard, ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject,
-    ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
-    StaticDamageSource, StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction,
-    TappedForManaSubject, TargetHandPlayer, TargetPermanentEndOfTurnEffect,
-    TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
-    TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount,
+    LifeLossPlayer, ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol,
+    MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, OtherCreatureTypeSubject,
+    PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature,
+    RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
+    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
+    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TappedForManaSubject,
+    TargetHandPlayer, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCastActor, TriggerCastSpell,
+    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -3661,6 +3661,7 @@ fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError>
     let kind = only_inner(pair, "source_object missing kind")?;
     match kind.as_rule() {
         Rule::permanent_type => Ok(SourceObject::This(permanent_type_from_pair(kind)?)),
+        Rule::permanent_object => Ok(SourceObject::ThisPermanent),
         Rule::aura_source_object => Ok(SourceObject::ThisAura),
         _ => Err(ParseError::Internal("source_object kind")),
     }
@@ -3920,19 +3921,27 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
         }
         Rule::static_other_creature_type_get_and_have_keyword => {
             let mut inner = pair.into_inner();
-            let creature_type_pair = inner.next().expect(
+            let subject_pair = inner.next().expect(
                 "static_other_creature_type_get_and_have_keyword names the creature subtype",
             );
-            let modifier_pair = inner
+            let (creature_type, subject) =
+                other_creature_type_subject_from_pair(subject_pair)?;
+            let next_pair = inner
                 .next()
-                .expect("static_other_creature_type_get_and_have_keyword has a pt_modifier");
-            let keyword_pair = inner
-                .next()
-                .expect("static_other_creature_type_get_and_have_keyword has a keyword");
-            Ok(StaticAbility::OtherCreatureTypeGetAndHaveKeyword {
-                creature_type: creature_type_from_plural_pair(creature_type_pair)?,
-                modifier: pt_modifier_from_pair(modifier_pair)?,
-                keyword: keyword_from_inner_pair(keyword_pair)?,
+                .expect("static_other_creature_type_get_and_have_keyword has an ability");
+            let (modifier, ability_pair) = if next_pair.as_rule() == Rule::pt_modifier {
+                let ability_pair = inner.next().expect(
+                    "static_other_creature_type_get_and_have_keyword has an ability after modifier",
+                );
+                (Some(pt_modifier_from_pair(next_pair)?), ability_pair)
+            } else {
+                (None, next_pair)
+            };
+            Ok(StaticAbility::OtherCreatureTypeGetAndHaveAbility {
+                creature_type,
+                subject,
+                modifier,
+                ability: granted_ability_from_pair(ability_pair)?,
             })
         }
         Rule::static_status_creatures_you_control_get => {
@@ -5507,6 +5516,7 @@ fn creature_type_from_pair(pair: Pair<Rule>) -> Result<CreatureType, ParseError>
         "insect" => Ok(CreatureType::Insect),
         "merfolk" => Ok(CreatureType::Merfolk),
         "wall" => Ok(CreatureType::Wall),
+        "zombie" => Ok(CreatureType::Zombie),
         _ => Err(ParseError::Internal("creature_type variant")),
     }
 }
@@ -5521,7 +5531,40 @@ fn creature_type_from_plural_pair(pair: Pair<Rule>) -> Result<CreatureType, Pars
         "insects" => Ok(CreatureType::Insect),
         "merfolk" => Ok(CreatureType::Merfolk),
         "walls" => Ok(CreatureType::Wall),
+        "zombies" => Ok(CreatureType::Zombie),
         _ => Err(ParseError::Internal("creature_type_plural variant")),
+    }
+}
+
+fn other_creature_type_subject_from_pair(
+    pair: Pair<Rule>,
+) -> Result<(CreatureType, OtherCreatureTypeSubject), ParseError> {
+    if pair.as_rule() != Rule::other_creature_type_subject {
+        return Err(ParseError::Internal("other_creature_type_subject"));
+    }
+    let child = only_inner(pair, "other_creature_type_subject missing subtype")?;
+    match child.as_rule() {
+        Rule::creature_type => Ok((
+            creature_type_from_pair(child)?,
+            OtherCreatureTypeSubject::TypeCreatures,
+        )),
+        Rule::creature_type_plural => Ok((
+            creature_type_from_plural_pair(child)?,
+            OtherCreatureTypeSubject::TypePlural,
+        )),
+        _ => Err(ParseError::Internal("other_creature_type_subject subtype")),
+    }
+}
+
+fn granted_ability_from_pair(pair: Pair<Rule>) -> Result<GrantedAbility, ParseError> {
+    match pair.as_rule() {
+        Rule::activated_ability => Ok(GrantedAbility::Activated(activated_ability_from_pair(
+            pair,
+        )?)),
+        Rule::keyword_ability_name | Rule::landwalk | Rule::protection | Rule::enchant => {
+            Ok(GrantedAbility::Keyword(keyword_from_inner_pair(pair)?))
+        }
+        _ => Err(ParseError::Internal("granted ability")),
     }
 }
 

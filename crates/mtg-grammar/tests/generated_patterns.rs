@@ -361,3 +361,5 @@ mod winter_orb;
 mod word_of_command;
 #[path = "generated_patterns/wrath_of_god.rs"]
 mod wrath_of_god;
+#[path = "generated_patterns/zombie_master.rs"]
+mod zombie_master;

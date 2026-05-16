@@ -1298,6 +1298,8 @@ pub enum LifeAmount {
 pub enum SourceObject {
     /// "this <permanent_type>"
     This(PermanentType),
+    /// "this permanent"
+    ThisPermanent,
     /// "this Aura"
     ThisAura,
 }
@@ -1848,6 +1850,7 @@ pub enum CreatureType {
     Insect,
     Merfolk,
     Wall,
+    Zombie,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1920,12 +1923,15 @@ pub enum StaticAbility {
         permanent_type: PermanentType,
         modifier: PtModifier,
     },
-    /// "Other <creature_type>s get <modifier> and have <keyword>." —
-    /// P/T modifier plus keyword grant for other creatures of a subtype.
-    OtherCreatureTypeGetAndHaveKeyword {
+    /// "Other <creature_type>s get <modifier> and have <ability>." /
+    /// "Other <creature_type> creatures have <ability>." — ability
+    /// grant for other objects or creatures of a subtype, optionally
+    /// with a P/T modifier.
+    OtherCreatureTypeGetAndHaveAbility {
         creature_type: CreatureType,
-        modifier: PtModifier,
-        keyword: Keyword,
+        subject: OtherCreatureTypeSubject,
+        modifier: Option<PtModifier>,
+        ability: GrantedAbility,
     },
     /// "<status> creatures you control get <modifier>." — P/T modifier
     /// on controlled creatures matching a tapped/untapped state.
@@ -2141,6 +2147,20 @@ pub enum StaticUntapRestriction {
     },
     /// "Players skip their untap steps."
     PlayersSkipTheirUntapSteps,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum OtherCreatureTypeSubject {
+    /// "Other <creature_type>s"
+    TypePlural,
+    /// "Other <creature_type> creatures"
+    TypeCreatures,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GrantedAbility {
+    Keyword(Keyword),
+    Activated(ActivatedAbility),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

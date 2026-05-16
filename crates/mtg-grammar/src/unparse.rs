@@ -14,21 +14,22 @@ use crate::ast::{
     DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
     DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
     DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, EachPlayerAction,
-    EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer, ManaAbilitySourceLimit,
-    ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
-    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
-    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, ReferencedCard,
-    ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination,
-    Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
-    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
-    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TappedForManaSubject,
-    TargetHandPlayer, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
-    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCastActor, TriggerCastSpell,
-    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect, ImperativeAction, InterveningIf,
+    Keyword, LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer,
+    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
+    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
+    ObjectStatus, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
+    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
+    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, StaticDamageSource, StaticUntapRestriction, Step,
+    TapAllPermanentsActor, TapUntapAction, TappedForManaSubject, TargetHandPlayer,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
+    TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
+    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -1529,6 +1530,20 @@ fn write_activated_ability(out: &mut String, aa: &ActivatedAbility) {
     write_activated_effect(out, &aa.effect);
 }
 
+fn write_granted_ability(out: &mut String, ability: &GrantedAbility) {
+    match ability {
+        GrantedAbility::Keyword(keyword) => {
+            write_keyword_lowercase(out, *keyword);
+            out.push('.');
+        }
+        GrantedAbility::Activated(ability) => {
+            out.push('"');
+            write_activated_ability(out, ability);
+            out.push('"');
+        }
+    }
+}
+
 fn write_activation_permission(out: &mut String, permission: ActivationPermission) {
     match permission {
         ActivationPermission::OnlySourcesOwner { source } => {
@@ -1919,18 +1934,29 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_pt_modifier(out, *modifier);
             out.push('.');
         }
-        StaticAbility::OtherCreatureTypeGetAndHaveKeyword {
+        StaticAbility::OtherCreatureTypeGetAndHaveAbility {
             creature_type,
+            subject,
             modifier,
-            keyword,
+            ability,
         } => {
             out.push_str("Other ");
-            out.push_str(creature_type_plural_name(*creature_type));
-            out.push_str(" get ");
-            write_pt_modifier(out, *modifier);
-            out.push_str(" and have ");
-            write_keyword_lowercase(out, *keyword);
-            out.push('.');
+            match subject {
+                OtherCreatureTypeSubject::TypePlural => {
+                    out.push_str(creature_type_plural_name(*creature_type));
+                }
+                OtherCreatureTypeSubject::TypeCreatures => {
+                    out.push_str(creature_type_name(*creature_type));
+                    out.push_str(" creatures");
+                }
+            }
+            if let Some(modifier) = modifier {
+                out.push_str(" get ");
+                write_pt_modifier(out, *modifier);
+                out.push_str(" and");
+            }
+            out.push_str(" have ");
+            write_granted_ability(out, ability);
         }
         StaticAbility::StatusCreaturesYouControlGet { status, modifier } => {
             out.push_str(creature_status_name_capitalized(*status));
@@ -3036,6 +3062,7 @@ fn write_source_object(out: &mut String, source: SourceObject) {
             out.push_str("this ");
             out.push_str(permanent_type_name(pt));
         }
+        SourceObject::ThisPermanent => out.push_str("this permanent"),
         SourceObject::ThisAura => out.push_str("this Aura"),
     }
 }
@@ -3057,6 +3084,7 @@ fn write_source_object_possessive_without_apostrophe(out: &mut String, source: S
             out.push_str(permanent_type_name(pt));
             out.push('s');
         }
+        SourceObject::ThisPermanent => out.push_str("this permanents"),
         SourceObject::ThisAura => out.push_str("this Auras"),
     }
 }
@@ -3067,6 +3095,7 @@ fn write_source_object_capitalized(out: &mut String, source: SourceObject) {
             out.push_str("This ");
             out.push_str(permanent_type_name(pt));
         }
+        SourceObject::ThisPermanent => out.push_str("This permanent"),
         SourceObject::ThisAura => out.push_str("This Aura"),
     }
 }
@@ -3778,6 +3807,7 @@ fn creature_type_name(ct: CreatureType) -> &'static str {
         CreatureType::Insect => "Insect",
         CreatureType::Merfolk => "Merfolk",
         CreatureType::Wall => "Wall",
+        CreatureType::Zombie => "Zombie",
     }
 }
 
@@ -3788,6 +3818,7 @@ fn creature_type_plural_name(ct: CreatureType) -> &'static str {
         CreatureType::Insect => "Insects",
         CreatureType::Merfolk => "Merfolk",
         CreatureType::Wall => "Walls",
+        CreatureType::Zombie => "Zombies",
     }
 }
 

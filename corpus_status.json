@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 260,
+  "passing": 261,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -901,8 +901,7 @@
       "status": "pass"
     },
     "lea/Zombie Master": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:7\n  |\n1 | Other Zombie creatures have swampwalk.\n  |       ^---\n  |\n  = expected creature_type_plural"
+      "status": "pass"
     }
   }
 }
