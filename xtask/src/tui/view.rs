@@ -565,15 +565,13 @@ fn render_card_panel(f: &mut Frame<'_>, area: Rect, state: &AppState) {
                     if let Some(err) = &iter.round_trip_error {
                         v.push(Line::from(""));
                         v.push(Line::from(Span::styled(
-                            "Round-trip",
+                            "Round-trip failed",
                             Style::default().fg(C_FAINT),
                         )));
-                        for line in err.lines() {
-                            v.push(Line::from(vec![
-                                Span::styled("  │ ", Style::default().fg(C_BAD)),
-                                Span::styled(line.to_string(), Style::default().fg(C_BAD)),
-                            ]));
-                        }
+                        v.extend(round_trip_error_lines(
+                            iter.normalized.as_deref().unwrap_or(&card.oracle_text),
+                            err,
+                        ));
                     }
                     v
                 }
@@ -621,6 +619,152 @@ fn card_name_field(name: &str) -> Line<'static> {
                 .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
         ),
     ])
+}
+
+fn round_trip_error_lines(oracle_text: &str, error: &str) -> Vec<Line<'static>> {
+    let Some(summary) = parse_round_trip_error(error, oracle_text) else {
+        return raw_round_trip_error_lines(error);
+    };
+
+    let mut lines = Vec::new();
+    lines.push(Line::from(vec![
+        Span::styled("  │ ", Style::default().fg(C_BAD)),
+        Span::styled(summary.headline, Style::default().fg(C_BAD)),
+    ]));
+    if !summary.parsed_prefix.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("  │ parsed: ", Style::default().fg(C_FAINT)),
+            Span::styled(summary.parsed_prefix, Style::default().fg(C_GOOD)),
+        ]));
+    }
+    if !summary.unsupported_suffix.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("  │ gap:    ", Style::default().fg(C_FAINT)),
+            Span::styled(summary.unsupported_suffix, Style::default().fg(C_BAD)),
+        ]));
+    }
+    lines.push(Line::from(vec![
+        Span::styled("  │ wanted: ", Style::default().fg(C_FAINT)),
+        Span::styled(summary.expected, Style::default().fg(C_WARN)),
+    ]));
+    if let Some(rule_hint) = summary.rule_hint {
+        lines.push(Line::from(vec![
+            Span::styled("  │ hint:   ", Style::default().fg(C_FAINT)),
+            Span::styled(rule_hint, Style::default().fg(C_INFO)),
+        ]));
+    }
+    lines.push(Line::from(vec![
+        Span::styled("  │ raw:    ", Style::default().fg(C_FAINT)),
+        Span::styled(summary.location, Style::default().fg(C_DIM)),
+    ]));
+    lines
+}
+
+fn raw_round_trip_error_lines(error: &str) -> Vec<Line<'static>> {
+    error
+        .lines()
+        .map(|line| {
+            Line::from(vec![
+                Span::styled("  │ ", Style::default().fg(C_BAD)),
+                Span::styled(line.to_string(), Style::default().fg(C_BAD)),
+            ])
+        })
+        .collect()
+}
+
+struct RoundTripErrorSummary {
+    headline: String,
+    parsed_prefix: String,
+    unsupported_suffix: String,
+    expected: String,
+    rule_hint: Option<String>,
+    location: String,
+}
+
+fn parse_round_trip_error(error: &str, oracle_text: &str) -> Option<RoundTripErrorSummary> {
+    let mut location = None;
+    let mut line_col = None;
+    let mut source_line = None;
+    let mut expected = None;
+
+    for line in error.lines() {
+        if let Some(rest) = line.trim().strip_prefix("--> ") {
+            location = Some(rest.to_string());
+            line_col = parse_line_col(rest);
+        } else if let Some((_, text)) = line.split_once('|') {
+            if text.trim_start() != "^---" && !text.trim().is_empty() {
+                source_line = Some(text.trim_start().to_string());
+            }
+        } else if let Some(rest) = line.trim().strip_prefix("= expected ") {
+            expected = Some(rest.to_string());
+        }
+    }
+
+    let expected = expected?;
+    let source_line = source_line
+        .or_else(|| oracle_text.lines().next().map(str::to_string))
+        .unwrap_or_default();
+    let (line_no, col_no) = line_col.unwrap_or((1, 1));
+    let split_at = byte_index_for_column(&source_line, col_no).unwrap_or(0);
+    let parsed_prefix = source_line[..split_at].trim_end().to_string();
+    let unsupported_suffix = source_line[split_at..].trim_start().to_string();
+    let expected_label = human_expected(&expected);
+
+    Some(RoundTripErrorSummary {
+        headline: format!("Parser stopped at line {line_no}, column {col_no}."),
+        parsed_prefix,
+        unsupported_suffix,
+        expected: expected_label,
+        rule_hint: rule_hint(&expected),
+        location: location.unwrap_or_else(|| format!("{line_no}:{col_no}")),
+    })
+}
+
+fn parse_line_col(location: &str) -> Option<(usize, usize)> {
+    let (_, rest) = location.rsplit_once(' ')?;
+    let (line, col) = rest.split_once(':')?;
+    Some((line.parse().ok()?, col.parse().ok()?))
+}
+
+fn byte_index_for_column(text: &str, col_no: usize) -> Option<usize> {
+    if col_no == 0 {
+        return Some(0);
+    }
+    text.char_indices()
+        .nth(col_no.saturating_sub(1))
+        .map(|(idx, _)| idx)
+        .or(Some(text.len()))
+}
+
+fn human_expected(expected: &str) -> String {
+    expected
+        .split(", or ")
+        .flat_map(|part| part.split(", "))
+        .map(|rule| rule.trim())
+        .filter(|rule| !rule.is_empty())
+        .map(|rule| {
+            let label = rule.replace('_', " ");
+            if rule.contains('_') {
+                format!("{label} ({rule})")
+            } else {
+                label
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
+fn rule_hint(expected: &str) -> Option<String> {
+    if expected.contains("counter_unless_cost") {
+        Some(
+            "Current counter-spell grammar expects an optional \"unless <cost>\" clause here."
+                .to_string(),
+        )
+    } else if expected.contains('_') {
+        Some("Open the named grammar rule and widen the existing shape if this phrase belongs there.".to_string())
+    } else {
+        None
+    }
 }
 
 pub(super) fn scryfall_card_url(name: &str) -> String {
