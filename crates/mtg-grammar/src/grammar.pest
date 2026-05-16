@@ -81,6 +81,7 @@ sentence_statement = _{
   | draw_cards
   | target_player_discards_cards_at_random
   | add_mana
+  | if_you_flip_result_effect
   | if_you_cant_source_deals_damage_to_you
   | until_eot_you_may_pay_cost_at_timing
   // Shared "If you do," wrapper; the payload decides the concrete effect.
@@ -795,8 +796,8 @@ color_word = @{
 
 // Creature subtypes that appear as Aura targets, enchanted objects, or
 // creature-type selectors.
-creature_type = @{ ^"goblin" | ^"golem" | ^"insect" | ^"merfolk" | ^"wall" | ^"zombie" }
-creature_type_plural = @{ ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"walls" | ^"zombies" }
+creature_type = @{ ^"djinn" | ^"goblin" | ^"golem" | ^"insect" | ^"merfolk" | ^"wall" | ^"zombie" }
+creature_type_plural = @{ ^"djinns" | ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"walls" | ^"zombies" }
 
 // Static abilities. Five surface shapes today:
 //   - "As long as <cond>, <effect>." — conditional continuous effect.
@@ -1236,6 +1237,7 @@ activated_effect = _{
   | next_card_draw_replacement
   | imperative_action_sequence
   | activated_draw_cards
+  | flip_coin
   | create_token
   | look_at_target_players_hand
   | target_player_discards_cards
@@ -1281,6 +1283,7 @@ permanent_type_choice = { permanent_type ~ ((("," ~ permanent_type)* ~ ","? ~ ^"
 activated_draw_cards = {
     ^"draw" ~ draw_card_object ~ "."
 }
+flip_coin = { ^"flip" ~ article ~ ^"coin" ~ "." }
 draw_card_object = _{ activated_draw_one_card | activated_draw_counted_cards }
 activated_draw_one_card = { article ~ ^"card" }
 activated_draw_counted_cards = { draw_count ~ ^"cards" }
@@ -2000,6 +2003,11 @@ if_you_cant_source_deals_damage_to_you = {
     ^"if" ~ ^"you" ~ ^"can't" ~ "," ~ source_object ~ ^"deals"
   ~ damage_amount ~ ^"damage" ~ ^"to" ~ ^"you" ~ "."
 }
+
+if_you_flip_result_effect = {
+    ^"if" ~ ^"you" ~ coin_flip_result ~ ^"the" ~ ^"flip" ~ "," ~ activated_effect
+}
+coin_flip_result = { ^"win" | ^"lose" }
 
 only_sources_owner_may_activate_this_ability = {
     ^"only" ~ source_object_possessive ~ ^"owner" ~ ^"may" ~ ^"activate"

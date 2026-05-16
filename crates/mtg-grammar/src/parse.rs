@@ -8,27 +8,27 @@ use crate::ast::{
     ActivationLimitContext, ActivationPermission, AddManaAmount, AsEntersChoice,
     AttackRequirementSubject, BalanceSameWayAction, BasicLandType, BasicLandTypeReference,
     BlockingCapacityAmount, BlockingCapacityDuration, BlockingCapacitySubject, CardCount,
-    CastRestriction, Color, ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder,
-    ContinuousEffect, ControlPlayerCondition, ControlPlayerController, ControlPlayerDuration,
-    ControlPlayerEffect, ControlledPlayer, CopyException, CopyGrantedAbility, CounterAmount,
-    CounterTargetSpellCondition, CreatureQuality, CreatureStatus, CreatureType, DamageAmount,
-    DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
-    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
-    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
-    DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
-    DrawReplacementEffect, EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount,
-    LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
-    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
-    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
-    ObjectStatus, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
-    PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
-    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticDamageSource, StaticUntapRestriction,
-    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
-    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    CastRestriction, CoinFlipResult, Color, ColoredTargetEffect, CombatRole, Condition,
+    ConditionalEffectOrder, ContinuousEffect, ControlPlayerCondition, ControlPlayerController,
+    ControlPlayerDuration, ControlPlayerEffect, ControlledPlayer, CopyException,
+    CopyGrantedAbility, CounterAmount, CounterTargetSpellCondition, CreatureQuality,
+    CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern,
+    DamageKind, DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount,
+    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
+    DamageRecipients, DamageRedirectionDestination, DestroyReferencedCreatureCondition,
+    DestroyTarget, DiesWording, DrawReplacementEffect, EachPlayerAction, EnchantObject,
+    EnchantedObject, GrantedAbility, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
+    LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause,
+    LifeTotalFloorPlayer, ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol,
+    MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, OtherCreatureTypeSubject,
+    PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature,
+    RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
+    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
+    StaticUntapRestriction, StatusCreatureController, StatusCreatureGetDuration, Step,
+    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -143,6 +143,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::if_you_cant_source_deals_damage_to_you => {
             if_you_cant_source_deals_damage_to_you_from_pair(pair)
         }
+        Rule::if_you_flip_result_effect => if_you_flip_result_effect_from_pair(pair),
         Rule::it_cant_be_regenerated => it_cant_be_regenerated_from_pair(pair),
         Rule::if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn => {
             if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(
@@ -1956,6 +1957,79 @@ fn if_you_cant_source_deals_damage_to_you_from_pair(
         source: source_object_from_pair(source_pair)?,
         amount: damage_amount_from_pair(amount_pair)?,
     })
+}
+
+fn if_you_flip_result_effect_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut result = None;
+    let mut effect = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::coin_flip_result => result = Some(coin_flip_result_from_pair(child)?),
+            rule if is_activated_effect_rule(rule) => {
+                effect = Some(activated_effect_from_pair(child)?);
+            }
+            _ => return Err(ParseError::Internal("if you flip result component")),
+        }
+    }
+    Ok(Statement::IfYouFlipResult {
+        result: result.ok_or(ParseError::Internal("if you flip result missing result"))?,
+        effect: effect.ok_or(ParseError::Internal("if you flip result missing effect"))?,
+    })
+}
+
+fn coin_flip_result_from_pair(pair: Pair<Rule>) -> Result<CoinFlipResult, ParseError> {
+    if pair.as_rule() != Rule::coin_flip_result {
+        return Err(ParseError::Internal("coin_flip_result"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "win" => Ok(CoinFlipResult::Win),
+        "lose" => Ok(CoinFlipResult::Lose),
+        _ => Err(ParseError::Internal("coin_flip_result variant")),
+    }
+}
+
+fn is_activated_effect_rule(rule: Rule) -> bool {
+    matches!(
+        rule,
+        Rule::add_mana_of_any_one_color
+            | Rule::add_one_mana_of_any_color
+            | Rule::add_mana
+            | Rule::tap_target_permanent_choice
+            | Rule::target_permanent_becomes_basic_land_type_until_source_leaves
+            | Rule::destroy
+            | Rule::regenerate_source
+            | Rule::colored_target_effect
+            | Rule::counter_target_colored_spell
+            | Rule::untap_target_permanent
+            | Rule::untap_source
+            | Rule::untap_enchanted_object
+            | Rule::take_extra_turn_after_this_one
+            | Rule::next_card_draw_replacement
+            | Rule::imperative_action_sequence
+            | Rule::activated_draw_cards
+            | Rule::flip_coin
+            | Rule::create_token
+            | Rule::look_at_target_players_hand
+            | Rule::target_player_discards_cards
+            | Rule::gain_control_of_target_permanent_for_as_long_as_you_control_source
+            | Rule::target_creature_with_power_or_less_cant_be_blocked
+            | Rule::target_permanent_gains_keyword_until_eot
+            | Rule::activated_source_becomes_pt_creature_until_end_of_combat
+            | Rule::activated_source_gains_keyword_until_eot
+            | Rule::activated_source_gets_until_eot
+            | Rule::activated_enchanted_gets_until_eot
+            | Rule::activated_direct_damage_effect
+            | Rule::next_damage_event_effect
+            | Rule::next_damage_redirection_effect
+            | Rule::activated_damage_prevention_effect
+            | Rule::put_pt_counters_on_source
+            | Rule::put_named_counter_on_target_non_basic_land
+            | Rule::choose_creature_card_in_hand_payable_by_mana_spent_on_variable
+            | Rule::choose_target_non_creature_type_creature_active_player_controlled_continuously
+            | Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
+            | Rule::if_source_turns_over_destroy_touched_nontoken_permanents
+            | Rule::then_destroy_source
+    )
 }
 
 fn prevention_recipient_from_pair(pair: Pair<Rule>) -> Result<PreventionRecipient, ParseError> {
@@ -4752,6 +4826,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 )?,
             })
         }
+        Rule::flip_coin => Ok(ActivatedEffect::FlipCoin),
         Rule::imperative_action_sequence => match imperative_action_sequence_from_pair(pair)? {
             Statement::ImperativeActionSequence { actions } => {
                 Ok(ActivatedEffect::ImperativeActionSequence { actions })
@@ -5669,6 +5744,7 @@ fn creature_type_from_pair(pair: Pair<Rule>) -> Result<CreatureType, ParseError>
         return Err(ParseError::Internal("creature_type"));
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
+        "djinn" => Ok(CreatureType::Djinn),
         "goblin" => Ok(CreatureType::Goblin),
         "golem" => Ok(CreatureType::Golem),
         "insect" => Ok(CreatureType::Insect),
@@ -5684,6 +5760,7 @@ fn creature_type_from_plural_pair(pair: Pair<Rule>) -> Result<CreatureType, Pars
         return Err(ParseError::Internal("creature_type_plural"));
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
+        "djinns" => Ok(CreatureType::Djinn),
         "goblins" => Ok(CreatureType::Goblin),
         "golems" => Ok(CreatureType::Golem),
         "insects" => Ok(CreatureType::Insect),

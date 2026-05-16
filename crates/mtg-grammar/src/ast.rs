@@ -66,6 +66,12 @@ pub enum Statement {
         source: SourceObject,
         amount: DamageAmount,
     },
+    /// "If you win/lose the flip, <effect>." — CR 705 coin-flip result
+    /// condition with an activated-effect payload.
+    IfYouFlipResult {
+        result: CoinFlipResult,
+        effect: ActivatedEffect,
+    },
     /// "<subject> can't be regenerated." — a CR 614.17 can't effect
     /// restricting the CR 701.15 regenerate keyword action.
     ItCantBeRegenerated {
@@ -1440,6 +1446,8 @@ pub enum ActivatedEffect {
     DrawCards {
         count: CardCount,
     },
+    /// "Flip a coin." — CR 705 coin-flip action.
+    FlipCoin,
     /// "<imperative action>, then <imperative action>."
     ImperativeActionSequence {
         actions: Vec<ImperativeAction>,
@@ -1525,6 +1533,12 @@ pub enum ActivatedEffect {
         source: SourceObject,
     },
     PhysicalAction(PhysicalAction),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CoinFlipResult {
+    Win,
+    Lose,
 }
 
 /// Replacement effect applied to a card-draw event.
@@ -1885,6 +1899,7 @@ pub enum SpellType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CreatureType {
+    Djinn,
     Goblin,
     Golem,
     Insect,

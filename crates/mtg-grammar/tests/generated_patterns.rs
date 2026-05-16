@@ -49,6 +49,8 @@ mod blessing;
 mod blue_elemental_blast;
 #[path = "generated_patterns/bog_wraith.rs"]
 mod bog_wraith;
+#[path = "generated_patterns/bottle_of_suleiman.rs"]
+mod bottle_of_suleiman;
 #[path = "generated_patterns/braingeyser.rs"]
 mod braingeyser;
 #[path = "generated_patterns/burrowing.rs"]

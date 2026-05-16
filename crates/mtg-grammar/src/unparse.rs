@@ -6,32 +6,32 @@ use crate::ast::{
     ActivationLimitContext, ActivationPermission, AddManaAmount, AsEntersChoice,
     AttackRequirementSubject, BalanceSameWayAction, BasicLandType, BasicLandTypeReference,
     BlockingCapacityAmount, BlockingCapacityDuration, BlockingCapacitySubject, CardCount,
-    CastRestriction, Color, ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder,
-    ContinuousEffect, ControlPlayerCondition, ControlPlayerController, ControlPlayerDuration,
-    ControlPlayerEffect, ControlledPlayer, CopyException, CopyGrantedAbility, CounterAmount,
-    CounterTargetSpellCondition, CreatureQuality, CreatureStatus, CreatureType, DamageAmount,
-    DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
-    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
-    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, DrawReplacementEffect,
-    EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount,
-    LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer, ManaAbilitySourceLimit, ManaCost,
-    ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
-    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
-    OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
-    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
-    ReferencedCard, ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject,
-    ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
-    StaticDamageSource, StaticUntapRestriction, StatusCreatureController,
-    StatusCreatureGetDuration, Step, TapAllPermanentsActor, TapUntapAction, TapUntapTarget,
-    TappedForManaSubject, TargetHandPlayer, TargetPermanentEndOfTurnEffect,
-    TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
-    TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    CastRestriction, CoinFlipResult, Color, ColoredTargetEffect, CombatRole, Condition,
+    ConditionalEffectOrder, ContinuousEffect, ControlPlayerCondition, ControlPlayerController,
+    ControlPlayerDuration, ControlPlayerEffect, ControlledPlayer, CopyException,
+    CopyGrantedAbility, CounterAmount, CounterTargetSpellCondition, CreatureQuality,
+    CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
+    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
+    DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
+    DrawReplacementEffect, EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount,
+    LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
+    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
+    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
+    ObjectStatus, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
+    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
+    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, StaticDamageSource, StaticUntapRestriction,
+    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
+    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
+    TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
+    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -116,6 +116,12 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" deals ");
             write_damage_amount(out, *amount);
             out.push_str(" damage to you.");
+        }
+        Statement::IfYouFlipResult { result, effect } => {
+            out.push_str("If you ");
+            out.push_str(coin_flip_result_name(*result));
+            out.push_str(" the flip, ");
+            write_activated_effect_lowercase(out, effect);
         }
         Statement::ItCantBeRegenerated { subject } => {
             match subject {
@@ -580,6 +586,22 @@ fn write_statement(out: &mut String, statement: &Statement) {
     }
 }
 
+fn coin_flip_result_name(result: CoinFlipResult) -> &'static str {
+    match result {
+        CoinFlipResult::Win => "win",
+        CoinFlipResult::Lose => "lose",
+    }
+}
+
+fn write_activated_effect_lowercase(out: &mut String, effect: &ActivatedEffect) {
+    let mut text = String::new();
+    write_activated_effect(&mut text, effect);
+    if let Some(first) = text.get_mut(0..1) {
+        first.make_ascii_lowercase();
+    }
+    out.push_str(&text);
+}
+
 fn statement_continues_previous_sentence(statement: &Statement) -> bool {
     matches!(
         statement,
@@ -588,6 +610,7 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
             | Statement::ItsControllerGainsLife { .. }
             | Statement::NamedSourceDealsDamage { .. }
             | Statement::ItCantBeRegenerated { .. }
+            | Statement::IfYouFlipResult { .. }
             | Statement::VariableCantBeNumber { .. }
             | Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn
             | Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn
@@ -1669,6 +1692,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_card_count_object(out, *count);
             out.push('.');
         }
+        ActivatedEffect::FlipCoin => out.push_str("Flip a coin."),
         ActivatedEffect::ImperativeActionSequence { actions } => {
             write_imperative_action_sequence(out, actions);
         }
@@ -3909,6 +3933,7 @@ fn write_permanent_controller(out: &mut String, controller: PermanentController)
 
 fn creature_type_name(ct: CreatureType) -> &'static str {
     match ct {
+        CreatureType::Djinn => "Djinn",
         CreatureType::Goblin => "Goblin",
         CreatureType::Golem => "Golem",
         CreatureType::Insect => "Insect",
@@ -3920,6 +3945,7 @@ fn creature_type_name(ct: CreatureType) -> &'static str {
 
 fn creature_type_plural_name(ct: CreatureType) -> &'static str {
     match ct {
+        CreatureType::Djinn => "Djinns",
         CreatureType::Goblin => "Goblins",
         CreatureType::Golem => "Golems",
         CreatureType::Insect => "Insects",
