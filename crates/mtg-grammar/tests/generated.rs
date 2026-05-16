@@ -356,3 +356,5 @@ mod unsummon;
 mod verduran_enchantress;
 #[path = "generated/vesuvan_doppelganger.rs"]
 mod vesuvan_doppelganger;
+#[path = "generated/veteran_bodyguard.rs"]
+mod veteran_bodyguard;

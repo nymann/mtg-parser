@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 252,
+  "passing": 253,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -822,8 +822,7 @@
       "status": "pass"
     },
     "lea/Veteran Bodyguard": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:12\n  |\n1 | As long as this creature is untapped, all damage that would be dealt to you by unblocked creatures is dealt to this creature instead.\n  |            ^---\n  |\n  = expected proper_name, you_control_basic_land, or enchanted_isnt"
+      "status": "pass"
     },
     "lea/Volcanic Eruption": {
       "status": "fail",
@@ -895,7 +894,7 @@
     },
     "lea/Winter Orb": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:12\n  |\n1 | As long as this artifact is untapped, players can't untap more than one land during their untap steps.\n  |            ^---\n  |\n  = expected proper_name, you_control_basic_land, or enchanted_isnt"
+      "error": "parse: parse error:  --> 1:39\n  |\n1 | As long as this artifact is untapped, players can't untap more than one land during their untap steps.\n  |                                       ^---\n  |\n  = expected damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead, becomes_pt_from_mv, source_pt_equal_to_basic_lands_controlled, or source_object"
     },
     "lea/Wooden Sphere": {
       "status": "pass"

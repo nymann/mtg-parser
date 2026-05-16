@@ -22,12 +22,12 @@ use crate::ast::{
     PermanentType, PhysicalAction, PreventionRecipient, PtModifier, ReferencedCreature,
     RegenerateRecipient, ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent,
     SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement,
-    StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
-    TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
-    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    StaticAbility, StaticDamageSource, StaticUntapRestriction, Step, TapAllPermanentsActor,
+    TapUntapAction, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCastActor, TriggerCastSpell,
+    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -5050,6 +5050,19 @@ fn condition_from_pair(pair: Pair<Rule>) -> Result<Condition, ParseError> {
                 is_attacking,
             })
         }
+        Rule::source_is_object_status => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner
+                .next()
+                .expect("object status condition begins with a source object");
+            let status_pair = inner
+                .next()
+                .expect("object status condition names a status");
+            Ok(Condition::SourceIsObjectStatus {
+                source: source_object_from_pair(source_pair)?,
+                status: object_status_from_pair(status_pair)?,
+            })
+        }
         _ => Err(ParseError::Internal("condition")),
     }
 }
@@ -5059,6 +5072,7 @@ fn is_condition_rule(rule: Rule) -> bool {
         rule,
         Rule::you_control_basic_land
             | Rule::enchanted_isnt
+            | Rule::source_is_object_status
             | Rule::source_isnt_attacking
             | Rule::source_is_attacking
     )
@@ -5074,6 +5088,21 @@ fn continuous_effect_from_pair(pair: Pair<Rule>) -> Result<ContinuousEffect, Par
                 source: source_object_from_pair(source_pair)?,
                 modifier: pt_modifier_from_pair(modifier_pair)?,
             })
+        }
+        Rule::damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead => {
+            let mut inner = pair.into_inner();
+            let source_pair = inner
+                .next()
+                .expect("static damage redirection names a damage source");
+            let destination_pair = inner
+                .next()
+                .expect("static damage redirection names a destination");
+            Ok(
+                ContinuousEffect::DamageThatWouldBeDealtToYouBySourceIsDealtToSourceInstead {
+                    source: static_damage_source_from_pair(source_pair)?,
+                    destination: source_object_from_pair(destination_pair)?,
+                },
+            )
         }
         Rule::becomes_pt_from_mv => {
             let types = pair
@@ -5098,6 +5127,13 @@ fn continuous_effect_from_pair(pair: Pair<Rule>) -> Result<ContinuousEffect, Par
             )
         }
         _ => Err(ParseError::Internal("continuous_effect")),
+    }
+}
+
+fn static_damage_source_from_pair(pair: Pair<Rule>) -> Result<StaticDamageSource, ParseError> {
+    match pair.as_rule() {
+        Rule::unblocked_creatures_damage_source => Ok(StaticDamageSource::UnblockedCreatures),
+        _ => Err(ParseError::Internal("static_damage_source")),
     }
 }
 

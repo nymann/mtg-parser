@@ -1350,18 +1350,26 @@ then_destroy_source = {
 
 physical_height_unit = @{ ^"feet" | ^"foot" }
 
-condition      = _{ you_control_basic_land | source_isnt_attacking | source_is_attacking | enchanted_isnt }
+condition      = _{ you_control_basic_land | source_is_object_status | source_isnt_attacking | source_is_attacking | enchanted_isnt }
 you_control_basic_land = { ^"you" ~ ^"control" ~ article ~ basic_land_type }
 enchanted_isnt = {
     ^"enchanted" ~ permanent_type ~ ^"isn't" ~ article ~ permanent_type
 }
+source_is_object_status = { source_object ~ ^"is" ~ object_status }
 source_isnt_attacking = { proper_name ~ ^"isn't" ~ ^"attacking" }
 source_is_attacking   = { proper_name ~ ^"is" ~ ^"attacking" }
 
-continuous_effect       = _{ source_gets | source_pt_equal_to_basic_lands_controlled | becomes_pt_from_mv }
+continuous_effect       = _{ source_gets | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead | source_pt_equal_to_basic_lands_controlled | becomes_pt_from_mv }
 source_gets = {
     source_object ~ ^"gets" ~ pt_modifier
 }
+damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead = {
+    ^"all" ~ ^"damage" ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"
+  ~ ^"to" ~ ^"you" ~ ^"by" ~ static_damage_source
+  ~ ^"is" ~ ^"dealt" ~ ^"to" ~ source_object ~ ^"instead"
+}
+static_damage_source = _{ unblocked_creatures_damage_source }
+unblocked_creatures_damage_source = { ^"unblocked" ~ ^"creatures" }
 becomes_pt_from_mv = {
     ^"it's" ~ article ~ permanent_type+
   ~ ^"with" ~ ^"power" ~ ^"and" ~ ^"toughness"

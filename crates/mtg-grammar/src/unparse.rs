@@ -19,13 +19,13 @@ use crate::ast::{
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, ReturnDestination,
     Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
-    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction,
-    Step, TapAllPermanentsActor, TapUntapAction, TargetPermanentEndOfTurnEffect,
-    TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
-    TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
+    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
+    TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
+    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -3131,6 +3131,11 @@ fn write_condition(out: &mut String, cond: &Condition) {
                 out.push_str(" isn't attacking");
             }
         }
+        Condition::SourceIsObjectStatus { source, status } => {
+            write_source_object(out, *source);
+            out.push_str(" is ");
+            out.push_str(object_status_name(*status));
+        }
     }
 }
 
@@ -3140,6 +3145,16 @@ fn write_continuous_effect(out: &mut String, eff: &ContinuousEffect) {
             write_source_object_capitalized(out, *source);
             out.push_str(" gets ");
             write_pt_modifier(out, *modifier);
+        }
+        ContinuousEffect::DamageThatWouldBeDealtToYouBySourceIsDealtToSourceInstead {
+            source,
+            destination,
+        } => {
+            out.push_str("all damage that would be dealt to you by ");
+            out.push_str(static_damage_source_name(*source));
+            out.push_str(" is dealt to ");
+            write_source_object(out, *destination);
+            out.push_str(" instead");
         }
         ContinuousEffect::BecomesWithPtFromManaValue { types } => {
             out.push_str("it's");
@@ -3165,6 +3180,12 @@ fn write_continuous_effect(out: &mut String, eff: &ContinuousEffect) {
                 LandCountController::DefendingPlayer => out.push_str("defending player controls"),
             }
         }
+    }
+}
+
+fn static_damage_source_name(source: StaticDamageSource) -> &'static str {
+    match source {
+        StaticDamageSource::UnblockedCreatures => "unblocked creatures",
     }
 }
 

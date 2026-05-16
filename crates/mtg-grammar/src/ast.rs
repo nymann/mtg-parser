@@ -2074,6 +2074,11 @@ pub enum Condition {
         source_name: String,
         is_attacking: bool,
     },
+    /// "this <object> is tapped/untapped"
+    SourceIsObjectStatus {
+        source: SourceObject,
+        status: ObjectStatus,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -2112,6 +2117,12 @@ pub enum ContinuousEffect {
         source: SourceObject,
         modifier: PtModifier,
     },
+    /// "All damage that would be dealt to you by <source> is dealt to
+    /// this <object> instead" — static damage redirection replacement effect.
+    DamageThatWouldBeDealtToYouBySourceIsDealtToSourceInstead {
+        source: StaticDamageSource,
+        destination: SourceObject,
+    },
     /// "it's a/an <types> with power and toughness each equal to its
     /// mana value" — the enchanted permanent gains the listed types
     /// and a characteristic-defining P/T equal to its mana value.
@@ -2122,6 +2133,12 @@ pub enum ContinuousEffect {
         land_type: BasicLandType,
         controller: LandCountController,
     },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StaticDamageSource {
+    /// "unblocked creatures"
+    UnblockedCreatures,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
