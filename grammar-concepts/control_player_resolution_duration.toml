@@ -1,0 +1,80 @@
+[[axis]]
+name = "controller"
+values = ["you"]
+
+[[axis]]
+name = "controlled_player"
+values = [
+    "that_player",
+    "the_player",
+]
+
+[[axis]]
+name = "duration_anchor"
+values = [
+    "source_finishes_resolving",
+    "that_spell_is_resolving",
+]
+
+[[axis]]
+name = "condition"
+values = [
+    "none",
+    "chosen_card_cast_as_spell",
+]
+
+[boundary]
+excludes = [
+    "Additional costs to cast this spell.",
+    "Casting-cost increases for targets beyond the first.",
+    "Standalone counter target spell effects.",
+]
+includes = [
+    "Control-player effects whose duration is anchored to a named source finishing resolution.",
+    "Control-player effects whose duration is anchored to that spell resolving.",
+    "Conditional control-player effects where the chosen card is cast as a spell.",
+]
+
+[concept]
+name = "control_player_resolution_duration"
+pest_rules = ["control_duration"]
+rules_queries = ["lex: control player until finishes resolving while spell is resolving"]
+rules_terms = [
+    "control",
+    "player",
+    "resolving",
+    "spell",
+]
+
+[[counterexample]]
+reason = "Additional cost wording is a casting-cost concept, not a control-player duration."
+text = "As an additional cost to cast this spell, sacrifice a creature."
+
+[[counterexample]]
+reason = "Per-target cost increase wording is a casting-cost modification concept."
+text = "This spell costs {1} more to cast for each target beyond the first."
+
+[[counterexample]]
+reason = "Standalone countering has no control-player duration."
+text = "Counter target spell."
+
+[[example]]
+text = "You control that player until Word of Command finishes resolving."
+
+[[example]]
+text = "If the chosen card is cast as a spell, you control the player while that spell is resolving."
+
+[grammar_query]
+candidate_rules = [
+    "control_duration",
+    "source_resolution_duration",
+    "spell_resolution_duration",
+    "control_player_effect",
+    "if_chosen_card_is_cast_as_spell",
+    "spell_additional_cost_to_cast_this_spell",
+]
+selected_rule = "control_duration"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

@@ -1,0 +1,38 @@
+[fixture]
+concept = "control_player_resolution_duration"
+rule = "control_player_effect"
+
+[[example]]
+text = "You control that player until Word of Command finishes resolving."
+
+[[example]]
+rule = "conditional_control_player_effect"
+text = "If the chosen card is cast as a spell, you control the player while that spell is resolving."
+
+[[example]]
+rule = "control_duration"
+text = "until Word of Command finishes resolving"
+
+[[example]]
+rule = "control_duration"
+text = "while that spell is resolving"
+
+[[example]]
+rule = "spell_resolution_duration"
+text = "that spell is resolving"
+
+[[counterexample]]
+text = "As an additional cost to cast this spell, sacrifice a creature."
+reason = "Additional cost wording is a casting-cost concept, not a control-player duration."
+
+[[counterexample]]
+text = "This spell costs {1} more to cast for each target beyond the first."
+reason = "Per-target cost increase wording is a casting-cost modification concept."
+
+[[counterexample]]
+text = "Counter target spell."
+reason = "Standalone countering has no control-player duration."
+
+[[counterexample]]
+text = "You control that player until Word of Command finishes resolving. trailing"
+reason = "Exact-consumption guard."
