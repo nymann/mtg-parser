@@ -21,6 +21,10 @@ text = "while that spell is resolving"
 rule = "spell_resolution_duration"
 text = "that spell is resolving"
 
+[[example]]
+rule = "control_player_condition"
+text = "the chosen card is cast as a spell"
+
 [[counterexample]]
 text = "As an additional cost to cast this spell, sacrifice a creature."
 reason = "Additional cost wording is a casting-cost concept, not a control-player duration."

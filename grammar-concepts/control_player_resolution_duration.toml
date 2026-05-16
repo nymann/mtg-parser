@@ -38,8 +38,11 @@ includes = [
 [concept]
 name = "control_player_resolution_duration"
 pest_rules = [
+    "conditional_control_player_effect",
     "control_player_effect",
     "control_duration",
+    "control_player_condition",
+    "spell_resolution_duration",
 ]
 rules_queries = ["lex: control player until finishes resolving while spell is resolving"]
 rules_terms = [
@@ -74,9 +77,10 @@ candidate_rules = [
     "spell_resolution_duration",
     "control_player_effect",
     "if_chosen_card_is_cast_as_spell",
+    "control_player_condition",
     "spell_additional_cost_to_cast_this_spell",
 ]
-selected_rule = "control_player_effect"
+selected_rule = "control_player_condition"
 
 [maturity]
 blockers = []
