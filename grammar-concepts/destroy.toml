@@ -23,7 +23,15 @@ name = "condition"
 values = [
     "none",
     "if_it_attacked_this_turn",
+    "if_it_didnt_attack_this_turn",
     "that_didnt_attack_this_turn",
+]
+
+[[axis]]
+name = "timing"
+values = [
+    "none",
+    "at_beginning_of_next_end_step",
 ]
 
 [[axis]]
@@ -60,6 +68,8 @@ includes = [
     "Sentence and trigger-effect surfaces for destroying all creatures blocking or blocked by it.",
     "Trigger effects that destroy that creature if it attacked this turn.",
     "Trigger effects that destroy an anaphoric it target.",
+    "Sentence surfaces that destroy an anaphoric it or that creature target at the beginning of the next end step.",
+    "Sentence surfaces that destroy an anaphoric it or that creature target at the beginning of the next end step if it didn't attack this turn.",
 ]
 
 [concept]
@@ -72,6 +82,7 @@ pest_rules = [
     "destroy_all_creatures_blocking_or_blocked_by_it",
     "destroy_that_creature_if_it_attacked_this_turn",
     "destroy_it",
+    "destroy_referenced_creature_at_beginning_of_next_end_step",
 ]
 rules_queries = [
     "lex: destroy target permanent",
@@ -79,6 +90,8 @@ rules_queries = [
     "lex: destroy all creatures blocking or blocked by it",
     "lex: destroy that creature if it attacked this turn",
     "lex: destroy it",
+    "lex: destroy it at the beginning of the next end step",
+    "lex: destroy that creature at the beginning of the next end step if it didn't attack this turn",
 ]
 rules_terms = [
     "attack",
@@ -122,6 +135,18 @@ text = "Counter it."
 reason = "Sacrifice is a different action even with the same anaphoric it selector."
 text = "Sacrifice it."
 
+[[counterexample]]
+reason = "Exile is a different zone-change action even with the same delayed anaphoric target timing."
+text = "Exile it at the beginning of the next end step."
+
+[[counterexample]]
+reason = "Sacrifice is a different action even with the same delayed anaphoric creature timing."
+text = "Sacrifice that creature at the beginning of the next end step."
+
+[[counterexample]]
+reason = "Counter is a different action even with the same delayed anaphoric target timing."
+text = "Counter it at the beginning of the next end step."
+
 [[example]]
 text = "Destroy target red permanent."
 
@@ -155,6 +180,18 @@ text = "Destroy it."
 [[example]]
 text = "When this creature dies, destroy it."
 
+[[example]]
+text = "Destroy it at the beginning of the next end step."
+
+[[example]]
+text = "Destroy that creature at the beginning of the next end step."
+
+[[example]]
+text = "Destroy it at the beginning of the next end step if it didn't attack this turn."
+
+[[example]]
+text = "Destroy that creature at the beginning of the next end step if it didn't attack this turn."
+
 [grammar_query]
 candidate_rules = [
     "destroy",
@@ -164,6 +201,7 @@ candidate_rules = [
     "destroy_all_creatures_blocking_or_blocked_by_it",
     "destroy_that_creature_if_it_attacked_this_turn",
     "destroy_it",
+    "destroy_referenced_creature_at_beginning_of_next_end_step",
     "target_colored_permanent",
     "counter_target_colored_spell_action",
     "exile",

@@ -62,6 +62,22 @@ text = "Destroy it."
 rule = "triggered_ability"
 text = "When this creature dies, destroy it."
 
+[[example]]
+rule = "destroy_referenced_creature_at_beginning_of_next_end_step"
+text = "Destroy it at the beginning of the next end step."
+
+[[example]]
+rule = "destroy_referenced_creature_at_beginning_of_next_end_step"
+text = "Destroy that creature at the beginning of the next end step."
+
+[[example]]
+rule = "destroy_referenced_creature_at_beginning_of_next_end_step"
+text = "Destroy it at the beginning of the next end step if it didn't attack this turn."
+
+[[example]]
+rule = "destroy_referenced_creature_at_beginning_of_next_end_step"
+text = "Destroy that creature at the beginning of the next end step if it didn't attack this turn."
+
 [[counterexample]]
 text = "Counter target red spell."
 reason = "Countering a colored target spell is the counter_target_spell concept."
@@ -132,6 +148,21 @@ reason = "The anaphoric it boundary belongs to destroy, not counter."
 rule = "destroy_it"
 text = "Sacrifice it."
 reason = "The anaphoric it boundary belongs to destroy, not sacrifice."
+
+[[counterexample]]
+rule = "destroy_referenced_creature_at_beginning_of_next_end_step"
+text = "Exile it at the beginning of the next end step."
+reason = "Exile is a different zone-change action even with the same delayed anaphoric target timing."
+
+[[counterexample]]
+rule = "destroy_referenced_creature_at_beginning_of_next_end_step"
+text = "Sacrifice that creature at the beginning of the next end step."
+reason = "Sacrifice is a different action even with the same delayed anaphoric creature timing."
+
+[[counterexample]]
+rule = "destroy_referenced_creature_at_beginning_of_next_end_step"
+text = "Counter it at the beginning of the next end step."
+reason = "Counter is a different action even with the same delayed anaphoric target timing."
 
 [[counterexample]]
 text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."
