@@ -89,6 +89,16 @@ gates grammar fixtures and grammar debt, repairs failures when allowed, updates
 maturity, and commits. It does not run add-card or try to make cards pass.
 ";
 
+const GRIND_LOOP_USAGE: &str = "\
+cargo xtask concept-grind-loop [--agent codex|claude] [--batch-size N]
+                               [--max-batches N] [--dry-run]
+
+Runs concept-grind in fixed-size batches. After each batch, an agent reviews
+metrics and quality artifacts, decides whether the previous optimization
+experiment passed or failed, reverts failed experiment commits, proposes the
+next experiment, applies it, compiles, and repeats.
+";
+
 pub fn discover(args: &[String]) -> ExitCode {
     match parse_discover_options(args).and_then(run_discover) {
         Ok(report) => {
@@ -276,6 +286,20 @@ pub fn grind(args: &[String]) -> ExitCode {
     }
 }
 
+pub fn grind_loop(args: &[String]) -> ExitCode {
+    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
+        print!("{GRIND_LOOP_USAGE}");
+        return ExitCode::SUCCESS;
+    }
+    match parse_grind_loop_options(args).and_then(run_grind_loop) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("concept-grind-loop: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
 pub(crate) fn run_with_sink(
     options: ConceptGrindOptions,
     sink: &mut dyn FlowSink,
@@ -375,6 +399,40 @@ pub(crate) struct ConceptGrindOptions {
     no_commit: bool,
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct ConceptGrindLoopOptions {
+    agent: AgentProvider,
+    batch_size: u32,
+    max_batches: u32,
+    dry_run: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct GrindLoopExperiment {
+    id: String,
+    hypothesis: String,
+    implementation_request: String,
+    success_metric: String,
+    quality_checks: Vec<String>,
+    #[serde(default)]
+    commit: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct GrindLoopReview {
+    previous_decision: ExperimentDecision,
+    previous_reason: String,
+    next_experiment: Option<GrindLoopExperiment>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum ExperimentDecision {
+    Pass,
+    Fail,
+    None,
+}
+
 #[derive(Debug, Serialize)]
 struct ExistingGrammarMapReport {
     rule_count: usize,
@@ -457,6 +515,41 @@ struct ConceptGrindIterationSummary {
     unmapped_rule_count_before: usize,
     unmapped_rule_count_after: usize,
     committed: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ConceptGrindMetrics {
+    workflow: String,
+    session_dir: PathBuf,
+    started_unix_ms: u128,
+    iterations: Vec<ConceptGrindIterationMetrics>,
+
+    #[serde(skip)]
+    active_steps: BTreeMap<(u32, u8), ActiveConceptGrindStep>,
+}
+
+#[derive(Debug)]
+struct ActiveConceptGrindStep {
+    label: String,
+    started: Instant,
+    started_unix_ms: u128,
+}
+
+#[derive(Debug, Serialize)]
+struct ConceptGrindIterationMetrics {
+    iteration: u32,
+    steps: Vec<ConceptGrindStepMetric>,
+}
+
+#[derive(Debug, Serialize)]
+struct ConceptGrindStepMetric {
+    index: u8,
+    label: String,
+    started_unix_ms: u128,
+    finished_unix_ms: u128,
+    duration_ms: u128,
+    ok: bool,
+    summary: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1186,12 +1279,527 @@ pub(crate) fn parse_grind_options(args: &[String]) -> Result<ConceptGrindOptions
     })
 }
 
+fn parse_grind_loop_options(args: &[String]) -> Result<ConceptGrindLoopOptions> {
+    let mut agent = AgentProvider::Codex;
+    let mut batch_size = 5u32;
+    let mut max_batches = 1u32;
+    let mut dry_run = false;
+
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{GRIND_LOOP_USAGE}"),
+            "--agent" => {
+                let value = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--agent requires a value"))?;
+                agent = parse_agent_provider(value)?;
+            }
+            s if s.starts_with("--agent=") => {
+                agent = parse_agent_provider(&s["--agent=".len()..])?;
+            }
+            "--batch-size" => {
+                let value = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--batch-size requires a value"))?;
+                batch_size = value
+                    .parse()
+                    .with_context(|| format!("--batch-size value: {value:?}"))?;
+            }
+            s if s.starts_with("--batch-size=") => {
+                batch_size = s["--batch-size=".len()..]
+                    .parse()
+                    .with_context(|| format!("--batch-size value: {s:?}"))?;
+            }
+            "--max-batches" => {
+                let value = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--max-batches requires a value"))?;
+                max_batches = value
+                    .parse()
+                    .with_context(|| format!("--max-batches value: {value:?}"))?;
+            }
+            s if s.starts_with("--max-batches=") => {
+                max_batches = s["--max-batches=".len()..]
+                    .parse()
+                    .with_context(|| format!("--max-batches value: {s:?}"))?;
+            }
+            "--dry-run" => dry_run = true,
+            other => bail!("unknown argument: {other}\n\n{GRIND_LOOP_USAGE}"),
+        }
+    }
+
+    if batch_size == 0 {
+        bail!("--batch-size must be greater than zero");
+    }
+    if max_batches == 0 {
+        bail!("--max-batches must be greater than zero");
+    }
+
+    Ok(ConceptGrindLoopOptions {
+        agent,
+        batch_size,
+        max_batches,
+        dry_run,
+    })
+}
+
 fn parse_agent_provider(value: &str) -> Result<AgentProvider> {
     match value {
         "codex" => Ok(AgentProvider::Codex),
         "claude" => Ok(AgentProvider::Claude),
         other => bail!("--agent must be 'codex' or 'claude', got {other:?}"),
     }
+}
+
+fn run_grind_loop(options: ConceptGrindLoopOptions) -> Result<()> {
+    if !options.dry_run {
+        ensure_clean_working_tree().context("concept-grind-loop requires a clean working tree")?;
+    }
+    let loop_dir = grammar_concept_log_root().join(format!("loop-{}", unix_timestamp()));
+    fs::create_dir_all(&loop_dir).with_context(|| format!("create {}", loop_dir.display()))?;
+    println!("concept-grind-loop log: {}", loop_dir.display());
+
+    if options.dry_run {
+        write_json(loop_dir.join("options.json"), &options)?;
+        return Ok(());
+    }
+
+    let mut sink = ConsoleSink::new();
+    let mut active_experiment: Option<GrindLoopExperiment> = None;
+
+    for batch in 1..=options.max_batches {
+        let batch_dir = loop_dir.join(format!("batch-{batch:03}"));
+        fs::create_dir_all(&batch_dir)
+            .with_context(|| format!("create {}", batch_dir.display()))?;
+
+        let batch_start = SystemTime::now();
+        run_grind_loop_batch(&options, &batch_dir)?;
+        let grind_dir = newest_grind_run_since(batch_start)?
+            .ok_or_else(|| anyhow!("concept-grind batch did not create a grind-* run directory"))?;
+        write_text(
+            batch_dir.join("grind_run_path.txt"),
+            &format!("{}\n", grind_dir.display()),
+        )?;
+        copy_if_exists(
+            grind_dir.join("metrics.json"),
+            batch_dir.join("metrics.json"),
+        )?;
+
+        let review_prompt = build_grind_loop_review_prompt(
+            batch,
+            &batch_dir,
+            &grind_dir,
+            active_experiment.as_ref(),
+        )?;
+        fs::write(batch_dir.join("review_prompt.md"), &review_prompt)
+            .with_context(|| format!("write {}", batch_dir.join("review_prompt.md").display()))?;
+        let review_outcome = refactor_hotspot::invoke_agent(
+            options.agent,
+            &review_prompt,
+            &batch_dir.join("review_transcript.ndjson"),
+            &mut sink,
+        )?;
+        fs::write(
+            batch_dir.join("review_response.md"),
+            &review_outcome.assistant_text,
+        )
+        .with_context(|| format!("write {}", batch_dir.join("review_response.md").display()))?;
+        if !review_outcome.success {
+            bail!(
+                "{} review agent exited with status {}",
+                options.agent.label(),
+                review_outcome.exit_code
+            );
+        }
+        let review = parse_grind_loop_review(&review_outcome.assistant_text)?;
+        write_json(batch_dir.join("review.json"), &review)?;
+
+        if let Some(previous) = active_experiment.take() {
+            match review.previous_decision {
+                ExperimentDecision::Pass | ExperimentDecision::None => {
+                    active_experiment = Some(previous);
+                }
+                ExperimentDecision::Fail => {
+                    if let Some(commit) = &previous.commit {
+                        git_revert_commit(commit)?;
+                        run_loop_validation(&batch_dir)?;
+                    }
+                }
+            }
+        }
+
+        if let Some(mut next) = review.next_experiment {
+            let experiment_dir = batch_dir.join("next_experiment");
+            fs::create_dir_all(&experiment_dir)
+                .with_context(|| format!("create {}", experiment_dir.display()))?;
+            write_json(experiment_dir.join("experiment.json"), &next)?;
+            apply_grind_loop_experiment(options.agent, &next, &experiment_dir, &mut sink)?;
+            run_loop_validation(&experiment_dir)?;
+            let patch = git_diff()?;
+            fs::write(experiment_dir.join("patch.diff"), &patch).with_context(|| {
+                format!("write {}", experiment_dir.join("patch.diff").display())
+            })?;
+            if patch.trim().is_empty() {
+                next.commit = None;
+            } else {
+                let commit = commit_current_experiment(&next)?;
+                next.commit = Some(commit);
+            }
+            write_json(experiment_dir.join("experiment_applied.json"), &next)?;
+            active_experiment = Some(next);
+        }
+    }
+
+    Ok(())
+}
+
+fn run_grind_loop_batch(options: &ConceptGrindLoopOptions, batch_dir: &Path) -> Result<()> {
+    let output = Command::new("cargo")
+        .args([
+            "xtask",
+            "concept-grind",
+            "--agent",
+            options.agent.label(),
+            "--max-iterations",
+            &options.batch_size.to_string(),
+        ])
+        .current_dir(repo_root())
+        .output()
+        .context("cargo xtask concept-grind batch")?;
+    let text = command_output_text(&output);
+    fs::write(batch_dir.join("grind_output.txt"), &text)
+        .with_context(|| format!("write {}", batch_dir.join("grind_output.txt").display()))?;
+    if !output.status.success() {
+        bail!("concept-grind batch failed\n{text}");
+    }
+    Ok(())
+}
+
+fn newest_grind_run_since(since: SystemTime) -> Result<Option<PathBuf>> {
+    let mut newest: Option<(SystemTime, PathBuf)> = None;
+    for entry in
+        fs::read_dir(grammar_concept_log_root()).context("read grammar concept log root")?
+    {
+        let entry = entry?;
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if !name.starts_with("grind-") {
+            continue;
+        }
+        let modified = entry
+            .metadata()
+            .and_then(|metadata| metadata.modified())
+            .unwrap_or(UNIX_EPOCH);
+        if modified < since {
+            continue;
+        }
+        if newest
+            .as_ref()
+            .is_none_or(|(current, _)| modified > *current)
+        {
+            newest = Some((modified, entry.path()));
+        }
+    }
+    Ok(newest.map(|(_, path)| path))
+}
+
+fn build_grind_loop_review_prompt(
+    batch: u32,
+    batch_dir: &Path,
+    grind_dir: &Path,
+    previous: Option<&GrindLoopExperiment>,
+) -> Result<String> {
+    let metrics = read_optional(grind_dir.join("metrics.json"))?;
+    let output = read_optional(batch_dir.join("grind_output.txt"))?;
+    let summaries = collect_iteration_summaries(grind_dir)?;
+    let previous_json = match previous {
+        Some(experiment) => serde_json::to_string_pretty(experiment)?,
+        None => "null".to_string(),
+    };
+
+    Ok(format!(
+        r#"You are reviewing an autonomous concept-grind optimization loop.
+
+Goal: increase completed grammar-green concept throughput per hour without reducing concept quality or weakening downstream readiness.
+
+Review batch {batch}. Decide whether the previous experiment passed or failed based on metrics and quality artifacts, then propose exactly one next experiment or null.
+
+Rules:
+- Judge by outcomes, not by a fixed allowlist of change types.
+- If quality regressed, mark the previous experiment as fail.
+- Do not propose prompt/context reduction unless the quality checks can prove no degradation.
+- Do not propose skipping quality gates unless the resulting quality contract is demonstrably equivalent.
+- The next experiment must include a measurable hypothesis and concrete implementation request.
+
+Previous experiment:
+```json
+{previous_json}
+```
+
+Batch metrics:
+```json
+{metrics}
+```
+
+Iteration summaries:
+```json
+{summaries}
+```
+
+Batch command output:
+```text
+{output}
+```
+
+Return only JSON with this shape:
+{{
+  "previous_decision": "pass" | "fail" | "none",
+  "previous_reason": "short reason",
+  "next_experiment": {{
+    "id": "exp-short-snake-case",
+    "hypothesis": "measurable claim",
+    "implementation_request": "specific code change to try",
+    "success_metric": "metric that should improve after the next batch",
+    "quality_checks": ["checks that must remain green"],
+    "commit": null
+  }}
+}}
+
+Use "next_experiment": null only if no responsible experiment is supported by this batch.
+"#,
+    ))
+}
+
+fn apply_grind_loop_experiment(
+    agent: AgentProvider,
+    experiment: &GrindLoopExperiment,
+    experiment_dir: &Path,
+    sink: &mut dyn FlowSink,
+) -> Result<()> {
+    let prompt = format!(
+        r#"You are implementing one concept-grind workflow optimization experiment.
+
+Experiment:
+```json
+{}
+```
+
+Constraints:
+- Implement only this experiment.
+- Preserve concept output quality; do not weaken gates, fixtures, maturity checks, or generated-test protections unless the experiment explicitly proves an equivalent quality contract.
+- Do not run `cargo xtask add-card`.
+- Keep the patch reviewable and scoped to workflow/tooling code.
+- Do not commit; the wrapper will validate and commit.
+
+Return:
+CONCEPT_GRIND_LOOP_EXPERIMENT:
+ID: {}
+CHANGE: <summary>
+QUALITY_RISK: <summary>
+"#,
+        serde_json::to_string_pretty(experiment)?,
+        experiment.id
+    );
+    fs::write(experiment_dir.join("implement_prompt.md"), &prompt).with_context(|| {
+        format!(
+            "write {}",
+            experiment_dir.join("implement_prompt.md").display()
+        )
+    })?;
+    let outcome = refactor_hotspot::invoke_agent(
+        agent,
+        &prompt,
+        &experiment_dir.join("implement_transcript.ndjson"),
+        sink,
+    )?;
+    fs::write(
+        experiment_dir.join("implement_response.md"),
+        &outcome.assistant_text,
+    )
+    .with_context(|| {
+        format!(
+            "write {}",
+            experiment_dir.join("implement_response.md").display()
+        )
+    })?;
+    if !outcome.success {
+        bail!(
+            "{} experiment implementation agent exited with status {}",
+            agent.label(),
+            outcome.exit_code
+        );
+    }
+    Ok(())
+}
+
+fn parse_grind_loop_review(response: &str) -> Result<GrindLoopReview> {
+    let json = extract_json_object(response)
+        .ok_or_else(|| anyhow!("review response did not contain a JSON object"))?;
+    serde_json::from_str(json).context("parse grind-loop review JSON")
+}
+
+fn extract_json_object(text: &str) -> Option<&str> {
+    let start = text.find('{')?;
+    let mut depth = 0usize;
+    let mut in_string = false;
+    let mut escaped = false;
+    for (offset, ch) in text[start..].char_indices() {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+        match ch {
+            '"' => in_string = true,
+            '{' => depth += 1,
+            '}' => {
+                depth = depth.saturating_sub(1);
+                if depth == 0 {
+                    let end = start + offset + ch.len_utf8();
+                    return Some(&text[start..end]);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+fn collect_iteration_summaries(grind_dir: &Path) -> Result<String> {
+    let mut summaries = Vec::<serde_json::Value>::new();
+    for entry in fs::read_dir(grind_dir).with_context(|| format!("read {}", grind_dir.display()))? {
+        let entry = entry?;
+        let path = entry.path().join("summary.json");
+        if !path.exists() {
+            continue;
+        }
+        let text = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+        if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+            summaries.push(value);
+        }
+    }
+    serde_json::to_string_pretty(&summaries).context("serialize iteration summaries")
+}
+
+fn run_loop_validation(dir: &Path) -> Result<()> {
+    run_logged_command("cargo_check_xtask", "cargo", &["check", "-p", "xtask"], dir)?;
+    run_logged_command(
+        "cargo_test_xtask_concept_grind",
+        "cargo",
+        &["test", "-p", "xtask", "concept_grind", "--", "--nocapture"],
+        dir,
+    )?;
+    Ok(())
+}
+
+fn run_logged_command(label: &str, program: &str, args: &[&str], dir: &Path) -> Result<String> {
+    let output = Command::new(program)
+        .args(args)
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("run {label}"))?;
+    let text = command_output_text(&output);
+    fs::write(dir.join(format!("{label}.txt")), &text)
+        .with_context(|| format!("write {}", dir.join(format!("{label}.txt")).display()))?;
+    if !output.status.success() {
+        bail!("{label} failed\n{text}");
+    }
+    Ok(text)
+}
+
+fn git_diff() -> Result<String> {
+    let output = Command::new("git")
+        .args(["diff", "--binary"])
+        .current_dir(repo_root())
+        .output()
+        .context("git diff --binary")?;
+    if !output.status.success() {
+        bail!("git diff failed\n{}", command_output_text(&output));
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+fn commit_current_experiment(experiment: &GrindLoopExperiment) -> Result<String> {
+    let add = Command::new("git")
+        .args(["add", "."])
+        .current_dir(repo_root())
+        .output()
+        .context("git add experiment")?;
+    if !add.status.success() {
+        bail!("git add experiment failed\n{}", command_output_text(&add));
+    }
+    let message = format!(
+        "Experiment concept-grind loop {}\n\nHypothesis: {}\nSuccess metric: {}\n",
+        experiment.id, experiment.hypothesis, experiment.success_metric
+    );
+    let commit = Command::new("git")
+        .args(["commit", "--no-verify", "-m", &message])
+        .current_dir(repo_root())
+        .output()
+        .context("git commit experiment")?;
+    if !commit.status.success() {
+        bail!(
+            "git commit experiment failed\n{}",
+            command_output_text(&commit)
+        );
+    }
+    current_head()
+}
+
+fn current_head() -> Result<String> {
+    let output = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(repo_root())
+        .output()
+        .context("git rev-parse HEAD")?;
+    if !output.status.success() {
+        bail!(
+            "git rev-parse HEAD failed\n{}",
+            command_output_text(&output)
+        );
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+fn git_revert_commit(commit: &str) -> Result<()> {
+    let output = Command::new("git")
+        .args(["revert", "--no-edit", commit])
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("git revert {commit}"))?;
+    if !output.status.success() {
+        bail!(
+            "git revert {commit} failed\n{}",
+            command_output_text(&output)
+        );
+    }
+    Ok(())
+}
+
+fn read_optional(path: PathBuf) -> Result<String> {
+    match fs::read_to_string(&path) {
+        Ok(text) => Ok(text),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok("(missing)\n".to_string()),
+        Err(e) => Err(e).with_context(|| format!("read {}", path.display())),
+    }
+}
+
+fn copy_if_exists(from: PathBuf, to: PathBuf) -> Result<()> {
+    if from.exists() {
+        fs::copy(&from, &to)
+            .with_context(|| format!("copy {} to {}", from.display(), to.display()))?;
+    }
+    Ok(())
+}
+
+fn write_text(path: PathBuf, text: &str) -> Result<()> {
+    fs::write(&path, text).with_context(|| format!("write {}", path.display()))
 }
 
 fn run_map_existing(options: MapExistingOptions) -> Result<ExistingGrammarMapReport> {
@@ -1402,6 +2010,8 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
+    let mut metrics = ConceptGrindMetrics::new(session_dir.clone());
+    metrics.write(&session_dir)?;
     sink.emit(FlowEvent::Note {
         level: NoteLevel::Info,
         text: format!("concept-grind log: {}", session_dir.display()),
@@ -1417,7 +2027,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         let iteration_start = Instant::now();
         let iteration_dir = session_dir.join(format!("iteration-{iteration:03}"));
 
-        concept_step_started(sink, 1, "map grammar gaps");
+        metrics.step_started(sink, iteration, 1, "map grammar gaps");
         fs::create_dir_all(&iteration_dir)
             .with_context(|| format!("create {}", iteration_dir.display()))?;
 
@@ -1440,17 +2050,19 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                 iteration_dir.display()
             ),
         });
-        concept_step_finished(
+        metrics.step_finished(
             sink,
+            &session_dir,
+            iteration,
             1,
             true,
             Some(format!(
                 "mapped={} unmapped={}",
                 before.mapped_rule_count, before.unmapped_rule_count
             )),
-        );
+        )?;
 
-        concept_step_started(sink, 2, "build boundary prompt");
+        metrics.step_started(sink, iteration, 2, "build boundary prompt");
         let boundary_prompt = build_boundary_prompt(&gap, &before)?;
         fs::write(iteration_dir.join("boundary_prompt.md"), &boundary_prompt).with_context(
             || {
@@ -1460,7 +2072,14 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                 )
             },
         )?;
-        concept_step_finished(sink, 2, true, Some("wrote boundary_prompt.md".to_string()));
+        metrics.step_finished(
+            sink,
+            &session_dir,
+            iteration,
+            2,
+            true,
+            Some("wrote boundary_prompt.md".to_string()),
+        )?;
 
         if options.dry_run {
             sink.emit(FlowEvent::SessionFinished {
@@ -1469,7 +2088,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             return Ok(());
         }
 
-        concept_step_started(sink, 3, "boundary agent");
+        metrics.step_started(sink, iteration, 3, "boundary agent");
         let boundary = refactor_hotspot::invoke_agent(
             options.agent,
             &boundary_prompt,
@@ -1500,7 +2119,14 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             &boundary_decision,
         )?;
         if let BoundaryOwner::Blocked(reason) = &boundary_decision.owner {
-            concept_step_finished(sink, 3, true, Some(format!("blocked: {reason}")));
+            metrics.step_finished(
+                sink,
+                &session_dir,
+                iteration,
+                3,
+                true,
+                Some(format!("blocked: {reason}")),
+            )?;
             if options.concept.is_some() || options.target_rule.is_some() {
                 return Err(anyhow!("boundary decision blocked concept-grind: {reason}"));
             }
@@ -1515,9 +2141,16 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             continue;
         }
         let gap = apply_boundary_decision(gap, &boundary_decision)?;
-        concept_step_finished(sink, 3, true, Some("parsed boundary decision".to_string()));
+        metrics.step_finished(
+            sink,
+            &session_dir,
+            iteration,
+            3,
+            true,
+            Some("parsed boundary decision".to_string()),
+        )?;
 
-        concept_step_started(sink, 4, "patch agent");
+        metrics.step_started(sink, iteration, 4, "patch agent");
         let patch_prompt = build_patch_prompt(&gap, &boundary_decision, &boundary.assistant_text)?;
         fs::write(iteration_dir.join("patch_prompt.md"), &patch_prompt).with_context(|| {
             format!("write {}", iteration_dir.join("patch_prompt.md").display())
@@ -1546,9 +2179,16 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                 iteration_dir.join("patch_transcript.ndjson").display()
             );
         }
-        concept_step_finished(sink, 4, true, Some("patch agent completed".to_string()));
+        metrics.step_finished(
+            sink,
+            &session_dir,
+            iteration,
+            4,
+            true,
+            Some("patch agent completed".to_string()),
+        )?;
 
-        concept_step_started(sink, 5, "gate and repair");
+        metrics.step_started(sink, iteration, 5, "gate and repair");
         let mut gate = run_concept_grind_gates(&gap, &before, &iteration_dir);
         for repair_index in 1..=options.repair_attempts {
             let Err(failure) = gate else {
@@ -1593,12 +2233,26 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             gate = run_concept_grind_gates(&gap, &before, &iteration_dir);
         }
         if let Err(failure) = gate {
-            concept_step_finished(sink, 5, false, Some(failure.label.clone()));
+            metrics.step_finished(
+                sink,
+                &session_dir,
+                iteration,
+                5,
+                false,
+                Some(failure.label.clone()),
+            )?;
             return Err(anyhow!("{} failed\n{}", failure.label, failure.output));
         }
-        concept_step_finished(sink, 5, true, Some("all gates passed".to_string()));
+        metrics.step_finished(
+            sink,
+            &session_dir,
+            iteration,
+            5,
+            true,
+            Some("all gates passed".to_string()),
+        )?;
 
-        concept_step_started(sink, 6, "update map and maturity");
+        metrics.step_started(sink, iteration, 6, "update map and maturity");
         let after = run_map_existing(MapExistingOptions {
             json: false,
             expand_deps: true,
@@ -1611,8 +2265,10 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             fresh_fixture: true,
         })?;
         write_json(iteration_dir.join("maturity.json"), &maturity)?;
-        concept_step_finished(
+        metrics.step_finished(
             sink,
+            &session_dir,
+            iteration,
             6,
             true,
             Some(format!(
@@ -1622,9 +2278,9 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                 before.unmapped_rule_count,
                 after.unmapped_rule_count
             )),
-        );
+        )?;
 
-        concept_step_started(sink, 7, "commit and summarize");
+        metrics.step_started(sink, iteration, 7, "commit and summarize");
         let committed = if options.no_commit {
             false
         } else {
@@ -1645,8 +2301,10 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             committed,
         };
         write_json(iteration_dir.join("summary.json"), &summary)?;
-        concept_step_finished(
+        metrics.step_finished(
             sink,
+            &session_dir,
+            iteration,
             7,
             true,
             Some(if committed {
@@ -1654,7 +2312,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             } else {
                 "no commit (--no-commit)".to_string()
             }),
-        );
+        )?;
         if committed {
             sink.emit(FlowEvent::IterationFinished {
                 index: iteration,
@@ -1687,6 +2345,77 @@ fn concept_step_started(sink: &mut dyn FlowSink, index: u8, label: &str) {
 
 fn concept_step_finished(sink: &mut dyn FlowSink, index: u8, ok: bool, summary: Option<String>) {
     sink.emit(FlowEvent::StepFinished { index, ok, summary });
+}
+
+impl ConceptGrindMetrics {
+    fn new(session_dir: PathBuf) -> Self {
+        Self {
+            workflow: "concept-grind".to_string(),
+            session_dir,
+            started_unix_ms: unix_timestamp_ms(),
+            iterations: Vec::new(),
+            active_steps: BTreeMap::new(),
+        }
+    }
+
+    fn step_started(&mut self, sink: &mut dyn FlowSink, iteration: u32, index: u8, label: &str) {
+        self.active_steps.insert(
+            (iteration, index),
+            ActiveConceptGrindStep {
+                label: label.to_string(),
+                started: Instant::now(),
+                started_unix_ms: unix_timestamp_ms(),
+            },
+        );
+        concept_step_started(sink, index, label);
+    }
+
+    fn step_finished(
+        &mut self,
+        sink: &mut dyn FlowSink,
+        session_dir: &Path,
+        iteration: u32,
+        index: u8,
+        ok: bool,
+        summary: Option<String>,
+    ) -> Result<()> {
+        let finished_unix_ms = unix_timestamp_ms();
+        let active = self
+            .active_steps
+            .remove(&(iteration, index))
+            .unwrap_or_else(|| ActiveConceptGrindStep {
+                label: format!("step {index}"),
+                started: Instant::now(),
+                started_unix_ms: finished_unix_ms,
+            });
+        let metric = ConceptGrindStepMetric {
+            index,
+            label: active.label,
+            started_unix_ms: active.started_unix_ms,
+            finished_unix_ms,
+            duration_ms: active.started.elapsed().as_millis(),
+            ok,
+            summary: summary.clone(),
+        };
+        let iteration_metrics = self
+            .iterations
+            .iter_mut()
+            .find(|entry| entry.iteration == iteration);
+        match iteration_metrics {
+            Some(entry) => entry.steps.push(metric),
+            None => self.iterations.push(ConceptGrindIterationMetrics {
+                iteration,
+                steps: vec![metric],
+            }),
+        }
+        self.write(session_dir)?;
+        concept_step_finished(sink, index, ok, summary);
+        Ok(())
+    }
+
+    fn write(&self, session_dir: &Path) -> Result<()> {
+        write_json(session_dir.join("metrics.json"), self)
+    }
 }
 
 fn concept_grind_rule_count() -> usize {
@@ -3384,6 +4113,13 @@ fn unix_timestamp() -> u64 {
         .duration_since(UNIX_EPOCH)
         .expect("system clock before unix epoch")
         .as_secs()
+}
+
+fn unix_timestamp_ms() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock before unix epoch")
+        .as_millis()
 }
 
 fn slug(input: &str) -> String {

@@ -76,6 +76,9 @@ Commands:
                               Autonomous grammar-first loop: pick a concept gap,
                               run boundary and PEST patch agents, gate fixtures,
                               update maturity, and commit.
+  concept-grind-loop          Run concept-grind in batches, review metrics after
+                              each batch, accept/revert the prior experiment, and
+                              apply the next optimization experiment.
   refactor-hotspot            Run a qmd-grounded autonomous refactor workflow.
               [--theme THEME] Defaults to grammar-core. Other themes include
               [--target PATH] damage, destroy, prevention, keyword-abilities,
@@ -173,6 +176,7 @@ fn main() -> ExitCode {
         Some("concept-grammar-query") => concept::grammar_query(&args[1..]),
         Some("concept-maturity") => concept::maturity(&args[1..]),
         Some("concept-map-existing") => concept::map_existing(&args[1..]),
+        Some("concept-grind-loop") => concept::grind_loop(&args[1..]),
         Some("concept-grind") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => concept::grind(&args[1..]),
             Ok(Ui::Tui) => match concept::parse_grind_options(&without_ui_hot_reload(&args[1..])) {
