@@ -12,11 +12,11 @@ use mtg_grammar::{
     DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
-    LifeAmount, ManaCost, ManaSymbol, ModalMode, PayManaAmount, PayManaPlayer,
+    LifeAmount, ManaCost, ManaSymbol, ModalMode, ObjectStatus, PayManaAmount, PayManaPlayer,
     PaymentFailureEffect, PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
-    StaticAbility, TapAllPermanentsActor, TargetPermanentSelector, TextChangeReplacementTerm,
-    TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
+    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, TapAllPermanentsActor, TargetPermanentSelector,
+    TextChangeReplacementTerm, TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -477,7 +477,20 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         }),
         Just(Statement::YouMayHaveThatPlayerShuffle),
         arb_life_amount().prop_map(|amount| Statement::TargetPlayerGainsLife { amount }),
-        Just(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw),
+        prop_oneof![
+            Just(SkipReplacementEvent::DrawCardDuringYourDrawStep),
+            (
+                arb_permanent_type(),
+                prop_oneof![Just(ObjectStatus::Tapped), Just(ObjectStatus::Untapped)]
+            )
+                .prop_map(|(permanent_type, status)| {
+                    SkipReplacementEvent::BeginYourTurnWhileSourceIsStatus {
+                        source: SourceObject::This(permanent_type),
+                        status,
+                    }
+                }),
+        ]
+        .prop_map(|event| Statement::IfYouWouldEventYouMaySkipThatInstead { event }),
         Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),
         prop_oneof![
             Just(TextChangeReplacementTerm::BasicLandType),

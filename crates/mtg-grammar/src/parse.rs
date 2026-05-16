@@ -19,12 +19,13 @@ use crate::ast::{
     NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType,
-    Statement, StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
-    TokenDescription, TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
+    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction, Step,
+    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCondition,
+    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -156,8 +157,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::target_player_gains_life => target_player_gains_life_from_pair(pair),
         Rule::its_controller_gains_life => its_controller_gains_life_from_pair(pair),
-        Rule::if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw => {
-            Ok(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw)
+        Rule::if_you_would_event_you_may_skip_that_instead => {
+            if_you_would_event_you_may_skip_that_instead_from_pair(pair)
         }
         Rule::look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order => {
             look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order_from_pair(
@@ -1710,6 +1711,33 @@ fn if_you_do_effect_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError>
     Ok(Statement::if_you_do(if_you_do_effect_from_inner_pair(
         effect_pair,
     )?))
+}
+
+fn if_you_would_event_you_may_skip_that_instead_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let event_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("skip replacement missing event"))?;
+    let event = match event_pair.as_rule() {
+        Rule::draw_card_during_your_draw_step => SkipReplacementEvent::DrawCardDuringYourDrawStep,
+        Rule::begin_your_turn_while_source_is_status => {
+            let mut inner = event_pair.into_inner();
+            let source_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("skip turn missing source"))?;
+            let status_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("skip turn missing status"))?;
+            SkipReplacementEvent::BeginYourTurnWhileSourceIsStatus {
+                source: source_object_from_pair(source_pair)?,
+                status: object_status_from_pair(status_pair)?,
+            }
+        }
+        _ => return Err(ParseError::Internal("skip replacement event")),
+    };
+    Ok(Statement::IfYouWouldEventYouMaySkipThatInstead { event })
 }
 
 fn if_you_do_effect_from_inner_pair(pair: Pair<Rule>) -> Result<IfYouDoEffect, ParseError> {
@@ -4100,6 +4128,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 object_pair,
             )?))
         }
+        Rule::take_extra_turn_after_this_one => Ok(ActivatedEffect::TakeExtraTurnAfterThisOne),
         Rule::regenerate_source => {
             let object_pair = only_inner(pair, "regenerate_source missing object")?;
             let recipient = match object_pair.as_rule() {

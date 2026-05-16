@@ -67,7 +67,7 @@ sentence_statement = _{
   | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
   | target_player_gains_life
   | its_controller_gains_life
-  | if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw
+  | if_you_would_event_you_may_skip_that_instead
   | look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order
   | you_may_have_that_player_shuffle
   | draw_cards
@@ -409,11 +409,30 @@ target_player_discards_cards_at_random = {
     ^"target" ~ ^"player" ~ ^"discards"
   ~ (discard_one_card | discard_counted_cards) ~ ^"at" ~ ^"random" ~ "."
 }
-if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw = {
-    ^"if" ~ ^"you" ~ ^"would" ~ ^"draw" ~ article ~ ^"card"
-  ~ ^"during" ~ ^"your" ~ ^"draw" ~ ^"step" ~ ","
-  ~ ^"instead" ~ ^"you" ~ ^"may" ~ ^"skip" ~ ^"that" ~ ^"draw" ~ "."
+if_you_would_event_you_may_skip_that_instead = {
+    if_you_would_skip_event ~ ","
+  ~ (skip_event_instead_prefix | skip_event_instead_suffix)
+  ~ "."
 }
+if_you_would_skip_event = _{
+    draw_card_during_your_draw_step
+  | begin_your_turn_while_source_is_status
+}
+draw_card_during_your_draw_step = {
+    ^"if" ~ ^"you" ~ ^"would" ~ ^"draw" ~ article ~ ^"card"
+  ~ ^"during" ~ ^"your" ~ ^"draw" ~ ^"step"
+}
+begin_your_turn_while_source_is_status = {
+    ^"if" ~ ^"you" ~ ^"would" ~ ^"begin" ~ ^"your" ~ ^"turn"
+  ~ ^"while" ~ source_object ~ ^"is" ~ object_status
+}
+skip_event_instead_prefix = {
+    ^"instead" ~ ^"you" ~ ^"may" ~ ^"skip" ~ ^"that" ~ skip_event_reference
+}
+skip_event_instead_suffix = {
+    ^"you" ~ ^"may" ~ ^"skip" ~ ^"that" ~ skip_event_reference ~ ^"instead"
+}
+skip_event_reference = _{ ^"draw" | ^"turn" }
 target_player_gains_life = {
     ^"target" ~ ^"player" ~ ^"gains" ~ life_gain_amount ~ "."
 }
@@ -1071,6 +1090,7 @@ activated_effect = _{
   | untap_target_permanent
   | untap_source
   | untap_enchanted_object
+  | take_extra_turn_after_this_one
   | activated_draw_cards
   | create_token
   | look_at_target_players_hand
@@ -1133,6 +1153,9 @@ untap_target_permanent = { ^"untap" ~ ^"target" ~ permanent_type ~ "." }
 untap_source = { ^"untap" ~ source_object ~ "." }
 untap_enchanted_object = { ^"untap" ~ ^"enchanted" ~ enchanted_object ~ "." }
 untap_referenced_permanent = { ^"untap" ~ ^"the" ~ permanent_type ~ "." }
+take_extra_turn_after_this_one = {
+    ^"take" ~ article ~ ^"extra" ~ ^"turn" ~ ^"after" ~ ^"this" ~ ^"one" ~ "."
+}
 look_at_target_players_hand = { ^"look" ~ ^"at" ~ ^"target" ~ ^"player's" ~ ^"hand" ~ "." }
 target_player_discards_cards = {
     ^"target" ~ ^"player" ~ ^"discards"

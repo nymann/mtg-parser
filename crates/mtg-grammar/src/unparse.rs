@@ -17,12 +17,13 @@ use crate::ast::{
     NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType,
-    Statement, StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
-    TokenDescription, TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
+    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction, Step,
+    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCondition,
+    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -149,10 +150,8 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_discard_count(out, *count);
             out.push_str(" at random.");
         }
-        Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw => {
-            out.push_str(
-                "If you would draw a card during your draw step, instead you may skip that draw.",
-            );
+        Statement::IfYouWouldEventYouMaySkipThatInstead { event } => {
+            write_skip_replacement_effect(out, *event);
         }
         Statement::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder { count } => {
             out.push_str("Look at the top ");
@@ -508,6 +507,7 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
             | Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn
             | Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn
             | Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep { .. }
+            | Statement::IfYouDoUntap { .. }
             | Statement::ForEachAttackingCreatureChooseLabelBlockingRestriction { .. }
     )
 }
@@ -895,6 +895,23 @@ fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
         }
         IfYouDoEffect::GainLife { amount } => write_you_gain_life(out, amount, SentenceCase::Lower),
     });
+}
+
+fn write_skip_replacement_effect(out: &mut String, event: SkipReplacementEvent) {
+    match event {
+        SkipReplacementEvent::DrawCardDuringYourDrawStep => {
+            out.push_str(
+                "If you would draw a card during your draw step, instead you may skip that draw.",
+            );
+        }
+        SkipReplacementEvent::BeginYourTurnWhileSourceIsStatus { source, status } => {
+            out.push_str("If you would begin your turn while ");
+            write_source_object(out, source);
+            out.push_str(" is ");
+            out.push_str(object_status_name(status));
+            out.push_str(", you may skip that turn instead.");
+        }
+    }
 }
 
 fn write_if_you_do(out: &mut String, write_effect: impl FnOnce(&mut String)) {
@@ -1369,6 +1386,9 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str("Untap enchanted ");
             write_enchanted_object(out, *object);
             out.push('.');
+        }
+        ActivatedEffect::TakeExtraTurnAfterThisOne => {
+            out.push_str("Take an extra turn after this one.");
         }
         ActivatedEffect::Regenerate(recipient) => {
             out.push_str("Regenerate ");

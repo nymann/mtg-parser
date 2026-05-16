@@ -102,9 +102,11 @@ pub enum Statement {
     TargetPlayerDiscardsCardsAtRandom {
         count: CardCount,
     },
-    /// "If you would draw a card during your draw step, instead you may
-    /// skip that draw."
-    IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw,
+    /// "If you would <event>, you may skip that <event> instead." —
+    /// CR 614.10 skip replacement effect.
+    IfYouWouldEventYouMaySkipThatInstead {
+        event: SkipReplacementEvent,
+    },
     /// "Look at the top N cards of target player's library, then put them
     /// back in any order."
     LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder {
@@ -487,6 +489,17 @@ pub(crate) enum IfYouDoEffect {
     },
     GainLife {
         amount: u32,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SkipReplacementEvent {
+    /// "draw a card during your draw step"
+    DrawCardDuringYourDrawStep,
+    /// "begin your turn while this <source> is <status>"
+    BeginYourTurnWhileSourceIsStatus {
+        source: SourceObject,
+        status: ObjectStatus,
     },
 }
 
@@ -1229,6 +1242,8 @@ pub enum ActivatedEffect {
     },
     /// "Untap enchanted <object>."
     UntapEnchanted(EnchantedObject),
+    /// "Take an extra turn after this one."
+    TakeExtraTurnAfterThisOne,
     /// "Regenerate <permanent>." — CR 701.15 regenerate keyword action.
     Regenerate(RegenerateRecipient),
     /// "Counter target <color> spell."
