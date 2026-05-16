@@ -20,15 +20,15 @@ use crate::ast::{
     NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
     OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
     PermanentType, PhysicalAction, PreventionRecipient, PtModifier, ReferencedCard,
-    ReferencedCreature, RegenerateRecipient, ReturnDestination, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticDamageSource, StaticUntapRestriction, Step,
-    TapAllPermanentsActor, TapUntapAction, TappedForManaSubject, TargetHandPlayer,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
-    TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
-    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination,
+    Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
+    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
+    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TappedForManaSubject,
+    TargetHandPlayer, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCastActor, TriggerCastSpell,
+    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -114,8 +114,12 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_damage_amount(out, *amount);
             out.push_str(" damage to you.");
         }
-        Statement::ItCantBeRegenerated => {
-            out.push_str("It can't be regenerated.");
+        Statement::ItCantBeRegenerated { subject } => {
+            match subject {
+                RegenerationRestrictionSubject::It => out.push_str("It"),
+                RegenerationRestrictionSubject::They => out.push_str("They"),
+            }
+            out.push_str(" can't be regenerated.");
         }
         Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
             permanent_type,
@@ -575,7 +579,7 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
             | Statement::YouGainLifeEqualToDamage { .. }
             | Statement::ItsControllerGainsLife { .. }
             | Statement::NamedSourceDealsDamage { .. }
-            | Statement::ItCantBeRegenerated
+            | Statement::ItCantBeRegenerated { .. }
             | Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn
             | Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn
             | Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep { .. }

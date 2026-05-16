@@ -370,3 +370,5 @@ mod wild_growth;
 mod winter_orb;
 #[path = "generated/word_of_command.rs"]
 mod word_of_command;
+#[path = "generated/wrath_of_god.rs"]
+mod wrath_of_god;

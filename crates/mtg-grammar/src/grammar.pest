@@ -233,7 +233,7 @@ counter_unless_cost = {
   | ^"with" ~ ^"mana" ~ ^"value" ~ variable_name
 }
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
-it_cant_be_regenerated = { ^"it" ~ ^"can't" ~ ^"be" ~ ^"regenerated" ~ "." }
+it_cant_be_regenerated = { (^"it" | ^"they") ~ ^"can't" ~ ^"be" ~ ^"regenerated" ~ "." }
 
 copy_target_spell_except_copy_is_color = {
     ^"copy" ~ ^"target" ~ spell_type_choice ~ ^"spell" ~ ","

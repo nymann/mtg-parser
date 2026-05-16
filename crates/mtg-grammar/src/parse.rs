@@ -22,15 +22,16 @@ use crate::ast::{
     NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
     ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
     PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
-    ReferencedCard, ReferencedCreature, RegenerateRecipient, ReturnDestination, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
-    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
-    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TappedForManaSubject,
-    TargetHandPlayer, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
-    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCastActor, TriggerCastSpell,
-    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    ReferencedCard, ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject,
+    ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
+    StaticDamageSource, StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction,
+    TappedForManaSubject, TargetHandPlayer, TargetPermanentEndOfTurnEffect,
+    TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
+    TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -140,7 +141,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::if_you_cant_source_deals_damage_to_you => {
             if_you_cant_source_deals_damage_to_you_from_pair(pair)
         }
-        Rule::it_cant_be_regenerated => Ok(Statement::ItCantBeRegenerated),
+        Rule::it_cant_be_regenerated => it_cant_be_regenerated_from_pair(pair),
         Rule::if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn => {
             if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(
                 pair,
@@ -1326,6 +1327,15 @@ fn if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_fr
             permanent_type: permanent_type_from_pair(permanent_type_pair)?,
         },
     )
+}
+
+fn it_cant_be_regenerated_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let subject = if pair.as_str().starts_with("They") || pair.as_str().starts_with("they") {
+        RegenerationRestrictionSubject::They
+    } else {
+        RegenerationRestrictionSubject::It
+    };
+    Ok(Statement::ItCantBeRegenerated { subject })
 }
 
 fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
