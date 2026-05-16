@@ -1,0 +1,68 @@
+[[axis]]
+name = "cause"
+values = ["damage"]
+
+[[axis]]
+name = "player"
+values = ["your"]
+
+[[axis]]
+name = "threshold"
+values = ["less_than_unsigned_number"]
+
+[[axis]]
+name = "replacement_floor"
+values = ["unsigned_number"]
+
+[boundary]
+excludes = [
+    "Damage-referenced life gain, owned by life_gain_equal_to_damage.",
+    "Ordinary fixed life-gain instructions that are not damage replacement effects.",
+]
+includes = [
+    "Static replacement effects where damage would reduce your life total below a numeric threshold.",
+    "Life-total floor replacement effects where the same damage event reduces the life total to a numeric floor instead.",
+]
+
+[concept]
+name = "life_total_floor_replacement"
+pest_rules = [
+    "static_life_total_floor_replacement",
+    "life_total_floor_cause",
+]
+rules_queries = [
+    "lex: damage would reduce your life total to less than 1 reduces it to 1 instead",
+    "lex: replacement effect damage life total less than",
+]
+rules_terms = [
+    "replacement effect",
+    "damage",
+    "life total",
+]
+
+[[counterexample]]
+reason = "Damage-referenced life gain, owned by life_gain_equal_to_damage."
+text = "You gain life equal to the damage dealt to you this turn."
+
+[[counterexample]]
+reason = "Damage-referenced life gain, owned by life_gain_equal_to_damage."
+text = "You gain life equal to the damage prevented this way."
+
+[[counterexample]]
+reason = "Ordinary fixed life gain, not a life-total floor replacement effect."
+text = "Target player gains 3 life."
+
+[[example]]
+text = "Damage that would reduce your life total to less than 1 reduces it to 1 instead."
+
+[grammar_query]
+candidate_rules = [
+    "static_life_total_floor_replacement",
+    "life_total_floor_cause",
+    "you_gain_life_equal_damage",
+]
+selected_rule = "static_life_total_floor_replacement"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
