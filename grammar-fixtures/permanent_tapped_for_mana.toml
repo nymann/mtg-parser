@@ -1,0 +1,31 @@
+[fixture]
+concept = "permanent_tapped_for_mana"
+rule = "player_taps_permanent_for_mana"
+
+[[example]]
+text = "a player taps a land for mana"
+reason = "A-player subject, land permanent type, and for-mana scope."
+
+[[example]]
+text = "a player taps an artifact for mana"
+reason = "A-player subject, artifact permanent type, and for-mana scope."
+
+[[counterexample]]
+text = "Its owner loses 3 life."
+reason = "Direct life-loss instruction, owned by player_loses_life."
+
+[[counterexample]]
+text = "that player loses all unspent mana"
+reason = "Mana-loss instruction, not a tap-for-mana event."
+
+[[counterexample]]
+text = "target player activates a mana ability of each land they control"
+reason = "Mana ability activation instruction, not tap-for-mana event wording."
+
+[[counterexample]]
+text = "tap all lands target player controls"
+reason = "Tap instruction without the for-mana scope."
+
+[[counterexample]]
+text = "a player taps a land for mana trailing"
+reason = "Exact-consumption guard."

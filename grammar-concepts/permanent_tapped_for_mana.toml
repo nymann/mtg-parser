@@ -1,0 +1,66 @@
+[[axis]]
+name = "player"
+values = ["a_player"]
+
+[[axis]]
+name = "permanent"
+values = ["permanent_type"]
+
+[[axis]]
+name = "mana_scope"
+values = ["for_mana"]
+
+[boundary]
+excludes = [
+    "Direct life-loss instructions owned by player_loses_life.",
+    "Mana-loss instructions that do not describe tapping a permanent for mana.",
+    "Mana ability activation instructions that do not use the tap-for-mana event wording.",
+    "Tap instructions that are not scoped to for mana.",
+]
+includes = ["Events where a player taps a permanent of a named permanent type for mana."]
+
+[concept]
+name = "permanent_tapped_for_mana"
+pest_rules = ["player_taps_permanent_for_mana"]
+rules_queries = [
+    "lex: player taps a land for mana",
+    "lex: player taps an artifact for mana",
+]
+rules_terms = [
+    "mana",
+    "permanent",
+    "tap",
+]
+
+[[counterexample]]
+reason = "Direct life-loss instruction, owned by player_loses_life."
+text = "Its owner loses 3 life."
+
+[[counterexample]]
+reason = "Mana-loss instruction, not a tap-for-mana event."
+text = "that player loses all unspent mana"
+
+[[counterexample]]
+reason = "Mana ability activation instruction, not tap-for-mana event wording."
+text = "target player activates a mana ability of each land they control"
+
+[[counterexample]]
+reason = "Tap instruction without the for-mana scope."
+text = "tap all lands target player controls"
+
+[[example]]
+text = "a player taps a land for mana"
+
+[[example]]
+text = "a player taps an artifact for mana"
+
+[grammar_query]
+candidate_rules = [
+    "player_taps_permanent_for_mana",
+    "player_loses_life",
+]
+selected_rule = "player_taps_permanent_for_mana"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
