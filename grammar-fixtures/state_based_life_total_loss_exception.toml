@@ -1,0 +1,27 @@
+[fixture]
+concept = "state_based_life_total_loss_exception"
+rule = "you_dont_lose_game_for_having_zero_or_less_life"
+
+[[example]]
+text = "You don't lose the game for having 0 or less life."
+reason = "Static state-based action exception for losing the game due to having 0 or less life."
+
+[[counterexample]]
+text = "You lose the game."
+reason = "Ordinary lose-the-game instruction without the life-total state-based exception."
+
+[[counterexample]]
+text = "If you can't, you lose the game."
+reason = "Conditional failure consequence, not a static state-based life-total loss exception."
+
+[[counterexample]]
+text = "Damage that would reduce your life total to less than 1 reduces it to 1 instead."
+reason = "Life-total floor replacement effect, owned by life_total_floor_replacement."
+
+[[counterexample]]
+text = "You can't lose the game."
+reason = "Broad can't-lose-the-game effect, not limited to having 0 or less life."
+
+[[counterexample]]
+text = "You don't lose the game for having 0 or less life. trailing"
+reason = "Exact-consumption guard."

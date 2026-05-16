@@ -1,0 +1,68 @@
+[[axis]]
+name = "player"
+values = ["you"]
+
+[[axis]]
+name = "protected_loss_event"
+values = ["lose_the_game"]
+
+[[axis]]
+name = "loss_condition"
+values = ["having_0_or_less_life"]
+
+[[axis]]
+name = "mechanism"
+values = ["static_state_based_action_exception"]
+
+[boundary]
+excludes = [
+    "Ordinary lose-the-game instructions without a state-based life-total loss exception.",
+    "Conditional lose-the-game consequences owned by their condition/failure concepts.",
+    "Life-total floor replacement effects owned by life_total_floor_replacement.",
+    "Broad can't-lose-the-game effects that are not limited to having 0 or less life.",
+]
+includes = ["Static exceptions that say you don't lose the game for having 0 or less life."]
+
+[concept]
+name = "state_based_life_total_loss_exception"
+pest_rules = ["you_dont_lose_game_for_having_zero_or_less_life"]
+rules_queries = [
+    "lex: don't lose the game for having 0 or less life",
+    "lex: state-based action lose the game 0 or less life",
+]
+rules_terms = [
+    "state-based actions",
+    "lose the game",
+    "life total",
+]
+
+[[counterexample]]
+reason = "Ordinary lose-the-game instruction without the life-total state-based exception."
+text = "You lose the game."
+
+[[counterexample]]
+reason = "Conditional failure consequence, not a static state-based life-total loss exception."
+text = "If you can't, you lose the game."
+
+[[counterexample]]
+reason = "Life-total floor replacement effect, owned by life_total_floor_replacement."
+text = "Damage that would reduce your life total to less than 1 reduces it to 1 instead."
+
+[[counterexample]]
+reason = "Broad can't-lose-the-game effect, not limited to having 0 or less life."
+text = "You can't lose the game."
+
+[[example]]
+text = "You don't lose the game for having 0 or less life."
+
+[grammar_query]
+candidate_rules = [
+    "you_dont_lose_game_for_having_zero_or_less_life",
+    "if_you_cant_you_lose_the_game",
+    "static_life_total_floor_replacement",
+]
+selected_rule = "you_dont_lose_game_for_having_zero_or_less_life"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
