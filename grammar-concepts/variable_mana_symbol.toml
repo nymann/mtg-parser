@@ -1,0 +1,71 @@
+[[axis]]
+name = "variable"
+values = [
+    "X",
+    "Y",
+]
+
+[boundary]
+excludes = [
+    "Bare variable names without mana-symbol braces.",
+    "Generic and color mana symbols, which are mana symbols but not variable mana symbols.",
+    "Spend-only mana restrictions scoped to a variable, owned by variable_mana_spending_restriction.",
+]
+includes = [
+    "Variable mana symbols of the form {variable}.",
+    "The variable axis currently contains X and Y.",
+]
+
+[concept]
+name = "variable_mana_symbol"
+pest_rules = ["variable_mana_symbol"]
+rules_queries = [
+    "lex: variable mana symbol",
+    "lex: X in a mana cost",
+]
+rules_terms = [
+    "variable mana symbol",
+    "mana symbol",
+    "X",
+    "Y",
+]
+
+[[counterexample]]
+reason = "Bare variable name, not a braced variable mana symbol."
+text = "X"
+
+[[counterexample]]
+reason = "Bare variable name, not a braced variable mana symbol."
+text = "Y"
+
+[[counterexample]]
+reason = "Generic mana symbol, not a variable mana symbol."
+text = "{1}"
+
+[[counterexample]]
+reason = "Color mana symbol, not a variable mana symbol."
+text = "{G}"
+
+[[counterexample]]
+reason = "Spend-only restriction sentence, owned by variable_mana_spending_restriction."
+text = "Spend only black mana on X."
+
+[[example]]
+text = "{X}"
+
+[[example]]
+text = "{Y}"
+
+[grammar_query]
+candidate_rules = [
+    "variable_mana_symbol",
+    "variable_name",
+    "mana_symbol",
+    "mana_body",
+    "spend_only_color_mana_on_variable",
+]
+selected_rule = "variable_mana_symbol"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

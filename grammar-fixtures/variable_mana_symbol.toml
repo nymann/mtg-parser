@@ -1,0 +1,35 @@
+[fixture]
+concept = "variable_mana_symbol"
+rule = "variable_mana_symbol"
+
+[[example]]
+text = "{X}"
+reason = "Variable mana symbol using the X variable axis value."
+
+[[example]]
+text = "{Y}"
+reason = "Variable mana symbol using the Y variable axis value."
+
+[[counterexample]]
+text = "X"
+reason = "Bare variable name lacks mana-symbol braces."
+
+[[counterexample]]
+text = "Y"
+reason = "Bare variable name lacks mana-symbol braces."
+
+[[counterexample]]
+text = "{1}"
+reason = "Generic mana symbol is not a variable mana symbol."
+
+[[counterexample]]
+text = "{G}"
+reason = "Color mana symbol is not a variable mana symbol."
+
+[[counterexample]]
+text = "Spend only black mana on X."
+reason = "Spend-only mana restriction is owned by variable_mana_spending_restriction, not this symbol concept."
+
+[[counterexample]]
+text = "{X} trailing"
+reason = "Exact-consumption guard."
