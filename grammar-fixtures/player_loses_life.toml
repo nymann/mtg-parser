@@ -1,0 +1,32 @@
+[fixture]
+concept = "player_loses_life"
+rule = "player_loses_life"
+
+[[example]]
+text = "Its owner loses 3 life."
+reason = "Direct life-loss instruction with its-owner player and numeric amount."
+
+[[example]]
+text = "Its owner loses half their life, rounded up."
+reason = "Direct life-loss instruction with its-owner player, half-life amount, and rounding."
+
+[[example]]
+text = "Its owner"
+rule = "life_loss_player"
+reason = "Subject slot owned by the direct player-loses-life concept."
+
+[[counterexample]]
+text = "You gain life equal to the damage dealt."
+reason = "Damage-referenced life gain, owned by life_gain_equal_to_damage."
+
+[[counterexample]]
+text = "Target player gains 3 life."
+reason = "Life gain, not life loss."
+
+[[counterexample]]
+text = "Lightning Bolt deals 3 damage to any target."
+reason = "Damage event, owned by damage_event."
+
+[[counterexample]]
+text = "Its owner loses 3 life. trailing"
+reason = "Exact-consumption guard."

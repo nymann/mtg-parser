@@ -1,0 +1,73 @@
+[[axis]]
+name = "player"
+values = ["its_owner"]
+
+[[axis]]
+name = "amount"
+values = [
+    "unsigned_number",
+    "half_their_life_total",
+]
+
+[[axis]]
+name = "rounding"
+values = [
+    "none",
+    "rounding",
+]
+
+[boundary]
+excludes = [
+    "Life gain instructions, including damage-referenced life gain owned by life_gain_equal_to_damage.",
+    "Damage events owned by damage_event.",
+]
+includes = [
+    "Direct instructions where the named player loses a fixed amount of life.",
+    "Direct instructions where the named player loses half their life, with optional rounding.",
+]
+
+[concept]
+name = "player_loses_life"
+pest_rules = [
+    "player_loses_life",
+    "life_loss_player",
+]
+rules_queries = [
+    "lex: player loses life",
+    "lex: owner loses half their life rounded up",
+]
+rules_terms = [
+    "life loss",
+    "life total",
+    "rounding",
+]
+
+[[counterexample]]
+reason = "Damage-referenced life gain, owned by life_gain_equal_to_damage."
+text = "You gain life equal to the damage dealt."
+
+[[counterexample]]
+reason = "Life gain, not life loss."
+text = "Target player gains 3 life."
+
+[[counterexample]]
+reason = "Damage event, owned by damage_event."
+text = "Lightning Bolt deals 3 damage to any target."
+
+[[example]]
+text = "Its owner loses 3 life."
+
+[[example]]
+text = "Its owner loses half their life, rounded up."
+
+[grammar_query]
+candidate_rules = [
+    "player_loses_life",
+    "life_loss_player",
+    "you_gain_life_equal_damage",
+]
+selected_rule = "player_loses_life"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
