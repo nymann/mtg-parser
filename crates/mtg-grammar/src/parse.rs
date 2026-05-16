@@ -8,8 +8,8 @@ use crate::ast::{
     ActivationPermission, AddManaAmount, AsEntersChoice, AttackRequirementSubject,
     BalanceSameWayAction, BasicLandType, BasicLandTypeReference, CardCount, CastRestriction, Color,
     ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
-    CopyException, CounterAmount, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
-    DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
+    CopyException, CounterAmount, CounterTargetSpellCondition, CreatureStatus, CreatureType,
+    DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
     DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyTarget, DiesWording, EachPlayerAction, EnchantObject,
@@ -1167,19 +1167,27 @@ fn target_player_gains_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, Pa
 }
 
 fn counter_target_spell_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let unless_cost = pair
+    let condition = pair
         .into_inner()
         .next()
         .map(counter_unless_cost_from_pair)
         .transpose()?;
-    Ok(Statement::CounterTargetSpell { unless_cost })
+    Ok(Statement::CounterTargetSpell { condition })
 }
 
-fn counter_unless_cost_from_pair(pair: Pair<Rule>) -> Result<CounterUnlessCost, ParseError> {
-    let cost_pair = only_inner(pair, "counter unless missing mana cost")?;
-    Ok(CounterUnlessCost::ItsControllerPays(mana_cost_from_pair(
-        cost_pair,
-    )))
+fn counter_unless_cost_from_pair(
+    pair: Pair<Rule>,
+) -> Result<CounterTargetSpellCondition, ParseError> {
+    let condition_pair = only_inner(pair, "counter condition missing inner value")?;
+    match condition_pair.as_rule() {
+        Rule::mana_cost => Ok(CounterTargetSpellCondition::ItsControllerPays(
+            mana_cost_from_pair(condition_pair),
+        )),
+        Rule::variable_name => Ok(CounterTargetSpellCondition::WithManaValue(
+            variable_from_str(condition_pair.as_str())?,
+        )),
+        _ => Err(ParseError::Internal("counter condition")),
+    }
 }
 
 fn tap_all_permanents_then_mana_loss_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {

@@ -6,8 +6,8 @@ use crate::ast::{
     ActivationPermission, AddManaAmount, AsEntersChoice, AttackRequirementSubject,
     BalanceSameWayAction, BasicLandType, BasicLandTypeReference, CardCount, CastRestriction, Color,
     ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
-    CopyException, CounterAmount, CounterUnlessCost, CreatureStatus, CreatureType, DamageAmount,
-    DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
+    CopyException, CounterAmount, CounterTargetSpellCondition, CreatureStatus, CreatureType,
+    DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
     DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
     DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
     DestroyTarget, DiesWording, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
@@ -37,10 +37,10 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn => {
             out.push_str("Ignore this effect for each creature the player didn't control continuously since the beginning of the turn.");
         }
-        Statement::CounterTargetSpell { unless_cost } => {
+        Statement::CounterTargetSpell { condition } => {
             out.push_str("Counter target spell");
-            if let Some(unless_cost) = unless_cost {
-                write_counter_unless_cost(out, unless_cost);
+            if let Some(condition) = condition {
+                write_counter_target_spell_condition(out, condition);
             }
             out.push('.');
         }
@@ -1103,11 +1103,15 @@ fn write_prevention_recipient(out: &mut String, recipient: PreventionRecipient) 
     }
 }
 
-fn write_counter_unless_cost(out: &mut String, cost: &CounterUnlessCost) {
-    match cost {
-        CounterUnlessCost::ItsControllerPays(mana) => {
+fn write_counter_target_spell_condition(out: &mut String, condition: &CounterTargetSpellCondition) {
+    match condition {
+        CounterTargetSpellCondition::ItsControllerPays(mana) => {
             out.push_str(" unless its controller pays ");
             write_mana_cost(out, mana);
+        }
+        CounterTargetSpellCondition::WithManaValue(variable) => {
+            out.push_str(" with mana value ");
+            out.push_str(variable_name(*variable));
         }
     }
 }

@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 235,
+  "passing": 236,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -721,8 +721,7 @@
       "status": "pass"
     },
     "lea/Spell Blast": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:22\n  |\n1 | Counter target spell with mana value X.\n  |                      ^---\n  |\n  = expected counter_unless_cost"
+      "status": "pass"
     },
     "lea/Stasis": {
       "status": "fail",

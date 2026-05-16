@@ -324,3 +324,5 @@ mod sleight_of_mind;
 mod smoke;
 #[path = "generated/soul_net.rs"]
 mod soul_net;
+#[path = "generated/spell_blast.rs"]
+mod spell_blast;

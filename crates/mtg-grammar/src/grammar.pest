@@ -216,6 +216,7 @@ counter_target_spell = {
 }
 counter_unless_cost = {
     ^"unless" ~ ^"its" ~ ^"controller" ~ ^"pays" ~ mana_cost
+  | ^"with" ~ ^"mana" ~ ^"value" ~ variable_name
 }
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
 

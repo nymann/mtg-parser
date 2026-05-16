@@ -11,8 +11,8 @@
 
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedEffect, AddManaAmount, BasicLandType, CardCount,
-    Color, CombatRole, DamageAmount, DamageEvent, DamageKind, DamageLifeGainCap,
-    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    Color, CombatRole, CounterTargetSpellCondition, DamageAmount, DamageEvent, DamageKind,
+    DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, ManaCost,
     ManaSymbol, ModalMode, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentType,
@@ -57,6 +57,13 @@ fn arb_card_count() -> impl Strategy<Value = CardCount> {
     prop_oneof![
         (1u32..=10).prop_map(CardCount::Number),
         arb_variable().prop_map(CardCount::Variable),
+    ]
+}
+
+fn arb_counter_target_spell_condition() -> impl Strategy<Value = CounterTargetSpellCondition> {
+    prop_oneof![
+        arb_mana_cost().prop_map(CounterTargetSpellCondition::ItsControllerPays),
+        arb_variable().prop_map(CounterTargetSpellCondition::WithManaValue),
     ]
 }
 
@@ -273,7 +280,8 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 cost: SpellAdditionalCost::SacrificePermanent { permanent_type },
             }
         }),
-        Just(Statement::CounterTargetSpell { unless_cost: None }),
+        prop::option::of(arb_counter_target_spell_condition())
+            .prop_map(|condition| Statement::CounterTargetSpell { condition }),
         Just(Statement::Destroy {
             target: DestroyTarget::TargetPermanents(vec![PermanentType::Creature]),
         }),

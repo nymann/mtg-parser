@@ -8,9 +8,9 @@ pub enum Statement {
     /// "Ignore this effect for each creature the player didn't control
     /// continuously since the beginning of the turn."
     IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn,
-    /// "Counter target spell[ unless its controller pays <mana>]."
+    /// "Counter target spell[ <condition>]." — CR 701.5 counter keyword action.
     CounterTargetSpell {
-        unless_cost: Option<CounterUnlessCost>,
+        condition: Option<CounterTargetSpellCondition>,
     },
     /// "As an additional cost to cast this spell, <cost>."
     AsAdditionalCostToCastThisSpell {
@@ -345,8 +345,11 @@ pub enum DestroyTarget {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum CounterUnlessCost {
+pub enum CounterTargetSpellCondition {
+    /// "unless its controller pays <mana>"
     ItsControllerPays(ManaCost),
+    /// "with mana value <variable>"
+    WithManaValue(Variable),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

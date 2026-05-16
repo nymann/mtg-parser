@@ -289,7 +289,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 cost: SpellAdditionalCost::SacrificePermanent { permanent_type },
             }
         }),
-        Just(Statement::CounterTargetSpell { unless_cost: None }),
+        Just(Statement::CounterTargetSpell { condition: None }),
         Just(Statement::Destroy {
             target: DestroyTarget::TargetPermanents(vec![PermanentType::Creature]),
         }),
