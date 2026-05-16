@@ -1,8 +1,8 @@
 {
   "_v": 1,
-  "generated_at": "2026-05-15",
+  "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 232,
+  "passing": 233,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -709,8 +709,7 @@
       "status": "pass"
     },
     "lea/Sleight of Mind": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:1\n  |\n1 | Change the text of target spell or permanent by replacing all instances of one color word with another.\n  | ^---\n  |\n  = expected card_text"
+      "status": "pass"
     },
     "lea/Smoke": {
       "status": "fail",

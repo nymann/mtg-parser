@@ -15,8 +15,8 @@ use mtg_grammar::{
     ManaCost, ManaSymbol, ModalMode, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
     PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent,
     SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
-    TapAllPermanentsActor, TargetPermanentSelector, TriggerEffect, TriggerEvent, TriggeredAbility,
-    Variable,
+    TapAllPermanentsActor, TargetPermanentSelector, TextChangeReplacementTerm, TriggerEffect,
+    TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -464,7 +464,11 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         (1u32..=10).prop_map(|amount| Statement::TargetPlayerGainsLife { amount }),
         Just(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw),
         Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),
-        Just(Statement::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType),
+        prop_oneof![
+            Just(TextChangeReplacementTerm::BasicLandType),
+            Just(TextChangeReplacementTerm::ColorWord),
+        ]
+        .prop_map(|term| Statement::ChangeTextOfTargetSpellOrPermanentReplacing { term }),
         Just(Statement::RegenerateTargetCreature),
         Just(Statement::ActivateOnlyDuringYourTurn),
         Just(Statement::ActivateOnlyDuringCombat),

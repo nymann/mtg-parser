@@ -318,3 +318,5 @@ mod serra_angel;
 mod simulacrum;
 #[path = "generated/siren_s_call.rs"]
 mod siren_s_call;
+#[path = "generated/sleight_of_mind.rs"]
+mod sleight_of_mind;

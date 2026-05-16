@@ -128,8 +128,10 @@ pub enum Statement {
     /// this way."
     ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay,
     /// "Change the text of target spell or permanent by replacing all
-    /// instances of one basic land type with another."
-    ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType,
+    /// instances of one <term> with another."
+    ChangeTextOfTargetSpellOrPermanentReplacing {
+        term: TextChangeReplacementTerm,
+    },
     /// "Add <mana>." / "Add an amount of <mana> equal to ..."
     AddMana {
         amount: AddManaAmount,
@@ -317,6 +319,12 @@ pub enum Statement {
     /// card is never wrapped in `Compound`, so each piece of card
     /// text has exactly one canonical AST.
     Compound(Vec<Statement>),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TextChangeReplacementTerm {
+    BasicLandType,
+    ColorWord,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -1542,7 +1542,11 @@ target_spell_or_permanent_becomes_color = {
 change_text_of_target_spell_or_permanent_replacing_basic_land_type = {
     ^"change" ~ ^"the" ~ ^"text" ~ ^"of" ~ ^"target" ~ ^"spell" ~ ^"or" ~ ^"permanent"
   ~ ^"by" ~ ^"replacing" ~ ^"all" ~ ^"instances" ~ ^"of" ~ ^"one"
-  ~ ^"basic" ~ ^"land" ~ ^"type" ~ ^"with" ~ ^"another" ~ "."
+  ~ text_change_replacement_term ~ ^"with" ~ ^"another" ~ "."
+}
+text_change_replacement_term = {
+    ^"basic" ~ ^"land" ~ ^"type"
+  | ^"color" ~ ^"word"
 }
 
 target_permanent_until_eot = {

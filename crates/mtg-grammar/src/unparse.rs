@@ -18,9 +18,10 @@ use crate::ast::{
     PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
     StaticAbility, Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect,
-    TargetPermanentSelector, TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    TargetPermanentSelector, TextChangeReplacementTerm, TriggerCondition, TriggerCounterRecipient,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -195,8 +196,10 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 "Then that player loses all unspent mana and you add the mana lost this way.",
             );
         }
-        Statement::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType => {
-            out.push_str("Change the text of target spell or permanent by replacing all instances of one basic land type with another.");
+        Statement::ChangeTextOfTargetSpellOrPermanentReplacing { term } => {
+            out.push_str("Change the text of target spell or permanent by replacing all instances of one ");
+            out.push_str(text_change_replacement_term_name(*term));
+            out.push_str(" with another.");
         }
         Statement::AddMana { amount } => {
             write_add_mana_sentence(out, amount, SentenceCase::Upper);
@@ -3167,6 +3170,13 @@ fn creature_status_name_capitalized(status: CreatureStatus) -> &'static str {
         CreatureStatus::Attacking => "Attacking",
         CreatureStatus::Tapped => "Tapped",
         CreatureStatus::Untapped => "Untapped",
+    }
+}
+
+fn text_change_replacement_term_name(term: TextChangeReplacementTerm) -> &'static str {
+    match term {
+        TextChangeReplacementTerm::BasicLandType => "basic land type",
+        TextChangeReplacementTerm::ColorWord => "color word",
     }
 }
 

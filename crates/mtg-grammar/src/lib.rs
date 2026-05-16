@@ -14,8 +14,8 @@ pub use ast::{
     MixedPtModifier, ModalMode, OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
     PermanentType, PhysicalAction, PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
-    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentSelector, TriggerEffect,
-    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentSelector, TextChangeReplacementTerm,
+    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
     VariablePtModifier, Zone,
 };
 pub use parse::{parse, ParseError};

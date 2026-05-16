@@ -20,10 +20,10 @@ use crate::ast::{
     PermanentType, PhysicalAction, PreventionRecipient, PtModifier, RegenerateRecipient, Rounding,
     Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost,
     SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TriggerCondition,
-    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm,
+    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -180,7 +180,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords_from_pair(pair)
         }
         Rule::change_text_of_target_spell_or_permanent_replacing_basic_land_type => {
-            Ok(Statement::ChangeTextOfTargetSpellOrPermanentReplacingBasicLandType)
+            change_text_of_target_spell_or_permanent_replacing_from_pair(pair)
         }
         Rule::target_spell_or_permanent_becomes_color => {
             target_spell_or_permanent_becomes_color_from_pair(pair)
@@ -642,6 +642,28 @@ fn target_spell_or_permanent_becomes_color_from_pair(
     Ok(Statement::TargetSpellOrPermanentBecomesColor {
         color: color_from_pair(color_pair)?,
     })
+}
+
+fn change_text_of_target_spell_or_permanent_replacing_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let term_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("change text missing replacement term"))?;
+    Ok(Statement::ChangeTextOfTargetSpellOrPermanentReplacing {
+        term: text_change_replacement_term_from_pair(term_pair)?,
+    })
+}
+
+fn text_change_replacement_term_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TextChangeReplacementTerm, ParseError> {
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "basic land type" => Ok(TextChangeReplacementTerm::BasicLandType),
+        "color word" => Ok(TextChangeReplacementTerm::ColorWord),
+        _ => Err(ParseError::Internal("unknown text change replacement term")),
+    }
 }
 
 fn each_player_equalizes_controlled_permanents_from_pair(
