@@ -16,16 +16,16 @@ use crate::ast::{
     DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, DrawReplacementEffect,
     EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect,
     ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount,
-    LifeLossPlayer, ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol,
-    MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, OtherCreatureTypeSubject,
-    PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature,
-    RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
-    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
-    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TapUntapTarget,
-    TappedForManaSubject, TargetHandPlayer, TargetPermanentEndOfTurnEffect,
+    LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer, ManaAbilitySourceLimit, ManaCost,
+    ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
+    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
+    OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
+    ReferencedCard, ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject,
+    ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
+    StaticDamageSource, StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction,
+    TapUntapTarget, TappedForManaSubject, TargetHandPlayer, TargetPermanentEndOfTurnEffect,
     TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
     TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
     TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
@@ -2085,6 +2085,20 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
         StaticAbility::IfYouWouldGainLifeDrawThatManyCardsInstead => {
             out.push_str("If you would gain life, draw that many cards instead.");
         }
+        StaticAbility::LifeTotalFloorReplacement {
+            cause,
+            player,
+            threshold,
+        } => {
+            write_life_total_floor_cause(out, *cause, SentenceCase::Upper);
+            out.push_str(" that would reduce ");
+            write_life_total_floor_player_possessive(out, *player);
+            out.push_str(" life total to less than ");
+            out.push_str(&threshold.to_string());
+            out.push_str(" reduces it to ");
+            out.push_str(&threshold.to_string());
+            out.push_str(" instead.");
+        }
         StaticAbility::IfEffectCausesYouToDiscardCardYouMayPutItOnTopOfYourLibraryInstead => {
             out.push_str("If an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard.");
         }
@@ -2282,6 +2296,19 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
         StaticAbility::CreaturesInAssignedPileBlockIfAble => {
             out.push_str("Each creature in a pile that can block the creature that pile is assigned to does so.");
         }
+    }
+}
+
+fn write_life_total_floor_cause(out: &mut String, cause: LifeTotalFloorCause, case: SentenceCase) {
+    match (cause, case) {
+        (LifeTotalFloorCause::Damage, SentenceCase::Upper) => out.push_str("Damage"),
+        (LifeTotalFloorCause::Damage, SentenceCase::Lower) => out.push_str("damage"),
+    }
+}
+
+fn write_life_total_floor_player_possessive(out: &mut String, player: LifeTotalFloorPlayer) {
+    match player {
+        LifeTotalFloorPlayer::You => out.push_str("your"),
     }
 }
 

@@ -18,21 +18,21 @@ use crate::ast::{
     DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
     DrawReplacementEffect, EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility,
     IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount,
-    LifeLossAmount, LifeLossPlayer, ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose,
-    ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
-    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost,
-    OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
-    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
-    ReferencedCard, ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject,
-    ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
-    StaticDamageSource, StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction,
-    TapUntapTarget, TappedForManaSubject, TargetHandPlayer, TargetPermanentEndOfTurnEffect,
-    TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
-    TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
+    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
+    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
+    ObjectStatus, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
+    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
+    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, StaticDamageSource, StaticUntapRestriction, Step,
+    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
+    TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
+    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -269,6 +269,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_you_have_no_maximum_hand_size
         | Rule::you_dont_lose_game_for_having_zero_or_less_life
         | Rule::if_you_would_gain_life_draw_that_many_cards_instead
+        | Rule::static_life_total_floor_replacement
         | Rule::static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead
         | Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns
         | Rule::static_you_may_have_source_enter_as_copy
@@ -4167,6 +4168,38 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
         Rule::if_you_would_gain_life_draw_that_many_cards_instead => {
             Ok(StaticAbility::IfYouWouldGainLifeDrawThatManyCardsInstead)
         }
+        Rule::static_life_total_floor_replacement => {
+            let mut cause = None;
+            let mut player = None;
+            let mut thresholds = Vec::new();
+            for child in pair.into_inner() {
+                match child.as_rule() {
+                    Rule::life_total_floor_cause => {
+                        cause = Some(life_total_floor_cause_from_pair(child)?);
+                    }
+                    Rule::life_total_floor_player => {
+                        player = Some(life_total_floor_player_from_pair(child)?);
+                    }
+                    Rule::unsigned_number => thresholds.push(
+                        child
+                            .as_str()
+                            .parse::<u32>()
+                            .map_err(|_| ParseError::Internal("life total floor threshold"))?,
+                    ),
+                    _ => return Err(ParseError::Internal("life total floor replacement part")),
+                }
+            }
+            match thresholds.as_slice() {
+                [minimum, replacement] if minimum == replacement => {
+                    Ok(StaticAbility::LifeTotalFloorReplacement {
+                        cause: cause.ok_or(ParseError::Internal("life total floor cause"))?,
+                        player: player.ok_or(ParseError::Internal("life total floor player"))?,
+                        threshold: *minimum,
+                    })
+                }
+                _ => Err(ParseError::Internal("life total floor threshold mismatch")),
+            }
+        }
         Rule::static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead => {
             Ok(StaticAbility::IfEffectCausesYouToDiscardCardYouMayPutItOnTopOfYourLibraryInstead)
         }
@@ -4439,6 +4472,24 @@ fn creatures_attack_this_turn_if_able_from_pair(
         _ => return Err(ParseError::Internal("attack requirement subject")),
     };
     Ok(StaticAbility::CreaturesAttackThisTurnIfAble { subject })
+}
+
+fn life_total_floor_cause_from_pair(pair: Pair<Rule>) -> Result<LifeTotalFloorCause, ParseError> {
+    match pair.as_rule() {
+        Rule::life_total_floor_cause if pair.as_str().eq_ignore_ascii_case("damage") => {
+            Ok(LifeTotalFloorCause::Damage)
+        }
+        _ => Err(ParseError::Internal("life total floor cause")),
+    }
+}
+
+fn life_total_floor_player_from_pair(pair: Pair<Rule>) -> Result<LifeTotalFloorPlayer, ParseError> {
+    match pair.as_rule() {
+        Rule::life_total_floor_player if pair.as_str().eq_ignore_ascii_case("your") => {
+            Ok(LifeTotalFloorPlayer::You)
+        }
+        _ => Err(ParseError::Internal("life total floor player")),
+    }
 }
 
 fn copy_exception_from_pair(pair: Pair<Rule>) -> Result<CopyException, ParseError> {

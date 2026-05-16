@@ -59,6 +59,7 @@ sentence_statement = _{
   | you_gain_life_equal_damage
   | you_dont_lose_game_for_having_zero_or_less_life
   | if_you_would_gain_life_draw_that_many_cards_instead
+  | static_life_total_floor_replacement
   | variable_cant_be_number
   | if_you_cant_you_lose_the_game
   | it_cant_be_regenerated
@@ -131,6 +132,7 @@ sentence_statement = _{
   | static_you_have_no_maximum_hand_size
   | you_dont_lose_game_for_having_zero_or_less_life
   | if_you_would_gain_life_draw_that_many_cards_instead
+  | static_life_total_floor_replacement
   | static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
   | static_you_may_have_source_enter_as_copy
@@ -367,6 +369,14 @@ if_you_would_gain_life_draw_that_many_cards_instead = {
     ^"if" ~ ^"you" ~ ^"would" ~ ^"gain" ~ ^"life" ~ ","
   ~ ^"draw" ~ ^"that" ~ ^"many" ~ ^"cards" ~ ^"instead" ~ "."
 }
+
+static_life_total_floor_replacement = {
+    life_total_floor_cause ~ ^"that" ~ ^"would" ~ ^"reduce" ~ life_total_floor_player
+  ~ ^"life" ~ ^"total" ~ ^"to" ~ ^"less" ~ ^"than" ~ unsigned_number
+  ~ ^"reduces" ~ ^"it" ~ ^"to" ~ unsigned_number ~ ^"instead" ~ "."
+}
+life_total_floor_cause = { ^"damage" }
+life_total_floor_player = { ^"your" }
 
 variable_cant_be_number = {
     variable_name ~ ^"can't" ~ ^"be" ~ unsigned_number ~ "."
@@ -843,6 +853,7 @@ static_ability = _{
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
   | you_dont_lose_game_for_having_zero_or_less_life
   | if_you_would_gain_life_draw_that_many_cards_instead
+  | static_life_total_floor_replacement
   | static_you_may_have_source_enter_as_copy
   | static_source_enters_tapped
   | static_source_attacks_each_combat_if_able

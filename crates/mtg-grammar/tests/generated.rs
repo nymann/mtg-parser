@@ -12,6 +12,8 @@ mod aladdin;
 mod aladdin_s_lamp;
 #[path = "generated/ali_baba.rs"]
 mod ali_baba;
+#[path = "generated/ali_from_cairo.rs"]
+mod ali_from_cairo;
 #[path = "generated/ancestral_recall.rs"]
 mod ancestral_recall;
 #[path = "generated/animate_artifact.rs"]

@@ -1911,6 +1911,16 @@ pub enum ManaSymbol {
     Colorless,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LifeTotalFloorCause {
+    Damage,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LifeTotalFloorPlayer {
+    You,
+}
+
 /// A static ability printed on a permanent. This covers conditional
 /// continuous effects, P/T modifiers on matching objects or enchanted
 /// objects, and permission effects that let an enchanted object attack
@@ -2047,6 +2057,14 @@ pub enum StaticAbility {
     /// "If you would gain life, draw that many cards instead." —
     /// replacement effect for life gain.
     IfYouWouldGainLifeDrawThatManyCardsInstead,
+    /// "<cause> that would reduce <player>'s life total to less than N
+    /// reduces it to N instead." — replacement effect that floors a life
+    /// total change.
+    LifeTotalFloorReplacement {
+        cause: LifeTotalFloorCause,
+        player: LifeTotalFloorPlayer,
+        threshold: u32,
+    },
     /// "If an effect causes you to discard a card, discard it, but you
     /// may put it on top of your library instead of into your graveyard."
     IfEffectCausesYouToDiscardCardYouMayPutItOnTopOfYourLibraryInstead,

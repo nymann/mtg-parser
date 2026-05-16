@@ -7,6 +7,8 @@ mod aladdin;
 mod aladdin_s_lamp;
 #[path = "generated_patterns/ali_baba.rs"]
 mod ali_baba;
+#[path = "generated_patterns/ali_from_cairo.rs"]
+mod ali_from_cairo;
 #[path = "generated_patterns/animate_wall.rs"]
 mod animate_wall;
 #[path = "generated_patterns/ankh_of_mishra.rs"]
