@@ -332,3 +332,5 @@ mod stasis;
 mod stone_giant;
 #[path = "generated/stream_of_life.rs"]
 mod stream_of_life;
+#[path = "generated/sunglasses_of_urza.rs"]
+mod sunglasses_of_urza;

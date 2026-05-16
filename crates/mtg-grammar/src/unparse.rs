@@ -1569,6 +1569,13 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_mana_cost(out, mana);
             out.push_str(" more to cast.");
         }
+        StaticAbility::ManaSpendingPermission { from, to } => {
+            out.push_str("You may spend ");
+            out.push_str(color_name(*from));
+            out.push_str(" mana as though it were ");
+            out.push_str(color_name(*to));
+            out.push_str(" mana.");
+        }
         StaticAbility::ActivatedAbilitiesOfColoredPermanentsCostManaMoreToActivate {
             color,
             permanent_type,

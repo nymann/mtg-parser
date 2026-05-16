@@ -321,3 +321,5 @@ mod stasis;
 mod stone_giant;
 #[path = "generated_patterns/stream_of_life.rs"]
 mod stream_of_life;
+#[path = "generated_patterns/sunglasses_of_urza.rs"]
+mod sunglasses_of_urza;

@@ -1663,6 +1663,8 @@ pub enum StaticAbility {
         condition: Condition,
         effect: ContinuousEffect,
     },
+    /// Permission effect for spending one color of mana as another.
+    ManaSpendingPermission { from: Color, to: Color },
     /// "<color> spells cost <mana> more to cast." — cost-increase effect
     /// for spells matching the color filter.
     ColoredSpellsCostManaMoreToCast { color: Color, mana: ManaCost },

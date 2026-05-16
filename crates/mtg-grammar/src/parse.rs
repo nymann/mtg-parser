@@ -229,6 +229,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::keyword_ability_list => keyword_list_from_pair(pair),
         Rule::semicolon_keyword_ability_list => semicolon_keyword_list_from_pair(pair),
         Rule::static_as_long_as
+        | Rule::static_mana_spending_permission
         | Rule::static_colored_spells_cost_mana_more_to_cast
         | Rule::static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
         | Rule::static_colored_permanents_get
@@ -3347,6 +3348,19 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             Ok(StaticAbility::ColoredSpellsCostManaMoreToCast {
                 color: color_from_pair(color_pair)?,
                 mana: mana_cost_from_pair(mana_pair),
+            })
+        }
+        Rule::static_mana_spending_permission => {
+            let mut inner = pair.into_inner();
+            let from_pair = inner
+                .next()
+                .expect("static_mana_spending_permission begins with a color");
+            let to_pair = inner.next().expect(
+                "static_mana_spending_permission names a replacement color",
+            );
+            Ok(StaticAbility::ManaSpendingPermission {
+                from: color_from_pair(from_pair)?,
+                to: color_from_pair(to_pair)?,
             })
         }
         Rule::static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate => {

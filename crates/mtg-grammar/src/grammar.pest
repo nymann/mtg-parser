@@ -100,6 +100,7 @@ sentence_statement = _{
   | activated_ability_with_activation_permission
   | activated_ability
   | static_as_long_as
+  | static_mana_spending_permission
   | static_colored_spells_cost_mana_more_to_cast
   | static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
   | static_colored_permanents_get
@@ -689,6 +690,7 @@ creature_type_plural = @{ ^"goblins" | ^"golems" | ^"merfolk" | ^"walls" }
 //     that preserves the Aura while applying the preceding static effect.
 static_ability = _{
     static_as_long_as
+  | static_mana_spending_permission
   | static_colored_spells_cost_mana_more_to_cast
   | static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
   | static_colored_permanents_get
@@ -726,6 +728,11 @@ static_ability = _{
 static_as_long_as = {
     (^"as" ~ ^"long" ~ ^"as" ~ condition ~ "," ~ continuous_effect ~ ".")
   | (continuous_effect ~ ^"as" ~ ^"long" ~ ^"as" ~ condition ~ ".")
+}
+
+static_mana_spending_permission = {
+    ^"you" ~ ^"may" ~ ^"spend" ~ color_word ~ ^"mana"
+  ~ ^"as" ~ ^"though" ~ ^"it" ~ ^"were" ~ color_word ~ ^"mana" ~ "."
 }
 
 static_colored_spells_cost_mana_more_to_cast = {
