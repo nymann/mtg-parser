@@ -1,0 +1,82 @@
+[[axis]]
+name = "ability_timing"
+values = ["as_enters"]
+
+[[axis]]
+name = "source"
+values = ["source_object"]
+
+[[axis]]
+name = "player"
+values = ["you"]
+
+[[axis]]
+name = "effect"
+values = ["lose_life"]
+
+[[axis]]
+name = "amount"
+values = ["your_life_total"]
+
+[boundary]
+excludes = [
+    "As-enters choice templates, such as choosing a color, are not life-loss effects.",
+    "Bare enters events and enters-static templates owned by permanent_enters or adjacent enters concepts.",
+    "Direct player life-loss instructions owned by player_loses_life.",
+    "Life-total floor replacement effects owned by life_total_floor_replacement.",
+    "Damage-referenced life gain owned by life_gain_equal_to_damage.",
+]
+includes = ["As-enters source-object templates where you lose life equal to your life total."]
+
+[concept]
+name = "as_enters_life_loss"
+pest_rules = ["as_source_enters_you_lose_life_equal_to_your_life_total"]
+rules_queries = [
+    "lex: as this creature enters you lose life equal to your life total",
+    "lex: as this permanent enters you lose life equal to your life total",
+]
+rules_terms = [
+    "as enters",
+    "life loss",
+    "life total",
+]
+
+[[counterexample]]
+reason = "As-enters choice template, not a life-loss effect."
+text = "As this creature enters, choose a color."
+
+[[counterexample]]
+reason = "Enters-static template, not an as-enters life-loss effect."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "Direct player life-loss instruction, owned by player_loses_life."
+text = "Its owner loses half their life, rounded up."
+
+[[counterexample]]
+reason = "Life-total floor replacement effect, owned by life_total_floor_replacement."
+text = "Damage that would reduce your life total to less than 1 reduces it to 1 instead."
+
+[[counterexample]]
+reason = "Damage-referenced life gain, owned by life_gain_equal_to_damage."
+text = "You gain life equal to the damage prevented this way."
+
+[[example]]
+text = "As this creature enters, you lose life equal to your life total."
+
+[[example]]
+text = "As this permanent enters, you lose life equal to your life total."
+
+[grammar_query]
+candidate_rules = [
+    "as_source_enters_you_lose_life_equal_to_your_life_total",
+    "permanent_enters",
+    "player_loses_life",
+    "static_life_total_floor_replacement",
+    "you_gain_life_equal_damage",
+]
+selected_rule = "as_source_enters_you_lose_life_equal_to_your_life_total"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

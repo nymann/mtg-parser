@@ -1,0 +1,35 @@
+[fixture]
+concept = "as_enters_life_loss"
+rule = "as_source_enters_you_lose_life_equal_to_your_life_total"
+
+[[example]]
+text = "As this creature enters, you lose life equal to your life total."
+reason = "As-enters source-object life-loss template with creature source."
+
+[[example]]
+text = "As this permanent enters, you lose life equal to your life total."
+reason = "As-enters source-object life-loss template with permanent source."
+
+[[counterexample]]
+text = "As this creature enters, choose a color."
+reason = "As-enters choice template, not a life-loss effect."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Enters-static template, not an as-enters life-loss effect."
+
+[[counterexample]]
+text = "Its owner loses half their life, rounded up."
+reason = "Direct player life-loss instruction, owned by player_loses_life."
+
+[[counterexample]]
+text = "Damage that would reduce your life total to less than 1 reduces it to 1 instead."
+reason = "Life-total floor replacement effect, owned by life_total_floor_replacement."
+
+[[counterexample]]
+text = "You gain life equal to the damage prevented this way."
+reason = "Damage-referenced life gain, owned by life_gain_equal_to_damage."
+
+[[counterexample]]
+text = "As this creature enters, you lose life equal to your life total. trailing"
+reason = "Exact-consumption guard."
