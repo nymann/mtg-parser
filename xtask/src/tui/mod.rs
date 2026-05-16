@@ -43,6 +43,21 @@ enum ViewerExit {
     Reload,
 }
 
+struct PendingHotReloadBuild {
+    child: Child,
+    mtime: SystemTime,
+    log_path: PathBuf,
+}
+
+impl Drop for PendingHotReloadBuild {
+    fn drop(&mut self) {
+        if matches!(self.child.try_wait(), Ok(None)) {
+            let _ = self.child.kill();
+            let _ = self.child.wait();
+        }
+    }
+}
+
 /// Sink that pushes events into a channel for the TUI to consume.
 pub struct TuiSink {
     tx: Sender<FlowEvent>,
@@ -242,6 +257,31 @@ fn spawn_hot_reload_viewer(event_log: &Path) -> Result<Child> {
         .context("spawn hot-reload TUI viewer")
 }
 
+fn spawn_hot_reload_build(mtime: SystemTime) -> Result<PendingHotReloadBuild> {
+    let log_path = hot_reload_build_log_path();
+    let log = std::fs::File::create(&log_path)
+        .with_context(|| format!("create hot-reload build log {}", log_path.display()))?;
+    let child = Command::new("cargo")
+        .args(["build", "-q", "-p", "xtask"])
+        .current_dir(crate::paths::repo_root())
+        .stdout(Stdio::from(log.try_clone()?))
+        .stderr(Stdio::from(log))
+        .spawn()
+        .context("spawn hot-reload preflight build")?;
+    Ok(PendingHotReloadBuild {
+        child,
+        mtime,
+        log_path,
+    })
+}
+
+fn hot_reload_build_log_path() -> PathBuf {
+    std::env::temp_dir().join(format!(
+        "mtg-parser-tui-hot-reload-build-{}.log",
+        std::process::id()
+    ))
+}
+
 fn tui_source_mtime() -> Result<SystemTime> {
     let dir = crate::paths::repo_root().join("xtask/src/tui");
     let mut newest = SystemTime::UNIX_EPOCH;
@@ -360,13 +400,55 @@ fn run_event_loop_from_log(
     let poll_timeout = Duration::from_millis(50);
     let mut last_area = terminal.size()?;
     let mut last_ui_mtime = tui_source_mtime()?;
+    let mut pending_reload_build = None::<PendingHotReloadBuild>;
 
     loop {
-        let current_mtime = tui_source_mtime()?;
-        if current_mtime > last_ui_mtime {
-            return Ok(ViewerExit::Reload);
+        if let Some(mut build) = pending_reload_build.take() {
+            match build.child.try_wait()? {
+                Some(status) if status.success() => {
+                    let _ = std::fs::remove_file(&build.log_path);
+                    return Ok(ViewerExit::Reload);
+                }
+                Some(status) => {
+                    let log = std::fs::read_to_string(&build.log_path).unwrap_or_default();
+                    let _ = std::fs::remove_file(&build.log_path);
+                    state.apply(FlowEvent::Note {
+                        level: NoteLevel::Warn,
+                        text: format!(
+                            "TUI hot reload build failed with status {status}; keeping current viewer.{}",
+                            first_log_lines(&log, 4)
+                        ),
+                    });
+                    last_ui_mtime = build.mtime;
+                }
+                None => {
+                    pending_reload_build = Some(build);
+                }
+            }
         }
-        last_ui_mtime = current_mtime;
+
+        let current_mtime = tui_source_mtime()?;
+        if current_mtime > last_ui_mtime && pending_reload_build.is_none() {
+            match spawn_hot_reload_build(current_mtime) {
+                Ok(build) => {
+                    state.apply(FlowEvent::Note {
+                        level: NoteLevel::Info,
+                        text: "TUI source changed; building replacement viewer in the background"
+                            .to_string(),
+                    });
+                    pending_reload_build = Some(build);
+                }
+                Err(err) => {
+                    state.apply(FlowEvent::Note {
+                        level: NoteLevel::Warn,
+                        text: format!(
+                            "TUI hot reload build could not start: {err:#}; keeping current viewer"
+                        ),
+                    });
+                    last_ui_mtime = current_mtime;
+                }
+            }
+        }
 
         for ev in reader.read_available()? {
             let hard_redraw = matches!(ev, FlowEvent::IterationStarted { .. });
@@ -415,6 +497,20 @@ fn run_event_loop_from_log(
                 _ => {}
             }
         }
+    }
+}
+
+fn first_log_lines(log: &str, max_lines: usize) -> String {
+    let lines = log
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .take(max_lines)
+        .map(str::trim)
+        .collect::<Vec<_>>();
+    if lines.is_empty() {
+        String::new()
+    } else {
+        format!(" {}", lines.join(" "))
     }
 }
 
