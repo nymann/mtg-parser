@@ -1,0 +1,103 @@
+[[axis]]
+name = "affected_object"
+values = ["it"]
+
+[[axis]]
+name = "qualifier"
+values = ["if_its_article_permanent_type"]
+
+[[axis]]
+name = "permanent_type"
+values = [
+    "artifact",
+    "creature",
+    "enchantment",
+    "land",
+    "planeswalker",
+]
+
+[[axis]]
+name = "regeneration_restriction"
+values = ["cant_be_regenerated"]
+
+[[axis]]
+name = "restriction_duration"
+values = ["this_turn"]
+
+[[axis]]
+name = "replaced_event"
+values = ["would_die_this_turn"]
+
+[[axis]]
+name = "replacement_action"
+values = ["exile_it_instead"]
+
+[boundary]
+excludes = [
+    "Standalone regeneration prohibition statements without the this-turn death replacement clause.",
+    "Standalone death-to-exile replacement effects without the conditional permanent-type regeneration restriction.",
+    "Immediate exile instructions such as Exile target creature.",
+    "Other replacement effects for destruction or damage removal.",
+]
+includes = [
+    "Conditional statements beginning If it's a permanent type.",
+    "This-turn can't-be-regenerated restriction on it.",
+    "This-turn would-die replacement that exiles it instead.",
+]
+
+[concept]
+name = "conditional_regeneration_restriction_and_death_exile_replacement"
+pest_rules = ["if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn"]
+rules_queries = [
+    "lex: if it's a creature it can't be regenerated this turn if it would die this turn exile it instead",
+    "lex: can't be regenerated this turn would die this turn exile it instead",
+]
+rules_terms = [
+    "regenerate",
+    "die",
+    "exile",
+    "replacement effect",
+]
+
+[[counterexample]]
+reason = "Standalone regeneration prohibition, owned by regeneration_prohibition."
+text = "It can't be regenerated."
+
+[[counterexample]]
+reason = "Standalone death-to-exile replacement lacks the conditional permanent-type regeneration restriction."
+text = "If it would die this turn, exile it instead."
+
+[[counterexample]]
+reason = "Immediate exile instruction, owned by exile."
+text = "Exile target creature."
+
+[[counterexample]]
+reason = "Different replacement effect over destruction and damage removal."
+text = "If enchanted permanent would be destroyed, instead remove all damage marked on it."
+
+[[example]]
+text = "If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+
+[[example]]
+text = "If it's an artifact, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+
+[[example]]
+text = "If it's an enchantment, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+
+[[example]]
+text = "If it's a land, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+
+[[example]]
+text = "If it's a planeswalker, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+
+[grammar_query]
+candidate_rules = [
+    "if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn",
+    "it_cant_be_regenerated",
+    "exile",
+]
+selected_rule = "if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

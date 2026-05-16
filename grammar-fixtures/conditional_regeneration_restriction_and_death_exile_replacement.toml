@@ -1,0 +1,56 @@
+[fixture]
+concept = "conditional_regeneration_restriction_and_death_exile_replacement"
+rule = "if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn"
+
+[[example]]
+text = "If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+reason = "Creature permanent-type axis value with this-turn regeneration restriction and death-to-exile replacement."
+
+[[example]]
+text = "If it's an artifact, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+reason = "Artifact permanent-type axis value."
+
+[[example]]
+text = "If it's an enchantment, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+reason = "Enchantment permanent-type axis value."
+
+[[example]]
+text = "If it's a land, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+reason = "Land permanent-type axis value."
+
+[[example]]
+text = "If it's a planeswalker, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+reason = "Planeswalker permanent-type axis value."
+
+[[example]]
+rule = "sentence_statement"
+text = "If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+reason = "Top-level sentence statement wiring for the owned PEST rule."
+
+[[counterexample]]
+text = "It can't be regenerated."
+reason = "Standalone regeneration prohibition lacks the conditional permanent-type death replacement."
+
+[[counterexample]]
+text = "If it would die this turn, exile it instead."
+reason = "Standalone death-to-exile replacement lacks the conditional permanent-type regeneration restriction."
+
+[[counterexample]]
+text = "Exile target creature."
+reason = "Immediate exile instruction, not this conditional replacement statement."
+
+[[counterexample]]
+text = "If enchanted permanent would be destroyed, instead remove all damage marked on it."
+reason = "Different replacement effect over destruction and damage removal."
+
+[[counterexample]]
+text = "If it's a creature, it can't be regenerated this turn."
+reason = "Missing death-to-exile replacement clause."
+
+[[counterexample]]
+text = "If it's an instant, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+reason = "Instant is not a permanent type for this rule."
+
+[[counterexample]]
+text = "If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead. trailing"
+reason = "Exact-consumption guard."
