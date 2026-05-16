@@ -1,0 +1,39 @@
+[fixture]
+concept = "permanent_enters"
+rule = "permanent_enters"
+
+[[example]]
+text = "a creature enters"
+reason = "Article plus permanent type with bare enters event."
+
+[[example]]
+text = "an artifact enters"
+reason = "Article plus permanent type with vowel-leading article."
+
+[[example]]
+text = "this creature enters"
+reason = "Source-object creature with bare enters event."
+
+[[example]]
+text = "this permanent enters"
+reason = "Source-object permanent with bare enters event."
+
+[[counterexample]]
+text = "a player taps a land for mana"
+reason = "Tap-for-mana trigger event, owned by permanent_tapped_for_mana."
+
+[[counterexample]]
+text = "this creature enters tapped."
+reason = "Replacement or static enters-tapped template, not the bare enters event."
+
+[[counterexample]]
+text = "this creature enters with a +1/+1 counter on it."
+reason = "Replacement or static enters-with-counters template, not the bare enters event."
+
+[[counterexample]]
+text = "as this creature enters, choose a color."
+reason = "As-enters choice template, not the bare enters event."
+
+[[counterexample]]
+text = "a creature enters trailing"
+reason = "Exact-consumption guard."

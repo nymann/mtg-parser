@@ -1,0 +1,76 @@
+[[axis]]
+name = "object"
+values = [
+    "article_permanent_type",
+    "source_object",
+]
+
+[[axis]]
+name = "event"
+values = ["enters"]
+
+[boundary]
+excludes = [
+    "Tap-for-mana trigger events owned by permanent_tapped_for_mana.",
+    "Replacement or static templates that modify how a permanent enters, such as enters tapped.",
+    "Replacement or static templates that add counters or other objects as a permanent enters.",
+    "As-enters choice templates that begin with an as-clause.",
+]
+includes = [
+    "Triggered events where a permanent of a named permanent type enters.",
+    "Triggered events where the source object enters.",
+]
+
+[concept]
+name = "permanent_enters"
+pest_rules = ["permanent_enters"]
+rules_queries = [
+    "lex: a creature enters",
+    "lex: this permanent enters",
+    "lex: enters the battlefield",
+]
+rules_terms = [
+    "battlefield",
+    "enters",
+    "permanent",
+]
+
+[[counterexample]]
+reason = "Tap-for-mana trigger event, owned by permanent_tapped_for_mana."
+text = "a player taps a land for mana"
+
+[[counterexample]]
+reason = "Replacement or static enters-tapped template, not the bare enters event."
+text = "this creature enters tapped."
+
+[[counterexample]]
+reason = "Replacement or static enters-with-counters template, not the bare enters event."
+text = "this creature enters with a +1/+1 counter on it."
+
+[[counterexample]]
+reason = "As-enters choice template, not the bare enters event."
+text = "as this creature enters, choose a color."
+
+[[example]]
+text = "a creature enters"
+
+[[example]]
+text = "an artifact enters"
+
+[[example]]
+text = "this creature enters"
+
+[[example]]
+text = "this permanent enters"
+
+[grammar_query]
+candidate_rules = [
+    "permanent_enters",
+    "aura_enters",
+    "player_taps_permanent_for_mana",
+]
+selected_rule = "permanent_enters"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
