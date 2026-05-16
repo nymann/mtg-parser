@@ -325,3 +325,5 @@ mod stream_of_life;
 mod sunglasses_of_urza;
 #[path = "generated_patterns/swords_to_plowshares.rs"]
 mod swords_to_plowshares;
+#[path = "generated_patterns/terror.rs"]
+mod terror;

@@ -59,6 +59,7 @@ sentence_statement = _{
   | you_dont_lose_game_for_having_zero_or_less_life
   | if_you_would_gain_life_draw_that_many_cards_instead
   | if_you_cant_you_lose_the_game
+  | it_cant_be_regenerated
   | if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn
   | tap_all_permanents_then_mana_loss
   | player_payment_failure
@@ -207,6 +208,7 @@ destroy_target = {
     destroy_all
   | target_colored_permanent
   | target_status_creature
+  | target_qualified_creature
   | target_creature_type
   | target_permanent_choice
 }
@@ -223,6 +225,7 @@ counter_unless_cost = {
   | ^"with" ~ ^"mana" ~ ^"value" ~ variable_name
 }
 regenerate_target_creature = { ^"regenerate" ~ ^"target" ~ ^"creature" ~ "." }
+it_cant_be_regenerated = { ^"it" ~ ^"can't" ~ ^"be" ~ ^"regenerated" ~ "." }
 
 copy_target_spell_except_copy_is_color = {
     ^"copy" ~ ^"target" ~ spell_type_choice ~ ^"spell" ~ ","
@@ -1085,6 +1088,12 @@ tap_target_permanent_choice = { ^"tap" ~ target_permanent_choice ~ "." }
 target_permanent_choice = { ^"target" ~ permanent_type_choice }
 target_colored_permanent = { ^"target" ~ color_word ~ ^"permanent" }
 target_status_creature = { ^"target" ~ creature_status ~ ^"creature" }
+target_qualified_creature = {
+    ^"target" ~ creature_quality ~ ("," ~ creature_quality)* ~ ^"creature"
+}
+creature_quality = _{ non_permanent_type | non_color_word }
+non_permanent_type = { ^"non" ~ permanent_type }
+non_color_word = { ^"non" ~ color_word }
 target_creature_type = { ^"target" ~ creature_type }
 permanent_type_choice = { permanent_type ~ ((("," ~ permanent_type)* ~ ","? ~ ^"or") ~ permanent_type)? }
 activated_draw_cards = {

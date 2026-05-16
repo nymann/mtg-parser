@@ -8,9 +8,9 @@ use crate::ast::{
     ActivationPermission, AddManaAmount, AsEntersChoice, AttackRequirementSubject,
     BalanceSameWayAction, BasicLandType, BasicLandTypeReference, CardCount, CastRestriction, Color,
     ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
-    CopyException, CounterAmount, CounterTargetSpellCondition, CreatureStatus, CreatureType,
-    DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
-    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    CopyException, CounterAmount, CounterTargetSpellCondition, CreatureQuality, CreatureStatus,
+    CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind,
+    DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
     EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
@@ -133,6 +133,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::if_you_cant_source_deals_damage_to_you => {
             if_you_cant_source_deals_damage_to_you_from_pair(pair)
         }
+        Rule::it_cant_be_regenerated => Ok(Statement::ItCantBeRegenerated),
         Rule::if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn => {
             if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn_from_pair(
                 pair,
@@ -961,6 +962,9 @@ fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseErro
                 creature_status_from_pair(status_pair)?,
             ))
         }
+        Rule::target_qualified_creature => Ok(DestroyTarget::TargetQualifiedCreature(
+            target_qualified_creature_from_pair(pair)?,
+        )),
         Rule::target_creature_type => {
             let creature_type_pair =
                 only_inner(pair, "target_creature_type missing creature_type")?;
@@ -983,6 +987,31 @@ fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseErro
             basic_land_type_from_plural_pair(pair)?,
         )),
         _ => Err(ParseError::Internal("destroy target")),
+    }
+}
+
+fn target_qualified_creature_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Vec<CreatureQuality>, ParseError> {
+    if pair.as_rule() != Rule::target_qualified_creature {
+        return Err(ParseError::Internal("target_qualified_creature"));
+    }
+    pair.into_inner().map(creature_quality_from_pair).collect()
+}
+
+fn creature_quality_from_pair(pair: Pair<Rule>) -> Result<CreatureQuality, ParseError> {
+    match pair.as_rule() {
+        Rule::non_permanent_type => {
+            let permanent_type_pair = only_inner(pair, "non_permanent_type missing type")?;
+            Ok(CreatureQuality::NonPermanentType(permanent_type_from_pair(
+                permanent_type_pair,
+            )?))
+        }
+        Rule::non_color_word => {
+            let color_pair = only_inner(pair, "non_color_word missing color")?;
+            Ok(CreatureQuality::NonColor(color_from_pair(color_pair)?))
+        }
+        _ => Err(ParseError::Internal("creature_quality")),
     }
 }
 

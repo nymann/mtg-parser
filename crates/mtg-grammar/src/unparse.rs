@@ -6,19 +6,19 @@ use crate::ast::{
     ActivationPermission, AddManaAmount, AsEntersChoice, AttackRequirementSubject,
     BalanceSameWayAction, BasicLandType, BasicLandTypeReference, CardCount, CastRestriction, Color,
     ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
-    CopyException, CounterAmount, CounterTargetSpellCondition, CreatureStatus, CreatureType,
-    DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
-    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
-    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, EachPlayerAction,
-    EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol,
-    MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
-    PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
-    StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor,
+    CopyException, CounterAmount, CounterTargetSpellCondition, CreatureQuality, CreatureStatus,
+    CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
+    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
+    DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
+    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
+    InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
+    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType,
+    Statement, StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm,
     TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
     TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
@@ -107,6 +107,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" deals ");
             write_damage_amount(out, *amount);
             out.push_str(" damage to you.");
+        }
+        Statement::ItCantBeRegenerated => {
+            out.push_str("It can't be regenerated.");
         }
         Statement::IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
             permanent_type,
@@ -501,6 +504,7 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
             | Statement::YouGainLifeEqualToDamage { .. }
             | Statement::ItsControllerGainsLife { .. }
             | Statement::NamedSourceDealsDamage { .. }
+            | Statement::ItCantBeRegenerated
             | Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn
             | Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn
             | Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep { .. }
@@ -3041,6 +3045,11 @@ fn write_destroy_target(out: &mut String, target: &DestroyTarget) {
             out.push_str(creature_status_name(*status));
             out.push_str(" creature");
         }
+        DestroyTarget::TargetQualifiedCreature(qualities) => {
+            out.push_str("target ");
+            write_creature_quality_list(out, qualities);
+            out.push_str(" creature");
+        }
         DestroyTarget::TargetCreatureType(creature_type) => {
             out.push_str("target ");
             write_creature_type(out, *creature_type);
@@ -3052,6 +3061,24 @@ fn write_destroy_target(out: &mut String, target: &DestroyTarget) {
         DestroyTarget::AllBasicLands(basic_land_type) => {
             out.push_str("all ");
             out.push_str(basic_land_type_plural_name(*basic_land_type));
+        }
+    }
+}
+
+fn write_creature_quality_list(out: &mut String, qualities: &[CreatureQuality]) {
+    for (index, quality) in qualities.iter().enumerate() {
+        if index > 0 {
+            out.push_str(", ");
+        }
+        match quality {
+            CreatureQuality::NonPermanentType(permanent_type) => {
+                out.push_str("non");
+                out.push_str(permanent_type_name(*permanent_type));
+            }
+            CreatureQuality::NonColor(color) => {
+                out.push_str("non");
+                out.push_str(color_name(*color));
+            }
         }
     }
 }

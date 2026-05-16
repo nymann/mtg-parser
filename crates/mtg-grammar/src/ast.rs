@@ -66,6 +66,9 @@ pub enum Statement {
         source: SourceObject,
         amount: DamageAmount,
     },
+    /// "It can't be regenerated." — a CR 614.17 can't effect restricting
+    /// the CR 701.15 regenerate keyword action.
+    ItCantBeRegenerated,
     /// "If it's a <type>, it can't be regenerated this turn, and if it
     /// would die this turn, exile it instead."
     IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn {
@@ -351,12 +354,22 @@ pub enum DestroyTarget {
     TargetColoredPermanent(Color),
     /// "target <status> creature"
     TargetStatusCreature(CreatureStatus),
+    /// "target <quality>[, <quality>] creature"
+    TargetQualifiedCreature(Vec<CreatureQuality>),
     /// "target <creature_type>"
     TargetCreatureType(CreatureType),
     /// "all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]"
     AllPermanents(Vec<PermanentType>),
     /// "all <basic_land_type>s"
     AllBasicLands(BasicLandType),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CreatureQuality {
+    /// "non<permanent_type>"
+    NonPermanentType(PermanentType),
+    /// "non<color>"
+    NonColor(Color),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
