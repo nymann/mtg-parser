@@ -357,3 +357,5 @@ mod wheel_of_fortune;
 mod wild_growth;
 #[path = "generated_patterns/winter_orb.rs"]
 mod winter_orb;
+#[path = "generated_patterns/word_of_command.rs"]
+mod word_of_command;

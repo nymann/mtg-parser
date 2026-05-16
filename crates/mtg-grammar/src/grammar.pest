@@ -65,6 +65,10 @@ sentence_statement = _{
   | tap_all_permanents_then_mana_loss
   | player_payment_failure
   | target_player_activates_mana_ability_of_each_permanent_they_control
+  | control_player_effect
+  | referenced_card_play_instruction
+  | mana_ability_activation_limit
+  | conditional_control_player_effect
   | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
   | target_player_gains_life
   | its_controller_gains_life
@@ -338,7 +342,10 @@ each_creature_damage_recipient = { ^"each" ~ ^"creature" }
 each_creature_with_keyword = { ^"each" ~ ^"creature" ~ ^"with" ~ keyword }
 each_creature_without_keyword = { ^"each" ~ ^"creature" ~ ^"without" ~ keyword }
 each_player_damage_recipient = { ^"each" ~ ^"player" }
-proper_name = @{ upper_alpha ~ (ASCII_ALPHANUMERIC | "'" | "-")* ~ (WHITESPACE ~ upper_alpha ~ (ASCII_ALPHANUMERIC | "'" | "-")*)* }
+proper_name = @{
+    upper_alpha ~ (ASCII_ALPHANUMERIC | "'" | "-")*
+  ~ (WHITESPACE ~ ((^"a" | ^"an" | ^"and" | ^"at" | ^"by" | ^"for" | ^"from" | ^"in" | ^"of" | ^"or" | ^"the" | ^"to" | ^"with") ~ WHITESPACE)? ~ upper_alpha ~ (ASCII_ALPHANUMERIC | "'" | "-")*)*
+}
 upper_alpha = _{ 'A'..'Z' }
 
 spend_only_color_mana_on_variable = {
@@ -490,6 +497,51 @@ target_player_activates_mana_ability_of_each_permanent_they_control = {
   ~ ^"of" ~ ^"each" ~ permanent_type ~ ^"they" ~ ^"control" ~ "."
 }
 
+control_player_effect = {
+    controller_ref ~ ^"control" ~ controlled_player_ref ~ control_duration ~ "."
+}
+controller_ref = { ^"you" }
+controlled_player_ref = { ^"that" ~ ^"player" | ^"the" ~ ^"player" }
+control_duration = {
+    ^"until" ~ source_resolution_duration
+  | ^"while" ~ spell_resolution_duration
+}
+source_resolution_duration = { proper_name ~ ^"finishes" ~ ^"resolving" }
+spell_resolution_duration = { ^"that" ~ ^"spell" ~ ^"is" ~ ^"resolving" }
+
+referenced_card_play_instruction = {
+    controlled_player_ref ~ ^"plays" ~ referenced_card_ref ~ if_able_clause? ~ "."
+}
+referenced_card_ref = { ^"that" ~ ^"card" }
+if_able_clause = { ^"if" ~ ^"able" }
+
+mana_ability_activation_limit = {
+    activation_limit_context ~ "," ~ controlled_player_ref ~ ^"can"
+  ~ ^"activate" ~ ^"mana" ~ ^"abilities" ~ ^"only" ~ ^"if"
+  ~ mana_ability_source_limit ~ ^"and" ~ ^"only" ~ ^"if"
+  ~ produced_mana_spending_limit ~ "."
+}
+activation_limit_context = { ^"while" ~ ^"doing" ~ ^"so" }
+mana_ability_source_limit = {
+    ^"they're" ~ ^"from" ~ ^"lands" ~ ^"that" ~ ^"player" ~ ^"controls"
+}
+produced_mana_spending_limit = {
+    ^"mana" ~ ^"they" ~ ^"produce" ~ ^"is" ~ ^"spent" ~ ^"to"
+  ~ mana_spending_purpose ~ (^"and/or" ~ ^"to" ~ mana_spending_purpose)*
+}
+mana_spending_purpose = {
+    ^"activate" ~ ^"other" ~ ^"mana" ~ ^"abilities" ~ ^"of" ~ ^"lands"
+  ~ ^"the" ~ ^"player" ~ ^"controls"
+  | ^"play" ~ referenced_card_ref
+}
+
+conditional_control_player_effect = {
+    ^"if" ~ control_player_condition ~ "," ~ control_player_effect
+}
+control_player_condition = {
+    ^"the" ~ ^"chosen" ~ ^"card" ~ ^"is" ~ ^"cast" ~ ^"as" ~ article ~ ^"spell"
+}
+
 then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way = {
     ^"then" ~ ^"that" ~ ^"player" ~ ^"loses" ~ ^"all" ~ ^"unspent"
   ~ ^"mana" ~ ^"and" ~ ^"you" ~ ^"add" ~ ^"the" ~ ^"mana"
@@ -522,11 +574,17 @@ exchange_that_card_with_top_card_of_your_library = {
 }
 
 imperative_action_sequence = {
-    imperative_action ~ ("," ~ imperative_action)* ~ "," ~ ^"then" ~ imperative_action ~ "."
+    (
+      (look_at_target_hand_action ~ ^"and" ~ choose_card_from_it_action)
+    | (imperative_action ~ ("," ~ imperative_action)* ~ "," ~ ^"then" ~ imperative_action)
+    )
+  ~ "."
 }
 
 imperative_action = _{
-    discard_your_hand_action
+    look_at_target_hand_action
+  | choose_card_from_it_action
+  | discard_your_hand_action
   | ante_top_card_of_your_library_action
   | search_your_library_for_a_card_action
   | put_that_card_into_your_hand_action
@@ -535,6 +593,11 @@ imperative_action = _{
   | tap_source_action
   | sacrifice_permanent_of_opponents_choice_action
 }
+look_at_target_hand_action = {
+    ^"look" ~ ^"at" ~ target_hand_player ~ ^"hand"
+}
+target_hand_player = { ^"target player's" | ^"target opponent's" }
+choose_card_from_it_action = { ^"choose" ~ article ~ ^"card" ~ ^"from" ~ ^"it" }
 discard_your_hand_action = { ^"discard" ~ ^"your" ~ ^"hand" }
 ante_top_card_of_your_library_action = {
     ^"ante" ~ ^"the" ~ ^"top" ~ ^"card" ~ ^"of" ~ ^"your" ~ ^"library"

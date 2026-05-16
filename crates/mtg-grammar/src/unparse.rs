@@ -3,24 +3,27 @@ use std::fmt::Write;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
-    ActivationPermission, AddManaAmount, AsEntersChoice, AttackRequirementSubject,
-    BalanceSameWayAction, BasicLandType, BasicLandTypeReference, BlockingCapacityAmount,
-    BlockingCapacityDuration, BlockingCapacitySubject, CardCount, CastRestriction, Color,
-    ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
-    CopyException, CopyGrantedAbility, CounterAmount, CounterTargetSpellCondition, CreatureQuality,
-    CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
-    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
-    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
-    DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
-    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
-    InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
-    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, ReturnDestination,
-    Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
-    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
-    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TappedForManaSubject,
+    ActivationLimitContext, ActivationPermission, AddManaAmount, AsEntersChoice,
+    AttackRequirementSubject, BalanceSameWayAction, BasicLandType, BasicLandTypeReference,
+    BlockingCapacityAmount, BlockingCapacityDuration, BlockingCapacitySubject, CardCount,
+    CastRestriction, Color, ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder,
+    ContinuousEffect, ControlPlayerCondition, ControlPlayerController, ControlPlayerDuration,
+    ControlPlayerEffect, ControlledPlayer, CopyException, CopyGrantedAbility, CounterAmount,
+    CounterTargetSpellCondition, CreatureQuality, CreatureStatus, CreatureType, DamageAmount,
+    DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
+    DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
+    DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
+    DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, EachPlayerAction,
+    EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
+    LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer, ManaAbilitySourceLimit,
+    ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
+    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
+    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, ReferencedCard,
+    ReferencedCreature, RegenerateRecipient, ReturnDestination, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, StaticDamageSource, StaticUntapRestriction, Step,
+    TapAllPermanentsActor, TapUntapAction, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -209,6 +212,54 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str("Target player activates a mana ability of each ");
             out.push_str(permanent_type_name(*permanent_type));
             out.push_str(" they control.");
+        }
+        Statement::ControlPlayer {
+            controller,
+            player,
+            duration,
+        } => {
+            write_control_player_effect(
+                out,
+                &ControlPlayerEffect {
+                    controller: *controller,
+                    player: *player,
+                    duration: duration.clone(),
+                },
+            );
+        }
+        Statement::ConditionalControlPlayer { condition, effect } => {
+            out.push_str("If ");
+            write_control_player_condition(out, *condition);
+            out.push_str(", ");
+            write_control_player_effect_with_case(out, effect, SentenceCase::Lower);
+        }
+        Statement::PlayReferencedCard {
+            player,
+            card,
+            if_able,
+        } => {
+            write_controlled_player(out, *player, SentenceCase::Upper);
+            out.push_str(" plays ");
+            write_referenced_card(out, *card);
+            if *if_able {
+                out.push_str(" if able");
+            }
+            out.push('.');
+        }
+        Statement::ManaAbilityActivationLimit {
+            context,
+            player,
+            source,
+            spending,
+        } => {
+            write_activation_limit_context(out, *context);
+            out.push_str(", ");
+            write_controlled_player(out, *player, SentenceCase::Lower);
+            out.push_str(" can activate mana abilities only if ");
+            write_mana_ability_source_limit(out, *source);
+            out.push_str(" and only if mana they produce is spent to ");
+            write_mana_spending_purposes(out, spending);
+            out.push('.');
         }
         Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay => {
             out.push_str(
@@ -530,7 +581,107 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
             | Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep { .. }
             | Statement::IfYouDoUntap { .. }
             | Statement::ForEachAttackingCreatureChooseLabelBlockingRestriction { .. }
+            | Statement::ControlPlayer { .. }
+            | Statement::ConditionalControlPlayer { .. }
+            | Statement::PlayReferencedCard { .. }
+            | Statement::ManaAbilityActivationLimit { .. }
     )
+}
+
+fn write_control_player_effect(out: &mut String, effect: &ControlPlayerEffect) {
+    write_control_player_effect_with_case(out, effect, SentenceCase::Upper);
+}
+
+fn write_control_player_effect_with_case(
+    out: &mut String,
+    effect: &ControlPlayerEffect,
+    sentence_case: SentenceCase,
+) {
+    write_control_player_controller(out, effect.controller, sentence_case);
+    out.push_str(" control ");
+    write_controlled_player(out, effect.player, SentenceCase::Lower);
+    out.push(' ');
+    write_control_player_duration(out, &effect.duration);
+    out.push('.');
+}
+
+fn write_control_player_controller(
+    out: &mut String,
+    controller: ControlPlayerController,
+    sentence_case: SentenceCase,
+) {
+    match (controller, sentence_case) {
+        (ControlPlayerController::You, SentenceCase::Upper) => out.push_str("You"),
+        (ControlPlayerController::You, SentenceCase::Lower) => out.push_str("you"),
+    }
+}
+
+fn write_controlled_player(
+    out: &mut String,
+    player: ControlledPlayer,
+    sentence_case: SentenceCase,
+) {
+    match (player, sentence_case) {
+        (ControlledPlayer::ThatPlayer, SentenceCase::Upper) => out.push_str("That player"),
+        (ControlledPlayer::ThatPlayer, SentenceCase::Lower) => out.push_str("that player"),
+        (ControlledPlayer::ThePlayer, SentenceCase::Upper) => out.push_str("The player"),
+        (ControlledPlayer::ThePlayer, SentenceCase::Lower) => out.push_str("the player"),
+    }
+}
+
+fn write_control_player_duration(out: &mut String, duration: &ControlPlayerDuration) {
+    match duration {
+        ControlPlayerDuration::SourceFinishesResolving { source_name } => {
+            out.push_str("until ");
+            out.push_str(source_name);
+            out.push_str(" finishes resolving");
+        }
+        ControlPlayerDuration::ThatSpellIsResolving => {
+            out.push_str("while that spell is resolving");
+        }
+    }
+}
+
+fn write_control_player_condition(out: &mut String, condition: ControlPlayerCondition) {
+    match condition {
+        ControlPlayerCondition::ChosenCardIsCastAsSpell => {
+            out.push_str("the chosen card is cast as a spell");
+        }
+    }
+}
+
+fn write_referenced_card(out: &mut String, card: ReferencedCard) {
+    match card {
+        ReferencedCard::ThatCard => out.push_str("that card"),
+    }
+}
+
+fn write_activation_limit_context(out: &mut String, context: ActivationLimitContext) {
+    match context {
+        ActivationLimitContext::WhileDoingSo => out.push_str("While doing so"),
+    }
+}
+
+fn write_mana_ability_source_limit(out: &mut String, source: ManaAbilitySourceLimit) {
+    match source {
+        ManaAbilitySourceLimit::LandsThatPlayerControls => {
+            out.push_str("they're from lands that player controls");
+        }
+    }
+}
+
+fn write_mana_spending_purposes(out: &mut String, purposes: &[ManaSpendingPurpose]) {
+    for (i, purpose) in purposes.iter().enumerate() {
+        if i > 0 {
+            out.push_str(" and/or to ");
+        }
+        match purpose {
+            ManaSpendingPurpose::ActivateOtherManaAbilitiesOfLandsThePlayerControls => {
+                out.push_str("activate other mana abilities of lands the player controls");
+            }
+            ManaSpendingPurpose::PlayThatCard => out.push_str("play that card"),
+        }
+    }
 }
 
 fn write_modal_choice(out: &mut String, modes: &[ModalMode]) {
@@ -754,6 +905,16 @@ fn write_cast_restriction(out: &mut String, restriction: CastRestriction) {
 }
 
 fn write_imperative_action_sequence(out: &mut String, actions: &[ImperativeAction]) {
+    if let [ImperativeAction::LookAtTargetHand { player }, ImperativeAction::ChooseCardFromIt] =
+        actions
+    {
+        write_imperative_action(out, ImperativeAction::LookAtTargetHand { player: *player });
+        out.push_str(" and ");
+        write_imperative_action(out, ImperativeAction::ChooseCardFromIt);
+        out.push('.');
+        return;
+    }
+
     for (i, action) in actions.iter().enumerate() {
         if i > 0 {
             if i + 1 == actions.len() {
@@ -769,6 +930,15 @@ fn write_imperative_action_sequence(out: &mut String, actions: &[ImperativeActio
 
 fn write_imperative_action(out: &mut String, action: ImperativeAction) {
     match action {
+        ImperativeAction::LookAtTargetHand { player } => {
+            out.push_str("Look at ");
+            match player {
+                TargetHandPlayer::Player => out.push_str("target player's"),
+                TargetHandPlayer::Opponent => out.push_str("target opponent's"),
+            }
+            out.push_str(" hand");
+        }
+        ImperativeAction::ChooseCardFromIt => out.push_str("choose a card from it"),
         ImperativeAction::DiscardYourHand => out.push_str("Discard your hand"),
         ImperativeAction::AnteTopCardOfYourLibrary => {
             out.push_str("ante the top card of your library");

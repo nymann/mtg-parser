@@ -5,25 +5,28 @@ use pest_derive::Parser;
 use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
-    ActivationPermission, AddManaAmount, AsEntersChoice, AttackRequirementSubject,
-    BalanceSameWayAction, BasicLandType, BasicLandTypeReference, BlockingCapacityAmount,
-    BlockingCapacityDuration, BlockingCapacitySubject, CardCount, CastRestriction, Color,
-    ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
-    CopyException, CopyGrantedAbility, CounterAmount, CounterTargetSpellCondition, CreatureQuality,
-    CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern,
-    DamageKind, DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount,
-    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
-    DamageRecipients, DamageRedirectionDestination, DestroyReferencedCreatureCondition,
-    DestroyTarget, DiesWording, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount,
-    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
-    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
-    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, ReferencedCreature,
-    RegenerateRecipient, ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement,
-    StaticAbility, StaticDamageSource, StaticUntapRestriction, Step, TapAllPermanentsActor,
-    TapUntapAction, TappedForManaSubject, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    ActivationLimitContext, ActivationPermission, AddManaAmount, AsEntersChoice,
+    AttackRequirementSubject, BalanceSameWayAction, BasicLandType, BasicLandTypeReference,
+    BlockingCapacityAmount, BlockingCapacityDuration, BlockingCapacitySubject, CardCount,
+    CastRestriction, Color, ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder,
+    ContinuousEffect, ControlPlayerCondition, ControlPlayerController, ControlPlayerDuration,
+    ControlPlayerEffect, ControlledPlayer, CopyException, CopyGrantedAbility, CounterAmount,
+    CounterTargetSpellCondition, CreatureQuality, CreatureStatus, CreatureType, DamageAmount,
+    DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
+    DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
+    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
+    DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
+    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
+    InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer,
+    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
+    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
+    ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
+    ReferencedCard, ReferencedCreature, RegenerateRecipient, ReturnDestination, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
+    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
+    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TappedForManaSubject,
+    TargetHandPlayer, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
     TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCastActor, TriggerCastSpell,
     TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
     TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
@@ -155,6 +158,10 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::target_player_activates_mana_ability_of_each_permanent_they_control => {
             target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(pair)
         }
+        Rule::control_player_effect => control_player_statement_from_pair(pair),
+        Rule::referenced_card_play_instruction => referenced_card_play_instruction_from_pair(pair),
+        Rule::mana_ability_activation_limit => mana_ability_activation_limit_from_pair(pair),
+        Rule::conditional_control_player_effect => conditional_control_player_effect_from_pair(pair),
         Rule::then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way => {
             Ok(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay)
         }
@@ -486,6 +493,13 @@ fn imperative_action_sequence_from_pair(pair: Pair<Rule>) -> Result<Statement, P
 
 fn imperative_action_from_pair(pair: Pair<Rule>) -> Result<ImperativeAction, ParseError> {
     match pair.as_rule() {
+        Rule::look_at_target_hand_action => {
+            let target_pair = only_inner(pair, "look at target hand missing player")?;
+            Ok(ImperativeAction::LookAtTargetHand {
+                player: target_hand_player_from_pair(target_pair)?,
+            })
+        }
+        Rule::choose_card_from_it_action => Ok(ImperativeAction::ChooseCardFromIt),
         Rule::discard_your_hand_action => Ok(ImperativeAction::DiscardYourHand),
         Rule::ante_top_card_of_your_library_action => {
             Ok(ImperativeAction::AnteTopCardOfYourLibrary)
@@ -525,6 +539,14 @@ fn imperative_action_from_pair(pair: Pair<Rule>) -> Result<ImperativeAction, Par
             })
         }
         _ => Err(ParseError::Internal("imperative action")),
+    }
+}
+
+fn target_hand_player_from_pair(pair: Pair<Rule>) -> Result<TargetHandPlayer, ParseError> {
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "target player's" => Ok(TargetHandPlayer::Player),
+        "target opponent's" => Ok(TargetHandPlayer::Opponent),
+        _ => Err(ParseError::Internal("target hand player")),
     }
 }
 
@@ -1436,6 +1458,184 @@ fn target_player_activates_mana_ability_of_each_permanent_they_control_from_pair
             permanent_type: permanent_type_from_pair(permanent_type_pair)?,
         },
     )
+}
+
+fn control_player_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let effect = control_player_effect_from_pair(pair)?;
+    Ok(Statement::ControlPlayer {
+        controller: effect.controller,
+        player: effect.player,
+        duration: effect.duration,
+    })
+}
+
+fn conditional_control_player_effect_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut condition = None;
+    let mut effect = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::control_player_condition => {
+                condition = Some(control_player_condition_from_pair(child)?);
+            }
+            Rule::control_player_effect => {
+                effect = Some(control_player_effect_from_pair(child)?);
+            }
+            _ => {}
+        }
+    }
+    Ok(Statement::ConditionalControlPlayer {
+        condition: condition.ok_or(ParseError::Internal(
+            "conditional control missing condition",
+        ))?,
+        effect: effect.ok_or(ParseError::Internal("conditional control missing effect"))?,
+    })
+}
+
+fn control_player_effect_from_pair(pair: Pair<Rule>) -> Result<ControlPlayerEffect, ParseError> {
+    let mut controller = None;
+    let mut player = None;
+    let mut duration = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::controller_ref => controller = Some(controller_ref_from_pair(child)?),
+            Rule::controlled_player_ref => player = Some(controlled_player_from_pair(child)?),
+            Rule::control_duration => duration = Some(control_duration_from_pair(child)?),
+            _ => {}
+        }
+    }
+    Ok(ControlPlayerEffect {
+        controller: controller.ok_or(ParseError::Internal("control effect missing controller"))?,
+        player: player.ok_or(ParseError::Internal("control effect missing player"))?,
+        duration: duration.ok_or(ParseError::Internal("control effect missing duration"))?,
+    })
+}
+
+fn controller_ref_from_pair(pair: Pair<Rule>) -> Result<ControlPlayerController, ParseError> {
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "you" => Ok(ControlPlayerController::You),
+        _ => Err(ParseError::Internal("controller ref")),
+    }
+}
+
+fn controlled_player_from_pair(pair: Pair<Rule>) -> Result<ControlledPlayer, ParseError> {
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "that player" => Ok(ControlledPlayer::ThatPlayer),
+        "the player" => Ok(ControlledPlayer::ThePlayer),
+        _ => Err(ParseError::Internal("controlled player")),
+    }
+}
+
+fn control_duration_from_pair(pair: Pair<Rule>) -> Result<ControlPlayerDuration, ParseError> {
+    let child = only_inner(pair, "control duration missing body")?;
+    match child.as_rule() {
+        Rule::source_resolution_duration => {
+            let source_pair = only_inner(child, "source duration missing source name")?;
+            Ok(ControlPlayerDuration::SourceFinishesResolving {
+                source_name: source_pair.as_str().to_string(),
+            })
+        }
+        Rule::spell_resolution_duration => Ok(ControlPlayerDuration::ThatSpellIsResolving),
+        _ => Err(ParseError::Internal("control duration")),
+    }
+}
+
+fn control_player_condition_from_pair(
+    pair: Pair<Rule>,
+) -> Result<ControlPlayerCondition, ParseError> {
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "the chosen card is cast as a spell" | "the chosen card is cast as an spell" => {
+            Ok(ControlPlayerCondition::ChosenCardIsCastAsSpell)
+        }
+        _ => Err(ParseError::Internal("control player condition")),
+    }
+}
+
+fn referenced_card_play_instruction_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut player = None;
+    let mut card = None;
+    let mut if_able = false;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::controlled_player_ref => player = Some(controlled_player_from_pair(child)?),
+            Rule::referenced_card_ref => card = Some(referenced_card_from_pair(child)?),
+            Rule::if_able_clause => if_able = true,
+            _ => {}
+        }
+    }
+    Ok(Statement::PlayReferencedCard {
+        player: player.ok_or(ParseError::Internal("play referenced card missing player"))?,
+        card: card.ok_or(ParseError::Internal("play referenced card missing card"))?,
+        if_able,
+    })
+}
+
+fn referenced_card_from_pair(pair: Pair<Rule>) -> Result<ReferencedCard, ParseError> {
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "that card" => Ok(ReferencedCard::ThatCard),
+        _ => Err(ParseError::Internal("referenced card")),
+    }
+}
+
+fn mana_ability_activation_limit_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut context = None;
+    let mut player = None;
+    let mut source = None;
+    let mut spending = Vec::new();
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::activation_limit_context => {
+                context = Some(activation_limit_context_from_pair(child)?);
+            }
+            Rule::controlled_player_ref => player = Some(controlled_player_from_pair(child)?),
+            Rule::mana_ability_source_limit => {
+                source = Some(mana_ability_source_limit_from_pair(child)?);
+            }
+            Rule::produced_mana_spending_limit => {
+                spending = child
+                    .into_inner()
+                    .filter(|purpose| purpose.as_rule() == Rule::mana_spending_purpose)
+                    .map(mana_spending_purpose_from_pair)
+                    .collect::<Result<Vec<_>, _>>()?;
+            }
+            _ => {}
+        }
+    }
+    Ok(Statement::ManaAbilityActivationLimit {
+        context: context.ok_or(ParseError::Internal("mana limit missing context"))?,
+        player: player.ok_or(ParseError::Internal("mana limit missing player"))?,
+        source: source.ok_or(ParseError::Internal("mana limit missing source"))?,
+        spending,
+    })
+}
+
+fn activation_limit_context_from_pair(
+    pair: Pair<Rule>,
+) -> Result<ActivationLimitContext, ParseError> {
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "while doing so" => Ok(ActivationLimitContext::WhileDoingSo),
+        _ => Err(ParseError::Internal("activation limit context")),
+    }
+}
+
+fn mana_ability_source_limit_from_pair(
+    pair: Pair<Rule>,
+) -> Result<ManaAbilitySourceLimit, ParseError> {
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "they're from lands that player controls" => {
+            Ok(ManaAbilitySourceLimit::LandsThatPlayerControls)
+        }
+        _ => Err(ParseError::Internal("mana ability source limit")),
+    }
+}
+
+fn mana_spending_purpose_from_pair(pair: Pair<Rule>) -> Result<ManaSpendingPurpose, ParseError> {
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "activate other mana abilities of lands the player controls" => {
+            Ok(ManaSpendingPurpose::ActivateOtherManaAbilitiesOfLandsThePlayerControls)
+        }
+        "play that card" => Ok(ManaSpendingPurpose::PlayThatCard),
+        _ => Err(ParseError::Internal("mana spending purpose")),
+    }
 }
 
 fn card_count_from_pair(count_pair: Pair<Rule>) -> Result<CardCount, ParseError> {

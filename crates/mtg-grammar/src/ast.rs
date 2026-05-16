@@ -147,6 +147,30 @@ pub enum Statement {
     TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl {
         permanent_type: PermanentType,
     },
+    /// Effects that make one player control another player for a bounded duration.
+    ControlPlayer {
+        controller: ControlPlayerController,
+        player: ControlledPlayer,
+        duration: ControlPlayerDuration,
+    },
+    /// Conditional control-player effect, such as control while a chosen spell resolves.
+    ConditionalControlPlayer {
+        condition: ControlPlayerCondition,
+        effect: ControlPlayerEffect,
+    },
+    /// "The player plays that card if able."
+    PlayReferencedCard {
+        player: ControlledPlayer,
+        card: ReferencedCard,
+        if_able: bool,
+    },
+    /// Restriction on what mana abilities may be activated in a bounded context.
+    ManaAbilityActivationLimit {
+        context: ActivationLimitContext,
+        player: ControlledPlayer,
+        source: ManaAbilitySourceLimit,
+        spending: Vec<ManaSpendingPurpose>,
+    },
     /// "Then that player loses all unspent mana and you add the mana lost
     /// this way."
     ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay,
@@ -770,6 +794,10 @@ pub enum BalanceSameWayAction {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ImperativeAction {
+    /// "look at target player's/opponent's hand"
+    LookAtTargetHand { player: TargetHandPlayer },
+    /// "choose a card from it"
+    ChooseCardFromIt,
     /// "discard your hand"
     DiscardYourHand,
     /// "ante the top card of your library"
@@ -786,6 +814,62 @@ pub enum ImperativeAction {
     TapSource { source: SourceObject },
     /// "sacrifice a/an <permanent_type> of an opponent's choice"
     SacrificePermanentOfOpponentsChoice { permanent_type: PermanentType },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TargetHandPlayer {
+    Player,
+    Opponent,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ControlPlayerController {
+    You,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ControlledPlayer {
+    ThatPlayer,
+    ThePlayer,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ControlPlayerEffect {
+    pub controller: ControlPlayerController,
+    pub player: ControlledPlayer,
+    pub duration: ControlPlayerDuration,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ControlPlayerDuration {
+    SourceFinishesResolving { source_name: String },
+    ThatSpellIsResolving,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ControlPlayerCondition {
+    ChosenCardIsCastAsSpell,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ReferencedCard {
+    ThatCard,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActivationLimitContext {
+    WhileDoingSo,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ManaAbilitySourceLimit {
+    LandsThatPlayerControls,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ManaSpendingPurpose {
+    ActivateOtherManaAbilitiesOfLandsThePlayerControls,
+    PlayThatCard,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
