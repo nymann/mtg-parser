@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 
 use mtg_scryfall::Card;
 
-use crate::agent_events::{self, ParsedAgentEvent, ToolUseTarget};
+use crate::agent_events::{self, ParsedAgentEvent, TokenUsage, ToolUseTarget};
 use crate::flow::{AgentProvider, FlowEvent, IterationOutcomeSummary, NoteLevel, SessionEndReason};
 use crate::tui::complexity::{self, MetricSnapshot};
 
@@ -75,6 +75,16 @@ impl AppState {
         } else {
             Some(durations.iter().sum::<u64>() / durations.len() as u64)
         }
+    }
+
+    pub fn avg_cost_per_committed_iteration(&self) -> Option<f64> {
+        let committed = self
+            .iterations
+            .iter()
+            .filter(|i| i.committed_duration_secs.is_some())
+            .count();
+        let total = self.session.as_ref()?.total_cost_usd;
+        (committed > 0 && total > 0.0).then_some(total / committed as f64)
     }
 
     fn visible_output_text(&self) -> String {
@@ -233,6 +243,23 @@ impl AppState {
                 } else {
                     complexity::historical_snapshots(COMPLEXITY_HISTORY_DEPTH)
                 };
+                let prior_total_cost_usd = self
+                    .session
+                    .as_ref()
+                    .map(|s| s.total_cost_usd)
+                    .unwrap_or_default();
+                let prior_charged_iterations = self
+                    .session
+                    .as_ref()
+                    .map(|s| s.charged_iterations)
+                    .unwrap_or_default();
+                let prior_total_usage = self
+                    .session
+                    .as_ref()
+                    .map(|s| s.total_usage)
+                    .unwrap_or_default();
+                let prior_latest_context_tokens =
+                    self.session.as_ref().and_then(|s| s.latest_context_tokens);
                 self.session = Some(SessionMeta {
                     workflow,
                     set,
@@ -243,6 +270,10 @@ impl AppState {
                     current_corpus_passing: baseline_corpus_passing,
                     current_corpus_total: baseline_corpus_total,
                     current_grammar_rules: baseline_grammar_rules,
+                    total_cost_usd: prior_total_cost_usd,
+                    charged_iterations: prior_charged_iterations,
+                    total_usage: prior_total_usage,
+                    latest_context_tokens: prior_latest_context_tokens,
                     started_at: Instant::now(),
                     history,
                 });
@@ -272,6 +303,8 @@ impl AppState {
                             finished_at: None,
                             summary: None,
                             total,
+                            usage: TokenUsage::default(),
+                            total_cost_usd: 0.0,
                         },
                     );
                     iter.current_step = Some(index);
@@ -290,6 +323,8 @@ impl AppState {
                             finished_at: None,
                             summary: None,
                             total,
+                            usage: TokenUsage::default(),
+                            total_cost_usd: 0.0,
                         },
                     );
                     self.iterations.last_mut().unwrap().current_step = Some(index);
@@ -406,6 +441,7 @@ impl AppState {
                     if self.is_duplicate_agent_done(provider, &parsed) {
                         continue;
                     }
+                    self.record_agent_usage(&parsed);
                     self.events.push(TimelineRow {
                         iteration_index: self.iterations.len() as u32,
                         delta,
@@ -471,11 +507,53 @@ impl AppState {
         }
     }
 
+    fn record_agent_usage(&mut self, parsed: &ParsedAgentEvent) {
+        let ParsedAgentEvent::Done {
+            total_cost_usd,
+            usage,
+            ..
+        } = parsed
+        else {
+            return;
+        };
+        let Some(iter) = self.iterations.last_mut() else {
+            return;
+        };
+        let current_step = iter.current_step;
+        if let Some(usage) = usage {
+            iter.usage = iter.usage.add(*usage);
+            if let Some(step_idx) = current_step {
+                if let Some(step) = iter.step_mut(step_idx) {
+                    step.usage = step.usage.add(*usage);
+                }
+            }
+        }
+        if *total_cost_usd > 0.0 {
+            iter.total_cost_usd += *total_cost_usd;
+            if let Some(step_idx) = current_step {
+                if let Some(step) = iter.step_mut(step_idx) {
+                    step.total_cost_usd += *total_cost_usd;
+                }
+            }
+        }
+        if let Some(session) = self.session.as_mut() {
+            if let Some(usage) = usage {
+                session.total_usage = session.total_usage.add(*usage);
+                session.latest_context_tokens = Some(usage.input_tokens);
+            }
+            if *total_cost_usd > 0.0 {
+                session.total_cost_usd += *total_cost_usd;
+                session.charged_iterations += 1;
+            }
+        }
+    }
+
     fn is_duplicate_agent_done(&self, provider: AgentProvider, parsed: &ParsedAgentEvent) -> bool {
         let ParsedAgentEvent::Done {
             subtype,
             num_turns,
             total_cost_usd,
+            ..
         } = parsed
         else {
             return false;
@@ -488,6 +566,7 @@ impl AppState {
                     subtype: last_subtype,
                     num_turns: last_num_turns,
                     total_cost_usd: last_total_cost_usd,
+                    ..
                 },
             }) if *last_provider == provider
                 && last_subtype == subtype
@@ -565,6 +644,10 @@ pub struct SessionMeta {
     pub current_corpus_passing: usize,
     pub current_corpus_total: usize,
     pub current_grammar_rules: usize,
+    pub total_cost_usd: f64,
+    pub charged_iterations: usize,
+    pub total_usage: TokenUsage,
+    pub latest_context_tokens: Option<u64>,
     pub started_at: Instant,
     /// Oldest → newest complexity snapshots, used to render the
     /// sparkline strip above the main area. Seeded from recent git
@@ -596,6 +679,8 @@ pub struct Iteration {
     pub last_event_at: Option<Instant>,
     pub outcome: Option<IterationOutcomeSummary>,
     pub committed_duration_secs: Option<u64>,
+    pub usage: TokenUsage,
+    pub total_cost_usd: f64,
 }
 
 impl Default for Iteration {
@@ -614,6 +699,8 @@ impl Default for Iteration {
             last_event_at: None,
             outcome: None,
             committed_duration_secs: None,
+            usage: TokenUsage::default(),
+            total_cost_usd: 0.0,
         }
     }
 }
@@ -665,6 +752,8 @@ pub struct StepState {
     pub finished_at: Option<Instant>,
     pub summary: Option<String>,
     pub total: u8,
+    pub usage: TokenUsage,
+    pub total_cost_usd: f64,
 }
 
 impl StepState {
@@ -676,6 +765,8 @@ impl StepState {
             finished_at: None,
             summary: None,
             total,
+            usage: TokenUsage::default(),
+            total_cost_usd: 0.0,
         }
     }
 
@@ -845,13 +936,46 @@ fn output_agent_lines(
             subtype,
             num_turns,
             total_cost_usd,
+            usage,
         } => vec![format_timed_row(
             row.delta,
             label,
-            &format!("done subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"),
+            &format!(
+                "done subtype={subtype} turns={num_turns}{}{}",
+                usage
+                    .map(format_usage_for_text)
+                    .filter(|s| !s.is_empty())
+                    .map(|s| format!(" · {s}"))
+                    .unwrap_or_default(),
+                if *total_cost_usd > 0.0 {
+                    format!(" · cost=${total_cost_usd:.4}")
+                } else {
+                    String::new()
+                }
+            ),
         )],
         ParsedAgentEvent::Other => Vec::new(),
     }
+}
+
+fn format_usage_for_text(usage: TokenUsage) -> String {
+    let mut parts = Vec::new();
+    if usage.input_tokens > 0 {
+        parts.push(format!("in={}", usage.input_tokens));
+    }
+    if usage.cached_input_tokens > 0 {
+        parts.push(format!("cached_in={}", usage.cached_input_tokens));
+    }
+    if usage.output_tokens > 0 {
+        parts.push(format!("out={}", usage.output_tokens));
+    }
+    if usage.reasoning_output_tokens > 0 {
+        parts.push(format!("reasoning={}", usage.reasoning_output_tokens));
+    }
+    if usage.cached_output_tokens > 0 {
+        parts.push(format!("cached_out={}", usage.cached_output_tokens));
+    }
+    parts.join(" ")
 }
 
 fn agent_action_summary(name: &str, target: &ToolUseTarget, repo_root: &std::path::Path) -> String {
