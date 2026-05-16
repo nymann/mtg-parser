@@ -503,6 +503,27 @@ enum BoundaryOwner {
     Blocked(String),
 }
 
+#[derive(Debug, Default, Serialize)]
+struct ConceptGrindSessionState {
+    blocked_target_rules: Vec<String>,
+    structural_cooldowns: Vec<StructuralCooldownEntry>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct StructuralCooldownEntry {
+    source_target_rule: String,
+    owner_reason: String,
+    cooled_target_rules: Vec<String>,
+    derivation_evidence: Vec<StructuralCooldownEvidence>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct StructuralCooldownEvidence {
+    target_rule: String,
+    source: String,
+    detail: String,
+}
+
 #[derive(Debug, Serialize)]
 struct ConceptGrindIterationSummary {
     iteration: u32,
@@ -2007,9 +2028,11 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
     });
 
     let mut blocked_targets = BTreeSet::new();
+    let mut structural_cooldowns = Vec::<StructuralCooldownEntry>::new();
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
+    write_concept_grind_session_state(&session_dir, &blocked_targets, &structural_cooldowns)?;
     let mut metrics = ConceptGrindMetrics::new(session_dir.clone());
     metrics.write(&session_dir)?;
     sink.emit(FlowEvent::Note {
@@ -2036,7 +2059,12 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
-        let gap = select_concept_gap_excluding(&before, &options, &blocked_targets)?;
+        let gap = select_concept_gap_excluding(
+            &before,
+            &options,
+            &blocked_targets,
+            &structural_cooldowns,
+        )?;
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
         sink.emit(FlowEvent::WorkflowIterationStarted {
@@ -2130,14 +2158,33 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             if options.concept.is_some() || options.target_rule.is_some() {
                 return Err(anyhow!("boundary decision blocked concept-grind: {reason}"));
             }
+            let blocked_target_rule = gap.target_rule.clone();
             sink.emit(FlowEvent::Note {
                 level: NoteLevel::Warn,
                 text: format!(
                     "skipping blocked target {} for this run: {reason}",
-                    gap.target_rule
+                    blocked_target_rule
                 ),
             });
-            blocked_targets.insert(gap.target_rule);
+            blocked_targets.insert(blocked_target_rule.clone());
+            if let Some(cooldown) =
+                derive_structural_cooldown(&before, &blocked_target_rule, reason)?
+            {
+                let cooled_count = cooldown.cooled_target_rules.len();
+                write_json(iteration_dir.join("structural_cooldown.json"), &cooldown)?;
+                sink.emit(FlowEvent::Note {
+                    level: NoteLevel::Info,
+                    text: format!(
+                        "cooling {cooled_count} structural sibling target rule(s) for this run"
+                    ),
+                });
+                structural_cooldowns.push(cooldown);
+            }
+            write_concept_grind_session_state(
+                &session_dir,
+                &blocked_targets,
+                &structural_cooldowns,
+            )?;
             continue;
         }
         let gap = apply_boundary_decision(gap, &boundary_decision)?;
@@ -2429,14 +2476,16 @@ fn select_concept_gap(
     report: &ExistingGrammarMapReport,
     options: &ConceptGrindOptions,
 ) -> Result<ConceptGap> {
-    select_concept_gap_excluding(report, options, &BTreeSet::new())
+    select_concept_gap_excluding(report, options, &BTreeSet::new(), &[])
 }
 
 fn select_concept_gap_excluding(
     report: &ExistingGrammarMapReport,
     options: &ConceptGrindOptions,
     excluded_rules: &BTreeSet<String>,
+    structural_cooldowns: &[StructuralCooldownEntry],
 ) -> Result<ConceptGap> {
+    let cooled_rules = structurally_cooled_rules(structural_cooldowns);
     if let Some(concept) = &options.concept {
         let query = options
             .query
@@ -2454,23 +2503,7 @@ fn select_concept_gap_excluding(
                     anyhow!("--target-rule {target_rule:?} is not an unmapped grammar rule")
                 })?
         } else {
-            report
-                .unmapped_rules
-                .iter()
-                .filter(|rule| !excluded_rules.contains(&rule.name))
-                .find(|rule| rule.suggested_concept.as_deref() == Some(concept.as_str()))
-                .or_else(|| {
-                    report
-                        .unmapped_rules
-                        .iter()
-                        .filter(|rule| !excluded_rules.contains(&rule.name))
-                        .find(|rule| rule.name.starts_with(concept))
-                })
-                .ok_or_else(|| {
-                    anyhow!(
-                        "--concept {concept:?} has no suggested or prefix-matching unmapped rule; pass --target-rule RULE to make the target explicit"
-                    )
-                })?
+            select_explicit_concept_rule(report, concept, excluded_rules, &cooled_rules)?
         };
         return Ok(ConceptGap {
             concept: concept.clone(),
@@ -2486,19 +2519,15 @@ fn select_concept_gap_excluding(
         bail!("--target-rule requires --concept so ownership is explicit");
     }
 
-    if let Some(rule) = report
-        .unmapped_rules
-        .iter()
-        .filter(|rule| !excluded_rules.contains(&rule.name))
-        .find(|rule| rule.suggested_concept.is_some())
-    {
-        let concept = rule.suggested_concept.clone().expect("checked");
+    let rule = select_auto_rule(report, excluded_rules, &cooled_rules)
+        .ok_or_else(|| anyhow!("no unblocked unmapped grammar rules remain"))?;
+    if let Some(concept) = &rule.suggested_concept {
         let query = options
             .query
             .clone()
             .unwrap_or_else(|| rule.name.replace('_', " "));
         return Ok(ConceptGap {
-            concept,
+            concept: concept.clone(),
             query,
             target_rule: rule.name.clone(),
             target_line: rule.line,
@@ -2506,13 +2535,6 @@ fn select_concept_gap_excluding(
             reason: "unmapped rule has existing concept-name prefix owner".to_string(),
         });
     }
-
-    let rule = report
-        .unmapped_rules
-        .iter()
-        .filter(|rule| !excluded_rules.contains(&rule.name))
-        .next()
-        .ok_or_else(|| anyhow!("no unblocked unmapped grammar rules remain"))?;
     let concept = slug(&rule.name).replace('-', "_");
     Ok(ConceptGap {
         concept,
@@ -2525,6 +2547,242 @@ fn select_concept_gap_excluding(
         suggested_existing_owner: false,
         reason: "first unmapped non-shared grammar rule".to_string(),
     })
+}
+
+fn select_explicit_concept_rule<'a>(
+    report: &'a ExistingGrammarMapReport,
+    concept: &str,
+    excluded_rules: &BTreeSet<String>,
+    cooled_rules: &BTreeSet<String>,
+) -> Result<&'a UnmappedGrammarRule> {
+    find_explicit_concept_rule(report, concept, excluded_rules, cooled_rules, true)
+        .or_else(|| find_explicit_concept_rule(report, concept, excluded_rules, cooled_rules, false))
+        .ok_or_else(|| {
+            anyhow!(
+                "--concept {concept:?} has no suggested or prefix-matching unmapped rule; pass --target-rule RULE to make the target explicit"
+            )
+        })
+}
+
+fn find_explicit_concept_rule<'a>(
+    report: &'a ExistingGrammarMapReport,
+    concept: &str,
+    excluded_rules: &BTreeSet<String>,
+    cooled_rules: &BTreeSet<String>,
+    require_non_cooled: bool,
+) -> Option<&'a UnmappedGrammarRule> {
+    report
+        .unmapped_rules
+        .iter()
+        .filter(|rule| !excluded_rules.contains(&rule.name))
+        .filter(|rule| !require_non_cooled || !cooled_rules.contains(&rule.name))
+        .find(|rule| rule.suggested_concept.as_deref() == Some(concept))
+        .or_else(|| {
+            report
+                .unmapped_rules
+                .iter()
+                .filter(|rule| !excluded_rules.contains(&rule.name))
+                .filter(|rule| !require_non_cooled || !cooled_rules.contains(&rule.name))
+                .find(|rule| rule.name.starts_with(concept))
+        })
+}
+
+fn select_auto_rule<'a>(
+    report: &'a ExistingGrammarMapReport,
+    excluded_rules: &BTreeSet<String>,
+    cooled_rules: &BTreeSet<String>,
+) -> Option<&'a UnmappedGrammarRule> {
+    find_auto_rule(report, excluded_rules, cooled_rules, true)
+        .or_else(|| find_auto_rule(report, excluded_rules, cooled_rules, false))
+}
+
+fn find_auto_rule<'a>(
+    report: &'a ExistingGrammarMapReport,
+    excluded_rules: &BTreeSet<String>,
+    cooled_rules: &BTreeSet<String>,
+    require_non_cooled: bool,
+) -> Option<&'a UnmappedGrammarRule> {
+    report
+        .unmapped_rules
+        .iter()
+        .filter(|rule| !excluded_rules.contains(&rule.name))
+        .filter(|rule| !require_non_cooled || !cooled_rules.contains(&rule.name))
+        .find(|rule| rule.suggested_concept.is_some())
+        .or_else(|| {
+            report
+                .unmapped_rules
+                .iter()
+                .filter(|rule| !excluded_rules.contains(&rule.name))
+                .filter(|rule| !require_non_cooled || !cooled_rules.contains(&rule.name))
+                .next()
+        })
+}
+
+fn structurally_cooled_rules(structural_cooldowns: &[StructuralCooldownEntry]) -> BTreeSet<String> {
+    structural_cooldowns
+        .iter()
+        .flat_map(|cooldown| cooldown.cooled_target_rules.iter().cloned())
+        .collect()
+}
+
+fn derive_structural_cooldown(
+    report: &ExistingGrammarMapReport,
+    source_target_rule: &str,
+    owner_reason: &str,
+) -> Result<Option<StructuralCooldownEntry>> {
+    if !boundary_reason_triggers_structural_cooldown(owner_reason) {
+        return Ok(None);
+    }
+
+    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+    let unmapped: BTreeSet<String> = report
+        .unmapped_rules
+        .iter()
+        .map(|rule| rule.name.clone())
+        .collect();
+    let mut evidence_by_rule = BTreeMap::<String, Vec<StructuralCooldownEvidence>>::new();
+
+    let direct_dependencies = grammar_query_engine::direct_dependencies(&rules, source_target_rule);
+    for dep in &direct_dependencies {
+        add_structural_cooldown_evidence(
+            &mut evidence_by_rule,
+            &unmapped,
+            source_target_rule,
+            dep,
+            "direct_dependency",
+            format!("{source_target_rule} directly depends on {dep}"),
+        );
+    }
+
+    let reverse_dependencies =
+        grammar_query_engine::reverse_dependencies(&rules, source_target_rule);
+    for parent in &reverse_dependencies {
+        add_structural_cooldown_evidence(
+            &mut evidence_by_rule,
+            &unmapped,
+            source_target_rule,
+            parent,
+            "reverse_dependency",
+            format!("{parent} directly depends on {source_target_rule}"),
+        );
+        for sibling in grammar_query_engine::direct_dependencies(&rules, parent) {
+            if sibling != source_target_rule {
+                add_structural_cooldown_evidence(
+                    &mut evidence_by_rule,
+                    &unmapped,
+                    source_target_rule,
+                    &sibling,
+                    "parent_alternation_sibling",
+                    format!("{sibling} shares parent {parent} with {source_target_rule}"),
+                );
+            }
+        }
+    }
+
+    for group in grammar_query_engine::duplicate_rhs_shape_groups(&rules) {
+        if group
+            .rules
+            .iter()
+            .any(|rule| rule.name == source_target_rule)
+        {
+            let shape = group.shape.clone();
+            for rule in group.rules {
+                if rule.name != source_target_rule {
+                    add_structural_cooldown_evidence(
+                        &mut evidence_by_rule,
+                        &unmapped,
+                        source_target_rule,
+                        &rule.name,
+                        "duplicate_rhs_shape",
+                        format!("duplicate RHS shape {shape}"),
+                    );
+                }
+            }
+        }
+    }
+
+    for similar in grammar_query_engine::similar_rhs_shapes(&rules) {
+        let sibling = if similar.left.name == source_target_rule {
+            Some(similar.right.name.as_str())
+        } else if similar.right.name == source_target_rule {
+            Some(similar.left.name.as_str())
+        } else {
+            None
+        };
+        if let Some(sibling) = sibling {
+            add_structural_cooldown_evidence(
+                &mut evidence_by_rule,
+                &unmapped,
+                source_target_rule,
+                &sibling,
+                "similar_rhs_shape",
+                format!(
+                    "similarity {:.2}; shared identifiers: {}",
+                    similar.similarity,
+                    similar.shared_identifiers.join(", ")
+                ),
+            );
+        }
+    }
+
+    evidence_by_rule.remove(source_target_rule);
+    let cooled_target_rules: Vec<String> = evidence_by_rule.keys().cloned().collect();
+    if cooled_target_rules.is_empty() {
+        return Ok(None);
+    }
+    let derivation_evidence = evidence_by_rule.into_values().flatten().collect();
+    Ok(Some(StructuralCooldownEntry {
+        source_target_rule: source_target_rule.to_string(),
+        owner_reason: owner_reason.to_string(),
+        cooled_target_rules,
+        derivation_evidence,
+    }))
+}
+
+fn boundary_reason_triggers_structural_cooldown(reason: &str) -> bool {
+    let reason = reason.to_ascii_lowercase();
+    reason.contains("shared/plumbing")
+        || reason.contains("shared plumbing")
+        || (reason.contains("shared") && reason.contains("plumbing"))
+        || reason.contains("alternation")
+        || reason.contains("wrapper")
+        || reason.contains("not a magic concept")
+        || reason.contains("not magic concept")
+}
+
+fn add_structural_cooldown_evidence(
+    evidence_by_rule: &mut BTreeMap<String, Vec<StructuralCooldownEvidence>>,
+    unmapped: &BTreeSet<String>,
+    source_target_rule: &str,
+    target_rule: &str,
+    source: &str,
+    detail: String,
+) {
+    if target_rule == source_target_rule || !unmapped.contains(target_rule) {
+        return;
+    }
+    evidence_by_rule
+        .entry(target_rule.to_string())
+        .or_default()
+        .push(StructuralCooldownEvidence {
+            target_rule: target_rule.to_string(),
+            source: source.to_string(),
+            detail,
+        });
+}
+
+fn write_concept_grind_session_state(
+    session_dir: &Path,
+    blocked_targets: &BTreeSet<String>,
+    structural_cooldowns: &[StructuralCooldownEntry],
+) -> Result<()> {
+    write_json(
+        session_dir.join("session_state.json"),
+        &ConceptGrindSessionState {
+            blocked_target_rules: blocked_targets.iter().cloned().collect(),
+            structural_cooldowns: structural_cooldowns.to_vec(),
+        },
+    )
 }
 
 fn build_boundary_prompt(gap: &ConceptGap, report: &ExistingGrammarMapReport) -> Result<String> {
@@ -4291,9 +4549,130 @@ mod tests {
             no_commit: true,
         };
         let excluded = BTreeSet::from(["counter_name".to_string()]);
-        let gap = select_concept_gap_excluding(&report, &options, &excluded)
+        let gap = select_concept_gap_excluding(&report, &options, &excluded, &[])
             .expect("should skip blocked suggestion");
         assert_eq!(gap.target_rule, "destroy_target");
+    }
+
+    #[test]
+    fn structural_cooldown_derives_neighbor_siblings_from_blocked_wrapper() {
+        let report = ExistingGrammarMapReport {
+            rule_count: 3,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 3,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "colored_target_effect".to_string(),
+                    line: 191,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "colored_target_action".to_string(),
+                    line: 192,
+                    suggested_concept: Some("colored_target".to_string()),
+                },
+                UnmappedGrammarRule {
+                    name: "destroy_target".to_string(),
+                    line: 219,
+                    suggested_concept: None,
+                },
+            ],
+        };
+
+        let cooldown = derive_structural_cooldown(
+            &report,
+            "colored_target_effect",
+            "shared/plumbing wrapper, not a Magic concept",
+        )
+        .expect("cooldown derives")
+        .expect("wrapper reason creates cooldown");
+
+        assert_eq!(cooldown.source_target_rule, "colored_target_effect");
+        assert_eq!(
+            cooldown.cooled_target_rules,
+            vec!["colored_target_action".to_string()]
+        );
+        assert!(cooldown.derivation_evidence.iter().any(|e| {
+            e.target_rule == "colored_target_action" && e.source == "direct_dependency"
+        }));
+    }
+
+    #[test]
+    fn auto_concept_grind_soft_skips_structurally_cooled_rules() {
+        let options = ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: None,
+            target_rule: None,
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            no_commit: true,
+        };
+        let cooldown = StructuralCooldownEntry {
+            source_target_rule: "colored_target_effect".to_string(),
+            owner_reason: "shared/plumbing wrapper".to_string(),
+            cooled_target_rules: vec!["colored_target_action".to_string()],
+            derivation_evidence: vec![StructuralCooldownEvidence {
+                target_rule: "colored_target_action".to_string(),
+                source: "direct_dependency".to_string(),
+                detail: "colored_target_effect directly depends on colored_target_action"
+                    .to_string(),
+            }],
+        };
+        let report = ExistingGrammarMapReport {
+            rule_count: 2,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 2,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "colored_target_action".to_string(),
+                    line: 192,
+                    suggested_concept: Some("colored_target".to_string()),
+                },
+                UnmappedGrammarRule {
+                    name: "destroy_target".to_string(),
+                    line: 219,
+                    suggested_concept: None,
+                },
+            ],
+        };
+
+        let gap = select_concept_gap_excluding(
+            &report,
+            &options,
+            &BTreeSet::new(),
+            std::slice::from_ref(&cooldown),
+        )
+        .expect("non-cooled candidate remains selectable");
+        assert_eq!(gap.target_rule, "destroy_target");
+
+        let cooled_only_report = ExistingGrammarMapReport {
+            unmapped_rules: vec![UnmappedGrammarRule {
+                name: "colored_target_action".to_string(),
+                line: 192,
+                suggested_concept: Some("colored_target".to_string()),
+            }],
+            unmapped_rule_count: 1,
+            ..report
+        };
+        let gap = select_concept_gap_excluding(
+            &cooled_only_report,
+            &options,
+            &BTreeSet::new(),
+            &[cooldown],
+        )
+        .expect("cooled candidate is selectable once no non-cooled candidates remain");
+        assert_eq!(gap.target_rule, "colored_target_action");
     }
 
     #[test]
