@@ -1,0 +1,29 @@
+[fixture]
+concept = "damage_redirection_effect"
+rule = "next_damage_redirection_effect"
+
+[[example]]
+text = "The next 1 damage that would be dealt to target creature this turn is dealt to its owner instead."
+
+[[example]]
+text = "The next 2 combat damage that would be dealt to you this turn is dealt to its owner instead."
+
+[[example]]
+text = "The next 1 damage that would be dealt to CARDNAME this turn is dealt to its owner instead."
+reason = "Source-object original recipient axis."
+
+[[counterexample]]
+text = "Lightning Bolt deals 3 damage to any target."
+reason = "Named-source damage instruction, owned by damage_event."
+
+[[counterexample]]
+text = "The next time a source of your choice would deal damage to target creature this turn, prevent that damage."
+reason = "Source-choice next-damage prevention wrapper, not this redirection shape."
+
+[[counterexample]]
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+reason = "Direct prevention shield, not redirection."
+
+[[counterexample]]
+text = "The next 1 damage that would be dealt to target creature this turn is dealt to its owner instead. trailing"
+reason = "Exact-consumption guard."
