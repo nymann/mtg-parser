@@ -1469,7 +1469,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink)
             );
         }
 
-        let mut gate = run_concept_grind_gates(&gap, &iteration_dir);
+        let mut gate = run_concept_grind_gates(&gap, &before, &iteration_dir);
         for repair_index in 1..=options.repair_attempts {
             let Err(failure) = gate else {
                 break;
@@ -1503,7 +1503,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink)
                         .display()
                 );
             }
-            gate = run_concept_grind_gates(&gap, &iteration_dir);
+            gate = run_concept_grind_gates(&gap, &before, &iteration_dir);
         }
         gate.map_err(|failure| anyhow!("{} failed\n{}", failure.label, failure.output))?;
 
@@ -1512,7 +1512,6 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink)
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_after.json"), &after)?;
-        verify_gap_closed(&gap, &before, &after)?;
         let maturity = run_maturity(MaturityOptions {
             concept: gap.concept.clone(),
             json: false,
@@ -1924,6 +1923,7 @@ BLOCKERS: <none or list>
 
 fn run_concept_grind_gates(
     gap: &ConceptGap,
+    before: &ExistingGrammarMapReport,
     iteration_dir: &Path,
 ) -> Result<(), ConceptGrindGateFailure> {
     let fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
@@ -1993,6 +1993,10 @@ fn run_concept_grind_gates(
         &["test", "-p", "mtg-grammar"],
         iteration_dir,
     )?;
+    verify_gap_closed(gap, before, &map).map_err(|e| ConceptGrindGateFailure {
+        label: "gap closure".to_string(),
+        output: format!("{e:#}"),
+    })?;
     Ok(())
 }
 
@@ -3255,5 +3259,64 @@ mod tests {
             "grammar-fixtures/counter_target_spell.toml"
         ));
         assert!(!is_concept_grind_commit_path("xtask/src/concept.rs"));
+    }
+
+    #[test]
+    fn gap_closure_failure_has_repairable_label() {
+        let failure = verify_gap_closed(
+            &ConceptGap {
+                concept: "counter_target_spell".to_string(),
+                query: "counter target colored spell".to_string(),
+                target_rule: "counter_target_colored_spell".to_string(),
+                target_line: 196,
+                suggested_existing_owner: true,
+                reason: "test".to_string(),
+            },
+            &map_report_for_test(false),
+            &map_report_for_test(false),
+        )
+        .map_err(|e| ConceptGrindGateFailure {
+            label: "gap closure".to_string(),
+            output: format!("{e:#}"),
+        })
+        .expect_err("gap should still be open");
+        assert_eq!(failure.label, "gap closure");
+        assert!(failure.output.contains("still unmapped"));
+    }
+
+    fn map_report_for_test(target_owned: bool) -> ExistingGrammarMapReport {
+        ExistingGrammarMapReport {
+            rule_count: 1,
+            concept_count: 1,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: usize::from(target_owned),
+            unmapped_rule_count: usize::from(!target_owned),
+            concepts: vec![ConceptRuleMap {
+                concept: "counter_target_spell".to_string(),
+                maturity: "grammar_fixture_green".to_string(),
+                concept_file: PathBuf::from("grammar-concepts/counter_target_spell.toml"),
+                declared_rules: vec!["counter_target_spell".to_string()],
+                found_rules: Vec::new(),
+                owned_rules: if target_owned {
+                    vec![RuleLocationSummary {
+                        name: "counter_target_colored_spell".to_string(),
+                        line: 196,
+                    }]
+                } else {
+                    Vec::new()
+                },
+                missing_rules: Vec::new(),
+            }],
+            unmapped_rules: if target_owned {
+                Vec::new()
+            } else {
+                vec![UnmappedGrammarRule {
+                    name: "counter_target_colored_spell".to_string(),
+                    line: 196,
+                    suggested_concept: Some("counter_target_spell".to_string()),
+                }]
+            },
+        }
     }
 }
