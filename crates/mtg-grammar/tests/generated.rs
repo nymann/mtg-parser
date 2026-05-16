@@ -26,6 +26,8 @@ mod animate_wall;
 mod ankh_of_mishra;
 #[path = "generated/armageddon.rs"]
 mod armageddon;
+#[path = "generated/army_of_allah.rs"]
+mod army_of_allah;
 #[path = "generated/aspect_of_wolf.rs"]
 mod aspect_of_wolf;
 #[path = "generated/bad_moon.rs"]

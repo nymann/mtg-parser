@@ -1977,11 +1977,13 @@ pub enum StaticAbility {
         modifier: Option<PtModifier>,
         ability: GrantedAbility,
     },
-    /// "<status> creatures you control get <modifier>." — P/T modifier
-    /// on controlled creatures matching a tapped/untapped state.
+    /// "<status> creatures [you control] get <modifier> [until end of
+    /// turn]." — P/T modifier on creatures matching a combat/tapped state.
     StatusCreaturesYouControlGet {
         status: CreatureStatus,
+        controller: StatusCreatureController,
         modifier: PtModifier,
+        duration: StatusCreatureGetDuration,
     },
     /// "Enchanted <type> gets +X/+Y, where X is <expr>, and Y is <expr>."
     /// — P/T modifier whose printed variables are defined inline.
@@ -2199,6 +2201,18 @@ pub enum StaticUntapRestriction {
     },
     /// "Players skip their untap steps."
     PlayersSkipTheirUntapSteps,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StatusCreatureController {
+    Any,
+    You,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StatusCreatureGetDuration {
+    Continuous,
+    UntilEndOfTurn,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

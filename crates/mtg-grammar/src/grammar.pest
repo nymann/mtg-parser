@@ -806,8 +806,8 @@ creature_type_plural = @{ ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"w
 //     "Other <creature_type> creatures have <ability>." — lord-style
 //     ability grants, optionally with a P/T modifier, for other
 //     creatures or objects of a subtype.
-//   - "<Status> creatures you control get <pt_modifier>." — P/T
-//     modifier on controlled creatures matching a tapped/untapped state.
+//   - "<Status> creatures [you control] get <pt_modifier> [until end of
+//     turn]." — P/T modifier on creatures matching a combat/tapped state.
 //   - "Enchanted <type> gets <pt_modifier>." — unconditional P/T
 //     modifier on the enchanted permanent (e.g. Animate Dead).
 //   - "Enchanted <type> gets <variable_pt_modifier>, where ..." — a
@@ -910,8 +910,12 @@ other_creature_type_granted_ability = _{
 }
 
 static_status_creatures_you_control_get = {
-    creature_status ~ ^"creatures" ~ ^"you" ~ ^"control" ~ ^"get" ~ pt_modifier ~ "."
+    creature_status ~ ^"creatures" ~ status_creature_controller?
+  ~ ^"get" ~ pt_modifier ~ status_creature_get_duration? ~ "."
 }
+
+status_creature_controller = { ^"you" ~ ^"control" }
+status_creature_get_duration = { ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" }
 
 creature_status = @{ ^"attacking" | ^"tapped" | ^"untapped" }
 

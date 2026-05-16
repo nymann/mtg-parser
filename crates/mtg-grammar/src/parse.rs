@@ -26,8 +26,9 @@ use crate::ast::{
     PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
     RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticDamageSource, StaticUntapRestriction, Step,
-    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    SpellType, Statement, StaticAbility, StaticDamageSource, StaticUntapRestriction,
+    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
+    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -3989,12 +3990,33 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             let status_pair = inner
                 .next()
                 .expect("static_status_creatures_you_control_get begins with a status");
-            let modifier_pair = inner
-                .next()
-                .expect("static_status_creatures_you_control_get has a pt_modifier");
+            let mut controller = StatusCreatureController::Any;
+            let mut duration = StatusCreatureGetDuration::Continuous;
+            let mut modifier_pair = None;
+            for child in inner {
+                match child.as_rule() {
+                    Rule::status_creature_controller => {
+                        controller = StatusCreatureController::You;
+                    }
+                    Rule::pt_modifier => {
+                        modifier_pair = Some(child);
+                    }
+                    Rule::status_creature_get_duration => {
+                        duration = StatusCreatureGetDuration::UntilEndOfTurn;
+                    }
+                    _ => unreachable!(
+                        "unexpected static_status_creatures_you_control_get child: {:?}",
+                        child.as_rule()
+                    ),
+                }
+            }
+            let modifier_pair =
+                modifier_pair.expect("static_status_creatures_you_control_get has a pt_modifier");
             Ok(StaticAbility::StatusCreaturesYouControlGet {
                 status: creature_status_from_pair(status_pair)?,
+                controller,
                 modifier: pt_modifier_from_pair(modifier_pair)?,
+                duration,
             })
         }
         Rule::static_enchanted_gets => {

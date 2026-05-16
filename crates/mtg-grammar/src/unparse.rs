@@ -24,8 +24,9 @@ use crate::ast::{
     ReferencedCard, ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject,
     ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
     SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
-    StaticDamageSource, StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction,
-    TapUntapTarget, TappedForManaSubject, TargetHandPlayer, TargetPermanentEndOfTurnEffect,
+    StaticDamageSource, StaticUntapRestriction, StatusCreatureController,
+    StatusCreatureGetDuration, Step, TapAllPermanentsActor, TapUntapAction, TapUntapTarget,
+    TappedForManaSubject, TargetHandPlayer, TargetPermanentEndOfTurnEffect,
     TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
     TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
     TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
@@ -1988,10 +1989,26 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str(" have ");
             write_granted_ability(out, ability);
         }
-        StaticAbility::StatusCreaturesYouControlGet { status, modifier } => {
+        StaticAbility::StatusCreaturesYouControlGet {
+            status,
+            controller,
+            modifier,
+            duration,
+        } => {
             out.push_str(creature_status_name_capitalized(*status));
-            out.push_str(" creatures you control get ");
+            out.push_str(" creatures");
+            match controller {
+                StatusCreatureController::Any => {}
+                StatusCreatureController::You => out.push_str(" you control"),
+            }
+            out.push_str(" get ");
             write_pt_modifier(out, *modifier);
+            match duration {
+                StatusCreatureGetDuration::Continuous => {}
+                StatusCreatureGetDuration::UntilEndOfTurn => {
+                    out.push_str(" until end of turn");
+                }
+            }
             out.push('.');
         }
         StaticAbility::EnchantedGetsWithDefinitions {
