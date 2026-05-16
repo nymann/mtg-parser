@@ -1294,6 +1294,8 @@ const SHARED_GRAMMAR_STOP_RULES: &[&str] = &[
     "colored_mana_symbol",
     "colors",
     "cost",
+    "counter_amount",
+    "counter_name",
     "creature_subtype",
     "creature_subtype_plural",
     "creature_type",
@@ -1393,6 +1395,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         baseline_grammar_rules: concept_grind_rule_count(),
     });
 
+    let mut blocked_targets = BTreeSet::new();
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
@@ -1420,7 +1423,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
-        let gap = select_concept_gap(&before, &options)?;
+        let gap = select_concept_gap_excluding(&before, &options, &blocked_targets)?;
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
         sink.emit(FlowEvent::WorkflowIterationStarted {
@@ -1493,6 +1496,21 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             iteration_dir.join("boundary_decision.json"),
             &boundary_decision,
         )?;
+        if let BoundaryOwner::Blocked(reason) = &boundary_decision.owner {
+            concept_step_finished(sink, 3, true, Some(format!("blocked: {reason}")));
+            if options.concept.is_some() || options.target_rule.is_some() {
+                return Err(anyhow!("boundary decision blocked concept-grind: {reason}"));
+            }
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Warn,
+                text: format!(
+                    "skipping blocked target {} for this run: {reason}",
+                    gap.target_rule
+                ),
+            });
+            blocked_targets.insert(gap.target_rule);
+            continue;
+        }
         let gap = apply_boundary_decision(gap, &boundary_decision)?;
         concept_step_finished(sink, 3, true, Some("parsed boundary decision".to_string()));
 
@@ -1673,9 +1691,18 @@ fn concept_grind_rule_count() -> usize {
         .unwrap_or_default()
 }
 
+#[cfg(test)]
 fn select_concept_gap(
     report: &ExistingGrammarMapReport,
     options: &ConceptGrindOptions,
+) -> Result<ConceptGap> {
+    select_concept_gap_excluding(report, options, &BTreeSet::new())
+}
+
+fn select_concept_gap_excluding(
+    report: &ExistingGrammarMapReport,
+    options: &ConceptGrindOptions,
+    excluded_rules: &BTreeSet<String>,
 ) -> Result<ConceptGap> {
     if let Some(concept) = &options.concept {
         let query = options
@@ -1683,6 +1710,9 @@ fn select_concept_gap(
             .clone()
             .unwrap_or_else(|| concept.replace('_', " "));
         let rule = if let Some(target_rule) = &options.target_rule {
+            if excluded_rules.contains(target_rule) {
+                bail!("--target-rule {target_rule:?} is excluded in this run");
+            }
             report
                 .unmapped_rules
                 .iter()
@@ -1694,11 +1724,13 @@ fn select_concept_gap(
             report
                 .unmapped_rules
                 .iter()
+                .filter(|rule| !excluded_rules.contains(&rule.name))
                 .find(|rule| rule.suggested_concept.as_deref() == Some(concept.as_str()))
                 .or_else(|| {
                     report
                         .unmapped_rules
                         .iter()
+                        .filter(|rule| !excluded_rules.contains(&rule.name))
                         .find(|rule| rule.name.starts_with(concept))
                 })
                 .ok_or_else(|| {
@@ -1724,6 +1756,7 @@ fn select_concept_gap(
     if let Some(rule) = report
         .unmapped_rules
         .iter()
+        .filter(|rule| !excluded_rules.contains(&rule.name))
         .find(|rule| rule.suggested_concept.is_some())
     {
         let concept = rule.suggested_concept.clone().expect("checked");
@@ -1743,8 +1776,10 @@ fn select_concept_gap(
 
     let rule = report
         .unmapped_rules
-        .first()
-        .ok_or_else(|| anyhow!("no unmapped grammar rules remain"))?;
+        .iter()
+        .filter(|rule| !excluded_rules.contains(&rule.name))
+        .next()
+        .ok_or_else(|| anyhow!("no unblocked unmapped grammar rules remain"))?;
     let concept = slug(&rule.name).replace('-', "_");
     Ok(ConceptGap {
         concept,
@@ -3408,6 +3443,46 @@ mod tests {
         };
         let err = select_concept_gap(&report, &options).expect_err("should require target-rule");
         assert!(err.to_string().contains("--target-rule"));
+    }
+
+    #[test]
+    fn auto_concept_grind_skips_blocked_suggested_rules() {
+        let report = ExistingGrammarMapReport {
+            rule_count: 2,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 2,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "counter_name".to_string(),
+                    line: 10,
+                    suggested_concept: Some("counter_target_spell".to_string()),
+                },
+                UnmappedGrammarRule {
+                    name: "destroy_target".to_string(),
+                    line: 20,
+                    suggested_concept: None,
+                },
+            ],
+        };
+        let options = ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: None,
+            target_rule: None,
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            no_commit: true,
+        };
+        let excluded = BTreeSet::from(["counter_name".to_string()]);
+        let gap = select_concept_gap_excluding(&report, &options, &excluded)
+            .expect("should skip blocked suggestion");
+        assert_eq!(gap.target_rule, "destroy_target");
     }
 
     #[test]
