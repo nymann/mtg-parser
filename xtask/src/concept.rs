@@ -353,6 +353,7 @@ struct MaturityOptions {
     concept: String,
     json: bool,
     update: bool,
+    fresh_fixture: bool,
 }
 
 #[derive(Debug)]
@@ -894,6 +895,7 @@ fn run_grow(options: GrowOptions) -> Result<GrowRun> {
         concept: concept.clone(),
         json: false,
         update: true,
+        fresh_fixture: false,
     })?;
 
     Ok(GrowRun {
@@ -1049,6 +1051,7 @@ fn parse_maturity_options(args: &[String]) -> Result<MaturityOptions> {
         concept,
         json,
         update,
+        fresh_fixture: false,
     })
 }
 
@@ -1605,6 +1608,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             concept: gap.concept.clone(),
             json: false,
             update: true,
+            fresh_fixture: true,
         })?;
         write_json(iteration_dir.join("maturity.json"), &maturity)?;
         concept_step_finished(
@@ -2128,6 +2132,7 @@ fn run_concept_grind_gates(
         concept: gap.concept.clone(),
         json: false,
         update: false,
+        fresh_fixture: true,
     })
     .map_err(|e| ConceptGrindGateFailure {
         label: "concept maturity".to_string(),
@@ -2209,6 +2214,20 @@ fn concept_grammar_test_command_args(fixture_path: &Path) -> Vec<OsString> {
         OsString::from("--fixture"),
         fixture_path.as_os_str().to_owned(),
     ]
+}
+
+fn run_maturity_fixture_file(path: &Path, fresh: bool) -> Result<FixtureRunResult> {
+    if fresh {
+        run_fixture_file_fresh(path).map_err(|failure| {
+            anyhow!(
+                "{} failed while evaluating concept maturity\n{}",
+                failure.label,
+                failure.output
+            )
+        })
+    } else {
+        run_fixture_file(path)
+    }
 }
 
 fn run_gap_closure_gate(
@@ -2602,7 +2621,7 @@ fn run_maturity(options: MaturityOptions) -> Result<MaturityReport> {
         blockers.push("cannot update maturity without a concept file".to_string());
     }
     let fixture_result = match &fixture_file {
-        Some(path) => match run_fixture_file(path) {
+        Some(path) => match run_maturity_fixture_file(path, options.fresh_fixture) {
             Ok(result) => {
                 if !result.passed {
                     blockers.push(format!(
