@@ -6,10 +6,30 @@ rule = "damage_event_statement"
 text = "Lightning Bolt deals 3 damage to any target."
 
 [[example]]
+text = "CARDNAME deals 1 damage to any target."
+rule = "activated_direct_damage_effect"
+
+[[example]]
+text = "This permanent deals X damage to target creature."
+rule = "activated_direct_damage_effect"
+
+[[example]]
+text = "CARDNAME deals 1 damage to any target of an opponent's choice."
+rule = "activated_direct_damage_effect"
+
+[[example]]
 text = "Fireball deals X damage divided evenly, rounded down, among any number of targets."
 
 [[example]]
 text = "Psionic Blast deals 4 damage to any target and 2 damage to you."
+
+[[example]]
+text = "CARDNAME deals 1 damage to any target and 2 damage to you."
+rule = "activated_direct_damage_effect"
+
+[[example]]
+text = "CARDNAME deals 3 damage to each creature and each player."
+rule = "activated_direct_damage_effect"
 
 [[example]]
 text = "Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way."
@@ -25,6 +45,10 @@ reason = "Replacement/prevention wrapper around a future damage event."
 [[counterexample]]
 text = "Prevent the next 1 damage that would be dealt to any target this turn."
 reason = "Direct prevention effect, not an instruction for a named source to deal damage."
+
+[[counterexample]]
+text = "Assign combat damage among creatures blocking or blocked by it."
+reason = "Combat damage assignment instruction, not a source-deals-damage event."
 
 [[counterexample]]
 text = "Lightning Bolt deals 3 damage to any target. trailing"

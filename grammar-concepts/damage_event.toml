@@ -1,6 +1,9 @@
 [[axis]]
 name = "source"
-values = ["named_proper_name"]
+values = [
+    "named_proper_name",
+    "source_object",
+]
 
 [[axis]]
 name = "amount"
@@ -14,9 +17,13 @@ values = [
 name = "recipient"
 values = [
     "any_target",
+    "any_target_of_opponents_choice",
     "recipient_list",
     "divided_evenly_among_targets",
     "per-recipient_assignments",
+    "target_permanent",
+    "each_creature",
+    "each_player",
 ]
 
 [[axis]]
@@ -35,15 +42,20 @@ excludes = [
 ]
 includes = [
     "Named-source damage instructions rooted at damage_event_statement.",
+    "Activated direct damage instructions rooted at activated_direct_damage_effect.",
     "Fixed, variable, and derived equal-to damage amounts.",
-    "Any-target, recipient-list, divided-evenly, and per-recipient assignment recipient shapes already encoded by damage_event_statement.",
+    "Any-target, opponent-choice any-target, target-permanent, each-creature, each-player, recipient-list, divided-evenly, and per-recipient assignment recipient shapes.",
 ]
 
 [concept]
 name = "damage_event"
-pest_rules = ["damage_event_statement"]
+pest_rules = [
+    "damage_event_statement",
+    "activated_direct_damage_effect",
+]
 rules_queries = [
     "lex: source deals damage to any target",
+    "lex: this permanent deals damage to target creature",
     "lex: damage divided evenly rounded down among any number of targets",
 ]
 rules_terms = [
@@ -67,14 +79,30 @@ text = "The next time a source of your choice would deal damage to target creatu
 reason = "Direct prevention effect, not an instruction for a named source to deal damage."
 text = "Prevent the next 1 damage that would be dealt to any target this turn."
 
+[[counterexample]]
+reason = "Combat damage assignment instruction, not a source-deals-damage event."
+text = "Assign combat damage among creatures blocking or blocked by it."
+
 [[example]]
 text = "Lightning Bolt deals 3 damage to any target."
+
+[[example]]
+text = "CARDNAME deals 1 damage to any target."
+
+[[example]]
+text = "This permanent deals X damage to target creature."
 
 [[example]]
 text = "Fireball deals X damage divided evenly, rounded down, among any number of targets."
 
 [[example]]
 text = "Psionic Blast deals 4 damage to any target and 2 damage to you."
+
+[[example]]
+text = "CARDNAME deals 1 damage to any target and 2 damage to you."
+
+[[example]]
+text = "CARDNAME deals 3 damage to each creature and each player."
 
 [[example]]
 text = "Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way."
