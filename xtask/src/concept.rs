@@ -3,7 +3,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail, Context, Result};
 use mtg_corpus::normalize_oracle_text;
@@ -12,7 +12,9 @@ use mtg_scryfall::ScryfallClient;
 use serde::{Deserialize, Serialize};
 
 use crate::console_sink::ConsoleSink;
-use crate::flow::AgentProvider;
+use crate::flow::{
+    AgentProvider, FlowEvent, FlowSink, IterationOutcomeSummary, NoteLevel, SessionEndReason,
+};
 use crate::grammar_query as grammar_query_engine;
 use crate::grammar_query::GrammarQuery;
 use crate::paths::{
@@ -79,7 +81,7 @@ const GRIND_USAGE: &str = "\
 cargo xtask concept-grind [--agent codex|claude] [--max-iterations N]
                           [--concept NAME] [--target-rule RULE] [--query TEXT]
                           [--repair-attempts N] [--dry-run]
-                          [--allow-dirty] [--no-commit]
+                          [--allow-dirty] [--no-commit] [--ui console|tui]
 
 Autonomous grammar-first loop. Each iteration maps existing grammar, selects the
 next concept gap, runs a read-only boundary agent, runs a PEST patch agent,
@@ -265,13 +267,21 @@ pub fn grind(args: &[String]) -> ExitCode {
         }
     };
     let mut sink = ConsoleSink::new();
-    match run_grind(options, &mut sink) {
-        Ok(()) => ExitCode::SUCCESS,
+    match run_with_sink(options, &mut sink) {
+        Ok(code) => code,
         Err(e) => {
             eprintln!("concept-grind: {e:#}");
             ExitCode::FAILURE
         }
     }
+}
+
+pub(crate) fn run_with_sink(
+    options: ConceptGrindOptions,
+    sink: &mut dyn FlowSink,
+) -> Result<ExitCode> {
+    run_grind(options, sink)?;
+    Ok(ExitCode::SUCCESS)
 }
 
 #[derive(Debug, Clone)]
@@ -352,7 +362,7 @@ struct MapExistingOptions {
 }
 
 #[derive(Debug, Clone)]
-struct ConceptGrindOptions {
+pub(crate) struct ConceptGrindOptions {
     agent: AgentProvider,
     max_iterations: u32,
     concept: Option<String>,
@@ -1056,7 +1066,7 @@ fn parse_map_existing_options(args: &[String]) -> Result<MapExistingOptions> {
     Ok(MapExistingOptions { json, expand_deps })
 }
 
-fn parse_grind_options(args: &[String]) -> Result<ConceptGrindOptions> {
+pub(crate) fn parse_grind_options(args: &[String]) -> Result<ConceptGrindOptions> {
     let mut agent = AgentProvider::Codex;
     let mut max_iterations = 1u32;
     let mut concept = None::<String>;
@@ -1363,19 +1373,45 @@ fn is_shared_grammar_stop_rule(rule_name: &str) -> bool {
     SHARED_GRAMMAR_STOP_RULES.contains(&rule_name)
 }
 
-fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink) -> Result<()> {
+const CONCEPT_GRIND_TOTAL_STEPS: u8 = 7;
+
+fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()> {
     if !options.dry_run && !options.allow_dirty {
         ensure_clean_working_tree()
             .context("working tree must be clean before concept-grind, or pass --allow-dirty")?;
     }
 
+    sink.emit(FlowEvent::SessionStarted {
+        workflow: "concept-grind".to_string(),
+        set: options
+            .concept
+            .clone()
+            .unwrap_or_else(|| "auto-gap".to_string()),
+        max_iterations: options.max_iterations,
+        baseline_corpus_passing: 0,
+        baseline_corpus_total: 0,
+        baseline_grammar_rules: concept_grind_rule_count(),
+    });
+
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
-    println!("concept-grind log: {}", session_dir.display());
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Info,
+        text: format!("concept-grind log: {}", session_dir.display()),
+    });
 
     for iteration in 1..=options.max_iterations {
+        if sink.stop_requested() {
+            sink.emit(FlowEvent::SessionFinished {
+                reason: SessionEndReason::StopRequested,
+            });
+            return Ok(());
+        }
+        let iteration_start = Instant::now();
         let iteration_dir = session_dir.join(format!("iteration-{iteration:03}"));
+
+        concept_step_started(sink, 1, "map grammar gaps");
         fs::create_dir_all(&iteration_dir)
             .with_context(|| format!("create {}", iteration_dir.display()))?;
 
@@ -1387,11 +1423,28 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink)
         let gap = select_concept_gap(&before, &options)?;
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
-        println!(
-            "iteration {iteration}: concept={} target_rule={} query={:?}",
-            gap.concept, gap.target_rule, gap.query
+        sink.emit(FlowEvent::WorkflowIterationStarted {
+            index: iteration,
+            max_iterations: options.max_iterations,
+            title: gap.concept.clone(),
+            detail: format!(
+                "target_rule={}\nquery={}\nlog={}",
+                gap.target_rule,
+                gap.query,
+                iteration_dir.display()
+            ),
+        });
+        concept_step_finished(
+            sink,
+            1,
+            true,
+            Some(format!(
+                "mapped={} unmapped={}",
+                before.mapped_rule_count, before.unmapped_rule_count
+            )),
         );
 
+        concept_step_started(sink, 2, "build boundary prompt");
         let boundary_prompt = build_boundary_prompt(&gap, &before)?;
         fs::write(iteration_dir.join("boundary_prompt.md"), &boundary_prompt).with_context(
             || {
@@ -1401,15 +1454,16 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink)
                 )
             },
         )?;
+        concept_step_finished(sink, 2, true, Some("wrote boundary_prompt.md".to_string()));
 
         if options.dry_run {
-            println!(
-                "dry-run: wrote {}",
-                iteration_dir.join("boundary_prompt.md").display()
-            );
+            sink.emit(FlowEvent::SessionFinished {
+                reason: SessionEndReason::DryRunStop,
+            });
             return Ok(());
         }
 
+        concept_step_started(sink, 3, "boundary agent");
         let boundary = refactor_hotspot::invoke_agent(
             options.agent,
             &boundary_prompt,
@@ -1440,7 +1494,9 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink)
             &boundary_decision,
         )?;
         let gap = apply_boundary_decision(gap, &boundary_decision)?;
+        concept_step_finished(sink, 3, true, Some("parsed boundary decision".to_string()));
 
+        concept_step_started(sink, 4, "patch agent");
         let patch_prompt = build_patch_prompt(&gap, &boundary_decision, &boundary.assistant_text)?;
         fs::write(iteration_dir.join("patch_prompt.md"), &patch_prompt).with_context(|| {
             format!("write {}", iteration_dir.join("patch_prompt.md").display())
@@ -1469,12 +1525,21 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink)
                 iteration_dir.join("patch_transcript.ndjson").display()
             );
         }
+        concept_step_finished(sink, 4, true, Some("patch agent completed".to_string()));
 
+        concept_step_started(sink, 5, "gate and repair");
         let mut gate = run_concept_grind_gates(&gap, &before, &iteration_dir);
         for repair_index in 1..=options.repair_attempts {
             let Err(failure) = gate else {
                 break;
             };
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Warn,
+                text: format!(
+                    "gate failed: {}; repair attempt {repair_index}/{}",
+                    failure.label, options.repair_attempts
+                ),
+            });
             fs::write(
                 iteration_dir.join(format!("repair-{repair_index}-failure.txt")),
                 format!("{}\n\n{}", failure.label, failure.output),
@@ -1506,8 +1571,13 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink)
             }
             gate = run_concept_grind_gates(&gap, &before, &iteration_dir);
         }
-        gate.map_err(|failure| anyhow!("{} failed\n{}", failure.label, failure.output))?;
+        if let Err(failure) = gate {
+            concept_step_finished(sink, 5, false, Some(failure.label.clone()));
+            return Err(anyhow!("{} failed\n{}", failure.label, failure.output));
+        }
+        concept_step_finished(sink, 5, true, Some("all gates passed".to_string()));
 
+        concept_step_started(sink, 6, "update map and maturity");
         let after = run_map_existing(MapExistingOptions {
             json: false,
             expand_deps: true,
@@ -1519,7 +1589,20 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink)
             update: true,
         })?;
         write_json(iteration_dir.join("maturity.json"), &maturity)?;
+        concept_step_finished(
+            sink,
+            6,
+            true,
+            Some(format!(
+                "mapped {} -> {}, unmapped {} -> {}",
+                before.mapped_rule_count,
+                after.mapped_rule_count,
+                before.unmapped_rule_count,
+                after.unmapped_rule_count
+            )),
+        );
 
+        concept_step_started(sink, 7, "commit and summarize");
         let committed = if options.no_commit {
             false
         } else {
@@ -1540,17 +1623,54 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink)
             committed,
         };
         write_json(iteration_dir.join("summary.json"), &summary)?;
-        println!(
-            "iteration {iteration}: fixture={} mapped {} -> {}, unmapped {} -> {}, committed={committed}",
-            if summary.fixture_passed { "pass" } else { "fail" },
-            summary.mapped_rule_count_before,
-            summary.mapped_rule_count_after,
-            summary.unmapped_rule_count_before,
-            summary.unmapped_rule_count_after
+        concept_step_finished(
+            sink,
+            7,
+            true,
+            Some(if committed {
+                "committed iteration".to_string()
+            } else {
+                "no commit (--no-commit)".to_string()
+            }),
         );
+        if committed {
+            sink.emit(FlowEvent::IterationFinished {
+                index: iteration,
+                outcome: IterationOutcomeSummary::Committed {
+                    new_passes: after
+                        .mapped_rule_count
+                        .saturating_sub(before.mapped_rule_count),
+                    corpus_passing: 0,
+                    corpus_total: 0,
+                    grammar_rules: after.rule_count,
+                    duration_secs: iteration_start.elapsed().as_secs(),
+                },
+            });
+        }
     }
 
+    sink.emit(FlowEvent::SessionFinished {
+        reason: SessionEndReason::MaxIterationsReached(options.max_iterations),
+    });
     Ok(())
+}
+
+fn concept_step_started(sink: &mut dyn FlowSink, index: u8, label: &str) {
+    sink.emit(FlowEvent::StepStarted {
+        index,
+        total: CONCEPT_GRIND_TOTAL_STEPS,
+        label: label.to_string(),
+    });
+}
+
+fn concept_step_finished(sink: &mut dyn FlowSink, index: u8, ok: bool, summary: Option<String>) {
+    sink.emit(FlowEvent::StepFinished { index, ok, summary });
+}
+
+fn concept_grind_rule_count() -> usize {
+    grammar_query_engine::parse_grammar_file(grammar_pest_path())
+        .map(|rules| rules.len())
+        .unwrap_or_default()
 }
 
 fn select_concept_gap(

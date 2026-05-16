@@ -25,6 +25,7 @@ use crossterm::{
 use ratatui::{backend::CrosstermBackend, Terminal};
 
 use crate::add_card;
+use crate::concept;
 use crate::flow::{FlowEvent, FlowSink, NoteLevel};
 use crate::grind;
 use crate::refactor_hotspot;
@@ -125,6 +126,19 @@ pub fn run_grind(opts: grind::Options) -> Result<std::process::ExitCode> {
 
 pub fn run_grind_hot_reload(opts: grind::Options) -> Result<std::process::ExitCode> {
     run_workflow_hot_reload("grind", move |sink| grind::run_with_sink(opts, sink))
+}
+
+/// Run concept-grind with the TUI as its output surface.
+pub fn run_concept_grind(opts: concept::ConceptGrindOptions) -> Result<std::process::ExitCode> {
+    run_workflow(move |sink| concept::run_with_sink(opts, sink))
+}
+
+pub fn run_concept_grind_hot_reload(
+    opts: concept::ConceptGrindOptions,
+) -> Result<std::process::ExitCode> {
+    run_workflow_hot_reload("concept-grind", move |sink| {
+        concept::run_with_sink(opts, sink)
+    })
 }
 
 pub fn run_viewer(event_log: PathBuf) -> Result<std::process::ExitCode> {

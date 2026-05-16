@@ -72,7 +72,7 @@ Commands:
                               artifacts. Does not mark cards passing.
   concept-map-existing        Inventory grammar.pest rules against committed concept
                               files and report mapped versus legacy/unmapped rules.
-  concept-grind --agent codex
+  concept-grind --agent codex [--ui console|tui]
                               Autonomous grammar-first loop: pick a concept gap,
                               run boundary and PEST patch agents, gate fixtures,
                               update maturity, and commit.
@@ -173,7 +173,30 @@ fn main() -> ExitCode {
         Some("concept-grammar-query") => concept::grammar_query(&args[1..]),
         Some("concept-maturity") => concept::maturity(&args[1..]),
         Some("concept-map-existing") => concept::map_existing(&args[1..]),
-        Some("concept-grind") => concept::grind(&args[1..]),
+        Some("concept-grind") => match parse_ui(&args[1..]) {
+            Ok(Ui::Console) => concept::grind(&args[1..]),
+            Ok(Ui::Tui) => match concept::parse_grind_options(&without_ui_hot_reload(&args[1..])) {
+                Ok(opts) => match if ui_hot_reload(&args[1..]) {
+                    tui::run_concept_grind_hot_reload(opts)
+                } else {
+                    tui::run_concept_grind(opts)
+                } {
+                    Ok(code) => code,
+                    Err(e) => {
+                        eprintln!("tui error: {e:#}");
+                        ExitCode::FAILURE
+                    }
+                },
+                Err(e) => {
+                    eprintln!("{e}");
+                    ExitCode::from(2)
+                }
+            },
+            Err(e) => {
+                eprintln!("{e}");
+                ExitCode::from(2)
+            }
+        },
         Some("tui-view") => match parse_tui_view_args(&args[1..]) {
             Ok(event_log) => match tui::run_viewer(event_log) {
                 Ok(code) => code,
