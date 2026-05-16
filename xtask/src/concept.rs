@@ -425,6 +425,14 @@ struct GrindLoopReview {
     next_experiment: Option<GrindLoopExperiment>,
 }
 
+#[derive(Debug, Serialize)]
+struct GrindLoopExperimentHistoryEntry {
+    batch: u32,
+    experiment: Option<GrindLoopExperiment>,
+    decision: ExperimentDecision,
+    reason: String,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 enum ExperimentDecision {
@@ -1541,6 +1549,11 @@ fn build_grind_loop_review_prompt(
     let metrics = read_optional(grind_dir.join("metrics.json"))?;
     let output = read_optional(batch_dir.join("grind_output.txt"))?;
     let summaries = collect_iteration_summaries(grind_dir)?;
+    let loop_dir = batch_dir
+        .parent()
+        .ok_or_else(|| anyhow!("batch dir {} has no parent", batch_dir.display()))?;
+    let experiment_history = collect_grind_loop_experiment_history(loop_dir, batch)?;
+    let experiment_history_json = serde_json::to_string_pretty(&experiment_history)?;
     let previous_json = match previous {
         Some(experiment) => serde_json::to_string_pretty(experiment)?,
         None => "null".to_string(),
@@ -1559,10 +1572,17 @@ Rules:
 - Do not propose prompt/context reduction unless the quality checks can prove no degradation.
 - Do not propose skipping quality gates unless the resulting quality contract is demonstrably equivalent.
 - The next experiment must include a measurable hypothesis and concrete implementation request.
+- Review the prior experiment history before proposing the next experiment.
+- Do not propose an experiment that is materially the same as a failed prior experiment unless the implementation_request explains the new evidence and the specific difference from that failed experiment.
 
 Previous experiment:
 ```json
 {previous_json}
+```
+
+Prior experiment history for this loop:
+```json
+{experiment_history_json}
 ```
 
 Batch metrics:
@@ -1597,6 +1617,62 @@ Return only JSON with this shape:
 Use "next_experiment": null only if no responsible experiment is supported by this batch.
 "#,
     ))
+}
+
+fn collect_grind_loop_experiment_history(
+    loop_dir: &Path,
+    current_batch: u32,
+) -> Result<Vec<GrindLoopExperimentHistoryEntry>> {
+    let mut history = Vec::new();
+    for batch in 1..current_batch.saturating_sub(1) {
+        let batch_dir = loop_dir.join(format!("batch-{batch:03}"));
+        let decision_review_path = loop_dir
+            .join(format!("batch-{:03}", batch + 1))
+            .join("review.json");
+        let experiment_path = batch_dir
+            .join("next_experiment")
+            .join("experiment_applied.json");
+        let experiment_fallback_path = batch_dir.join("next_experiment").join("experiment.json");
+
+        let review = if decision_review_path.exists() {
+            let text = fs::read_to_string(&decision_review_path)
+                .with_context(|| format!("read {}", decision_review_path.display()))?;
+            Some(
+                serde_json::from_str::<GrindLoopReview>(&text)
+                    .with_context(|| format!("parse {}", decision_review_path.display()))?,
+            )
+        } else {
+            None
+        };
+        let experiment = if experiment_path.exists() {
+            read_grind_loop_experiment(&experiment_path)?
+        } else if experiment_fallback_path.exists() {
+            read_grind_loop_experiment(&experiment_fallback_path)?
+        } else {
+            None
+        };
+
+        history.push(GrindLoopExperimentHistoryEntry {
+            batch,
+            experiment,
+            decision: review
+                .as_ref()
+                .map(|review| review.previous_decision)
+                .unwrap_or(ExperimentDecision::None),
+            reason: review
+                .as_ref()
+                .map(|review| review.previous_reason.clone())
+                .unwrap_or_else(|| "not yet reviewed".to_string()),
+        });
+    }
+    Ok(history)
+}
+
+fn read_grind_loop_experiment(path: &Path) -> Result<Option<GrindLoopExperiment>> {
+    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+    let experiment = serde_json::from_str::<GrindLoopExperiment>(&text)
+        .with_context(|| format!("parse {}", path.display()))?;
+    Ok(Some(experiment))
 }
 
 fn apply_grind_loop_experiment(
