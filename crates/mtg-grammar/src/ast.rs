@@ -876,8 +876,8 @@ pub enum TriggerEvent {
     },
     /// "a player taps a/an <permanent_type> for mana"
     PlayerTapsPermanentForMana { permanent_type: PermanentType },
-    /// "a/an <basic_land_type> is tapped for mana"
-    BasicLandTypeIsTappedForMana { land_type: BasicLandType },
+    /// "<subject> is tapped for mana"
+    IsTappedForMana { subject: TappedForManaSubject },
     /// "a/an <basic_land_type> <controller> becomes <status>"
     BasicLandTypeControllerBecomesStatus {
         land_type: BasicLandType,
@@ -1222,6 +1222,14 @@ pub enum AsEntersChoice {
 pub enum ObjectStatus {
     Tapped,
     Untapped,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TappedForManaSubject {
+    /// "a/an <basic_land_type>"
+    BasicLandType(BasicLandType),
+    /// "enchanted <object>"
+    Enchanted(EnchantedObject),
 }
 
 /// "<cost>: <effect>." — an activated ability with explicit printed

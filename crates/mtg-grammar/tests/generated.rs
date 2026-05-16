@@ -364,3 +364,5 @@ mod volcanic_eruption;
 mod web;
 #[path = "generated/wheel_of_fortune.rs"]
 mod wheel_of_fortune;
+#[path = "generated/wild_growth.rs"]
+mod wild_growth;

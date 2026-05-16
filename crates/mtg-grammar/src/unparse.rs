@@ -20,7 +20,7 @@ use crate::ast::{
     PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, ReturnDestination,
     Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
     SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
-    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction,
+    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TappedForManaSubject,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -2087,7 +2087,7 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::PlayerCastsColoredSpell { .. }
         | TriggerEvent::CastsSpell { .. }
         | TriggerEvent::PlayerTapsPermanentForMana { .. }
-        | TriggerEvent::BasicLandTypeIsTappedForMana { .. }
+        | TriggerEvent::IsTappedForMana { .. }
         | TriggerEvent::BasicLandTypeControllerBecomesStatus { .. }
         | TriggerEvent::OneOrMoreCreaturesYouControlAttack
         | TriggerEvent::YouAreDealtDamage
@@ -2186,9 +2186,17 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str(permanent_type_name(permanent_type));
             out.push_str(" for mana");
         }
-        TriggerEvent::BasicLandTypeIsTappedForMana { land_type } => {
-            out.push_str("a ");
-            out.push_str(basic_land_type_name(land_type));
+        TriggerEvent::IsTappedForMana { subject } => {
+            match subject {
+                TappedForManaSubject::BasicLandType(land_type) => {
+                    out.push_str("a ");
+                    out.push_str(basic_land_type_name(land_type));
+                }
+                TappedForManaSubject::Enchanted(object) => {
+                    out.push_str("enchanted ");
+                    write_enchanted_object(out, object);
+                }
+            }
             out.push_str(" is tapped for mana");
         }
         TriggerEvent::BasicLandTypeControllerBecomesStatus {

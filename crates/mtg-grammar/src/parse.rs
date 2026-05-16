@@ -23,7 +23,7 @@ use crate::ast::{
     RegenerateRecipient, ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent,
     SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement,
     StaticAbility, StaticDamageSource, StaticUntapRestriction, Step, TapAllPermanentsActor,
-    TapUntapAction, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TapUntapAction, TappedForManaSubject, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
     TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCastActor, TriggerCastSpell,
     TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
     TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
@@ -2406,13 +2406,17 @@ fn you_control_no_basic_lands_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent
 fn basic_land_type_is_tapped_for_mana_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEvent, ParseError> {
-    let land_type = only_inner(
-        pair,
-        "basic_land_type_is_tapped_for_mana missing basic_land_type",
-    )?;
-    Ok(TriggerEvent::BasicLandTypeIsTappedForMana {
-        land_type: basic_land_type_from_pair(land_type)?,
-    })
+    let subject_pair = only_inner(pair, "basic_land_type_is_tapped_for_mana missing subject")?;
+    let subject = match subject_pair.as_rule() {
+        Rule::basic_land_type => {
+            TappedForManaSubject::BasicLandType(basic_land_type_from_pair(subject_pair)?)
+        }
+        Rule::permanent_type | Rule::creature_type => {
+            TappedForManaSubject::Enchanted(enchanted_object_from_pair(subject_pair)?)
+        }
+        _ => return Err(ParseError::Internal("tapped-for-mana subject")),
+    };
+    Ok(TriggerEvent::IsTappedForMana { subject })
 }
 
 fn basic_land_type_controller_becomes_status_from_pair(

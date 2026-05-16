@@ -1549,7 +1549,8 @@ enchanted_object_becomes_status = {
 you_control_no_basic_lands = { ^"you" ~ ^"control" ~ ^"no" ~ basic_land_type_plural }
 permanent_enters        = { article ~ permanent_type ~ ^"enters" }
 basic_land_type_is_tapped_for_mana = {
-    article ~ basic_land_type ~ ^"is" ~ ^"tapped" ~ ^"for" ~ ^"mana"
+    (article ~ basic_land_type | ^"enchanted" ~ enchanted_object)
+  ~ ^"is" ~ ^"tapped" ~ ^"for" ~ ^"mana"
 }
 basic_land_type_controller_becomes_status = {
     article ~ basic_land_type ~ permanent_controller ~ ^"becomes" ~ object_status

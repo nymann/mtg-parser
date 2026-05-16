@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 256,
+  "passing": 257,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -883,8 +883,7 @@
       "status": "pass"
     },
     "lea/Wild Growth": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:10\n  |\n2 | Whenever enchanted land is tapped for mana, its controller adds an additional {G}.\n  |          ^---\n  |\n  = expected trigger_event_clause"
+      "status": "pass"
     },
     "lea/Will-o'-the-Wisp": {
       "status": "pass"
