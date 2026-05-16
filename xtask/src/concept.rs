@@ -503,6 +503,34 @@ enum BoundaryOwner {
     Blocked(String),
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct PlumbingSiblingCooldown {
+    source_target_rule: String,
+    owner_reason: String,
+    derived_branch_rules: Vec<String>,
+    derived_owning_concepts: Vec<String>,
+    derivation_evidence: String,
+}
+
+#[derive(Debug, Serialize)]
+struct PlumbingSiblingCooldownLog {
+    source_target_rule: String,
+    owner_reason: String,
+    derived_branch_rules: Vec<String>,
+    derived_owning_concepts: Vec<String>,
+    cooled_sibling_target_rules: Vec<String>,
+    derivation_evidence: String,
+    fallback_status: String,
+}
+
+#[derive(Debug, Serialize)]
+struct PlumbingCooldownSelectionLog {
+    selected_target_rule: String,
+    selected_was_plumbing_cooled: bool,
+    non_cooled_candidate_available: bool,
+    fallback_status: String,
+}
+
 #[derive(Debug, Serialize)]
 struct ConceptGrindIterationSummary {
     iteration: u32,
@@ -2007,6 +2035,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
     });
 
     let mut blocked_targets = BTreeSet::new();
+    let mut plumbing_cooldowns = BTreeMap::<String, PlumbingSiblingCooldown>::new();
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
@@ -2036,7 +2065,21 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
-        let gap = select_concept_gap_excluding(&before, &options, &blocked_targets)?;
+        let gap =
+            select_concept_gap_excluding(&before, &options, &blocked_targets, &plumbing_cooldowns)?;
+        if !plumbing_cooldowns.is_empty() {
+            let selection_log = plumbing_cooldown_selection_log(
+                &before,
+                &options,
+                &blocked_targets,
+                &plumbing_cooldowns,
+                &gap,
+            );
+            write_json(
+                iteration_dir.join("plumbing_cooldown_selection.json"),
+                &selection_log,
+            )?;
+        }
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
         sink.emit(FlowEvent::WorkflowIterationStarted {
@@ -2137,7 +2180,36 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     gap.target_rule
                 ),
             });
-            blocked_targets.insert(gap.target_rule);
+            let source_target_rule = gap.target_rule.clone();
+            if let Some(log) = derive_plumbing_sibling_cooldown(
+                &before,
+                &source_target_rule,
+                reason,
+                &plumbing_cooldowns,
+            )? {
+                for sibling in &log.cooled_sibling_target_rules {
+                    plumbing_cooldowns.insert(
+                        sibling.clone(),
+                        PlumbingSiblingCooldown {
+                            source_target_rule: log.source_target_rule.clone(),
+                            owner_reason: log.owner_reason.clone(),
+                            derived_branch_rules: log.derived_branch_rules.clone(),
+                            derived_owning_concepts: log.derived_owning_concepts.clone(),
+                            derivation_evidence: log.derivation_evidence.clone(),
+                        },
+                    );
+                }
+                write_json(iteration_dir.join("plumbing_sibling_cooldown.json"), &log)?;
+                sink.emit(FlowEvent::Note {
+                    level: NoteLevel::Info,
+                    text: format!(
+                        "plumbing sibling cooldown derived from {}: {} sibling(s)",
+                        source_target_rule,
+                        log.cooled_sibling_target_rules.len()
+                    ),
+                });
+            }
+            blocked_targets.insert(source_target_rule);
             continue;
         }
         let gap = apply_boundary_decision(gap, &boundary_decision)?;
@@ -2429,13 +2501,14 @@ fn select_concept_gap(
     report: &ExistingGrammarMapReport,
     options: &ConceptGrindOptions,
 ) -> Result<ConceptGap> {
-    select_concept_gap_excluding(report, options, &BTreeSet::new())
+    select_concept_gap_excluding(report, options, &BTreeSet::new(), &BTreeMap::new())
 }
 
 fn select_concept_gap_excluding(
     report: &ExistingGrammarMapReport,
     options: &ConceptGrindOptions,
     excluded_rules: &BTreeSet<String>,
+    cooled_rules: &BTreeMap<String, PlumbingSiblingCooldown>,
 ) -> Result<ConceptGap> {
     if let Some(concept) = &options.concept {
         let query = options
@@ -2458,7 +2531,23 @@ fn select_concept_gap_excluding(
                 .unmapped_rules
                 .iter()
                 .filter(|rule| !excluded_rules.contains(&rule.name))
+                .filter(|rule| !cooled_rules.contains_key(&rule.name))
                 .find(|rule| rule.suggested_concept.as_deref() == Some(concept.as_str()))
+                .or_else(|| {
+                    report
+                        .unmapped_rules
+                        .iter()
+                        .filter(|rule| !excluded_rules.contains(&rule.name))
+                        .filter(|rule| !cooled_rules.contains_key(&rule.name))
+                        .find(|rule| rule.name.starts_with(concept))
+                })
+                .or_else(|| {
+                    report
+                        .unmapped_rules
+                        .iter()
+                        .filter(|rule| !excluded_rules.contains(&rule.name))
+                        .find(|rule| rule.suggested_concept.as_deref() == Some(concept.as_str()))
+                })
                 .or_else(|| {
                     report
                         .unmapped_rules
@@ -2490,6 +2579,7 @@ fn select_concept_gap_excluding(
         .unmapped_rules
         .iter()
         .filter(|rule| !excluded_rules.contains(&rule.name))
+        .filter(|rule| !cooled_rules.contains_key(&rule.name))
         .find(|rule| rule.suggested_concept.is_some())
     {
         let concept = rule.suggested_concept.clone().expect("checked");
@@ -2507,13 +2597,44 @@ fn select_concept_gap_excluding(
         });
     }
 
+    if let Some(rule) = report
+        .unmapped_rules
+        .iter()
+        .filter(|rule| !excluded_rules.contains(&rule.name))
+        .filter(|rule| !cooled_rules.contains_key(&rule.name))
+        .next()
+    {
+        let concept = slug(&rule.name).replace('-', "_");
+        return Ok(ConceptGap {
+            concept,
+            query: options
+                .query
+                .clone()
+                .unwrap_or_else(|| rule.name.replace('_', " ")),
+            target_rule: rule.name.clone(),
+            target_line: rule.line,
+            suggested_existing_owner: false,
+            reason: "first unmapped non-shared grammar rule".to_string(),
+        });
+    }
+
     let rule = report
         .unmapped_rules
         .iter()
         .filter(|rule| !excluded_rules.contains(&rule.name))
-        .next()
+        .find(|rule| rule.suggested_concept.is_some())
+        .or_else(|| {
+            report
+                .unmapped_rules
+                .iter()
+                .filter(|rule| !excluded_rules.contains(&rule.name))
+                .next()
+        })
         .ok_or_else(|| anyhow!("no unblocked unmapped grammar rules remain"))?;
-    let concept = slug(&rule.name).replace('-', "_");
+    let concept = rule
+        .suggested_concept
+        .clone()
+        .unwrap_or_else(|| slug(&rule.name).replace('-', "_"));
     Ok(ConceptGap {
         concept,
         query: options
@@ -2525,6 +2646,276 @@ fn select_concept_gap_excluding(
         suggested_existing_owner: false,
         reason: "first unmapped non-shared grammar rule".to_string(),
     })
+}
+
+fn plumbing_cooldown_selection_log(
+    report: &ExistingGrammarMapReport,
+    options: &ConceptGrindOptions,
+    excluded_rules: &BTreeSet<String>,
+    cooled_rules: &BTreeMap<String, PlumbingSiblingCooldown>,
+    gap: &ConceptGap,
+) -> PlumbingCooldownSelectionLog {
+    let selected_was_plumbing_cooled = cooled_rules.contains_key(&gap.target_rule);
+    let non_cooled_candidate_available =
+        candidate_rules_for_selection(report, options, excluded_rules)
+            .into_iter()
+            .any(|rule| !cooled_rules.contains_key(&rule.name));
+    let fallback_status = if selected_was_plumbing_cooled {
+        "fallback_to_cooled_after_non_cooled_exhausted"
+    } else if non_cooled_candidate_available {
+        "selected_non_cooled_candidate"
+    } else {
+        "no_matching_non_cooled_candidate"
+    }
+    .to_string();
+
+    PlumbingCooldownSelectionLog {
+        selected_target_rule: gap.target_rule.clone(),
+        selected_was_plumbing_cooled,
+        non_cooled_candidate_available,
+        fallback_status,
+    }
+}
+
+fn candidate_rules_for_selection<'a>(
+    report: &'a ExistingGrammarMapReport,
+    options: &ConceptGrindOptions,
+    excluded_rules: &BTreeSet<String>,
+) -> Vec<&'a UnmappedGrammarRule> {
+    if let Some(concept) = &options.concept {
+        if let Some(target_rule) = &options.target_rule {
+            return report
+                .unmapped_rules
+                .iter()
+                .filter(|rule| rule.name == *target_rule)
+                .filter(|rule| !excluded_rules.contains(&rule.name))
+                .collect();
+        }
+        return report
+            .unmapped_rules
+            .iter()
+            .filter(|rule| !excluded_rules.contains(&rule.name))
+            .filter(|rule| {
+                rule.suggested_concept.as_deref() == Some(concept.as_str())
+                    || rule.name.starts_with(concept)
+            })
+            .collect();
+    }
+
+    report
+        .unmapped_rules
+        .iter()
+        .filter(|rule| !excluded_rules.contains(&rule.name))
+        .collect()
+}
+
+fn derive_plumbing_sibling_cooldown(
+    report: &ExistingGrammarMapReport,
+    target_rule: &str,
+    owner_reason: &str,
+    existing_cooldowns: &BTreeMap<String, PlumbingSiblingCooldown>,
+) -> Result<Option<PlumbingSiblingCooldownLog>> {
+    if !owner_reason.starts_with("shared") {
+        return Ok(None);
+    }
+
+    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+    let owned_by_rule = owned_concepts_by_rule(report);
+    let Some(signature) = plumbing_branch_owner_signature(&rules, &owned_by_rule, target_rule)
+    else {
+        return Ok(Some(PlumbingSiblingCooldownLog {
+            source_target_rule: target_rule.to_string(),
+            owner_reason: owner_reason.to_string(),
+            derived_branch_rules: Vec::new(),
+            derived_owning_concepts: Vec::new(),
+            cooled_sibling_target_rules: Vec::new(),
+            derivation_evidence:
+                "not derived: target rule is not a pure wrapper/alternation over owned rules"
+                    .to_string(),
+            fallback_status: "no_cooldown_derived".to_string(),
+        }));
+    };
+
+    let mut cooled_sibling_target_rules = Vec::new();
+    for candidate in &report.unmapped_rules {
+        if candidate.name == target_rule || existing_cooldowns.contains_key(&candidate.name) {
+            continue;
+        }
+        let Some(candidate_signature) =
+            plumbing_branch_owner_signature(&rules, &owned_by_rule, &candidate.name)
+        else {
+            continue;
+        };
+        if candidate_signature.branch_owner_pairs == signature.branch_owner_pairs {
+            cooled_sibling_target_rules.push(candidate.name.clone());
+        }
+    }
+
+    let fallback_status = if cooled_sibling_target_rules.is_empty() {
+        "derived_no_matching_unmapped_siblings"
+    } else {
+        "cooldown_active_until_non_cooled_candidates_exhausted"
+    }
+    .to_string();
+
+    Ok(Some(PlumbingSiblingCooldownLog {
+        source_target_rule: target_rule.to_string(),
+        owner_reason: owner_reason.to_string(),
+        derived_branch_rules: signature.branch_rules,
+        derived_owning_concepts: signature.owning_concepts,
+        cooled_sibling_target_rules,
+        derivation_evidence: signature.derivation_evidence,
+        fallback_status,
+    }))
+}
+
+#[derive(Debug)]
+struct PlumbingBranchOwnerSignature {
+    branch_rules: Vec<String>,
+    owning_concepts: Vec<String>,
+    branch_owner_pairs: Vec<(String, Vec<String>)>,
+    derivation_evidence: String,
+}
+
+fn plumbing_branch_owner_signature(
+    rules: &[grammar_query_engine::GrammarRuleDefinition],
+    owned_by_rule: &BTreeMap<String, BTreeSet<String>>,
+    rule_name: &str,
+) -> Option<PlumbingBranchOwnerSignature> {
+    let rule = rules.iter().find(|rule| rule.name == rule_name)?;
+    let branch_rules = pure_wrapper_branch_rules(&rule.rhs)?;
+    let mut branch_owner_pairs = Vec::new();
+    let mut owning_concepts = BTreeSet::new();
+    for branch_rule in &branch_rules {
+        let owners = owned_by_rule.get(branch_rule)?;
+        if owners.is_empty() {
+            return None;
+        }
+        owning_concepts.extend(owners.iter().cloned());
+        branch_owner_pairs.push((
+            branch_rule.clone(),
+            owners.iter().cloned().collect::<Vec<_>>(),
+        ));
+    }
+    branch_owner_pairs.sort();
+    let branch_rules = branch_owner_pairs
+        .iter()
+        .map(|(branch_rule, _)| branch_rule.clone())
+        .collect::<Vec<_>>();
+    Some(PlumbingBranchOwnerSignature {
+        branch_rules: branch_rules.clone(),
+        owning_concepts: owning_concepts.into_iter().collect(),
+        branch_owner_pairs,
+        derivation_evidence: format!(
+            "{rule_name} RHS is a pure wrapper/alternation over owned branch rule(s): {}",
+            branch_rules.join(", ")
+        ),
+    })
+}
+
+fn owned_concepts_by_rule(report: &ExistingGrammarMapReport) -> BTreeMap<String, BTreeSet<String>> {
+    let mut owned_by_rule = BTreeMap::<String, BTreeSet<String>>::new();
+    for concept in &report.concepts {
+        for rule in &concept.owned_rules {
+            owned_by_rule
+                .entry(rule.name.clone())
+                .or_default()
+                .insert(concept.concept.clone());
+        }
+    }
+    owned_by_rule
+}
+
+fn pure_wrapper_branch_rules(rhs: &str) -> Option<Vec<String>> {
+    let rhs = strip_pest_rule_wrapper(rhs)?;
+    let mut branches = Vec::new();
+    for branch in split_top_level_alternatives(rhs) {
+        let branch = strip_balanced_parens(branch.trim());
+        if branch.is_empty() || !is_rule_identifier(branch) {
+            return None;
+        }
+        if !branches.iter().any(|existing| existing == branch) {
+            branches.push(branch.to_string());
+        }
+    }
+    if branches.is_empty() {
+        None
+    } else {
+        Some(branches)
+    }
+}
+
+fn strip_pest_rule_wrapper(rhs: &str) -> Option<&str> {
+    let mut rhs = rhs.trim();
+    while matches!(rhs.as_bytes().first(), Some(b'_' | b'@' | b'$' | b'!')) {
+        rhs = rhs[1..].trim_start();
+    }
+    if !rhs.starts_with('{') || !rhs.ends_with('}') {
+        return None;
+    }
+    Some(rhs[1..rhs.len() - 1].trim())
+}
+
+fn split_top_level_alternatives(input: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut start = 0usize;
+    let mut depth = 0i32;
+    for (index, ch) in input.char_indices() {
+        match ch {
+            '(' => depth += 1,
+            ')' => depth -= 1,
+            '|' if depth == 0 => {
+                let part = input[start..index].trim();
+                if !part.is_empty() {
+                    out.push(part);
+                }
+                start = index + ch.len_utf8();
+            }
+            _ => {}
+        }
+    }
+    let part = input[start..].trim();
+    if !part.is_empty() {
+        out.push(part);
+    }
+    out
+}
+
+fn strip_balanced_parens(mut input: &str) -> &str {
+    loop {
+        let trimmed = input.trim();
+        if !(trimmed.starts_with('(') && trimmed.ends_with(')')) {
+            return trimmed;
+        }
+        let mut depth = 0i32;
+        let mut wraps_whole = true;
+        for (index, ch) in trimmed.char_indices() {
+            match ch {
+                '(' => depth += 1,
+                ')' => {
+                    depth -= 1;
+                    if depth == 0 && index + ch.len_utf8() < trimmed.len() {
+                        wraps_whole = false;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        if !wraps_whole || depth != 0 {
+            return trimmed;
+        }
+        input = &trimmed[1..trimmed.len() - 1];
+    }
+}
+
+fn is_rule_identifier(input: &str) -> bool {
+    let mut chars = input.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    (first.is_ascii_alphabetic() || first == '_')
+        && chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
 }
 
 fn build_boundary_prompt(gap: &ConceptGap, report: &ExistingGrammarMapReport) -> Result<String> {
@@ -4291,9 +4682,165 @@ mod tests {
             no_commit: true,
         };
         let excluded = BTreeSet::from(["counter_name".to_string()]);
-        let gap = select_concept_gap_excluding(&report, &options, &excluded)
+        let gap = select_concept_gap_excluding(&report, &options, &excluded, &BTreeMap::new())
             .expect("should skip blocked suggestion");
         assert_eq!(gap.target_rule, "destroy_target");
+    }
+
+    #[test]
+    fn plumbing_cooldown_skips_cooled_rule_while_non_cooled_exists() {
+        let report = ExistingGrammarMapReport {
+            rule_count: 3,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 3,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "plumbing_wrapper_a".to_string(),
+                    line: 10,
+                    suggested_concept: Some("owned_concept".to_string()),
+                },
+                UnmappedGrammarRule {
+                    name: "plumbing_wrapper_b".to_string(),
+                    line: 20,
+                    suggested_concept: Some("owned_concept".to_string()),
+                },
+                UnmappedGrammarRule {
+                    name: "real_candidate".to_string(),
+                    line: 30,
+                    suggested_concept: None,
+                },
+            ],
+        };
+        let options = ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: None,
+            target_rule: None,
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            no_commit: true,
+        };
+        let cooled = BTreeMap::from([(
+            "plumbing_wrapper_b".to_string(),
+            PlumbingSiblingCooldown {
+                source_target_rule: "plumbing_wrapper_a".to_string(),
+                owner_reason: "shared/plumbing".to_string(),
+                derived_branch_rules: vec!["owned_rule".to_string()],
+                derived_owning_concepts: vec!["owned_concept".to_string()],
+                derivation_evidence: "test".to_string(),
+            },
+        )]);
+        let excluded = BTreeSet::from(["plumbing_wrapper_a".to_string()]);
+        let gap = select_concept_gap_excluding(&report, &options, &excluded, &cooled)
+            .expect("should skip cooled sibling");
+        assert_eq!(gap.target_rule, "real_candidate");
+    }
+
+    #[test]
+    fn plumbing_cooldown_falls_back_to_cooled_rule_when_exhausted() {
+        let report = ExistingGrammarMapReport {
+            rule_count: 2,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 2,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "plumbing_wrapper_a".to_string(),
+                    line: 10,
+                    suggested_concept: Some("owned_concept".to_string()),
+                },
+                UnmappedGrammarRule {
+                    name: "plumbing_wrapper_b".to_string(),
+                    line: 20,
+                    suggested_concept: Some("owned_concept".to_string()),
+                },
+            ],
+        };
+        let options = ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: None,
+            target_rule: None,
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            no_commit: true,
+        };
+        let cooled = BTreeMap::from([(
+            "plumbing_wrapper_b".to_string(),
+            PlumbingSiblingCooldown {
+                source_target_rule: "plumbing_wrapper_a".to_string(),
+                owner_reason: "shared/plumbing".to_string(),
+                derived_branch_rules: vec!["owned_rule".to_string()],
+                derived_owning_concepts: vec!["owned_concept".to_string()],
+                derivation_evidence: "test".to_string(),
+            },
+        )]);
+        let excluded = BTreeSet::from(["plumbing_wrapper_a".to_string()]);
+        let gap = select_concept_gap_excluding(&report, &options, &excluded, &cooled)
+            .expect("should fall back to cooled sibling");
+        assert_eq!(gap.target_rule, "plumbing_wrapper_b");
+    }
+
+    #[test]
+    fn pure_wrapper_branch_rules_accepts_only_rule_alternations() {
+        assert_eq!(
+            pure_wrapper_branch_rules("_{ owned_a | (owned_b) }"),
+            Some(vec!["owned_a".to_string(), "owned_b".to_string()])
+        );
+        assert_eq!(pure_wrapper_branch_rules("{ owned_a ~ owned_b }"), None);
+        assert_eq!(pure_wrapper_branch_rules("{ \"literal\" | owned_b }"), None);
+    }
+
+    #[test]
+    fn plumbing_branch_owner_signature_requires_owned_branches() {
+        let rules = vec![
+            grammar_query_engine::GrammarRuleDefinition {
+                name: "wrapper".to_string(),
+                rhs: "_{ owned_a | owned_b }".to_string(),
+                line: 1,
+            },
+            grammar_query_engine::GrammarRuleDefinition {
+                name: "owned_a".to_string(),
+                rhs: "{ \"a\" }".to_string(),
+                line: 2,
+            },
+            grammar_query_engine::GrammarRuleDefinition {
+                name: "owned_b".to_string(),
+                rhs: "{ \"b\" }".to_string(),
+                line: 3,
+            },
+        ];
+        let owned_by_rule = BTreeMap::from([
+            (
+                "owned_a".to_string(),
+                BTreeSet::from(["concept_a".to_string()]),
+            ),
+            (
+                "owned_b".to_string(),
+                BTreeSet::from(["concept_b".to_string()]),
+            ),
+        ]);
+        let signature = plumbing_branch_owner_signature(&rules, &owned_by_rule, "wrapper")
+            .expect("wrapper should derive");
+        assert_eq!(
+            signature.branch_rules,
+            vec!["owned_a".to_string(), "owned_b".to_string()]
+        );
+        assert_eq!(
+            signature.owning_concepts,
+            vec!["concept_a".to_string(), "concept_b".to_string()]
+        );
     }
 
     #[test]
