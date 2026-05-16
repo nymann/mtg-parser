@@ -12,18 +12,18 @@ use crate::ast::{
     DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
     DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
-    DamageRedirectionDestination, DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount,
-    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
-    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
-    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
-    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, RegenerateRecipient, Rounding,
-    Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm,
-    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    DamageRedirectionDestination, DestroyTarget, DiesWording, EachPlayerAction, EnchantObject,
+    EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController,
+    LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
+    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
+    ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
+    RegenerateRecipient, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction,
+    Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TextChangeReplacementTerm, TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition,
+    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
+    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -2287,18 +2287,26 @@ fn permanent_dealt_damage_by_source_this_turn_dies_from_pair(
 fn permanent_put_into_graveyard_from_battlefield_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEvent, ParseError> {
+    let wording = if pair.as_str().to_ascii_lowercase().ends_with(" dies") {
+        DiesWording::Dies
+    } else {
+        DiesWording::PutIntoGraveyardFromBattlefield
+    };
     let mut inner = pair.into_inner();
     let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
         "put-into-graveyard event missing permanent_type",
     ))?;
-    let zone_pair = inner.next().ok_or(ParseError::Internal(
-        "put-into-graveyard event missing zone",
-    ))?;
-    if zone_from_pair(zone_pair)? != Zone::Graveyard {
-        return Err(ParseError::Internal("put-into-graveyard event zone"));
+    if wording == DiesWording::PutIntoGraveyardFromBattlefield {
+        let zone_pair = inner.next().ok_or(ParseError::Internal(
+            "put-into-graveyard event missing zone",
+        ))?;
+        if zone_from_pair(zone_pair)? != Zone::Graveyard {
+            return Err(ParseError::Internal("put-into-graveyard event zone"));
+        }
     }
     Ok(TriggerEvent::PermanentPutIntoGraveyardFromBattlefield {
         permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+        wording,
     })
 }
 

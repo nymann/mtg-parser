@@ -1404,8 +1404,11 @@ source_deals_damage_to_an_opponent = {
     source_object ~ ^"deals" ~ ^"damage" ~ ^"to" ~ article ~ ^"opponent"
 }
 permanent_put_into_graveyard_from_battlefield = {
-    article ~ permanent_type ~ ^"is" ~ ^"put" ~ ^"into" ~ article ~ zone
-  ~ ^"from" ~ ^"the" ~ ^"battlefield"
+    article ~ permanent_type
+  ~ (
+        ^"is" ~ ^"put" ~ ^"into" ~ article ~ zone ~ ^"from" ~ ^"the" ~ ^"battlefield"
+      | ^"dies"
+    )
 }
 permanent_dealt_damage_by_source_this_turn_dies = {
     article ~ permanent_type ~ ^"dealt" ~ ^"damage" ~ ^"by" ~ source_object

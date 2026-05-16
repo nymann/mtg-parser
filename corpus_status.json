@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 234,
+  "passing": 235,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -718,8 +718,7 @@
       "status": "pass"
     },
     "lea/Soul Net": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:12\n  |\n1 | Whenever a creature dies, you may pay {1}. If you do, you gain 1 life.\n  |            ^---\n  |\n  = expected basic_land_type"
+      "status": "pass"
     },
     "lea/Spell Blast": {
       "status": "fail",

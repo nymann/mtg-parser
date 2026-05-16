@@ -840,7 +840,11 @@ pub enum TriggerEvent {
     /// "this <source> is dealt damage"
     SourceIsDealtDamage { source: SourceObject },
     /// "a/an <permanent_type> is put into a graveyard from the battlefield"
-    PermanentPutIntoGraveyardFromBattlefield { permanent_type: PermanentType },
+    /// or "a/an <permanent_type> dies"
+    PermanentPutIntoGraveyardFromBattlefield {
+        permanent_type: PermanentType,
+        wording: DiesWording,
+    },
     /// "a/an <permanent_type> dealt damage by this <source> this turn dies"
     PermanentDealtDamageBySourceThisTurnDies {
         permanent_type: PermanentType,
@@ -863,6 +867,12 @@ pub enum TriggerEvent {
     SourceDealsDamageToAnOpponent { source: SourceObject },
     /// "you control no <basic_land_type>s"
     YouControlNoBasicLands { land_type: BasicLandType },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DiesWording {
+    PutIntoGraveyardFromBattlefield,
+    Dies,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

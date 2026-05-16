@@ -10,7 +10,7 @@ use crate::ast::{
     DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
     DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
     DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyTarget, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    DestroyTarget, DiesWording, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
     ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
     ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
     NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
@@ -2058,11 +2058,19 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::YouAreDealtDamage => {
             out.push_str("you're dealt damage");
         }
-        TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { permanent_type } => {
+        TriggerEvent::PermanentPutIntoGraveyardFromBattlefield {
+            permanent_type,
+            wording,
+        } => {
             out.push_str(indefinite_article(permanent_type));
             out.push(' ');
             out.push_str(permanent_type_name(permanent_type));
-            out.push_str(" is put into a graveyard from the battlefield");
+            match wording {
+                DiesWording::PutIntoGraveyardFromBattlefield => {
+                    out.push_str(" is put into a graveyard from the battlefield");
+                }
+                DiesWording::Dies => out.push_str(" dies"),
+            }
         }
         TriggerEvent::PermanentDealtDamageBySourceThisTurnDies {
             permanent_type,

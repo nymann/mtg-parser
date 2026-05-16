@@ -322,3 +322,5 @@ mod siren_s_call;
 mod sleight_of_mind;
 #[path = "generated/smoke.rs"]
 mod smoke;
+#[path = "generated/soul_net.rs"]
+mod soul_net;
