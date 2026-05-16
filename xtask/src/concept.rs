@@ -1993,11 +1993,19 @@ fn run_concept_grind_gates(
         &["test", "-p", "mtg-grammar"],
         iteration_dir,
     )?;
-    verify_gap_closed(gap, before, &map).map_err(|e| ConceptGrindGateFailure {
+    run_gap_closure_gate(gap, before, &map)?;
+    Ok(())
+}
+
+fn run_gap_closure_gate(
+    gap: &ConceptGap,
+    before: &ExistingGrammarMapReport,
+    after: &ExistingGrammarMapReport,
+) -> Result<(), ConceptGrindGateFailure> {
+    verify_gap_closed(gap, before, after).map_err(|e| ConceptGrindGateFailure {
         label: "gap closure".to_string(),
         output: format!("{e:#}"),
-    })?;
-    Ok(())
+    })
 }
 
 fn verify_gap_closed(
@@ -3263,7 +3271,7 @@ mod tests {
 
     #[test]
     fn gap_closure_failure_has_repairable_label() {
-        let failure = verify_gap_closed(
+        let failure = run_gap_closure_gate(
             &ConceptGap {
                 concept: "counter_target_spell".to_string(),
                 query: "counter target colored spell".to_string(),
@@ -3275,10 +3283,6 @@ mod tests {
             &map_report_for_test(false),
             &map_report_for_test(false),
         )
-        .map_err(|e| ConceptGrindGateFailure {
-            label: "gap closure".to_string(),
-            output: format!("{e:#}"),
-        })
         .expect_err("gap should still be open");
         assert_eq!(failure.label, "gap closure");
         assert!(failure.output.contains("still unmapped"));
