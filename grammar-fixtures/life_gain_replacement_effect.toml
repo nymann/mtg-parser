@@ -1,0 +1,23 @@
+[fixture]
+concept = "life_gain_replacement_effect"
+rule = "if_you_would_gain_life_draw_that_many_cards_instead"
+
+[[example]]
+text = "If you would gain life, draw that many cards instead."
+reason = "Life-gain replacement effect with you as affected player, gain-life replaced event, that-many draw result, and instead marker."
+
+[[counterexample]]
+text = "You gain life equal to the damage prevented this way."
+reason = "Damage-prevention-referenced life gain, owned by life_gain_equal_to_damage."
+
+[[counterexample]]
+text = "Damage that would reduce your life total to less than 1 reduces it to 1 instead."
+reason = "Life-total floor replacement effect, owned by life_total_floor_replacement."
+
+[[counterexample]]
+text = "Target player draws two cards."
+reason = "Generic draw instruction, not a life-gain replacement effect."
+
+[[counterexample]]
+text = "If you would gain life, draw that many cards instead. trailing"
+reason = "Exact-consumption guard."

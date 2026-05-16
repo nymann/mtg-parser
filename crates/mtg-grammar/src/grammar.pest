@@ -375,10 +375,18 @@ you_dont_lose_game_for_having_zero_or_less_life = {
   ~ ^"having" ~ ^"0" ~ ^"or" ~ ^"less" ~ ^"life" ~ "."
 }
 
-if_you_would_gain_life_draw_that_many_cards_instead = {
-    ^"if" ~ ^"you" ~ ^"would" ~ ^"gain" ~ ^"life" ~ ","
-  ~ ^"draw" ~ ^"that" ~ ^"many" ~ ^"cards" ~ ^"instead" ~ "."
+life_gain_replacement_effect = {
+    ^"if" ~ life_gain_replacement_affected_player ~ ^"would"
+  ~ life_gain_replacement_replaced_event ~ ","
+  ~ life_gain_replacement_result ~ ^"instead" ~ "."
 }
+life_gain_replacement_affected_player = { ^"you" }
+life_gain_replacement_replaced_event = { ^"gain" ~ ^"life" }
+life_gain_replacement_result = { draw_that_many_cards_replacement_result }
+draw_that_many_cards_replacement_result = {
+    ^"draw" ~ ^"that" ~ ^"many" ~ ^"cards"
+}
+if_you_would_gain_life_draw_that_many_cards_instead = { life_gain_replacement_effect }
 
 static_life_total_floor_replacement = {
     life_total_floor_cause ~ ^"that" ~ ^"would" ~ ^"reduce" ~ life_total_floor_player

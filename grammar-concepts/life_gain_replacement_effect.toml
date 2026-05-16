@@ -1,0 +1,81 @@
+[[axis]]
+name = "affected_player"
+values = ["you"]
+
+[[axis]]
+name = "replaced_event"
+values = ["gain_life"]
+
+[[axis]]
+name = "replacement_event"
+values = ["draw_that_many_cards"]
+
+[[axis]]
+name = "quantity_reference"
+values = ["that_many"]
+
+[[axis]]
+name = "marker"
+values = ["instead"]
+
+[[axis]]
+name = "ability_kind"
+values = ["static_replacement_effect"]
+
+[boundary]
+excludes = [
+    "Damage-referenced life gain, owned by life_gain_equal_to_damage.",
+    "Life-total floor replacement effects owned by life_total_floor_replacement.",
+    "Generic draw instructions that are not replacing life gain.",
+]
+includes = [
+    "Static replacement effects where if you would gain life, the event is replaced instead.",
+    "Life-gain replacement effects whose replacement event draws that many cards.",
+]
+
+[concept]
+name = "life_gain_replacement_effect"
+pest_rules = [
+    "life_gain_replacement_effect",
+    "if_you_would_gain_life_draw_that_many_cards_instead",
+]
+rules_queries = [
+    "lex: if you would gain life draw that many cards instead",
+    "lex: replacement effect gain life draw that many cards instead",
+]
+rules_terms = [
+    "replacement effect",
+    "life gain",
+    "draw",
+]
+
+[[counterexample]]
+reason = "Damage-prevention-referenced life gain, owned by life_gain_equal_to_damage."
+text = "You gain life equal to the damage prevented this way."
+
+[[counterexample]]
+reason = "Life-total floor replacement effect, owned by life_total_floor_replacement."
+text = "Damage that would reduce your life total to less than 1 reduces it to 1 instead."
+
+[[counterexample]]
+reason = "Generic draw instruction, not a life-gain replacement effect."
+text = "Target player draws two cards."
+
+[[example]]
+text = "If you would gain life, draw that many cards instead."
+
+[grammar_query]
+candidate_rules = [
+    "life_gain_replacement_effect",
+    "if_you_would_gain_life_draw_that_many_cards_instead",
+    "life_gain_replacement_result",
+    "draw_that_many_cards_replacement_result",
+    "you_gain_life_equal_damage",
+    "static_life_total_floor_replacement",
+    "draw_cards",
+]
+selected_rule = "if_you_would_gain_life_draw_that_many_cards_instead"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
