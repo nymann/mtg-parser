@@ -13,6 +13,7 @@ values = [
     "target_basic_lands_count",
     "destroy_all",
     "all_non_creature_type_creatures_player_controls_that_didnt_attack_this_turn",
+    "all_creatures_blocking_or_blocked_by_it",
 ]
 
 [[axis]]
@@ -45,6 +46,7 @@ includes = [
     "Color-qualified target permanent destruction through target_colored_permanent.",
     "Sentence, modal mode, and activated ability surfaces for destroy target colored permanent actions.",
     "Trigger effects that destroy all non-creature-type creatures a player controls that didn't attack this turn.",
+    "Sentence and trigger-effect surfaces for destroying all creatures blocking or blocked by it.",
 ]
 
 [concept]
@@ -54,13 +56,16 @@ pest_rules = [
     "destroy_target",
     "destroy_target_colored_permanent_action",
     "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn",
+    "destroy_all_creatures_blocking_or_blocked_by_it",
 ]
 rules_queries = [
     "lex: destroy target permanent",
     "lex: destroy all non-Goblin creatures that player controls that didn't attack this turn",
+    "lex: destroy all creatures blocking or blocked by it",
 ]
 rules_terms = [
     "attack",
+    "block",
     "control",
     "creature type",
     "destroy",
@@ -98,12 +103,19 @@ text = "{U}: Destroy target red permanent."
 [[example]]
 text = "Destroy all non-Goblin creatures that player controls that didn't attack this turn."
 
+[[example]]
+text = "Destroy all creatures blocking or blocked by it."
+
+[[example]]
+text = "When this creature dies, destroy all creatures blocking or blocked by it."
+
 [grammar_query]
 candidate_rules = [
     "destroy",
     "destroy_target",
     "destroy_target_colored_permanent_action",
     "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn",
+    "destroy_all_creatures_blocking_or_blocked_by_it",
     "target_colored_permanent",
     "counter_target_colored_spell_action",
     "exile",

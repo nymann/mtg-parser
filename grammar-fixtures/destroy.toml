@@ -27,6 +27,21 @@ text = "Destroy all non-Goblin creatures that player controls that didn't attack
 rule = "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn"
 text = "Destroy all non-Goblin creatures that player controls that didn't attack this turn."
 
+[[example]]
+text = "Destroy all creatures blocking or blocked by it."
+
+[[example]]
+rule = "triggered_ability"
+text = "When this creature dies, destroy all creatures blocking or blocked by it."
+
+[[example]]
+rule = "trigger_effect"
+text = "Destroy all creatures blocking or blocked by it."
+
+[[example]]
+rule = "destroy_all_creatures_blocking_or_blocked_by_it"
+text = "Destroy all creatures blocking or blocked by it."
+
 [[counterexample]]
 text = "Counter target red spell."
 reason = "Countering a colored target spell is the counter_target_spell concept."
@@ -47,3 +62,15 @@ reason = "Exact-consumption guard."
 rule = "trigger_effect"
 text = "Exile all non-Goblin creatures that player controls that didn't attack this turn."
 reason = "Exile is a different zone-change action even with the same selector shape."
+
+[[counterexample]]
+text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."
+reason = "Unblocking is a combat status change, not a destroy effect."
+
+[[counterexample]]
+text = "Target blocking creature gets +7/+7 until end of turn."
+reason = "Power/toughness modification of a blocking creature is not a destroy effect."
+
+[[counterexample]]
+text = "All creatures able to block enchanted creature do so."
+reason = "Blocking requirements are not destroy effects."

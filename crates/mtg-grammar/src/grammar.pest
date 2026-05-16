@@ -217,7 +217,8 @@ this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first = {
 destroy = { ^"destroy" ~ destroy_target ~ "." }
 exile = { ^"exile" ~ destroy_target ~ "." }
 destroy_target = {
-    destroy_all
+    all_creatures_blocking_or_blocked_by_it
+  | destroy_all
   | target_basic_lands_count
   | target_colored_permanent
   | target_status_creature
@@ -227,6 +228,9 @@ destroy_target = {
 }
 destroy_all = { ^"all" ~ destroy_all_objects }
 destroy_all_objects = { basic_land_type_plural | permanent_type_plural_list }
+all_creatures_blocking_or_blocked_by_it = {
+    ^"all" ~ ^"creatures" ~ ^"blocking" ~ ^"or" ~ ^"blocked" ~ ^"by" ~ ^"it"
+}
 target_basic_lands_count = { card_count ~ ^"target" ~ basic_land_type_plural }
 permanent_type_plural_list = {
     permanent_type_plural ~ (("," ~ permanent_type_plural)* ~ ","? ~ ^"and" ~ permanent_type_plural)?
@@ -1839,8 +1843,7 @@ destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_t
 }
 
 destroy_all_creatures_blocking_or_blocked_by_it = {
-    ^"destroy" ~ ^"all" ~ ^"creatures" ~ ^"blocking" ~ ^"or"
-  ~ ^"blocked" ~ ^"by" ~ ^"it" ~ "."
+    ^"destroy" ~ all_creatures_blocking_or_blocked_by_it ~ "."
 }
 
 defending_player_divides_creatures_without_keyword_into_labeled_piles = {
