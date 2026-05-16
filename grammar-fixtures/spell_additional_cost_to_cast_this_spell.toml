@@ -1,0 +1,25 @@
+[fixture]
+concept = "spell_additional_cost_to_cast_this_spell"
+rule = "as_additional_cost_to_cast_this_spell"
+
+[[example]]
+text = "As an additional cost to cast this spell, sacrifice a creature."
+
+[[example]]
+text = "As an additional cost to cast this spell, sacrifice an artifact."
+
+[[counterexample]]
+text = "This spell costs {1} more to cast for each target beyond the first."
+reason = "Per-target mana cost increase belongs to a separate casting-cost modification concept."
+
+[[counterexample]]
+text = "Red spells cost {1} more to cast."
+reason = "Global static colored-spell cost modification, not a self-referential additional cost."
+
+[[counterexample]]
+text = "Sacrifice a creature."
+reason = "Standalone sacrifice action, not an additional cost to cast this spell."
+
+[[counterexample]]
+text = "As an additional cost to cast this spell, sacrifice a creature. trailing"
+reason = "Exact-consumption guard."

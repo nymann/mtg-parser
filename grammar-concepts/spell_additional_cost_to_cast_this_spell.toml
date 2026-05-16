@@ -1,0 +1,73 @@
+[[axis]]
+name = "subject"
+values = ["this_spell"]
+
+[[axis]]
+name = "affected_action"
+values = ["cast"]
+
+[[axis]]
+name = "cost_timing"
+values = ["additional"]
+
+[[axis]]
+name = "cost_kind"
+values = ["sacrifice_permanent"]
+
+[[axis]]
+name = "cost_object"
+values = ["permanent_type"]
+
+[boundary]
+excludes = [
+    "Mana cost increases that apply while casting a spell.",
+    "Global static cost modifications for colored spells.",
+    "Standalone sacrifice actions that are not cast additional costs.",
+]
+includes = [
+    "Self-referential spell additional costs that apply to casting this spell.",
+    "Additional costs whose operand is sacrificing a permanent identified by permanent type.",
+]
+
+[concept]
+name = "spell_additional_cost_to_cast_this_spell"
+pest_rules = ["as_additional_cost_to_cast_this_spell"]
+rules_queries = ["lex: as an additional cost to cast this spell sacrifice a creature"]
+rules_terms = [
+    "additional cost",
+    "cast",
+    "cost",
+    "sacrifice",
+    "spell",
+]
+
+[[counterexample]]
+reason = "Per-target mana cost increase belongs to a separate casting-cost modification concept."
+text = "This spell costs {1} more to cast for each target beyond the first."
+
+[[counterexample]]
+reason = "Global static colored-spell cost modification, not a self-referential additional cost."
+text = "Red spells cost {1} more to cast."
+
+[[counterexample]]
+reason = "Standalone sacrifice action, not an additional cost to cast this spell."
+text = "Sacrifice a creature."
+
+[[example]]
+text = "As an additional cost to cast this spell, sacrifice a creature."
+
+[[example]]
+text = "As an additional cost to cast this spell, sacrifice an artifact."
+
+[grammar_query]
+candidate_rules = [
+    "as_additional_cost_to_cast_this_spell",
+    "spell_additional_cost",
+    "sacrifice_permanent_cost",
+    "this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first",
+]
+selected_rule = "as_additional_cost_to_cast_this_spell"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
