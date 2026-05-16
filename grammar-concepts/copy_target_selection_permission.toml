@@ -1,0 +1,64 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "modality"
+values = ["may"]
+
+[[axis]]
+name = "action"
+values = ["choose_new_targets"]
+
+[[axis]]
+name = "object"
+values = ["the_copy"]
+
+[[axis]]
+name = "copy_context"
+values = ["spell_or_ability_copy"]
+
+[boundary]
+excludes = [
+    "Instructions that create a spell copy without choosing new targets for an existing copy.",
+    "Permanent enter-as-copy replacement effects.",
+    "Copy effects whose exception changes color or other copiable values without target-selection permission.",
+]
+includes = [
+    "Target-retargeting permission for an existing spell or ability copy.",
+    "You-may wording that chooses new targets for the copy.",
+]
+
+[concept]
+name = "copy_target_selection_permission"
+pest_rules = ["you_may_choose_new_targets_for_the_copy"]
+rules_queries = ["lex: you may choose new targets for the copy"]
+rules_terms = [
+    "copy",
+    "target",
+    "spell",
+    "ability",
+]
+
+[[counterexample]]
+reason = "Spell-copy creation with a color exception, not target-selection permission for an existing copy."
+text = "Copy target instant spell, except that the copy is red."
+
+[[counterexample]]
+reason = "Permanent enter-as-copy replacement wording, not target-selection permission for a spell or ability copy."
+text = "You may have this creature enter as a copy of any creature on the battlefield."
+
+[[example]]
+text = "You may choose new targets for the copy."
+
+[grammar_query]
+candidate_rules = [
+    "you_may_choose_new_targets_for_the_copy",
+    "copy_target_spell_except_copy_is_color",
+    "static_you_may_have_source_enter_as_copy",
+]
+selected_rule = "you_may_choose_new_targets_for_the_copy"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

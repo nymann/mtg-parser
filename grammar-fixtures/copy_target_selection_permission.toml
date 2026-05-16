@@ -1,0 +1,21 @@
+[fixture]
+concept = "copy_target_selection_permission"
+rule = "you_may_choose_new_targets_for_the_copy"
+
+[[example]]
+text = "You may choose new targets for the copy."
+
+[[example]]
+text = "you may choose new targets for the copy."
+
+[[counterexample]]
+text = "Copy target instant spell, except that the copy is red."
+reason = "Spell-copy creation with a color exception, not target-selection permission for an existing copy."
+
+[[counterexample]]
+text = "You may have this creature enter as a copy of any creature on the battlefield."
+reason = "Permanent enter-as-copy replacement wording, not target-selection permission for a spell or ability copy."
+
+[[counterexample]]
+text = "You may choose new targets for the copy. trailing"
+reason = "Exact-consumption guard."
