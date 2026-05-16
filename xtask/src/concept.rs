@@ -581,6 +581,9 @@ struct ConceptGrindIterationSummary {
     concept: String,
     query: String,
     target_rule: String,
+    fastpath_attempted: bool,
+    fastpath_result: String,
+    fallback_reason: Option<String>,
     fixture_passed: bool,
     maturity_state: String,
     mapped_rule_count_before: usize,
@@ -608,6 +611,23 @@ struct ConceptQualityContractFailure {
     maturity_command: Vec<String>,
     fixture_result: FixtureRunResult,
     maturity_result: MaturityReport,
+}
+
+#[derive(Debug, Serialize)]
+struct ConceptFastPathReport {
+    fastpath_attempted: bool,
+    fastpath_result: String,
+    fallback_reason: Option<String>,
+    fixture_command: Vec<String>,
+    maturity_command: Vec<String>,
+    parsed_results: Option<ConceptQualityContractReport>,
+    gate_failure: Option<ConceptFastPathGateFailure>,
+}
+
+#[derive(Debug, Serialize)]
+struct ConceptFastPathGateFailure {
+    label: String,
+    output: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -2666,41 +2686,74 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         )?;
 
         metrics.step_started(sink, iteration, 4, "patch agent");
-        let patch_prompt = build_patch_prompt(&gap, &boundary_decision, &boundary.assistant_text)?;
-        fs::write(iteration_dir.join("patch_prompt.md"), &patch_prompt).with_context(|| {
-            format!("write {}", iteration_dir.join("patch_prompt.md").display())
-        })?;
-        let patch = refactor_hotspot::invoke_agent(
-            options.agent,
-            &patch_prompt,
-            &iteration_dir.join("patch_transcript.ndjson"),
-            sink,
-        )?;
-        fs::write(
-            iteration_dir.join("patch_response.md"),
-            &patch.assistant_text,
-        )
-        .with_context(|| {
-            format!(
-                "write {}",
-                iteration_dir.join("patch_response.md").display()
-            )
-        })?;
-        if !patch.success {
-            bail!(
-                "{} patch agent exited with status {}; transcript: {}",
-                options.agent.label(),
-                patch.exit_code,
-                iteration_dir.join("patch_transcript.ndjson").display()
-            );
+        let mut fastpath_report = ConceptFastPathReport::new(
+            &gap.concept,
+            &grammar_fixtures_dir().join(format!("{}.toml", gap.concept)),
+        );
+        let mut patch_agent_used = false;
+        if should_attempt_concept_only_fastpath(&gap, &boundary_decision)? {
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Info,
+                text: format!(
+                    "attempting concept-only scaffold fast path for {} -> {}",
+                    gap.concept, gap.target_rule
+                ),
+            });
+            fastpath_report.fastpath_attempted = true;
+            match run_concept_only_fastpath(
+                &gap,
+                &boundary_decision,
+                &before,
+                &iteration_dir,
+                &mut fastpath_report,
+            ) {
+                Ok(()) => {
+                    fastpath_report.fastpath_result = "passed".to_string();
+                }
+                Err(reason) => {
+                    let reason = reason.to_string();
+                    fastpath_report.fastpath_result = "fallback".to_string();
+                    fastpath_report.fallback_reason = Some(reason.clone());
+                    sink.emit(FlowEvent::Note {
+                        level: NoteLevel::Warn,
+                        text: format!("fast path fell back to patch agent: {reason}"),
+                    });
+                    invoke_patch_agent(
+                        &gap,
+                        &boundary_decision,
+                        &boundary.assistant_text,
+                        &options,
+                        sink,
+                        &iteration_dir,
+                    )?;
+                    patch_agent_used = true;
+                }
+            }
+        } else {
+            invoke_patch_agent(
+                &gap,
+                &boundary_decision,
+                &boundary.assistant_text,
+                &options,
+                sink,
+                &iteration_dir,
+            )?;
+            patch_agent_used = true;
         }
+        write_json(iteration_dir.join("fastpath_report.json"), &fastpath_report)?;
         metrics.step_finished(
             sink,
             &session_dir,
             iteration,
             4,
             true,
-            Some("patch agent completed".to_string()),
+            Some(if fastpath_report.fastpath_attempted && !patch_agent_used {
+                "fast path completed".to_string()
+            } else if fastpath_report.fastpath_attempted {
+                "fast path fallback patch agent completed".to_string()
+            } else {
+                "patch agent completed".to_string()
+            }),
         )?;
 
         metrics.step_started(sink, iteration, 5, "gate and repair");
@@ -2866,6 +2919,9 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             concept: gap.concept.clone(),
             query: gap.query.clone(),
             target_rule: gap.target_rule.clone(),
+            fastpath_attempted: fastpath_report.fastpath_attempted,
+            fastpath_result: fastpath_report.fastpath_result.clone(),
+            fallback_reason: fastpath_report.fallback_reason.clone(),
             fixture_passed: final_contract.fixture_result.passed,
             maturity_state: final_maturity.state.clone(),
             mapped_rule_count_before: before.mapped_rule_count,
@@ -3379,6 +3435,329 @@ BLOCKERS: <none or list>
         boundary_json = serde_json::to_string_pretty(boundary_decision)?,
         boundary_response = boundary_response,
     ))
+}
+
+fn invoke_patch_agent(
+    gap: &ConceptGap,
+    boundary_decision: &BoundaryDecision,
+    boundary_response: &str,
+    options: &ConceptGrindOptions,
+    sink: &mut dyn FlowSink,
+    iteration_dir: &Path,
+) -> Result<()> {
+    let patch_prompt = build_patch_prompt(gap, boundary_decision, boundary_response)?;
+    fs::write(iteration_dir.join("patch_prompt.md"), &patch_prompt)
+        .with_context(|| format!("write {}", iteration_dir.join("patch_prompt.md").display()))?;
+    let patch = refactor_hotspot::invoke_agent(
+        options.agent,
+        &patch_prompt,
+        &iteration_dir.join("patch_transcript.ndjson"),
+        sink,
+    )?;
+    fs::write(
+        iteration_dir.join("patch_response.md"),
+        &patch.assistant_text,
+    )
+    .with_context(|| {
+        format!(
+            "write {}",
+            iteration_dir.join("patch_response.md").display()
+        )
+    })?;
+    if !patch.success {
+        bail!(
+            "{} patch agent exited with status {}; transcript: {}",
+            options.agent.label(),
+            patch.exit_code,
+            iteration_dir.join("patch_transcript.ndjson").display()
+        );
+    }
+    Ok(())
+}
+
+impl ConceptFastPathReport {
+    fn new(concept: &str, fixture_path: &Path) -> Self {
+        Self {
+            fastpath_attempted: false,
+            fastpath_result: "not_applicable".to_string(),
+            fallback_reason: None,
+            fixture_command: fixture_command_for_log(fixture_path),
+            maturity_command: maturity_command_for_log(concept, false),
+            parsed_results: None,
+            gate_failure: None,
+        }
+    }
+}
+
+fn should_attempt_concept_only_fastpath(
+    gap: &ConceptGap,
+    decision: &BoundaryDecision,
+) -> Result<bool> {
+    if !matches!(decision.owner, BoundaryOwner::New(_)) {
+        return Ok(false);
+    }
+    if !is_no_pest_patch_intent(&decision.pest_patch_intent) {
+        return Ok(false);
+    }
+    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+    Ok(rules.iter().any(|rule| rule.name == gap.target_rule))
+}
+
+fn is_no_pest_patch_intent(intent: &str) -> bool {
+    let normalized = intent
+        .trim()
+        .trim_matches(|c: char| matches!(c, '`' | '"' | '\'' | '.' | ';'))
+        .to_ascii_lowercase();
+    matches!(
+        normalized.as_str(),
+        "none" | "no" | "no pest patch" | "no pest patch intended" | "no grammar change"
+    )
+}
+
+fn run_concept_only_fastpath(
+    gap: &ConceptGap,
+    decision: &BoundaryDecision,
+    before: &ExistingGrammarMapReport,
+    iteration_dir: &Path,
+    report: &mut ConceptFastPathReport,
+) -> Result<()> {
+    write_concept_only_scaffold(gap, decision).context("scaffold generation failed")?;
+    let quality = run_quality_contract(gap).context("fastpath quality contract failed")?;
+    report.parsed_results = Some(quality);
+    if !report
+        .parsed_results
+        .as_ref()
+        .is_some_and(|quality| quality.passed)
+    {
+        bail!("fastpath fixture or maturity check failed");
+    }
+    if grammar_pest_has_uncommitted_diff()? {
+        bail!("fastpath produced or inherited a grammar.pest diff");
+    }
+    if let Err(failure) = run_concept_grind_gates(gap, before, iteration_dir) {
+        report.gate_failure = Some(ConceptFastPathGateFailure {
+            label: failure.label.clone(),
+            output: failure.output.clone(),
+        });
+        bail!("fastpath existing gate failed: {}", failure.label);
+    }
+    Ok(())
+}
+
+fn write_concept_only_scaffold(gap: &ConceptGap, decision: &BoundaryDecision) -> Result<()> {
+    let examples = parse_boundary_fixture_lines(&decision.examples_to_accept);
+    if examples.is_empty() {
+        bail!("boundary decision did not provide examples to accept");
+    }
+    let mut counterexamples = parse_boundary_fixture_lines(&decision.counterexamples_to_reject);
+    if counterexamples.is_empty() {
+        bail!("boundary decision did not provide counterexamples to reject");
+    }
+    if let Some(first) = examples.first() {
+        counterexamples.push(format!("{first} trailing"));
+    }
+    counterexamples.sort();
+    counterexamples.dedup();
+
+    let concept_path = grammar_concepts_dir().join(format!("{}.toml", gap.concept));
+    let fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
+    if concept_path.exists() {
+        bail!(
+            "concept-only fastpath refuses to overwrite {}",
+            concept_path.display()
+        );
+    }
+    if fixture_path.exists() {
+        bail!(
+            "concept-only fastpath refuses to overwrite {}",
+            fixture_path.display()
+        );
+    }
+    fs::write(
+        &concept_path,
+        render_concept_only_concept_toml(gap, decision, &examples, &counterexamples)?,
+    )
+    .with_context(|| format!("write {}", concept_path.display()))?;
+    fs::write(
+        &fixture_path,
+        render_concept_only_fixture_toml(gap, &examples, &counterexamples),
+    )
+    .with_context(|| format!("write {}", fixture_path.display()))?;
+    Ok(())
+}
+
+fn render_concept_only_concept_toml(
+    gap: &ConceptGap,
+    decision: &BoundaryDecision,
+    examples: &[String],
+    counterexamples: &[String],
+) -> Result<String> {
+    let grammar_report = build_grammar_query_report(&gap.query, vec![gap.target_rule.clone()], 10)?;
+    let axes = parse_boundary_axes(&decision.axes, &gap.query);
+    let includes = vec![format!(
+        "Boundary-reviewed concept-only coverage for existing PEST rule {}.",
+        gap.target_rule
+    )];
+    let excludes = vec![
+        "PEST grammar changes; boundary decision declared PEST_PATCH_INTENT none.".to_string(),
+        "Parser, unparser, lowering, generated card tests, and corpus pass status.".to_string(),
+    ];
+
+    let mut out = String::new();
+    out.push_str("[concept]\n");
+    out.push_str(&format!("name = {:?}\n", gap.concept));
+    out.push_str(&format!("rules_terms = {:?}\n", query_terms(&gap.query)));
+    out.push_str(&format!(
+        "rules_queries = {:?}\n",
+        vec![format!("lex: {}", gap.query)]
+    ));
+    out.push_str(&format!(
+        "pest_rules = {:?}\n\n",
+        vec![gap.target_rule.clone()]
+    ));
+
+    out.push_str("[boundary]\n");
+    out.push_str(&format!("includes = {:?}\n", includes));
+    out.push_str(&format!("excludes = {:?}\n\n", excludes));
+
+    for axis in axes {
+        out.push_str("[[axis]]\n");
+        out.push_str(&format!("name = {:?}\n", axis.0));
+        out.push_str(&format!("evidence = {:?}\n\n", axis.1));
+    }
+    for text in examples {
+        out.push_str("[[example]]\n");
+        out.push_str(&format!("text = {:?}\n\n", text));
+    }
+    for text in counterexamples {
+        out.push_str("[[counterexample]]\n");
+        out.push_str(&format!("text = {:?}\n", text));
+        out.push_str("reason = \"Boundary-reviewed reject or exact-consumption guard.\"\n\n");
+    }
+
+    out.push_str("[maturity]\n");
+    out.push_str("pest_grammar = \"bounded\"\n");
+    out.push_str("blockers = []\n\n");
+
+    out.push_str("[grammar_query]\n");
+    out.push_str(&format!("selected_rule = {:?}\n", gap.target_rule));
+    out.push_str(&format!(
+        "candidate_rules = {:?}\n",
+        grammar_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.name.clone())
+            .take(10)
+            .collect::<Vec<_>>()
+    ));
+    Ok(out)
+}
+
+fn render_concept_only_fixture_toml(
+    gap: &ConceptGap,
+    examples: &[String],
+    counterexamples: &[String],
+) -> String {
+    let mut out = String::new();
+    out.push_str("[fixture]\n");
+    out.push_str(&format!("concept = {:?}\n", gap.concept));
+    out.push_str(&format!("rule = {:?}\n\n", gap.target_rule));
+    for text in examples {
+        out.push_str("[[example]]\n");
+        out.push_str(&format!("text = {:?}\n\n", text));
+    }
+    for text in counterexamples {
+        out.push_str("[[counterexample]]\n");
+        out.push_str(&format!("text = {:?}\n", text));
+        out.push_str("reason = \"Boundary-reviewed reject or exact-consumption guard.\"\n\n");
+    }
+    out
+}
+
+fn parse_boundary_fixture_lines(value: &str) -> Vec<String> {
+    let mut lines = Vec::new();
+    for raw in value.lines() {
+        let line = clean_boundary_list_item(raw);
+        if !line.is_empty() && !looks_like_boundary_placeholder(&line) {
+            lines.push(line);
+        }
+    }
+    if lines.is_empty() {
+        let line = clean_boundary_list_item(value);
+        if !line.is_empty() && !looks_like_boundary_placeholder(&line) {
+            lines.push(line);
+        }
+    }
+    lines.sort();
+    lines.dedup();
+    lines
+}
+
+fn parse_boundary_axes(value: &str, query: &str) -> Vec<(String, Vec<String>)> {
+    let mut axes = Vec::new();
+    for raw in value.lines() {
+        let line = clean_boundary_list_item(raw);
+        if line.is_empty() || looks_like_boundary_placeholder(&line) {
+            continue;
+        }
+        let (name, evidence) = line
+            .split_once('=')
+            .or_else(|| line.split_once(':'))
+            .map(|(name, evidence)| (slug(name).replace('-', "_"), evidence.trim().to_string()))
+            .unwrap_or_else(|| ("boundary".to_string(), line.clone()));
+        if !name.is_empty() && !evidence.is_empty() {
+            axes.push((name, vec![evidence]));
+        }
+    }
+    if axes.is_empty() {
+        axes.push(("wording".to_string(), query_terms(query)));
+    }
+    axes
+}
+
+fn clean_boundary_list_item(raw: &str) -> String {
+    let mut line = raw.trim();
+    while let Some(rest) = line
+        .strip_prefix("- ")
+        .or_else(|| line.strip_prefix("* "))
+        .or_else(|| line.strip_prefix("+ "))
+    {
+        line = rest.trim();
+    }
+    if let Some((prefix, rest)) = line.split_once(". ") {
+        if prefix.chars().all(|c| c.is_ascii_digit()) {
+            line = rest.trim();
+        }
+    }
+    line.trim_matches(|c: char| matches!(c, '"' | '\'' | '`') || c.is_ascii_whitespace())
+        .trim()
+        .to_string()
+}
+
+fn looks_like_boundary_placeholder(line: &str) -> bool {
+    let lower = line.to_ascii_lowercase();
+    lower.starts_with('<')
+        || lower.contains("example")
+        || lower.contains("counterexample")
+        || lower == "none"
+        || lower == "n/a"
+}
+
+fn grammar_pest_has_uncommitted_diff() -> Result<bool> {
+    let output = Command::new("git")
+        .args([
+            "diff",
+            "--name-only",
+            "--",
+            "crates/mtg-grammar/src/grammar.pest",
+        ])
+        .current_dir(repo_root())
+        .output()
+        .context("git diff --name-only -- grammar.pest")?;
+    if !output.status.success() {
+        bail!("git diff failed\n{}", command_output_text(&output));
+    }
+    Ok(!String::from_utf8_lossy(&output.stdout).trim().is_empty())
 }
 
 fn build_repair_prompt(gap: &ConceptGap, failure: &ConceptGrindGateFailure) -> Result<String> {
@@ -4999,6 +5378,65 @@ mod tests {
         assert!(decision
             .pest_patch_intent
             .contains("generalized destroy target shape"));
+    }
+
+    #[test]
+    fn concept_only_fastpath_detects_new_owner_no_pest_patch() {
+        let gap = ConceptGap {
+            concept: "new_exile_boundary".to_string(),
+            query: "exile target creature".to_string(),
+            target_rule: "exile".to_string(),
+            target_line: 1,
+            suggested_existing_owner: false,
+            reason: "test".to_string(),
+        };
+        let decision = BoundaryDecision {
+            owner: BoundaryOwner::New("new_exile_boundary".to_string()),
+            owner_raw: "new:new_exile_boundary".to_string(),
+            axes: "action = exile".to_string(),
+            examples_to_accept: "- \"Exile target creature.\"".to_string(),
+            counterexamples_to_reject: "- \"cards in exile\"".to_string(),
+            pest_patch_intent: "none".to_string(),
+        };
+
+        assert!(should_attempt_concept_only_fastpath(&gap, &decision)
+            .expect("fastpath detection succeeds"));
+    }
+
+    #[test]
+    fn concept_only_scaffold_renders_concept_and_fixture_toml() {
+        let gap = ConceptGap {
+            concept: "new_exile_boundary".to_string(),
+            query: "exile target creature".to_string(),
+            target_rule: "exile".to_string(),
+            target_line: 1,
+            suggested_existing_owner: false,
+            reason: "test".to_string(),
+        };
+        let decision = BoundaryDecision {
+            owner: BoundaryOwner::New("new_exile_boundary".to_string()),
+            owner_raw: "new:new_exile_boundary".to_string(),
+            axes: "- action = exile\n- object_selector = target creature".to_string(),
+            examples_to_accept: "- \"Exile target creature.\"".to_string(),
+            counterexamples_to_reject: "- \"cards in exile\"".to_string(),
+            pest_patch_intent: "none".to_string(),
+        };
+        let examples = parse_boundary_fixture_lines(&decision.examples_to_accept);
+        let counterexamples = parse_boundary_fixture_lines(&decision.counterexamples_to_reject);
+        let concept_toml =
+            render_concept_only_concept_toml(&gap, &decision, &examples, &counterexamples)
+                .expect("concept toml renders");
+        let fixture_toml = render_concept_only_fixture_toml(&gap, &examples, &counterexamples);
+
+        let concept_doc: ConceptDocument =
+            toml::from_str(&concept_toml).expect("concept toml parses");
+        let fixture_doc: FixtureDocument =
+            toml::from_str(&fixture_toml).expect("fixture toml parses");
+        assert_eq!(concept_doc.concept.name, "new_exile_boundary");
+        assert_eq!(concept_doc.concept.pest_rules, vec!["exile"]);
+        assert_eq!(concept_doc.axis.len(), 2);
+        assert_eq!(fixture_doc.fixture.rule, "exile");
+        assert_eq!(fixture_doc.example[0].text, "Exile target creature.");
     }
 
     #[test]
