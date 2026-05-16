@@ -1593,11 +1593,16 @@ signed_pt_component = _{ signed_variable | signed_number }
 where_clause         = { ^"where" ~ variable_definition ~ ("," ~ ^"and" ~ variable_definition)? }
 variable_definition  = { variable_name ~ ^"is" ~ value_expression }
 value_expression     = _{
-    half_number_of_basic_lands_you_control
+    unsigned_number
+  | half_number_of_basic_lands_you_control
+  | number_of_permanents_you_control
   | number_of_status_permanents_they_controlled_at_beginning_of_this_turn
   | number_of_cards_in_their_hand_minus
   | amount_of_mana_that_player_paid_this_way
   | its_power
+}
+number_of_permanents_you_control = {
+    ^"the" ~ ^"number" ~ ^"of" ~ permanent_type_plural ~ ^"you" ~ ^"control"
 }
 half_number_of_basic_lands_you_control = {
     ^"half" ~ ^"the" ~ ^"number" ~ ^"of" ~ basic_land_type_plural

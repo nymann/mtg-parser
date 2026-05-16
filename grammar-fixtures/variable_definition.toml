@@ -1,0 +1,54 @@
+[fixture]
+concept = "variable_definition"
+rule = "variable_definition"
+
+[[example]]
+text = "X is 1"
+reason = "Definition using X with a bare unsigned-number value expression."
+
+[[example]]
+text = "Y is the number of creatures you control"
+reason = "Definition using Y with a permanent-count value expression."
+
+[[example]]
+text = "X is its power"
+reason = "Definition using an existing value_expression alternative."
+
+[[example]]
+rule = "variable_name"
+text = "Y"
+reason = "Variable axis preserves both X and Y."
+
+[[example]]
+rule = "value_expression"
+text = "the number of creatures you control"
+reason = "Definition-value axis accepts controlled permanent counts."
+
+[[example]]
+rule = "value_expression"
+text = "1"
+reason = "Definition-value axis accepts unsigned numbers."
+
+[[counterexample]]
+text = "{X}"
+reason = "Variable mana symbol, not a variable definition."
+
+[[counterexample]]
+text = "{Y}"
+reason = "Variable mana symbol, not a variable definition."
+
+[[counterexample]]
+text = "X"
+reason = "Standalone variable name without an is-definition."
+
+[[counterexample]]
+text = "Y"
+reason = "Standalone variable name without an is-definition."
+
+[[counterexample]]
+text = "Spend only black mana on X."
+reason = "Spend-only mana restriction scoped to a variable, not a variable definition."
+
+[[counterexample]]
+text = "X is 1 trailing"
+reason = "Exact-consumption guard."

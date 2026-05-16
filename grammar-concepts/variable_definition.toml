@@ -1,0 +1,84 @@
+[[axis]]
+name = "variable"
+values = [
+    "X",
+    "Y",
+]
+
+[[axis]]
+name = "definition_value"
+values = [
+    "unsigned_number",
+    "number_of_permanents_you_control",
+    "half_basic_lands_you_control_rounded",
+    "cards_in_hand_minus_number",
+    "status_permanents_controlled_at_beginning",
+    "amount_of_mana_paid_this_way",
+    "its_power",
+]
+
+[boundary]
+excludes = [
+    "Standalone variable names without an is-definition.",
+    "Variable mana symbols in mana costs or activation costs.",
+    "Spend-only mana restrictions scoped to a variable, owned by variable_mana_spending_restriction.",
+]
+includes = [
+    "Definitions of the form variable is value_expression.",
+    "X and Y variable names with value expressions used by where clauses.",
+]
+
+[concept]
+name = "variable_definition"
+pest_rules = ["variable_definition"]
+rules_queries = [
+    "lex: X is 1",
+    "lex: where X is the number of creatures you control",
+]
+rules_terms = [
+    "X",
+    "Y",
+    "variable",
+    "value",
+]
+
+[[counterexample]]
+reason = "Variable mana symbol, not a variable definition."
+text = "{X}"
+
+[[counterexample]]
+reason = "Variable mana symbol, not a variable definition."
+text = "{Y}"
+
+[[counterexample]]
+reason = "Standalone variable name without an is-definition."
+text = "X"
+
+[[counterexample]]
+reason = "Standalone variable name without an is-definition."
+text = "Y"
+
+[[counterexample]]
+reason = "Spend-only mana restriction scoped to a variable, not a variable definition."
+text = "Spend only black mana on X."
+
+[[example]]
+text = "X is 1"
+
+[[example]]
+text = "Y is the number of creatures you control"
+
+[[example]]
+text = "X is its power"
+
+[grammar_query]
+candidate_rules = [
+    "variable_definition",
+    "variable_name",
+    "value_expression",
+]
+selected_rule = "variable_definition"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
