@@ -1,15 +1,26 @@
 [fixture]
 concept = "damage_redirection_effect"
-rule = "next_damage_redirection_effect"
+rule = "damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead"
+
+[[example]]
+text = "All damage that would be dealt to you by a source is dealt to that source instead"
+reason = "Static all-damage replacement/redirection effect."
+
+[[example]]
+text = "All damage that would be dealt to you by unblocked creatures is dealt to this creature instead"
+reason = "Static all-damage replacement/redirection to the source object."
 
 [[example]]
 text = "The next 1 damage that would be dealt to target creature this turn is dealt to its owner instead."
+rule = "next_damage_redirection_effect"
 
 [[example]]
 text = "The next 2 combat damage that would be dealt to you this turn is dealt to its owner instead."
+rule = "next_damage_redirection_effect"
 
 [[example]]
 text = "The next 1 damage that would be dealt to CARDNAME this turn is dealt to its owner instead."
+rule = "next_damage_redirection_effect"
 reason = "Source-object original recipient axis."
 
 [[counterexample]]
@@ -25,5 +36,9 @@ text = "Prevent the next 1 damage that would be dealt to any target this turn."
 reason = "Direct prevention shield, not redirection."
 
 [[counterexample]]
-text = "The next 1 damage that would be dealt to target creature this turn is dealt to its owner instead. trailing"
+text = "Whenever this creature deals damage to an opponent, that player discards a card at random."
+reason = "Triggered damage condition, not replacement/redirection."
+
+[[counterexample]]
+text = "All damage that would be dealt to you by a source is dealt to that source instead. trailing"
 reason = "Exact-consumption guard."

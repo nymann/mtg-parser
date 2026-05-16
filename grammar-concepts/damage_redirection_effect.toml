@@ -1,4 +1,11 @@
 [[axis]]
+name = "damage_scope"
+values = [
+    "next_damage",
+    "all_damage",
+]
+
+[[axis]]
 name = "amount"
 values = ["damage_prevention_amount"]
 
@@ -18,30 +25,54 @@ values = [
 ]
 
 [[axis]]
-name = "destination"
-values = ["its_owner"]
+name = "source_filter"
+values = [
+    "absent",
+    "static_damage_source",
+]
+
+[[axis]]
+name = "redirected_recipient"
+values = [
+    "its_owner",
+    "source_object",
+    "that_source",
+]
 
 [[axis]]
 name = "duration"
-values = ["this_turn"]
+values = [
+    "this_turn",
+    "absent",
+]
+
+[[axis]]
+name = "replacement_marker"
+values = ["instead"]
 
 [boundary]
 excludes = [
     "Named-source damage instructions owned by damage_event.",
     "Source-choice next-damage wrappers whose result prevents that damage.",
     "Direct prevention shields that prevent damage instead of redirecting where it is dealt.",
+    "Triggered damage conditions that react after damage is dealt.",
 ]
 includes = [
     "Replacement effects for the next amount of damage that would be dealt this turn.",
     "Redirection effects that keep the underlying damage event axes outside damage_event.",
     "Damage redirection to the original recipient object's owner.",
+    "Static all-damage replacement effects from a damage source to that source instead.",
 ]
 
 [concept]
 name = "damage_redirection_effect"
-pest_rules = ["next_damage_redirection_effect"]
+pest_rules = [
+    "next_damage_redirection_effect",
+    "damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead",
+]
 rules_queries = [
     "lex: damage would be dealt dealt to its owner instead",
+    "lex: all damage that would be dealt to you by a source is dealt to that source instead",
     "lex: replacement effect damage dealt to its owner instead",
 ]
 rules_terms = [
@@ -63,6 +94,10 @@ text = "The next time a source of your choice would deal damage to target creatu
 reason = "Direct prevention shield, not redirection."
 text = "Prevent the next 1 damage that would be dealt to any target this turn."
 
+[[counterexample]]
+reason = "Triggered damage condition, not replacement/redirection."
+text = "Whenever this creature deals damage to an opponent, that player discards a card at random."
+
 [[example]]
 text = "The next 1 damage that would be dealt to target creature this turn is dealt to its owner instead."
 
@@ -71,6 +106,12 @@ text = "The next 2 combat damage that would be dealt to you this turn is dealt t
 
 [[example]]
 text = "The next 1 damage that would be dealt to CARDNAME this turn is dealt to its owner instead."
+
+[[example]]
+text = "All damage that would be dealt to you by a source is dealt to that source instead"
+
+[[example]]
+text = "All damage that would be dealt to you by unblocked creatures is dealt to this creature instead"
 
 [maturity]
 blockers = []
