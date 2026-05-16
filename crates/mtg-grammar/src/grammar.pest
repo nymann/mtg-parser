@@ -976,10 +976,20 @@ creatures_named_on_battlefield = {
 possessive_proper_name = @{ upper_alpha ~ (!("'s" ~ WHITESPACE) ~ ANY)* }
 
 target_creature_defending_player_controls_can_block_any_number = {
-    ^"target" ~ ^"creature" ~ ^"defending" ~ ^"player" ~ ^"controls"
-  ~ ^"can" ~ ^"block" ~ ^"any" ~ ^"number" ~ ^"of" ~ ^"creatures"
-  ~ ^"this" ~ ^"turn" ~ "."
+    blocking_capacity_subject ~ ^"can" ~ ^"block" ~ blocking_capacity_amount
+  ~ blocking_capacity_object ~ blocking_capacity_duration ~ "."
 }
+blocking_capacity_subject = {
+    (^"target" ~ ^"creature" ~ ^"defending" ~ ^"player" ~ ^"controls")
+  | source_object
+}
+blocking_capacity_amount = { blocking_capacity_any_number | blocking_capacity_additional_one }
+blocking_capacity_any_number = { ^"any" ~ ^"number" ~ ^"of" }
+blocking_capacity_additional_one = { article ~ ^"additional" }
+blocking_capacity_object = { ^"creatures" | ^"creature" }
+blocking_capacity_duration = { blocking_capacity_this_turn | blocking_capacity_each_combat }
+blocking_capacity_this_turn = { ^"this" ~ ^"turn" }
+blocking_capacity_each_combat = { ^"each" ~ ^"combat" }
 
 remove_target_creature_defending_player_controls_from_combat = {
     ^"remove" ~ ^"target" ~ ^"creature" ~ ^"defending" ~ ^"player"

@@ -337,3 +337,5 @@ mod time_walk;
 mod timetwister;
 #[path = "generated_patterns/twiddle.rs"]
 mod twiddle;
+#[path = "generated_patterns/two_headed_giant_of_foriys.rs"]
+mod two_headed_giant_of_foriys;

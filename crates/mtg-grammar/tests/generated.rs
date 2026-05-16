@@ -348,3 +348,5 @@ mod time_walk;
 mod timetwister;
 #[path = "generated/twiddle.rs"]
 mod twiddle;
+#[path = "generated/two_headed_giant_of_foriys.rs"]
+mod two_headed_giant_of_foriys;

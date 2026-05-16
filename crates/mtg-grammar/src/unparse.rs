@@ -4,7 +4,8 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     ActivationPermission, AddManaAmount, AsEntersChoice, AttackRequirementSubject,
-    BalanceSameWayAction, BasicLandType, BasicLandTypeReference, CardCount, CastRestriction, Color,
+    BalanceSameWayAction, BasicLandType, BasicLandTypeReference, BlockingCapacityAmount,
+    BlockingCapacityDuration, BlockingCapacitySubject, CardCount, CastRestriction, Color,
     ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
     CopyException, CounterAmount, CounterTargetSpellCondition, CreatureQuality, CreatureStatus,
     CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
@@ -1873,42 +1874,34 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_enchanted_object(out, *object);
             out.push_str(" doesn't untap during its controller's untap step.");
         }
-        StaticAbility::UntapRestrictionDuringUntapSteps { restriction } => {
-            match restriction {
-                StaticUntapRestriction::CreaturesWithPowerOrGreater { power } => {
-                    write!(
+        StaticAbility::UntapRestrictionDuringUntapSteps { restriction } => match restriction {
+            StaticUntapRestriction::CreaturesWithPowerOrGreater { power } => {
+                write!(
                         out,
                         "Creatures with power {power} or greater don't untap during their controllers' untap steps."
                     )
                     .expect("writing to String cannot fail");
-                }
-                StaticUntapRestriction::PlayersCantUntapMoreThanPermanents {
-                    amount,
-                    permanent_type,
-                } => {
-                    out.push_str("Players can't untap more than ");
-                    out.push_str(u32_to_number_word(*amount));
-                    out.push(' ');
-                    out.push_str(permanent_type_name(*permanent_type));
-                    out.push_str(" during their untap steps.");
-                }
-                StaticUntapRestriction::PlayersSkipTheirUntapSteps => {
-                    out.push_str("Players skip their untap steps.");
-                }
             }
-        }
+            StaticUntapRestriction::PlayersCantUntapMoreThanPermanents {
+                amount,
+                permanent_type,
+            } => {
+                out.push_str("Players can't untap more than ");
+                out.push_str(u32_to_number_word(*amount));
+                out.push(' ');
+                out.push_str(permanent_type_name(*permanent_type));
+                out.push_str(" during their untap steps.");
+            }
+            StaticUntapRestriction::PlayersSkipTheirUntapSteps => {
+                out.push_str("Players skip their untap steps.");
+            }
+        },
         StaticAbility::SourceCantBlockCreaturesWithPowerOrGreater { source, power } => {
             write_source_object_capitalized(out, *source);
-            write!(
-                out,
-                " can't block creatures with power {power} or greater."
-            )
-            .expect("writing to String cannot fail");
+            write!(out, " can't block creatures with power {power} or greater.")
+                .expect("writing to String cannot fail");
         }
-        StaticAbility::NamedSourcePowerToughnessEachEqualToCount {
-            source_name,
-            count,
-        } => {
+        StaticAbility::NamedSourcePowerToughnessEachEqualToCount { source_name, count } => {
             out.push_str(source_name);
             out.push_str("'s power and toughness are each equal to the number of ");
             match count {
@@ -1970,10 +1963,21 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str(counter_name);
             out.push_str(" counter on it.");
         }
-        StaticAbility::TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn => {
-            out.push_str(
-                "Target creature defending player controls can block any number of creatures this turn.",
-            );
+        StaticAbility::BlockingCapacityPermission {
+            subject,
+            amount,
+            duration,
+        } => {
+            write_blocking_capacity_subject_capitalized(out, *subject);
+            out.push_str(" can block ");
+            match amount {
+                BlockingCapacityAmount::AnyNumber => out.push_str("any number of creatures"),
+                BlockingCapacityAmount::AdditionalOne => out.push_str("an additional creature"),
+            }
+            match duration {
+                BlockingCapacityDuration::ThisTurn => out.push_str(" this turn."),
+                BlockingCapacityDuration::EachCombat => out.push_str(" each combat."),
+            }
         }
         StaticAbility::RemoveTargetCreatureDefendingPlayerControlsFromCombat => {
             out.push_str("Remove target creature defending player controls from combat.");
@@ -1992,7 +1996,9 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
                 }
             }
             match subject {
-                AttackRequirementSubject::ThatCreature => out.push_str(" attacks this turn if able."),
+                AttackRequirementSubject::ThatCreature => {
+                    out.push_str(" attacks this turn if able.")
+                }
                 AttackRequirementSubject::CreaturesActivePlayerControls => {
                     out.push_str(" attack this turn if able.")
                 }
@@ -2008,7 +2014,9 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str("Creatures those players control that can block additional creatures may likewise be put into additional piles.");
         }
         StaticAbility::AssignEachPileToAttackingCreatureAtRandom => {
-            out.push_str("Assign each pile to a different one of those attacking creatures at random.");
+            out.push_str(
+                "Assign each pile to a different one of those attacking creatures at random.",
+            );
         }
         StaticAbility::CreaturesInAssignedPileBlockIfAble => {
             out.push_str("Each creature in a pile that can block the creature that pile is assigned to does so.");
@@ -2801,6 +2809,15 @@ fn write_source_object_capitalized(out: &mut String, source: SourceObject) {
             out.push_str(permanent_type_name(pt));
         }
         SourceObject::ThisAura => out.push_str("This Aura"),
+    }
+}
+
+fn write_blocking_capacity_subject_capitalized(out: &mut String, subject: BlockingCapacitySubject) {
+    match subject {
+        BlockingCapacitySubject::TargetCreatureDefendingPlayerControls => {
+            out.push_str("Target creature defending player controls");
+        }
+        BlockingCapacitySubject::Source(source) => write_source_object_capitalized(out, source),
     }
 }
 

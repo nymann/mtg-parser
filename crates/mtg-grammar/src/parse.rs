@@ -6,7 +6,8 @@ use crate::ast::{
     ActionTiming, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageEventEffect, ActivatedDamageRecipient, ActivatedDamageSource, ActivatedEffect,
     ActivationPermission, AddManaAmount, AsEntersChoice, AttackRequirementSubject,
-    BalanceSameWayAction, BasicLandType, BasicLandTypeReference, CardCount, CastRestriction, Color,
+    BalanceSameWayAction, BasicLandType, BasicLandTypeReference, BlockingCapacityAmount,
+    BlockingCapacityDuration, BlockingCapacitySubject, CardCount, CastRestriction, Color,
     ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
     CopyException, CounterAmount, CounterTargetSpellCondition, CreatureQuality, CreatureStatus,
     CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind,
@@ -3340,6 +3341,53 @@ fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError>
     }
 }
 
+fn blocking_capacity_permission_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseError> {
+    let mut inner = pair.into_inner();
+    let subject_pair = inner
+        .next()
+        .expect("blocking capacity permission names subject");
+    let amount_pair = inner
+        .next()
+        .expect("blocking capacity permission names amount");
+    let _object_pair = inner
+        .next()
+        .expect("blocking capacity permission names blocked object kind");
+    let duration_pair = inner
+        .next()
+        .expect("blocking capacity permission names duration");
+
+    let subject = match subject_pair.into_inner().next() {
+        Some(source_pair) => BlockingCapacitySubject::Source(source_object_from_pair(source_pair)?),
+        None => BlockingCapacitySubject::TargetCreatureDefendingPlayerControls,
+    };
+    let amount = match amount_pair
+        .into_inner()
+        .next()
+        .expect("blocking capacity amount has concrete amount")
+        .as_rule()
+    {
+        Rule::blocking_capacity_any_number => BlockingCapacityAmount::AnyNumber,
+        Rule::blocking_capacity_additional_one => BlockingCapacityAmount::AdditionalOne,
+        _ => return Err(ParseError::Internal("blocking capacity amount")),
+    };
+    let duration = match duration_pair
+        .into_inner()
+        .next()
+        .expect("blocking capacity duration has concrete duration")
+        .as_rule()
+    {
+        Rule::blocking_capacity_this_turn => BlockingCapacityDuration::ThisTurn,
+        Rule::blocking_capacity_each_combat => BlockingCapacityDuration::EachCombat,
+        _ => return Err(ParseError::Internal("blocking capacity duration")),
+    };
+
+    Ok(StaticAbility::BlockingCapacityPermission {
+        subject,
+        amount,
+        duration,
+    })
+}
+
 fn source_object_from_possessive_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError> {
     if pair.as_rule() != Rule::source_object_possessive {
         return Err(ParseError::Internal("source_object_possessive"));
@@ -3964,9 +4012,9 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 counter_name: counter_name_from_counter_pair(counter_pair)?,
             })
         }
-        Rule::target_creature_defending_player_controls_can_block_any_number => Ok(
-            StaticAbility::TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn,
-        ),
+        Rule::target_creature_defending_player_controls_can_block_any_number => {
+            blocking_capacity_permission_from_pair(pair)
+        }
         Rule::remove_target_creature_defending_player_controls_from_combat => {
             Ok(StaticAbility::RemoveTargetCreatureDefendingPlayerControlsFromCombat)
         }

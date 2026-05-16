@@ -1924,9 +1924,12 @@ pub enum StaticAbility {
         land_type: BasicLandType,
         counter_name: String,
     },
-    /// "Target creature defending player controls can block any number
-    /// of creatures this turn."
-    TargetCreatureDefendingPlayerControlsCanBlockAnyNumberOfCreaturesThisTurn,
+    /// "<subject> can block <amount> creature(s) <duration>."
+    BlockingCapacityPermission {
+        subject: BlockingCapacitySubject,
+        amount: BlockingCapacityAmount,
+        duration: BlockingCapacityDuration,
+    },
     /// "Remove target creature defending player controls from combat."
     RemoveTargetCreatureDefendingPlayerControlsFromCombat,
     /// "Creatures it was blocking that had become blocked by only that
@@ -1950,6 +1953,30 @@ pub enum StaticAbility {
     /// "Each creature in a pile that can block the creature that pile is
     /// assigned to does so."
     CreaturesInAssignedPileBlockIfAble,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BlockingCapacitySubject {
+    /// "target creature defending player controls"
+    TargetCreatureDefendingPlayerControls,
+    /// "this <permanent_type>"
+    Source(SourceObject),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BlockingCapacityAmount {
+    /// "any number of creatures"
+    AnyNumber,
+    /// "an additional creature"
+    AdditionalOne,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BlockingCapacityDuration {
+    /// "this turn"
+    ThisTurn,
+    /// "each combat"
+    EachCombat,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
