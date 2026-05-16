@@ -1,0 +1,102 @@
+[[axis]]
+name = "action"
+values = ["destroy"]
+
+[[axis]]
+name = "target_selector"
+values = [
+    "target_colored_permanent",
+    "target_permanent_choice",
+    "target_status_creature",
+    "target_qualified_creature",
+    "target_creature_type",
+    "target_basic_lands_count",
+    "destroy_all",
+]
+
+[[axis]]
+name = "color"
+values = [
+    "white",
+    "blue",
+    "black",
+    "red",
+    "green",
+]
+
+[[axis]]
+name = "surface"
+values = [
+    "sentence",
+    "modal_mode",
+    "activated_effect",
+]
+
+[boundary]
+excludes = [
+    "Countering target colored spells.",
+    "Exiling target permanents or creatures even when they share target selector grammar.",
+    "Color-changing effects that mention a target spell or permanent becoming a color.",
+]
+includes = [
+    "Destroy effects using existing destroy target selectors.",
+    "Color-qualified target permanent destruction through target_colored_permanent.",
+    "Sentence, modal mode, and activated ability surfaces for destroy target colored permanent actions.",
+]
+
+[concept]
+name = "destroy"
+pest_rules = [
+    "destroy",
+    "destroy_target",
+    "destroy_target_colored_permanent_action",
+]
+rules_queries = ["lex: destroy target permanent"]
+rules_terms = [
+    "destroy",
+    "permanent",
+    "target",
+]
+
+[[counterexample]]
+reason = "Countering a colored target spell is the counter_target_spell concept."
+text = "Counter target red spell."
+
+[[counterexample]]
+reason = "Exile is a different zone-change action even when it reuses destroy target selector grammar."
+text = "Exile target red permanent."
+
+[[counterexample]]
+reason = "Color-setting effect, not a destroy effect."
+text = "Target spell or permanent becomes red."
+
+[[example]]
+text = "Destroy target red permanent."
+
+[[example]]
+text = "Destroy target creature."
+
+[[example]]
+text = "Destroy all lands."
+
+[[example]]
+text = "• Destroy target red permanent."
+
+[[example]]
+text = "{U}: Destroy target red permanent."
+
+[grammar_query]
+candidate_rules = [
+    "destroy",
+    "destroy_target",
+    "destroy_target_colored_permanent_action",
+    "target_colored_permanent",
+    "counter_target_colored_spell_action",
+    "exile",
+    "target_spell_or_permanent_becomes_color",
+]
+selected_rule = "destroy_target_colored_permanent_action"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

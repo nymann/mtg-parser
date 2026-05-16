@@ -1,0 +1,36 @@
+[fixture]
+concept = "destroy"
+rule = "destroy"
+
+[[example]]
+text = "Destroy target red permanent."
+
+[[example]]
+text = "Destroy target creature."
+
+[[example]]
+text = "Destroy all lands."
+
+[[example]]
+rule = "modal_mode"
+text = "• Destroy target red permanent."
+
+[[example]]
+rule = "activated_ability"
+text = "{U}: Destroy target red permanent."
+
+[[counterexample]]
+text = "Counter target red spell."
+reason = "Countering a colored target spell is the counter_target_spell concept."
+
+[[counterexample]]
+text = "Exile target red permanent."
+reason = "Exile is a different zone-change action even when it reuses destroy target selector grammar."
+
+[[counterexample]]
+text = "Target spell or permanent becomes red."
+reason = "Color-setting effect, not a destroy effect."
+
+[[counterexample]]
+text = "Destroy target red permanent. trailing"
+reason = "Exact-consumption guard."
