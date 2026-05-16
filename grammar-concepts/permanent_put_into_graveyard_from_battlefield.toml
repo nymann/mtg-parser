@@ -1,0 +1,84 @@
+[[axis]]
+name = "permanent"
+values = ["permanent_type"]
+
+[[axis]]
+name = "wording"
+values = [
+    "dies",
+    "put_into_graveyard_from_battlefield",
+]
+
+[[axis]]
+name = "destination"
+values = ["graveyard"]
+
+[[axis]]
+name = "origin"
+values = ["battlefield"]
+
+[boundary]
+excludes = [
+    "Tap-for-mana trigger events owned by permanent_tapped_for_mana.",
+    "Source-object death triggers that refer to this object rather than an article plus permanent type.",
+    "Source-object graveyard triggers that refer to this permanent rather than an article plus permanent type.",
+    "Battlefield entry events owned by permanent_enters.",
+]
+includes = [
+    "Triggered events where a permanent of a named permanent type dies.",
+    "Triggered events where a permanent of a named permanent type is put into a graveyard from the battlefield.",
+]
+
+[concept]
+name = "permanent_put_into_graveyard_from_battlefield"
+pest_rules = ["permanent_put_into_graveyard_from_battlefield"]
+rules_queries = [
+    "lex: a creature dies",
+    "lex: artifact is put into a graveyard from the battlefield",
+    "lex: land is put into a graveyard from the battlefield",
+]
+rules_terms = [
+    "battlefield",
+    "dies",
+    "graveyard",
+    "permanent",
+]
+
+[[counterexample]]
+reason = "Tap-for-mana trigger event, owned by permanent_tapped_for_mana."
+text = "a player taps a land for mana"
+
+[[counterexample]]
+reason = "Source-object death trigger, not article plus permanent type."
+text = "this creature dies"
+
+[[counterexample]]
+reason = "Source-object graveyard trigger, not article plus permanent type."
+text = "this permanent is put into a graveyard from the battlefield"
+
+[[counterexample]]
+reason = "Battlefield entry event, not a graveyard-from-battlefield event."
+text = "a creature enters the battlefield"
+
+[[example]]
+text = "a creature dies"
+
+[[example]]
+text = "an artifact is put into a graveyard from the battlefield"
+
+[[example]]
+text = "a land is put into a graveyard from the battlefield"
+
+[grammar_query]
+candidate_rules = [
+    "permanent_put_into_graveyard_from_battlefield",
+    "source_put_into_graveyard_from_battlefield",
+    "source_dies",
+    "permanent_enters",
+    "player_taps_permanent_for_mana",
+]
+selected_rule = "permanent_put_into_graveyard_from_battlefield"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

@@ -1,0 +1,35 @@
+[fixture]
+concept = "permanent_put_into_graveyard_from_battlefield"
+rule = "permanent_put_into_graveyard_from_battlefield"
+
+[[example]]
+text = "a creature dies"
+reason = "Article plus permanent type with dies wording."
+
+[[example]]
+text = "an artifact is put into a graveyard from the battlefield"
+reason = "Article plus permanent type with explicit graveyard-from-battlefield wording."
+
+[[example]]
+text = "a land is put into a graveyard from the battlefield"
+reason = "Land permanent type with explicit graveyard-from-battlefield wording."
+
+[[counterexample]]
+text = "a player taps a land for mana"
+reason = "Tap-for-mana trigger event, owned by permanent_tapped_for_mana."
+
+[[counterexample]]
+text = "this creature dies"
+reason = "Source-object death trigger, not article plus permanent type."
+
+[[counterexample]]
+text = "this permanent is put into a graveyard from the battlefield"
+reason = "Source-object graveyard trigger, not article plus permanent type."
+
+[[counterexample]]
+text = "a creature enters the battlefield"
+reason = "Battlefield entry event, not a graveyard-from-battlefield event."
+
+[[counterexample]]
+text = "a creature dies trailing"
+reason = "Exact-consumption guard."
