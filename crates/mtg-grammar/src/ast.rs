@@ -794,6 +794,8 @@ pub enum EachPlayerAction {
     AnteTopCardOfTheirLibrary,
     /// "shuffles their hand and graveyard into their library"
     ShuffleTheirHandAndGraveyardIntoTheirLibrary,
+    /// "discards their hand"
+    DiscardTheirHand,
     /// "draws N cards"
     DrawCards { count: CardCount },
 }

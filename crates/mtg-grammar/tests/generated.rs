@@ -362,3 +362,5 @@ mod veteran_bodyguard;
 mod volcanic_eruption;
 #[path = "generated/web.rs"]
 mod web;
+#[path = "generated/wheel_of_fortune.rs"]
+mod wheel_of_fortune;

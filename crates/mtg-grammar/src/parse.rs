@@ -547,6 +547,7 @@ fn each_player_action_from_pair(pair: Pair<Rule>) -> Result<EachPlayerAction, Pa
         Rule::each_player_shuffles_their_hand_and_graveyard_into_their_library_action => {
             Ok(EachPlayerAction::ShuffleTheirHandAndGraveyardIntoTheirLibrary)
         }
+        Rule::each_player_discards_their_hand_action => Ok(EachPlayerAction::DiscardTheirHand),
         Rule::draw_cards_action => {
             let count_pair = pair.into_inner().next().ok_or(ParseError::Internal(
                 "each-player draw action missing count",

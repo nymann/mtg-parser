@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 255,
+  "passing": 256,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -874,8 +874,7 @@
       "status": "pass"
     },
     "lea/Wheel of Fortune": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:13\n  |\n1 | Each player discards their hand, then draws seven cards.\n  |             ^---\n  |\n  = expected each_player_action_sequence"
+      "status": "pass"
     },
     "lea/White Knight": {
       "status": "pass"

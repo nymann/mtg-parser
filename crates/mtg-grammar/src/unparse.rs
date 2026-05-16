@@ -833,6 +833,9 @@ fn write_each_player_action(out: &mut String, action: EachPlayerAction) {
         EachPlayerAction::ShuffleTheirHandAndGraveyardIntoTheirLibrary => {
             out.push_str("shuffles their hand and graveyard into their library");
         }
+        EachPlayerAction::DiscardTheirHand => {
+            out.push_str("discards their hand");
+        }
         EachPlayerAction::DrawCards { count } => {
             out.push_str("draws ");
             write_card_count(out, count);

@@ -563,6 +563,7 @@ each_player_action_sequence = {
 each_player_action = _{
     each_player_antes_top_card_of_their_library_action
   | each_player_shuffles_their_hand_and_graveyard_into_their_library_action
+  | each_player_discards_their_hand_action
   | draw_cards_action
 }
 each_player_antes_top_card_of_their_library_action = {
@@ -571,6 +572,9 @@ each_player_antes_top_card_of_their_library_action = {
 each_player_shuffles_their_hand_and_graveyard_into_their_library_action = {
     ^"shuffles" ~ ^"their" ~ ^"hand" ~ ^"and" ~ ^"graveyard"
   ~ ^"into" ~ ^"their" ~ ^"library"
+}
+each_player_discards_their_hand_action = {
+    ^"discards" ~ ^"their" ~ ^"hand"
 }
 
 until_eot_you_may_pay_cost_at_timing = {
