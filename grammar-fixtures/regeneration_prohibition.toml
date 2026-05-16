@@ -1,0 +1,41 @@
+[fixture]
+concept = "regeneration_prohibition"
+rule = "it_cant_be_regenerated"
+
+[[example]]
+text = "It can't be regenerated."
+
+[[example]]
+text = "They can't be regenerated."
+
+[[example]]
+rule = "sentence_statement"
+text = "It can't be regenerated."
+
+[[example]]
+rule = "sentence_statement"
+text = "They can't be regenerated."
+
+[[counterexample]]
+text = "Regenerate target creature."
+reason = "Keyword-action regenerate instruction, not a regeneration prohibition."
+
+[[counterexample]]
+text = "Regenerate this creature."
+reason = "Activated regenerate effect, not a regeneration prohibition."
+
+[[counterexample]]
+text = "If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+reason = "Conditional this-turn prohibition plus replacement effect is outside this concept root."
+
+[[counterexample]]
+text = "It can't be regenerated this turn."
+reason = "Explicit duration is outside the implicit current-effect boundary."
+
+[[counterexample]]
+text = "It can be regenerated."
+reason = "Positive polarity is outside the can't-be-regenerated boundary."
+
+[[counterexample]]
+text = "It can't be regenerated. trailing"
+reason = "Exact-consumption guard."
