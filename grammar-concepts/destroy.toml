@@ -32,6 +32,7 @@ name = "timing"
 values = [
     "none",
     "at_beginning_of_next_end_step",
+    "at_end_of_combat",
 ]
 
 [[axis]]
@@ -70,6 +71,7 @@ includes = [
     "Trigger effects that destroy an anaphoric it target.",
     "Sentence surfaces that destroy an anaphoric it or that creature target at the beginning of the next end step.",
     "Sentence surfaces that destroy an anaphoric it or that creature target at the beginning of the next end step if it didn't attack this turn.",
+    "Trigger effects that destroy that creature at end of combat.",
 ]
 
 [concept]
@@ -83,6 +85,7 @@ pest_rules = [
     "destroy_that_creature_if_it_attacked_this_turn",
     "destroy_it",
     "destroy_referenced_creature_at_beginning_of_next_end_step",
+    "destroy_that_creature_at_end_of_combat",
 ]
 rules_queries = [
     "lex: destroy target permanent",
@@ -92,6 +95,7 @@ rules_queries = [
     "lex: destroy it",
     "lex: destroy it at the beginning of the next end step",
     "lex: destroy that creature at the beginning of the next end step if it didn't attack this turn",
+    "lex: destroy that creature at end of combat",
 ]
 rules_terms = [
     "attack",
@@ -147,6 +151,18 @@ text = "Sacrifice that creature at the beginning of the next end step."
 reason = "Counter is a different action even with the same delayed anaphoric target timing."
 text = "Counter it at the beginning of the next end step."
 
+[[counterexample]]
+reason = "Exile is a different zone-change action even with the same referenced creature and combat timing."
+text = "Exile that creature at end of combat."
+
+[[counterexample]]
+reason = "Sacrifice is a different action even with the same referenced creature and combat timing."
+text = "Sacrifice that creature at end of combat."
+
+[[counterexample]]
+reason = "Counter is a different action even with the same referenced creature and combat timing."
+text = "Counter that creature spell at end of combat."
+
 [[example]]
 text = "Destroy target red permanent."
 
@@ -192,6 +208,12 @@ text = "Destroy it at the beginning of the next end step if it didn't attack thi
 [[example]]
 text = "Destroy that creature at the beginning of the next end step if it didn't attack this turn."
 
+[[example]]
+text = "Destroy that creature at end of combat."
+
+[[example]]
+text = "Whenever a green creature attacks, destroy that creature at end of combat."
+
 [grammar_query]
 candidate_rules = [
     "destroy",
@@ -202,12 +224,13 @@ candidate_rules = [
     "destroy_that_creature_if_it_attacked_this_turn",
     "destroy_it",
     "destroy_referenced_creature_at_beginning_of_next_end_step",
+    "destroy_that_creature_at_end_of_combat",
     "target_colored_permanent",
     "counter_target_colored_spell_action",
     "exile",
     "target_spell_or_permanent_becomes_color",
 ]
-selected_rule = "destroy_it"
+selected_rule = "destroy_that_creature_at_end_of_combat"
 
 [maturity]
 blockers = []

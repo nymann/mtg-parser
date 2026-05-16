@@ -78,6 +78,18 @@ text = "Destroy it at the beginning of the next end step if it didn't attack thi
 rule = "destroy_referenced_creature_at_beginning_of_next_end_step"
 text = "Destroy that creature at the beginning of the next end step if it didn't attack this turn."
 
+[[example]]
+rule = "destroy_that_creature_at_end_of_combat"
+text = "Destroy that creature at end of combat."
+
+[[example]]
+rule = "trigger_effect"
+text = "Destroy that creature at end of combat."
+
+[[example]]
+rule = "triggered_ability"
+text = "Whenever a green creature attacks, destroy that creature at end of combat."
+
 [[counterexample]]
 text = "Counter target red spell."
 reason = "Countering a colored target spell is the counter_target_spell concept."
@@ -163,6 +175,21 @@ reason = "Sacrifice is a different action even with the same delayed anaphoric c
 rule = "destroy_referenced_creature_at_beginning_of_next_end_step"
 text = "Counter it at the beginning of the next end step."
 reason = "Counter is a different action even with the same delayed anaphoric target timing."
+
+[[counterexample]]
+rule = "destroy_that_creature_at_end_of_combat"
+text = "Exile that creature at end of combat."
+reason = "Exile is a different zone-change action even with the same referenced creature and combat timing."
+
+[[counterexample]]
+rule = "destroy_that_creature_at_end_of_combat"
+text = "Sacrifice that creature at end of combat."
+reason = "Sacrifice is a different action even with the same referenced creature and combat timing."
+
+[[counterexample]]
+rule = "destroy_that_creature_at_end_of_combat"
+text = "Counter that creature spell at end of combat."
+reason = "Counter is a different action even with the same referenced creature and combat timing."
 
 [[counterexample]]
 text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."

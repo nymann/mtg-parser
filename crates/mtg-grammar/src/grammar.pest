@@ -1678,6 +1678,7 @@ trigger_event = _{
   | player_casts_colored_spell
   | basic_land_type_is_tapped_for_mana
   | basic_land_type_controller_becomes_status
+  | article ~ color_word ~ ^"creature" ~ ^"attacks"
   | one_or_more_creatures_you_control_attack
   | one_or_more_permanents_with_original_printing_on_battlefield
   | permanent_enters
@@ -1982,7 +1983,7 @@ destroy_referenced_creature_condition = {
 }
 
 destroy_that_creature_at_end_of_combat = {
-    ^"destroy" ~ ^"that" ~ ^"creature" ~ ^"at" ~ ^"end" ~ ^"of" ~ ^"combat" ~ "."
+    ^"destroy" ~ that_creature_subject ~ ^"at" ~ end_of_combat ~ "."
 }
 
 that_creatures_controller_sacrifices_it = {
