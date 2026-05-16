@@ -1,0 +1,94 @@
+[[axis]]
+name = "action"
+values = ["regenerate"]
+
+[[axis]]
+name = "recipient_selector"
+values = [
+    "target_creature",
+    "source_object",
+    "enchanted_object",
+]
+
+[[axis]]
+name = "surface"
+values = [
+    "sentence",
+    "activated_effect",
+]
+
+[[axis]]
+name = "rules_kind"
+values = ["CR_701_keyword_action"]
+
+[boundary]
+excludes = [
+    "Regeneration prohibition effects using can't be regenerated wording.",
+    "Replacement effects that mention an object can't be regenerated and exile it instead if it would die.",
+    "Other imperative actions that share target creature wording, such as destroy or remove from combat.",
+]
+includes = [
+    "Keyword-action regenerate effects for target creature sentence surfaces.",
+    "Activated effects that regenerate the source object.",
+    "Activated effects that regenerate an enchanted object.",
+]
+
+[concept]
+name = "regenerate"
+pest_rules = [
+    "regenerate_target_creature",
+    "regenerate_source",
+]
+rules_queries = [
+    "lex: regenerate target creature",
+    "lex: regenerate this creature",
+    "lex: regenerate enchanted creature",
+]
+rules_terms = [
+    "regenerate",
+    "keyword action",
+    "creature",
+    "target",
+]
+
+[[counterexample]]
+reason = "Regeneration prohibition, not the regenerate keyword action."
+text = "It can't be regenerated."
+
+[[counterexample]]
+reason = "Regeneration prohibition with plural anaphora, not the regenerate keyword action."
+text = "They can't be regenerated."
+
+[[counterexample]]
+reason = "Conditional prohibition and replacement effect, not an imperative regenerate action."
+text = "If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+
+[[counterexample]]
+reason = "Destroy is a different keyword action even with target creature wording."
+text = "Destroy target creature."
+
+[[counterexample]]
+reason = "Removing a creature from combat is a different action even with target creature wording."
+text = "Remove target creature defending player controls from combat."
+
+[[example]]
+text = "Regenerate target creature."
+
+[[example]]
+text = "{B}: Regenerate this creature."
+
+[[example]]
+text = "{G}: Regenerate enchanted creature."
+
+[grammar_query]
+candidate_rules = [
+    "regenerate_target_creature",
+    "regenerate_source",
+    "it_cant_be_regenerated",
+    "if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn",
+]
+selected_rule = "regenerate_target_creature"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

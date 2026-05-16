@@ -1,0 +1,55 @@
+[fixture]
+concept = "regenerate"
+rule = "regenerate_target_creature"
+
+[[example]]
+text = "Regenerate target creature."
+
+[[example]]
+rule = "sentence_statement"
+text = "Regenerate target creature."
+
+[[example]]
+rule = "activated_ability"
+text = "{B}: Regenerate this creature."
+
+[[example]]
+rule = "regenerate_source"
+text = "Regenerate this creature."
+
+[[example]]
+rule = "activated_ability"
+text = "{G}: Regenerate enchanted creature."
+
+[[example]]
+rule = "regenerate_source"
+text = "Regenerate enchanted creature."
+
+[[counterexample]]
+text = "It can't be regenerated."
+reason = "Regeneration prohibition, not the regenerate keyword action."
+
+[[counterexample]]
+text = "They can't be regenerated."
+reason = "Regeneration prohibition with plural anaphora, not the regenerate keyword action."
+
+[[counterexample]]
+text = "If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead."
+reason = "Conditional prohibition and replacement effect, not an imperative regenerate action."
+
+[[counterexample]]
+text = "Destroy target creature."
+reason = "Destroy is a different keyword action even with target creature wording."
+
+[[counterexample]]
+text = "Remove target creature defending player controls from combat."
+reason = "Removing a creature from combat is a different action even with target creature wording."
+
+[[counterexample]]
+text = "Regenerate target creature. trailing"
+reason = "Exact-consumption guard."
+
+[[counterexample]]
+rule = "activated_ability"
+text = "{B}: It can't be regenerated."
+reason = "Activated effects should match regenerate actions, not regeneration prohibition wording."
