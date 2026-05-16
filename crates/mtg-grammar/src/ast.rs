@@ -1864,6 +1864,8 @@ pub enum StaticUntapRestriction {
         amount: u32,
         permanent_type: PermanentType,
     },
+    /// "Players skip their untap steps."
+    PlayersSkipTheirUntapSteps,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

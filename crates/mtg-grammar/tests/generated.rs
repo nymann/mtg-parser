@@ -326,3 +326,5 @@ mod smoke;
 mod soul_net;
 #[path = "generated/spell_blast.rs"]
 mod spell_blast;
+#[path = "generated/stasis.rs"]
+mod stasis;

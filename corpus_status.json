@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 236,
+  "passing": 237,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -724,8 +724,7 @@
       "status": "pass"
     },
     "lea/Stasis": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:9\n  |\n1 | Players skip their untap steps.\n  |         ^---\n  |\n  = expected discard_cards_action or sacrifice_permanents_action"
+      "status": "pass"
     },
     "lea/Steal Artifact": {
       "status": "pass"

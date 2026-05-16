@@ -3611,33 +3611,37 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
         }
         Rule::static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps => {
             let mut inner = pair.into_inner();
-            let first_pair = inner
-                .next()
-                .expect("static untap restriction names a threshold");
-            match first_pair.as_rule() {
-                Rule::unsigned_number => {
-                    let power = first_pair
-                        .as_str()
-                        .parse::<u32>()
-                        .map_err(|_| ParseError::Internal("static untap restriction power"))?;
-                    Ok(StaticAbility::UntapRestrictionDuringUntapSteps {
-                        restriction: StaticUntapRestriction::CreaturesWithPowerOrGreater { power },
-                    })
-                }
-                Rule::number_word => {
-                    let amount = number_word_to_u32(first_pair.as_str())
-                        .ok_or(ParseError::Internal("static untap restriction amount"))?;
-                    let permanent_type_pair = inner
-                        .next()
-                        .expect("static untap restriction names a permanent type");
-                    Ok(StaticAbility::UntapRestrictionDuringUntapSteps {
-                        restriction: StaticUntapRestriction::PlayersCantUntapMoreThanPermanents {
-                            amount,
-                            permanent_type: permanent_type_from_pair(permanent_type_pair)?,
-                        },
-                    })
-                }
-                _ => Err(ParseError::Internal("static untap restriction threshold")),
+            match inner.next() {
+                Some(first_pair) => match first_pair.as_rule() {
+                    Rule::unsigned_number => {
+                        let power = first_pair
+                            .as_str()
+                            .parse::<u32>()
+                            .map_err(|_| ParseError::Internal("static untap restriction power"))?;
+                        Ok(StaticAbility::UntapRestrictionDuringUntapSteps {
+                            restriction: StaticUntapRestriction::CreaturesWithPowerOrGreater {
+                                power,
+                            },
+                        })
+                    }
+                    Rule::number_word => {
+                        let amount = number_word_to_u32(first_pair.as_str())
+                            .ok_or(ParseError::Internal("static untap restriction amount"))?;
+                        let permanent_type_pair = inner
+                            .next()
+                            .expect("static untap restriction names a permanent type");
+                        Ok(StaticAbility::UntapRestrictionDuringUntapSteps {
+                            restriction: StaticUntapRestriction::PlayersCantUntapMoreThanPermanents {
+                                amount,
+                                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                            },
+                        })
+                    }
+                    _ => Err(ParseError::Internal("static untap restriction threshold")),
+                },
+                None => Ok(StaticAbility::UntapRestrictionDuringUntapSteps {
+                    restriction: StaticUntapRestriction::PlayersSkipTheirUntapSteps,
+                }),
             }
         }
         Rule::static_source_cant_block_creatures_with_power_or_greater => {

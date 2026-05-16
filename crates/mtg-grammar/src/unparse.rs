@@ -1773,6 +1773,9 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
                     out.push_str(permanent_type_name(*permanent_type));
                     out.push_str(" during their untap steps.");
                 }
+                StaticUntapRestriction::PlayersSkipTheirUntapSteps => {
+                    out.push_str("Players skip their untap steps.");
+                }
             }
         }
         StaticAbility::SourceCantBlockCreaturesWithPowerOrGreater { source, power } => {

@@ -889,6 +889,7 @@ static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap
     ~ ^"untap" ~ ^"steps" ~ ".")
   | (^"players" ~ ^"can't" ~ ^"untap" ~ ^"more" ~ ^"than" ~ number_word
     ~ permanent_type ~ ^"during" ~ ^"their" ~ ^"untap" ~ ^"steps" ~ ".")
+  | (^"players" ~ ^"skip" ~ ^"their" ~ ^"untap" ~ ^"steps" ~ ".")
 }
 
 static_source_cant_block_creatures_with_power_or_greater = {
