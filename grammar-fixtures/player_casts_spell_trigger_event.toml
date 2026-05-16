@@ -1,0 +1,55 @@
+[fixture]
+concept = "player_casts_spell_trigger_event"
+rule = "player_casts_colored_spell"
+
+[[example]]
+text = "a player casts a black spell"
+reason = "A-player actor with color-word spell descriptor."
+
+[[example]]
+text = "you cast a red spell"
+reason = "You actor with color-word spell descriptor."
+
+[[example]]
+text = "a player casts an artifact spell"
+reason = "A-player actor with permanent-type spell descriptor."
+
+[[example]]
+text = "you cast a creature spell"
+reason = "You actor with permanent-type spell descriptor."
+
+[[example]]
+rule = "you_cast_spell_actor"
+text = "you"
+reason = "Actor slot for you-cast trigger events."
+
+[[example]]
+rule = "player_cast_spell_actor"
+text = "a player"
+reason = "Actor slot for a-player-casts trigger events."
+
+[[example]]
+rule = "cast_spell_descriptor"
+text = "black"
+reason = "Color-word descriptor slot for spell-cast trigger events."
+
+[[example]]
+rule = "cast_spell_descriptor"
+text = "artifact"
+reason = "Permanent-type descriptor slot for spell-cast trigger events."
+
+[[counterexample]]
+text = "Its owner loses 3 life."
+reason = "Direct life-loss instruction, not a spell-cast trigger event."
+
+[[counterexample]]
+text = "Counter target blue spell."
+reason = "Standalone countering effect, not a spell-cast trigger event."
+
+[[counterexample]]
+text = "Black spells cost {1} more to cast."
+reason = "Static spell-cost modification, not a spell-cast trigger event."
+
+[[counterexample]]
+text = "a player casts a black spell trailing"
+reason = "Exact-consumption guard."

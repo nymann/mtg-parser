@@ -1,0 +1,81 @@
+[[axis]]
+name = "actor"
+values = [
+    "you",
+    "a_player",
+]
+
+[[axis]]
+name = "spell_descriptor"
+values = [
+    "color_word",
+    "permanent_type",
+]
+
+[boundary]
+excludes = [
+    "Direct life-loss instructions owned by player_loses_life.",
+    "Standalone counter target spell effects owned by counter_target_spell.",
+    "Static spell-cost modification effects.",
+]
+includes = [
+    "Trigger events where you cast a spell matching a color or permanent-type descriptor.",
+    "Trigger events where a player casts a spell matching a color or permanent-type descriptor.",
+]
+
+[concept]
+name = "player_casts_spell_trigger_event"
+pest_rules = [
+    "player_casts_colored_spell",
+    "you_cast_spell_actor",
+    "player_cast_spell_actor",
+    "cast_spell_descriptor",
+]
+rules_queries = [
+    "lex: whenever a player casts a spell",
+    "lex: whenever you cast a spell",
+]
+rules_terms = [
+    "cast",
+    "spell",
+    "trigger event",
+]
+
+[[counterexample]]
+reason = "Direct life-loss instruction, not a spell-cast trigger event."
+text = "Its owner loses 3 life."
+
+[[counterexample]]
+reason = "Standalone countering effect, not a spell-cast trigger event."
+text = "Counter target blue spell."
+
+[[counterexample]]
+reason = "Static spell-cost modification, not a spell-cast trigger event."
+text = "Black spells cost {1} more to cast."
+
+[[example]]
+text = "a player casts a black spell"
+
+[[example]]
+text = "you cast a red spell"
+
+[[example]]
+text = "a player casts an artifact spell"
+
+[[example]]
+text = "you cast a creature spell"
+
+[grammar_query]
+candidate_rules = [
+    "player_casts_colored_spell",
+    "you_cast_spell_actor",
+    "player_cast_spell_actor",
+    "cast_spell_descriptor",
+    "player_loses_life",
+    "counter_target_spell",
+]
+selected_rule = "player_casts_colored_spell"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
