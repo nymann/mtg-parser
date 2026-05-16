@@ -581,9 +581,6 @@ struct ConceptGrindIterationSummary {
     concept: String,
     query: String,
     target_rule: String,
-    fastpath_attempted: bool,
-    fastpath_result: String,
-    fallback_reason: Option<String>,
     fixture_passed: bool,
     maturity_state: String,
     mapped_rule_count_before: usize,
@@ -591,25 +588,6 @@ struct ConceptGrindIterationSummary {
     unmapped_rule_count_before: usize,
     unmapped_rule_count_after: usize,
     committed: bool,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct ConceptFastPathLog {
-    eligibility_inputs: ConceptFastPathEligibilityInputs,
-    normalized_owner: String,
-    normalized_pest_patch_intent: String,
-    target_rule_exists: bool,
-    eligible: bool,
-    fastpath_attempted: bool,
-    fastpath_result: String,
-    fallback_reason: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct ConceptFastPathEligibilityInputs {
-    owner_raw: String,
-    pest_patch_intent_raw: String,
-    target_rule: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -2687,51 +2665,34 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             Some("parsed boundary decision".to_string()),
         )?;
 
-        metrics.step_started(sink, iteration, 4, "fastpath or patch agent");
-        let mut fastpath = concept_fastpath_log(&boundary_decision, &gap)?;
-        write_json(iteration_dir.join("fastpath.json"), &fastpath)?;
-        let mut used_patch_agent = false;
-        if fastpath.eligible {
-            fastpath.fastpath_attempted = true;
-            write_json(iteration_dir.join("fastpath.json"), &fastpath)?;
-            match scaffold_concept_fastpath(&gap) {
-                Ok(()) => match run_concept_grind_gates(&gap, &before, &iteration_dir) {
-                    Ok(()) => {
-                        if grammar_pest_has_diff()? {
-                            fastpath.fastpath_result = "fallback".to_string();
-                            fastpath.fallback_reason =
-                                Some("fastpath produced grammar.pest diff".to_string());
-                        } else {
-                            fastpath.fastpath_result = "success".to_string();
-                        }
-                    }
-                    Err(failure) => {
-                        fs::write(
-                            iteration_dir.join("fastpath_gate_failure.txt"),
-                            format!("{}\n\n{}", failure.label, failure.output),
-                        )?;
-                        fastpath.fastpath_result = "fallback".to_string();
-                        fastpath.fallback_reason =
-                            Some(format!("fastpath gate failed: {}", failure.label));
-                    }
-                },
-                Err(error) => {
-                    fastpath.fastpath_result = "fallback".to_string();
-                    fastpath.fallback_reason = Some(format!("fastpath scaffold failed: {error:#}"));
-                }
-            }
-            write_json(iteration_dir.join("fastpath.json"), &fastpath)?;
-        }
-        if fastpath.fastpath_result != "success" {
-            used_patch_agent = true;
-            run_concept_patch_agent(
-                options.agent,
-                &gap,
-                &boundary_decision,
-                &boundary.assistant_text,
-                &iteration_dir,
-                sink,
-            )?;
+        metrics.step_started(sink, iteration, 4, "patch agent");
+        let patch_prompt = build_patch_prompt(&gap, &boundary_decision, &boundary.assistant_text)?;
+        fs::write(iteration_dir.join("patch_prompt.md"), &patch_prompt).with_context(|| {
+            format!("write {}", iteration_dir.join("patch_prompt.md").display())
+        })?;
+        let patch = refactor_hotspot::invoke_agent(
+            options.agent,
+            &patch_prompt,
+            &iteration_dir.join("patch_transcript.ndjson"),
+            sink,
+        )?;
+        fs::write(
+            iteration_dir.join("patch_response.md"),
+            &patch.assistant_text,
+        )
+        .with_context(|| {
+            format!(
+                "write {}",
+                iteration_dir.join("patch_response.md").display()
+            )
+        })?;
+        if !patch.success {
+            bail!(
+                "{} patch agent exited with status {}; transcript: {}",
+                options.agent.label(),
+                patch.exit_code,
+                iteration_dir.join("patch_transcript.ndjson").display()
+            );
         }
         metrics.step_finished(
             sink,
@@ -2739,18 +2700,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             iteration,
             4,
             true,
-            Some(if used_patch_agent {
-                format!(
-                    "patch agent completed{}",
-                    fastpath
-                        .fallback_reason
-                        .as_ref()
-                        .map(|reason| format!(" after fallback: {reason}"))
-                        .unwrap_or_default()
-                )
-            } else {
-                "fastpath scaffold completed".to_string()
-            }),
+            Some("patch agent completed".to_string()),
         )?;
 
         metrics.step_started(sink, iteration, 5, "gate and repair");
@@ -2916,9 +2866,6 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             concept: gap.concept.clone(),
             query: gap.query.clone(),
             target_rule: gap.target_rule.clone(),
-            fastpath_attempted: fastpath.fastpath_attempted,
-            fastpath_result: fastpath.fastpath_result.clone(),
-            fallback_reason: fastpath.fallback_reason.clone(),
             fixture_passed: final_contract.fixture_result.passed,
             maturity_state: final_maturity.state.clone(),
             mapped_rule_count_before: before.mapped_rule_count,
@@ -3282,12 +3229,12 @@ fn parse_boundary_decision(response: &str) -> Result<BoundaryDecision> {
 fn parse_boundary_owner(owner: &str) -> Result<BoundaryOwner> {
     let owner = owner.trim();
     if let Some(concept) = owner.strip_prefix("existing:") {
-        let concept = leading_concept_name(concept.trim());
+        let concept = concept.trim();
         validate_concept_name(concept)?;
         return Ok(BoundaryOwner::Existing(concept.to_string()));
     }
     if let Some(concept) = owner.strip_prefix("new:") {
-        let concept = leading_concept_name(concept.trim());
+        let concept = concept.trim();
         validate_concept_name(concept)?;
         return Ok(BoundaryOwner::New(concept.to_string()));
     }
@@ -3299,39 +3246,6 @@ fn parse_boundary_owner(owner: &str) -> Result<BoundaryOwner> {
         return Ok(BoundaryOwner::Blocked(reason.to_string()));
     }
     bail!("OWNER must be existing:<concept>, new:<concept>, or blocked:<reason>; got {owner:?}");
-}
-
-fn leading_concept_name(value: &str) -> &str {
-    let end = value
-        .char_indices()
-        .find_map(|(index, c)| {
-            (!(c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')).then_some(index)
-        })
-        .unwrap_or(value.len());
-    &value[..end]
-}
-
-fn normalized_owner(owner: &BoundaryOwner) -> String {
-    match owner {
-        BoundaryOwner::Existing(concept) => format!("existing:{concept}"),
-        BoundaryOwner::New(concept) => format!("new:{concept}"),
-        BoundaryOwner::Blocked(reason) => format!("blocked:{reason}"),
-    }
-}
-
-fn normalized_pest_patch_intent(intent: &str) -> String {
-    let trimmed = intent.trim_start();
-    let lower = trimmed.to_ascii_lowercase();
-    let after_none = lower.strip_prefix("none");
-    if after_none.is_some_and(|rest| {
-        rest.chars()
-            .next()
-            .is_none_or(|c| !c.is_ascii_alphanumeric() && c != '_')
-    }) {
-        "none".to_string()
-    } else {
-        "patch".to_string()
-    }
 }
 
 fn apply_boundary_decision(gap: ConceptGap, decision: &BoundaryDecision) -> Result<ConceptGap> {
@@ -3465,147 +3379,6 @@ BLOCKERS: <none or list>
         boundary_json = serde_json::to_string_pretty(boundary_decision)?,
         boundary_response = boundary_response,
     ))
-}
-
-fn concept_fastpath_log(
-    decision: &BoundaryDecision,
-    gap: &ConceptGap,
-) -> Result<ConceptFastPathLog> {
-    let normalized_owner = normalized_owner(&decision.owner);
-    let normalized_pest_patch_intent = normalized_pest_patch_intent(&decision.pest_patch_intent);
-    let target_rule_exists = grammar_rule_exists(&gap.target_rule)?;
-    let eligible = matches!(decision.owner, BoundaryOwner::New(_))
-        && normalized_pest_patch_intent == "none"
-        && target_rule_exists;
-    let fallback_reason = (!eligible).then(|| {
-        if !matches!(decision.owner, BoundaryOwner::New(_)) {
-            "owner is not new".to_string()
-        } else if normalized_pest_patch_intent != "none" {
-            "pest patch intent is not none".to_string()
-        } else {
-            "target rule does not exist".to_string()
-        }
-    });
-    Ok(ConceptFastPathLog {
-        eligibility_inputs: ConceptFastPathEligibilityInputs {
-            owner_raw: decision.owner_raw.clone(),
-            pest_patch_intent_raw: decision.pest_patch_intent.clone(),
-            target_rule: gap.target_rule.clone(),
-        },
-        normalized_owner,
-        normalized_pest_patch_intent,
-        target_rule_exists,
-        eligible,
-        fastpath_attempted: false,
-        fastpath_result: if eligible {
-            "not_attempted".to_string()
-        } else {
-            "ineligible".to_string()
-        },
-        fallback_reason,
-    })
-}
-
-fn grammar_rule_exists(rule: &str) -> Result<bool> {
-    Ok(
-        grammar_query_engine::parse_grammar_file(grammar_pest_path())?
-            .iter()
-            .any(|definition| definition.name == rule),
-    )
-}
-
-fn scaffold_concept_fastpath(gap: &ConceptGap) -> Result<()> {
-    let concept_file = grammar_concepts_dir().join(format!("{}.toml", gap.concept));
-    let fixture_file = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
-    if concept_file.exists() {
-        bail!("{} already exists", concept_file.display());
-    }
-    if fixture_file.exists() {
-        bail!("{} already exists", fixture_file.display());
-    }
-
-    let sets = tracked_sets()?;
-    let corpus = build_corpus_cluster(&gap.query, &sets, 25)?;
-    let axes = AxisArtifact {
-        concept: gap.concept.clone(),
-        axes: infer_axes(&corpus.examples),
-    };
-    let grammar_report = build_grammar_query_report(&gap.query, vec![gap.target_rule.clone()], 25)?;
-    let rule = choose_fixture_rule(&gap.concept, Some(&gap.target_rule), &grammar_report)?;
-    let fixture = build_fixture_document(&gap.concept, &rule, &corpus)?;
-
-    fs::create_dir_all(grammar_concepts_dir()).context("create grammar-concepts")?;
-    fs::create_dir_all(grammar_fixtures_dir()).context("create grammar-fixtures")?;
-    write_grown_concept_file(
-        &concept_file,
-        &gap.concept,
-        &gap.query,
-        &rule,
-        &corpus,
-        &axes,
-        &grammar_report,
-    )?;
-    fs::write(&fixture_file, fixture).with_context(|| format!("write {}", fixture_file.display()))
-}
-
-fn run_concept_patch_agent(
-    agent: AgentProvider,
-    gap: &ConceptGap,
-    boundary_decision: &BoundaryDecision,
-    boundary_response: &str,
-    iteration_dir: &Path,
-    sink: &mut dyn FlowSink,
-) -> Result<()> {
-    let patch_prompt = build_patch_prompt(gap, boundary_decision, boundary_response)?;
-    fs::write(iteration_dir.join("patch_prompt.md"), &patch_prompt)
-        .with_context(|| format!("write {}", iteration_dir.join("patch_prompt.md").display()))?;
-    let patch = refactor_hotspot::invoke_agent(
-        agent,
-        &patch_prompt,
-        &iteration_dir.join("patch_transcript.ndjson"),
-        sink,
-    )?;
-    fs::write(
-        iteration_dir.join("patch_response.md"),
-        &patch.assistant_text,
-    )
-    .with_context(|| {
-        format!(
-            "write {}",
-            iteration_dir.join("patch_response.md").display()
-        )
-    })?;
-    if !patch.success {
-        bail!(
-            "{} patch agent exited with status {}; transcript: {}",
-            agent.label(),
-            patch.exit_code,
-            iteration_dir.join("patch_transcript.ndjson").display()
-        );
-    }
-    Ok(())
-}
-
-fn grammar_pest_has_diff() -> Result<bool> {
-    let root = repo_root();
-    let grammar_path = grammar_pest_path();
-    let grammar_path = grammar_path
-        .strip_prefix(&root)
-        .unwrap_or(&grammar_path)
-        .to_path_buf();
-    let status = Command::new("git")
-        .current_dir(root)
-        .arg("diff")
-        .arg("--quiet")
-        .arg("--")
-        .arg(grammar_path)
-        .status()
-        .context("git diff --quiet grammar.pest")?;
-    match status.code() {
-        Some(0) => Ok(false),
-        Some(1) => Ok(true),
-        _ => bail!("git diff --quiet grammar.pest exited with {status}"),
-    }
 }
 
 fn build_repair_prompt(gap: &ConceptGap, failure: &ConceptGrindGateFailure) -> Result<String> {
@@ -5197,56 +4970,6 @@ mod tests {
             BoundaryOwner::Existing(concept) if concept == "counter_target_spell"
         ));
         assert!(decision.pest_patch_intent.contains("widen"));
-    }
-
-    #[test]
-    fn parses_new_owner_with_trailing_explanation() {
-        let decision = parse_boundary_decision(
-            "CONCEPT_BOUNDARY_DECISION:\n\
-             OWNER: new:counter_target_spell because this should become its own concept\n\
-             AXES: action=counter\n\
-             EXAMPLES_TO_ACCEPT: Counter target spell.\n\
-             COUNTEREXAMPLES_TO_REJECT: Destroy target creature.\n\
-             PEST_PATCH_INTENT: none; target rule already exists\n",
-        )
-        .expect("decision parses");
-        assert!(matches!(
-            &decision.owner,
-            BoundaryOwner::New(concept) if concept == "counter_target_spell"
-        ));
-        assert_eq!(
-            normalized_pest_patch_intent(&decision.pest_patch_intent),
-            "none"
-        );
-    }
-
-    #[test]
-    fn fastpath_eligible_for_new_owner_none_intent_and_existing_rule() {
-        let decision = parse_boundary_decision(
-            "CONCEPT_BOUNDARY_DECISION:\n\
-             OWNER: new:counter_target_spell with a scaffold only\n\
-             AXES: action=counter\n\
-             EXAMPLES_TO_ACCEPT: Counter target spell.\n\
-             COUNTEREXAMPLES_TO_REJECT: Destroy target creature.\n\
-             PEST_PATCH_INTENT: none - the grammar rule exists already\n",
-        )
-        .expect("decision parses");
-        let gap = ConceptGap {
-            concept: "counter_target_spell".to_string(),
-            query: "counter target spell".to_string(),
-            target_rule: "counter_target_spell".to_string(),
-            target_line: 1,
-            suggested_existing_owner: false,
-            reason: "test".to_string(),
-        };
-        let log = concept_fastpath_log(&decision, &gap).expect("fastpath log");
-        assert!(log.eligible);
-        assert_eq!(log.normalized_owner, "new:counter_target_spell");
-        assert_eq!(log.normalized_pest_patch_intent, "none");
-        assert!(log.target_rule_exists);
-        assert!(!log.fastpath_attempted);
-        assert_eq!(log.fastpath_result, "not_attempted");
-        assert!(log.fallback_reason.is_none());
     }
 
     #[test]
