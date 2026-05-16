@@ -1711,7 +1711,7 @@ enchanted_object_becomes_status = {
     (^"enchanted" ~ enchanted_object | source_object) ~ ^"becomes" ~ object_status
 }
 you_control_no_basic_lands = { ^"you" ~ ^"control" ~ ^"no" ~ basic_land_type_plural }
-permanent_enters        = { article ~ permanent_type ~ ^"enters" }
+permanent_enters        = { (article ~ permanent_type | source_object) ~ ^"enters" }
 basic_land_type_is_tapped_for_mana = {
     (article ~ basic_land_type | ^"enchanted" ~ enchanted_object)
   ~ ^"is" ~ ^"tapped" ~ ^"for" ~ ^"mana"
@@ -1817,6 +1817,7 @@ trigger_effect = _{
   | player_may_pay_mana
   | you_may_have_source_become_copy_of_target
   | you_may_draw_cards
+  | activated_draw_cards
   | damage_prevention_effect_sentence
   | tap_enchanted_object
   | if_you_do_gain_life
@@ -2184,7 +2185,7 @@ that_player_discards_card_at_random = {
 its_controller_adds_an_additional_mana = {
     ^"its" ~ ^"controller" ~ ^"adds" ~ article ~ ^"additional" ~ mana_symbol ~ "."
 }
-source_object = { ^"this" ~ source_object_kind }
+source_object = { "CARDNAME" | (^"this" ~ source_object_kind) }
 source_object_kind = _{ aura_source_object | permanent_object | permanent_type }
 aura_source_object = { ^"aura" }
 permanent_object = { ^"permanent" }

@@ -1,0 +1,111 @@
+[[axis]]
+name = "object"
+values = ["permanent"]
+
+[[axis]]
+name = "entry_event"
+values = ["enter_as_copy"]
+
+[[axis]]
+name = "choice"
+values = ["you_may"]
+
+[[axis]]
+name = "copy_source"
+values = ["any_permanent_type_on_battlefield"]
+
+[[axis]]
+name = "permanent_type"
+values = [
+    "artifact",
+    "creature",
+    "enchantment",
+    "land",
+    "planeswalker",
+]
+
+[[axis]]
+name = "copy_exception"
+values = [
+    "none",
+    "permanent_type_in_addition",
+    "color_not_copied",
+]
+
+[[axis]]
+name = "granted_ability"
+values = [
+    "none",
+    "this_ability",
+    "quoted_triggered_ability",
+]
+
+[boundary]
+excludes = [
+    "Spell-copy effects, including copy target instant or sorcery spell wording.",
+    "Target permanent copy effects that do not use enter-as-copy replacement wording.",
+    "Static or aura-granted quoted triggered abilities that do not copy a permanent as it enters.",
+    "Instructions that choose new targets for an already-created copy.",
+]
+includes = [
+    "You-may replacement effects that have this object enter as a copy of any permanent type on the battlefield.",
+    "Permanent-copy exceptions where the copy does not copy the copied permanent type's color.",
+    "Permanent-copy exceptions that grant this object a quoted triggered ability.",
+    "The copied object type as permanent_type data.",
+]
+
+[concept]
+name = "copy_permanent_enter_as"
+pest_rules = [
+    "static_you_may_have_source_enter_as_copy",
+    "copy_exception_with_quoted_triggered_ability",
+]
+rules_queries = [
+    "lex: enter as a copy of any creature on the battlefield except doesn't copy color",
+    "lex: copy effect exception doesn't copy color has triggered ability",
+]
+rules_terms = [
+    "copy",
+    "permanent",
+    "battlefield",
+    "replacement effect",
+    "enters",
+    "triggered ability",
+]
+
+[[counterexample]]
+reason = "Spell-copy effect, not permanent enter-as-copy replacement wording."
+text = "Copy target instant spell, except that the copy is red."
+
+[[counterexample]]
+reason = "Target permanent copy wording, not you-may enter-as-copy replacement wording."
+text = "Copy target creature, except it doesn't copy that creature's color and it has this ability."
+
+[[counterexample]]
+reason = "Aura-granted triggered ability, not a copy exception on an entering permanent."
+text = 'Enchanted creature has "When this creature dies, draw a card."'
+
+[[counterexample]]
+reason = "Target-retargeting permission for an existing copy, not creation of an entering permanent copy."
+text = "You may choose new targets for the copy."
+
+[[example]]
+text = """You may have CARDNAME enter as a copy of any creature on the battlefield, except it doesn't copy that creature's color and it has "When this creature enters, draw a card.""""
+
+[[example]]
+text = """You may have CARDNAME enter as a copy of any artifact on the battlefield, except it doesn't copy that artifact's color and it has "When this artifact enters, draw a card.""""
+
+[grammar_query]
+candidate_rules = [
+    "static_you_may_have_source_enter_as_copy",
+    "copy_exception",
+    "copy_exception_doesnt_copy_color_and_has_this_ability",
+    "copy_exception_with_quoted_triggered_ability",
+    "copy_target_spell_except_copy_is_color",
+    "static_enchanted_has_triggered_ability",
+]
+selected_rule = "static_you_may_have_source_enter_as_copy"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
