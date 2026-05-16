@@ -34,8 +34,8 @@ use crate::ast::{
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    TriggerEffect, TriggerEvent, TriggerPaymentCost, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -135,6 +135,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             for_each_damage_prevented_by_removing_pt_counter_from_pair(pair)
         }
         Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
+        Rule::if_you_pay_source_deals_damage => if_you_pay_source_deals_damage_from_pair(pair),
         Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
             as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(pair)
         }
@@ -1946,6 +1947,35 @@ fn damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError>
     }
 }
 
+fn named_counter_count_on_it_from_pair(pair: Pair<Rule>) -> Result<String, ParseError> {
+    let counter_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("named counter count missing counter"))?;
+    counter_name_from_counter_pair(counter_pair)
+}
+
+fn if_you_pay_source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("if-you-pay damage missing source"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("if-you-pay damage missing amount"))?;
+    let recipients = inner
+        .map(damage_recipient_from_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    if recipients.is_empty() {
+        return Err(ParseError::Internal("if-you-pay damage missing recipient"));
+    }
+    Ok(Statement::IfYouPaySourceDealsDamage {
+        source: source_object_from_pair(source_pair)?,
+        counter_name: named_counter_count_on_it_from_pair(amount_pair)?,
+        recipients,
+    })
+}
+
 fn if_you_cant_source_deals_damage_to_you_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
@@ -2611,6 +2641,7 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
             delayed_remove_all_named_counters_from_linked_land_from_pair(pair)
         }
         Rule::put_named_counters_on_source
+        | Rule::one_named_counter_on_source
         | Rule::that_many_named_counters
         | Rule::one_named_counter_for_each_permanent_died_this_turn => {
             put_named_counters_on_source_from_pair(pair)
@@ -3072,17 +3103,44 @@ fn return_enchanted_card_and_attach_from_pair(
 fn sacrifice_source_unless_you_pay_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEffect, ParseError> {
-    let mut inner = pair.into_inner();
-    let source_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("sacrifice unless missing source"))?;
-    let cost_pair = inner
-        .next()
-        .ok_or(ParseError::Internal("sacrifice unless missing cost"))?;
+    let mut source = None;
+    let mut cost = None;
+    let mut prefixed_by_then = false;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::trigger_then_prefix => prefixed_by_then = true,
+            Rule::source_object => source = Some(source_object_from_pair(child)?),
+            Rule::mana_cost | Rule::mana_cost_for_each_named_counter_on_it => {
+                cost = Some(trigger_payment_cost_from_pair(child)?);
+            }
+            _ => return Err(ParseError::Internal("sacrifice unless child")),
+        }
+    }
     Ok(TriggerEffect::SacrificeSourceUnlessYouPay {
-        source: source_object_from_pair(source_pair)?,
-        cost: mana_cost_from_pair(cost_pair),
+        source: source.ok_or(ParseError::Internal("sacrifice unless missing source"))?,
+        cost: cost.ok_or(ParseError::Internal("sacrifice unless missing cost"))?,
+        prefixed_by_then,
     })
+}
+
+fn trigger_payment_cost_from_pair(pair: Pair<Rule>) -> Result<TriggerPaymentCost, ParseError> {
+    match pair.as_rule() {
+        Rule::mana_cost => Ok(TriggerPaymentCost::Mana(mana_cost_from_pair(pair))),
+        Rule::mana_cost_for_each_named_counter_on_it => {
+            let mut inner = pair.into_inner();
+            let cost_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("counter payment missing mana cost"))?;
+            let counter_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("counter payment missing counter"))?;
+            Ok(TriggerPaymentCost::ManaForEachNamedCounterOnIt {
+                cost: mana_cost_from_pair(cost_pair),
+                counter_name: counter_name_from_counter_pair(counter_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("trigger payment cost")),
+    }
 }
 
 fn sacrifice_source_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
@@ -3724,6 +3782,20 @@ fn named_counter_placement_from_pair(
     pair: Pair<Rule>,
 ) -> Result<(NamedCounterAmount, String, SourceObject), ParseError> {
     match pair.as_rule() {
+        Rule::one_named_counter_on_source => {
+            let mut inner = pair.into_inner();
+            let counter_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("one named counter missing counter"))?;
+            let source_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("one named counter missing source"))?;
+            Ok((
+                NamedCounterAmount::One,
+                counter_name_from_counter_pair(counter_pair)?,
+                source_object_from_pair(source_pair)?,
+            ))
+        }
         Rule::that_many_named_counters => {
             let mut inner = pair.into_inner();
             let counter_pair = inner.next().ok_or(ParseError::Internal(

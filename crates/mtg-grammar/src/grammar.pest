@@ -55,6 +55,7 @@ sentence_statement = _{
   | damage_prevention_effect
   | for_each_damage_prevented_by_removing_pt_counter
   | spend_only_color_mana_on_variable
+  | if_you_pay_source_deals_damage
   | as_source_enters_you_lose_life_equal_to_your_life_total
   | you_gain_life_equal_damage
   | you_dont_lose_game_for_having_zero_or_less_life
@@ -2000,7 +2001,13 @@ spell_additional_cost = _{ sacrifice_permanent_cost }
 sacrifice_permanent_cost = { ^"sacrifice" ~ article ~ permanent_type }
 
 sacrifice_source_unless_you_pay = {
-    ^"sacrifice" ~ source_object ~ ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ "."
+    trigger_then_prefix? ~ ^"sacrifice" ~ source_object ~ ^"unless"
+  ~ ^"you" ~ ^"pay" ~ trigger_payment_cost ~ "."
+}
+trigger_then_prefix = { ^"then" }
+trigger_payment_cost = _{ mana_cost_for_each_named_counter_on_it | mana_cost }
+mana_cost_for_each_named_counter_on_it = {
+    mana_cost ~ ^"for" ~ ^"each" ~ named_counter ~ ^"on" ~ ^"it"
 }
 
 sacrifice_source_effect = {
@@ -2075,9 +2082,15 @@ trigger_counter_recipient = { it_counter_recipient | source_counter_recipient }
 it_counter_recipient = { ^"it" }
 source_counter_recipient = { source_object }
 put_named_counters_on_source = _{
-    that_many_named_counters
+    one_named_counter_on_source
+  | that_many_named_counters
   | one_named_counter_for_each_permanent_died_this_turn
 }
+one_named_counter_on_source = {
+    ^"put" ~ article ~ named_counter ~ ^"on" ~ source_object
+  ~ trigger_counter_placement_terminator
+}
+trigger_counter_placement_terminator = _{ "." | "," }
 that_many_named_counters = {
     ^"put" ~ ^"that" ~ ^"many" ~ named_counters ~ ^"on" ~ source_object ~ "."
 }
@@ -2144,6 +2157,15 @@ trigger_damage_condition = {
 }
 trigger_damage_variable_definition = {
     "," ~ where_clause
+}
+if_you_pay_source_deals_damage = {
+    ^"if" ~ ^"you" ~ ^"pay" ~ "," ~ source_object ~ ^"deals"
+  ~ ^"damage" ~ named_counter_count_on_it ~ ^"to" ~ damage_recipient
+  ~ (^"and" ~ damage_recipient)* ~ "."
+}
+named_counter_count_on_it = {
+    ^"equal" ~ ^"to" ~ ^"the" ~ ^"number" ~ ^"of" ~ named_counters
+  ~ ^"on" ~ ^"it"
 }
 that_player_adds_mana_of_any_type_that_permanent_produced = {
     ^"that" ~ ^"player" ~ ^"adds" ~ number_word ~ ^"mana" ~ ^"of"

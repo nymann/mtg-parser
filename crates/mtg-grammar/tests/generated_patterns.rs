@@ -103,6 +103,8 @@ mod crystal_rod;
 mod cuombajj_witches;
 #[path = "generated_patterns/cursed_land.rs"]
 mod cursed_land;
+#[path = "generated_patterns/cyclone.rs"]
+mod cyclone;
 #[path = "generated_patterns/cyclopean_tomb.rs"]
 mod cyclopean_tomb;
 #[path = "generated_patterns/dark_ritual.rs"]

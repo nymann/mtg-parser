@@ -32,8 +32,8 @@ use crate::ast::{
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    TriggerEffect, TriggerEvent, TriggerPaymentCost, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -97,6 +97,20 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(color_name(*color));
             out.push_str(" mana on ");
             out.push_str(variable_name(*variable));
+            out.push('.');
+        }
+        Statement::IfYouPaySourceDealsDamage {
+            source,
+            counter_name,
+            recipients,
+        } => {
+            out.push_str("If you pay, ");
+            write_source_object(out, *source);
+            out.push_str(" deals damage equal to the number of ");
+            out.push_str(counter_name);
+            out.push_str(" counters on it");
+            out.push_str(" to ");
+            write_damage_recipients(out, recipients);
             out.push('.');
         }
         Statement::AsSourceEntersYouLoseLifeEqualToYourLifeTotal { source } => {
@@ -613,6 +627,7 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
             | Statement::NamedSourceDealsDamage { .. }
             | Statement::ItCantBeRegenerated { .. }
             | Statement::IfYouFlipResult { .. }
+            | Statement::IfYouPaySourceDealsDamage { .. }
             | Statement::VariableCantBeNumber { .. }
             | Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn
             | Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn
@@ -2836,6 +2851,12 @@ fn write_trigger_effect(
         } => {
             out.push_str("put ");
             match amount {
+                NamedCounterAmount::One => {
+                    out.push_str("a ");
+                    out.push_str(counter_name);
+                    out.push_str(" counter on ");
+                    write_source_object(out, *source);
+                }
                 NamedCounterAmount::ThatMany => {
                     write_named_counter_amount(out, *amount, counter_name);
                     out.push_str(" on ");
@@ -2851,7 +2872,11 @@ fn write_trigger_effect(
                     out.push_str(" that died this turn");
                 }
             }
-            out.push('.');
+            out.push(if terminal || !matches!(amount, NamedCounterAmount::One) {
+                '.'
+            } else {
+                ','
+            });
         }
         TriggerEffect::YouMayRemoveNamedCounterFromSource {
             counter_name,
@@ -2893,11 +2918,18 @@ fn write_trigger_effect(
             out.push_str(permanent_type_name(*card_type));
             out.push_str(" card to the battlefield under your control and attach this Aura to it.");
         }
-        TriggerEffect::SacrificeSourceUnlessYouPay { source, cost } => {
+        TriggerEffect::SacrificeSourceUnlessYouPay {
+            source,
+            cost,
+            prefixed_by_then,
+        } => {
+            if *prefixed_by_then {
+                out.push_str("then ");
+            }
             out.push_str("sacrifice ");
             write_source_object(out, *source);
             out.push_str(" unless you pay ");
-            write_mana_cost(out, cost);
+            write_trigger_payment_cost(out, cost);
             out.push('.');
         }
         TriggerEffect::SacrificeSource { source } => {
@@ -3005,6 +3037,11 @@ fn write_counter_amount(out: &mut String, amount: CounterAmount) {
 
 fn write_named_counter_amount(out: &mut String, amount: NamedCounterAmount, counter_name: &str) {
     match amount {
+        NamedCounterAmount::One => {
+            out.push_str("a ");
+            out.push_str(counter_name);
+            out.push_str(" counter");
+        }
         NamedCounterAmount::ThatMany => {
             out.push_str("that many ");
             out.push_str(counter_name);
@@ -3016,6 +3053,18 @@ fn write_named_counter_amount(out: &mut String, amount: NamedCounterAmount, coun
             out.push_str(" counter for each ");
             out.push_str(permanent_type_name(permanent_type));
             out.push_str(" that died this turn");
+        }
+    }
+}
+
+fn write_trigger_payment_cost(out: &mut String, cost: &TriggerPaymentCost) {
+    match cost {
+        TriggerPaymentCost::Mana(mana) => write_mana_cost(out, mana),
+        TriggerPaymentCost::ManaForEachNamedCounterOnIt { cost, counter_name } => {
+            write_mana_cost(out, cost);
+            out.push_str(" for each ");
+            out.push_str(counter_name);
+            out.push_str(" counter on it");
         }
     }
 }

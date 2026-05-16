@@ -51,6 +51,13 @@ pub enum Statement {
         color: Color,
         variable: Variable,
     },
+    /// "If you pay, this <source> deals damage equal to the number of
+    /// <counter> counters on it to <recipient>[ and <recipient>]."
+    IfYouPaySourceDealsDamage {
+        source: SourceObject,
+        counter_name: String,
+        recipients: Vec<DamageRecipient>,
+    },
     /// "As this <source> enters, you lose life equal to your life total."
     AsSourceEntersYouLoseLifeEqualToYourLifeTotal {
         source: SourceObject,
@@ -1215,10 +1222,11 @@ pub enum TriggerEffect {
     /// control and attach this Aura to it" — pulls the enchanted card
     /// out of its zone and re-attaches the Aura on the battlefield.
     ReturnEnchantedCardAndAttach { card_type: PermanentType },
-    /// "sacrifice this <source> unless you pay <mana_cost>"
+    /// "[then] sacrifice this <source> unless you pay <cost>"
     SacrificeSourceUnlessYouPay {
         source: SourceObject,
-        cost: ManaCost,
+        cost: TriggerPaymentCost,
+        prefixed_by_then: bool,
     },
     /// "sacrifice this <source>"
     SacrificeSource { source: SourceObject },
@@ -1410,10 +1418,21 @@ pub enum ActivationPermission {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NamedCounterAmount {
+    /// "a <counter> counter"
+    One,
     /// "that many <counter> counters"
     ThatMany,
     /// "a <counter> counter for each <permanent_type> that died this turn"
     OneForEachPermanentThatDiedThisTurn { permanent_type: PermanentType },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TriggerPaymentCost {
+    Mana(ManaCost),
+    ManaForEachNamedCounterOnIt {
+        cost: ManaCost,
+        counter_name: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
