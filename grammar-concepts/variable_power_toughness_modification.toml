@@ -1,0 +1,104 @@
+[[axis]]
+name = "power_variable"
+values = [
+    "+X",
+    "-X",
+    "+Y",
+    "-Y",
+]
+
+[[axis]]
+name = "toughness_variable"
+values = [
+    "+X",
+    "-X",
+    "+Y",
+    "-Y",
+]
+
+[[axis]]
+name = "modified_object"
+values = [
+    "enchanted_creature",
+    "enchanted_artifact",
+    "enchanted_land",
+    "enchanted_enchantment",
+]
+
+[[axis]]
+name = "definition_expression"
+values = [
+    "half_basic_lands_you_control_rounded_down",
+    "half_basic_lands_you_control_rounded_up",
+    "cards_in_hand_minus_number",
+    "status_permanents_controlled_at_beginning",
+    "amount_of_mana_paid_this_way",
+    "its_power",
+]
+
+[boundary]
+excludes = [
+    "Spend-only mana restrictions scoped to a variable, owned by variable_mana_spending_restriction.",
+    "Temporary target-creature pump spells that also grant abilities or use until-end-of-turn duration.",
+    "Fixed numeric enchanted-object P/T modifications without variable definitions.",
+]
+includes = [
+    "Enchanted permanent P/T modification sentences with signed variable power and toughness components.",
+    "Where-clause definitions for one or two printed P/T variables.",
+    "Creature, artifact, land, and enchantment enchanted-object surfaces.",
+]
+
+[concept]
+name = "variable_power_toughness_modification"
+pest_rules = [
+    "static_enchanted_gets_with_definitions",
+    "variable_pt_modifier",
+]
+rules_queries = [
+    "lex: enchanted creature gets +X/+Y where X is",
+    "lex: power and toughness variable where X is",
+]
+rules_terms = [
+    "power",
+    "toughness",
+    "variable",
+    "enchanted",
+]
+
+[[counterexample]]
+reason = "Variable mana spending restriction, not a P/T modification."
+text = "Spend only black mana on X."
+
+[[counterexample]]
+reason = "Temporary target-creature spell effect with a keyword grant, not an enchanted-object variable P/T modification."
+text = "Target creature gains trample and gets +X/+0 until end of turn, where X is its power."
+
+[[counterexample]]
+reason = "Fixed numeric P/T modification without variable definitions."
+text = "Enchanted creature gets +1/+1."
+
+[[example]]
+text = "Enchanted creature gets +X/+Y, where X is half the number of Forests you control, rounded down, and Y is half the number of Forests you control, rounded up."
+
+[[example]]
+text = "Enchanted artifact gets +X/-Y, where X is the number of cards in their hand minus 4, and Y is the amount of mana that player paid this way."
+
+[[example]]
+text = "Enchanted land gets -X/+Y, where X is the number of tapped lands they controlled at the beginning of this turn, and Y is its power."
+
+[[example]]
+text = "Enchanted enchantment gets -Y/-X, where Y is its power, and X is the amount of mana that player paid this way."
+
+[grammar_query]
+candidate_rules = [
+    "static_enchanted_gets_with_definitions",
+    "variable_pt_modifier",
+    "signed_variable",
+    "where_clause",
+    "variable_definition",
+]
+selected_rule = "variable_pt_modifier"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

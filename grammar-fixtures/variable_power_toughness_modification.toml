@@ -1,0 +1,40 @@
+[fixture]
+concept = "variable_power_toughness_modification"
+rule = "static_enchanted_gets_with_definitions"
+
+[[example]]
+text = "Enchanted creature gets +X/+Y, where X is half the number of Forests you control, rounded down, and Y is half the number of Forests you control, rounded up."
+reason = "Creature enchanted-object surface with independent rounded-down and rounded-up basic-land definitions."
+
+[[example]]
+text = "Enchanted artifact gets +X/-Y, where X is the number of cards in their hand minus 4, and Y is the amount of mana that player paid this way."
+reason = "Artifact enchanted-object surface with cards-in-hand-minus and mana-paid definition expressions."
+
+[[example]]
+text = "Enchanted land gets -X/+Y, where X is the number of tapped lands they controlled at the beginning of this turn, and Y is its power."
+reason = "Land enchanted-object surface with signed variables and status-permanents definition expression."
+
+[[example]]
+text = "Enchanted enchantment gets -Y/-X, where Y is its power, and X is the amount of mana that player paid this way."
+reason = "Enchantment enchanted-object surface using the Y variable in the power component and X in toughness."
+
+[[example]]
+rule = "variable_pt_modifier"
+text = "+Y/-X"
+reason = "Fragment coverage for signed variable power and toughness components."
+
+[[counterexample]]
+text = "Spend only black mana on X."
+reason = "Variable mana spending restriction, not a P/T modification."
+
+[[counterexample]]
+text = "Target creature gains trample and gets +X/+0 until end of turn, where X is its power."
+reason = "Temporary target-creature spell effect with a keyword grant, not an enchanted-object variable P/T modification."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1."
+reason = "Fixed numeric P/T modification without variable definitions."
+
+[[counterexample]]
+text = "Enchanted creature gets +X/+Y, where X is half the number of Forests you control, rounded down, and Y is half the number of Forests you control, rounded up. trailing"
+reason = "Exact-consumption guard."
