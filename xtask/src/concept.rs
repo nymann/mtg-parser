@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsString;
 use std::fs;
+use std::io::Write;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
@@ -484,7 +485,7 @@ struct RuleLocationSummary {
     line: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct UnmappedGrammarRule {
     name: String,
     line: usize,
@@ -573,6 +574,26 @@ struct PlumbingCooldownSelection {
     cooled_target_rules: Vec<String>,
     excluded_rules: Vec<String>,
     fallback_status: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct NonConceptExclusion {
+    target_rule: String,
+    candidate_concept: String,
+    structural_exclusion_reason: String,
+    matched_feature: String,
+    timestamp: u128,
+}
+
+#[derive(Debug, Serialize)]
+struct ConceptCandidateBuildLog {
+    candidate_build_index: u32,
+    excluded_count: usize,
+    excluded_rules: Vec<String>,
+    exclusions: Vec<NonConceptExclusion>,
+    remaining_candidate_count: usize,
+    selected_post_filter_candidate: Option<String>,
+    base_excluded_rules: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -2526,7 +2547,39 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         )?;
         let excluded_rules: BTreeSet<String> =
             cooldown_selection.excluded_rules.iter().cloned().collect();
-        let gap = select_concept_gap_excluding(&before, &options, &excluded_rules)?;
+        let candidate_queue = concept_candidate_queue(&before, &options, &excluded_rules)?;
+        let grammar_rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+        let candidate_build = build_concept_candidate_selection(
+            iteration,
+            &before,
+            &grammar_rules,
+            &candidate_queue,
+            &excluded_rules,
+        );
+        append_non_concept_exclusions(
+            &session_dir.join("non_concept_exclusions.jsonl"),
+            &candidate_build.exclusions,
+        )?;
+        write_json(
+            iteration_dir.join("candidate_selection.json"),
+            &candidate_build,
+        )?;
+        sink.emit(FlowEvent::Note {
+            level: NoteLevel::Info,
+            text: format!(
+                "candidate selection: excluded_count={} excluded_rules=[{}] remaining_candidate_count={} selected_post_filter_candidate={}",
+                candidate_build.excluded_count,
+                candidate_build.excluded_rules.join(", "),
+                candidate_build.remaining_candidate_count,
+                candidate_build
+                    .selected_post_filter_candidate
+                    .as_deref()
+                    .unwrap_or("<none>")
+            ),
+        });
+        let mut all_excluded_rules = excluded_rules.clone();
+        all_excluded_rules.extend(candidate_build.excluded_rules.iter().cloned());
+        let gap = select_concept_gap_excluding(&before, &options, &all_excluded_rules)?;
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
         sink.emit(FlowEvent::WorkflowIterationStarted {
@@ -3011,85 +3064,107 @@ fn select_concept_gap_excluding(
     options: &ConceptGrindOptions,
     excluded_rules: &BTreeSet<String>,
 ) -> Result<ConceptGap> {
+    let candidates = concept_candidate_queue(report, options, excluded_rules)?;
+    let rule = candidates
+        .first()
+        .ok_or_else(|| anyhow!("no unblocked unmapped grammar rules remain"))?;
+    Ok(concept_gap_for_rule(rule, options))
+}
+
+fn concept_candidate_queue<'a>(
+    report: &'a ExistingGrammarMapReport,
+    options: &ConceptGrindOptions,
+    excluded_rules: &BTreeSet<String>,
+) -> Result<Vec<&'a UnmappedGrammarRule>> {
     if let Some(concept) = &options.concept {
-        let query = options
-            .query
-            .clone()
-            .unwrap_or_else(|| concept.replace('_', " "));
-        let rule = if let Some(target_rule) = &options.target_rule {
+        if let Some(target_rule) = &options.target_rule {
             if excluded_rules.contains(target_rule) {
                 bail!("--target-rule {target_rule:?} is excluded in this run");
             }
-            report
+            let rule = report
                 .unmapped_rules
                 .iter()
                 .find(|rule| rule.name == *target_rule)
                 .ok_or_else(|| {
                     anyhow!("--target-rule {target_rule:?} is not an unmapped grammar rule")
-                })?
+                })?;
+            return Ok(vec![rule]);
         } else {
-            report
+            let mut candidates: Vec<&UnmappedGrammarRule> = report
                 .unmapped_rules
                 .iter()
                 .filter(|rule| !excluded_rules.contains(&rule.name))
-                .find(|rule| rule.suggested_concept.as_deref() == Some(concept.as_str()))
-                .or_else(|| {
-                    report
-                        .unmapped_rules
-                        .iter()
-                        .filter(|rule| !excluded_rules.contains(&rule.name))
-                        .find(|rule| rule.name.starts_with(concept))
-                })
-                .ok_or_else(|| {
-                    anyhow!(
-                        "--concept {concept:?} has no suggested or prefix-matching unmapped rule; pass --target-rule RULE to make the target explicit"
-                    )
-                })?
-        };
-        return Ok(ConceptGap {
-            concept: concept.clone(),
-            query,
-            target_rule: rule.name.clone(),
-            target_line: rule.line,
-            suggested_existing_owner: rule.suggested_concept.is_some(),
-            reason: "explicit --concept".to_string(),
-        });
+                .filter(|rule| rule.suggested_concept.as_deref() == Some(concept.as_str()))
+                .collect();
+            candidates.extend(
+                report
+                    .unmapped_rules
+                    .iter()
+                    .filter(|rule| !excluded_rules.contains(&rule.name))
+                    .filter(|rule| rule.suggested_concept.as_deref() != Some(concept.as_str()))
+                    .filter(|rule| rule.name.starts_with(concept)),
+            );
+            if candidates.is_empty() {
+                bail!(
+                    "--concept {concept:?} has no suggested or prefix-matching unmapped rule; pass --target-rule RULE to make the target explicit"
+                );
+            }
+            return Ok(candidates);
+        }
     }
 
     if options.target_rule.is_some() {
         bail!("--target-rule requires --concept so ownership is explicit");
     }
 
-    if let Some(rule) = report
+    let mut candidates: Vec<&UnmappedGrammarRule> = report
         .unmapped_rules
         .iter()
         .filter(|rule| !excluded_rules.contains(&rule.name))
-        .find(|rule| rule.suggested_concept.is_some())
-    {
-        let concept = rule.suggested_concept.clone().expect("checked");
-        let query = options
-            .query
-            .clone()
-            .unwrap_or_else(|| rule.name.replace('_', " "));
-        return Ok(ConceptGap {
-            concept,
-            query,
+        .filter(|rule| rule.suggested_concept.is_some())
+        .collect();
+    let mut seen: BTreeSet<String> = candidates.iter().map(|rule| rule.name.clone()).collect();
+    candidates.extend(
+        report
+            .unmapped_rules
+            .iter()
+            .filter(|rule| !excluded_rules.contains(&rule.name))
+            .filter(|rule| seen.insert(rule.name.clone())),
+    );
+    Ok(candidates)
+}
+
+fn concept_gap_for_rule(rule: &UnmappedGrammarRule, options: &ConceptGrindOptions) -> ConceptGap {
+    if let Some(concept) = &options.concept {
+        return ConceptGap {
+            concept: concept.clone(),
+            query: options
+                .query
+                .clone()
+                .unwrap_or_else(|| concept.replace('_', " ")),
+            target_rule: rule.name.clone(),
+            target_line: rule.line,
+            suggested_existing_owner: rule.suggested_concept.is_some(),
+            reason: "explicit --concept".to_string(),
+        };
+    }
+
+    if let Some(concept) = &rule.suggested_concept {
+        return ConceptGap {
+            concept: concept.clone(),
+            query: options
+                .query
+                .clone()
+                .unwrap_or_else(|| rule.name.replace('_', " ")),
             target_rule: rule.name.clone(),
             target_line: rule.line,
             suggested_existing_owner: true,
             reason: "unmapped rule has existing concept-name prefix owner".to_string(),
-        });
+        };
     }
 
-    let rule = report
-        .unmapped_rules
-        .iter()
-        .filter(|rule| !excluded_rules.contains(&rule.name))
-        .next()
-        .ok_or_else(|| anyhow!("no unblocked unmapped grammar rules remain"))?;
-    let concept = slug(&rule.name).replace('-', "_");
-    Ok(ConceptGap {
-        concept,
+    ConceptGap {
+        concept: slug(&rule.name).replace('-', "_"),
         query: options
             .query
             .clone()
@@ -3098,7 +3173,136 @@ fn select_concept_gap_excluding(
         target_line: rule.line,
         suggested_existing_owner: false,
         reason: "first unmapped non-shared grammar rule".to_string(),
+    }
+}
+
+fn build_concept_candidate_selection(
+    candidate_build_index: u32,
+    report: &ExistingGrammarMapReport,
+    grammar_rules: &[grammar_query_engine::GrammarRuleDefinition],
+    candidate_queue: &[&UnmappedGrammarRule],
+    base_excluded_rules: &BTreeSet<String>,
+) -> ConceptCandidateBuildLog {
+    let mut exclusions = Vec::new();
+    let mut remaining = Vec::new();
+
+    for candidate in candidate_queue {
+        if let Some(exclusion) = classify_non_concept_candidate(report, grammar_rules, candidate) {
+            exclusions.push(exclusion);
+        } else {
+            remaining.push(candidate.name.clone());
+        }
+    }
+
+    let excluded_rules = exclusions
+        .iter()
+        .map(|exclusion| exclusion.target_rule.clone())
+        .collect::<Vec<_>>();
+
+    ConceptCandidateBuildLog {
+        candidate_build_index,
+        excluded_count: exclusions.len(),
+        excluded_rules,
+        exclusions,
+        remaining_candidate_count: remaining.len(),
+        selected_post_filter_candidate: remaining.first().cloned(),
+        base_excluded_rules: base_excluded_rules.iter().cloned().collect(),
+    }
+}
+
+fn classify_non_concept_candidate(
+    report: &ExistingGrammarMapReport,
+    grammar_rules: &[grammar_query_engine::GrammarRuleDefinition],
+    candidate: &UnmappedGrammarRule,
+) -> Option<NonConceptExclusion> {
+    let target_rule = candidate.name.as_str();
+    let (structural_exclusion_reason, matched_feature) = if target_rule.ends_with("_amount") {
+        (
+            "amount_or_numeric_slot_helper_rule",
+            "rule_name_suffix:_amount",
+        )
+    } else if target_rule.ends_with("_controller") {
+        (
+            "controller_or_qualifier_helper_leaf_rule",
+            "rule_name_suffix:_controller",
+        )
+    } else if target_rule.ends_with("_object") {
+        (
+            "source_or_object_kind_literal_leaf_rule",
+            "rule_name_suffix:_object",
+        )
+    } else if target_rule == "variable_mana_symbol" {
+        (
+            "shared_variable_syntax_token",
+            "rule_name_exact:variable_mana_symbol",
+        )
+    } else if wrapper_routes_to_multiple_mapped_concepts(report, grammar_rules, target_rule) {
+        (
+            "wrapper_or_alternation_rule_routes_to_multiple_mapped_concepts",
+            "wrapper_children_multiple_mapped_concepts",
+        )
+    } else {
+        return None;
+    };
+
+    Some(NonConceptExclusion {
+        target_rule: target_rule.to_string(),
+        candidate_concept: candidate
+            .suggested_concept
+            .clone()
+            .unwrap_or_else(|| slug(target_rule).replace('-', "_")),
+        structural_exclusion_reason: structural_exclusion_reason.to_string(),
+        matched_feature: matched_feature.to_string(),
+        timestamp: unix_timestamp_ms(),
     })
+}
+
+fn wrapper_routes_to_multiple_mapped_concepts(
+    report: &ExistingGrammarMapReport,
+    grammar_rules: &[grammar_query_engine::GrammarRuleDefinition],
+    target_rule: &str,
+) -> bool {
+    let rule_by_name: BTreeMap<&str, &grammar_query_engine::GrammarRuleDefinition> = grammar_rules
+        .iter()
+        .map(|rule| (rule.name.as_str(), rule))
+        .collect();
+    let Some(rule) = rule_by_name.get(target_rule).copied() else {
+        return false;
+    };
+    let dependencies = grammar_query_engine::direct_dependencies(grammar_rules, target_rule);
+    if !is_pure_wrapper_or_alternation_rhs(&rule.rhs, &dependencies) {
+        return false;
+    }
+
+    let expansion_tree = expand_rule_leaf_set(grammar_rules, &rule_by_name, target_rule, 2, None);
+    let leaf_rules = expansion_tree
+        .normalized_leaf_rules
+        .iter()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let owning_concepts = leaf_owning_concepts(report, &leaf_rules)
+        .into_values()
+        .flatten()
+        .collect::<BTreeSet<_>>();
+
+    owning_concepts.len() > 1
+}
+
+fn append_non_concept_exclusions(path: &Path, exclusions: &[NonConceptExclusion]) -> Result<()> {
+    if exclusions.is_empty() {
+        return Ok(());
+    }
+
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .with_context(|| format!("open {}", path.display()))?;
+    for exclusion in exclusions {
+        let line = serde_json::to_string(exclusion).context("serialize non-concept exclusion")?;
+        writeln!(file, "{line}").with_context(|| format!("write {}", path.display()))?;
+    }
+    Ok(())
 }
 
 fn build_boundary_prompt(gap: &ConceptGap, report: &ExistingGrammarMapReport) -> Result<String> {
@@ -5077,6 +5281,156 @@ mod tests {
         let gap = select_concept_gap_excluding(&report, &options, &excluded)
             .expect("should skip blocked suggestion");
         assert_eq!(gap.target_rule, "destroy_target");
+    }
+
+    #[test]
+    fn preboundary_nonconcept_filter_skips_helper_rules_before_selection() {
+        let rules = grammar_query_engine::parse_grammar_rules(
+            r#"
+damage_amount = { unsigned_number }
+destroy_target = { "destroy" ~ "target" }
+"#,
+        )
+        .expect("grammar parses");
+        let report = ExistingGrammarMapReport {
+            rule_count: rules.len(),
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 2,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "damage_amount".to_string(),
+                    line: 2,
+                    suggested_concept: Some("damage_event".to_string()),
+                },
+                UnmappedGrammarRule {
+                    name: "destroy_target".to_string(),
+                    line: 3,
+                    suggested_concept: None,
+                },
+            ],
+        };
+        let options = ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: None,
+            target_rule: None,
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            no_commit: true,
+        };
+        let base_excluded = BTreeSet::new();
+        let queue = concept_candidate_queue(&report, &options, &base_excluded)
+            .expect("candidate queue builds");
+        let build = build_concept_candidate_selection(1, &report, &rules, &queue, &base_excluded);
+
+        assert_eq!(build.excluded_count, 1);
+        assert_eq!(build.excluded_rules, vec!["damage_amount".to_string()]);
+        assert_eq!(
+            build.exclusions[0].structural_exclusion_reason,
+            "amount_or_numeric_slot_helper_rule"
+        );
+        assert_eq!(
+            build.selected_post_filter_candidate,
+            Some("destroy_target".to_string())
+        );
+
+        let all_excluded = BTreeSet::from(["damage_amount".to_string()]);
+        let gap = select_concept_gap_excluding(&report, &options, &all_excluded)
+            .expect("post-filter candidate selected");
+        assert_eq!(gap.target_rule, "destroy_target");
+    }
+
+    #[test]
+    fn preboundary_nonconcept_filter_skips_multi_concept_wrappers() {
+        let rules = grammar_query_engine::parse_grammar_rules(
+            r#"
+colored_target_effect = { damage_leaf | destroy_leaf }
+damage_leaf = { "damage" }
+destroy_leaf = { "destroy" }
+real_concept_rule = { "real" }
+"#,
+        )
+        .expect("grammar parses");
+        let report = ExistingGrammarMapReport {
+            rule_count: rules.len(),
+            concept_count: 2,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 2,
+            unmapped_rule_count: 2,
+            concepts: vec![
+                ConceptRuleMap {
+                    concept: "damage_event".to_string(),
+                    maturity: "grammar_fixture_green".to_string(),
+                    concept_file: PathBuf::from("grammar-concepts/damage_event.toml"),
+                    declared_rules: vec!["damage_leaf".to_string()],
+                    found_rules: Vec::new(),
+                    owned_rules: vec![RuleLocationSummary {
+                        name: "damage_leaf".to_string(),
+                        line: 3,
+                    }],
+                    missing_rules: Vec::new(),
+                },
+                ConceptRuleMap {
+                    concept: "destroy".to_string(),
+                    maturity: "grammar_fixture_green".to_string(),
+                    concept_file: PathBuf::from("grammar-concepts/destroy.toml"),
+                    declared_rules: vec!["destroy_leaf".to_string()],
+                    found_rules: Vec::new(),
+                    owned_rules: vec![RuleLocationSummary {
+                        name: "destroy_leaf".to_string(),
+                        line: 4,
+                    }],
+                    missing_rules: Vec::new(),
+                },
+            ],
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "colored_target_effect".to_string(),
+                    line: 2,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "real_concept_rule".to_string(),
+                    line: 5,
+                    suggested_concept: None,
+                },
+            ],
+        };
+        let options = ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: None,
+            target_rule: None,
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            no_commit: true,
+        };
+        let base_excluded = BTreeSet::new();
+        let queue = concept_candidate_queue(&report, &options, &base_excluded)
+            .expect("candidate queue builds");
+        let build = build_concept_candidate_selection(1, &report, &rules, &queue, &base_excluded);
+
+        assert_eq!(
+            build.excluded_rules,
+            vec!["colored_target_effect".to_string()]
+        );
+        assert_eq!(
+            build.exclusions[0].matched_feature,
+            "wrapper_children_multiple_mapped_concepts"
+        );
+        assert_eq!(
+            build.selected_post_filter_candidate,
+            Some("real_concept_rule".to_string())
+        );
     }
 
     #[test]
