@@ -24,9 +24,10 @@ use crate::ast::{
     SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction,
     Step, TapAllPermanentsActor, TapUntapAction, TargetPermanentEndOfTurnEffect,
     TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
-    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -2214,6 +2215,7 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         Rule::you_lose_the_game => Ok(TriggerEffect::YouLoseTheGame),
         Rule::you_gain_life => you_gain_life_from_pair(pair),
         Rule::you_may_pay_mana | Rule::player_may_pay_mana => you_may_pay_mana_from_pair(pair),
+        Rule::you_may_draw_cards => you_may_draw_cards_from_pair(pair),
         Rule::damage_prevention_effect_sentence => {
             let (effect, definitions) = damage_prevention_effect_sentence_from_pair(pair)?;
             Ok(TriggerEffect::PreventDamage {
@@ -2331,10 +2333,33 @@ fn permanent_enters_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseErr
 }
 
 fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
-    let color = only_inner(pair, "player_casts_colored_spell missing color")?;
-    Ok(TriggerEvent::PlayerCastsColoredSpell {
-        color: color_from_pair(color)?,
-    })
+    let mut inner = pair.into_inner();
+    let actor_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("cast-spell event missing actor"))?;
+    let spell_pair = inner.next().ok_or(ParseError::Internal(
+        "cast-spell event missing spell descriptor",
+    ))?;
+    let actor = match actor_pair.as_rule() {
+        Rule::you_cast_spell_actor => TriggerCastActor::You,
+        Rule::player_cast_spell_actor => TriggerCastActor::Player,
+        _ => return Err(ParseError::Internal("cast-spell actor")),
+    };
+    let spell = match spell_pair.as_rule() {
+        Rule::color_word => TriggerCastSpell::Colored {
+            color: color_from_pair(spell_pair)?,
+        },
+        Rule::permanent_type => TriggerCastSpell::PermanentType {
+            permanent_type: permanent_type_from_pair(spell_pair)?,
+        },
+        _ => return Err(ParseError::Internal("cast-spell descriptor")),
+    };
+    match (actor, spell) {
+        (TriggerCastActor::Player, TriggerCastSpell::Colored { color }) => {
+            Ok(TriggerEvent::PlayerCastsColoredSpell { color })
+        }
+        (actor, spell) => Ok(TriggerEvent::CastsSpell { actor, spell }),
+    }
 }
 
 fn player_taps_permanent_for_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
@@ -2684,6 +2709,31 @@ fn you_may_pay_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseEr
         player: pay_mana_player_from_pair(player_pair)?,
         amount: pay_mana_amount_from_pair(amount_pair)?,
     })
+}
+
+fn you_may_draw_cards_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let draw_pair = only_inner(pair, "you_may_draw_cards missing draw effect")?;
+    let count_pair = only_inner(draw_pair, "you_may_draw_cards missing count")?;
+    Ok(TriggerEffect::YouMayDrawCards {
+        count: draw_card_object_count_from_pair(count_pair, "you_may_draw_cards counted draw")?,
+    })
+}
+
+fn draw_card_object_count_from_pair(
+    count_pair: Pair<Rule>,
+    counted_context: &'static str,
+) -> Result<CardCount, ParseError> {
+    match count_pair.as_rule() {
+        Rule::activated_draw_one_card => Ok(CardCount::Number(1)),
+        Rule::activated_draw_counted_cards => {
+            let draw_count_pair = count_pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal(counted_context))?;
+            card_count_from_pair(draw_count_pair)
+        }
+        _ => Err(ParseError::Internal("draw card object count")),
+    }
 }
 
 fn pay_mana_player_from_pair(pair: Pair<Rule>) -> Result<PayManaPlayer, ParseError> {
@@ -4275,18 +4325,12 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 .into_inner()
                 .next()
                 .ok_or(ParseError::Internal("activated draw missing count"))?;
-            let count = match count_pair.as_rule() {
-                Rule::activated_draw_one_card => CardCount::Number(1),
-                Rule::activated_draw_counted_cards => {
-                    let draw_count_pair = count_pair
-                        .into_inner()
-                        .next()
-                        .ok_or(ParseError::Internal("activated draw counted missing count"))?;
-                    card_count_from_pair(draw_count_pair)?
-                }
-                _ => return Err(ParseError::Internal("activated draw count")),
-            };
-            Ok(ActivatedEffect::DrawCards { count })
+            Ok(ActivatedEffect::DrawCards {
+                count: draw_card_object_count_from_pair(
+                    count_pair,
+                    "activated draw counted missing count",
+                )?,
+            })
         }
         Rule::create_token => create_token_from_pair(pair),
         Rule::target_player_discards_cards => {

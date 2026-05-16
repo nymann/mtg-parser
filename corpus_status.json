@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 250,
+  "passing": 251,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -816,8 +816,7 @@
       "status": "pass"
     },
     "lea/Verduran Enchantress": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever you cast an enchantment spell, you may draw a card.\n  |          ^---\n  |\n  = expected trigger_event_clause"
+      "status": "pass"
     },
     "lea/Vesuvan Doppelganger": {
       "status": "fail",

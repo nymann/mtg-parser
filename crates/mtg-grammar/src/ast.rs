@@ -861,6 +861,11 @@ pub enum TriggerEvent {
     PermanentEnters { permanent_type: PermanentType },
     /// "a player casts a/an <color> spell"
     PlayerCastsColoredSpell { color: Color },
+    /// "<actor> casts/cast a/an <color or permanent_type> spell"
+    CastsSpell {
+        actor: TriggerCastActor,
+        spell: TriggerCastSpell,
+    },
     /// "a player taps a/an <permanent_type> for mana"
     PlayerTapsPermanentForMana { permanent_type: PermanentType },
     /// "a/an <basic_land_type> is tapped for mana"
@@ -938,6 +943,18 @@ pub enum TriggerEvent {
 pub enum DiesWording {
     PutIntoGraveyardFromBattlefield,
     Dies,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TriggerCastActor {
+    You,
+    Player,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TriggerCastSpell {
+    Colored { color: Color },
+    PermanentType { permanent_type: PermanentType },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1068,6 +1085,8 @@ pub enum TriggerEffect {
         player: PayManaPlayer,
         amount: PayManaAmount,
     },
+    /// "you may draw a card/N cards"
+    YouMayDrawCards { count: CardCount },
     /// "Prevent <amount> of that damage[, where ...]"
     PreventDamage {
         #[serde(flatten)]

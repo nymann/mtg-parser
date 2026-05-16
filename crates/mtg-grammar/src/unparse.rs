@@ -22,9 +22,10 @@ use crate::ast::{
     SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction,
     Step, TapAllPermanentsActor, TapUntapAction, TargetPermanentEndOfTurnEffect,
     TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
-    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -2047,6 +2048,7 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::PermanentDealtDamageBySourceThisTurnDies { .. }
         | TriggerEvent::YouPlayPermanent { .. }
         | TriggerEvent::PlayerCastsColoredSpell { .. }
+        | TriggerEvent::CastsSpell { .. }
         | TriggerEvent::PlayerTapsPermanentForMana { .. }
         | TriggerEvent::BasicLandTypeIsTappedForMana { .. }
         | TriggerEvent::BasicLandTypeControllerBecomesStatus { .. }
@@ -2118,6 +2120,26 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::PlayerCastsColoredSpell { color } => {
             out.push_str("a player casts a ");
             out.push_str(color_name(color));
+            out.push_str(" spell");
+        }
+        TriggerEvent::CastsSpell { actor, spell } => {
+            match actor {
+                TriggerCastActor::You => out.push_str("you cast "),
+                TriggerCastActor::Player => out.push_str("a player casts "),
+            }
+            out.push_str(match spell {
+                TriggerCastSpell::Colored { .. } => "a",
+                TriggerCastSpell::PermanentType { permanent_type } => {
+                    indefinite_article(permanent_type)
+                }
+            });
+            out.push(' ');
+            match spell {
+                TriggerCastSpell::Colored { color } => out.push_str(color_name(color)),
+                TriggerCastSpell::PermanentType { permanent_type } => {
+                    out.push_str(permanent_type_name(permanent_type));
+                }
+            }
             out.push_str(" spell");
         }
         TriggerEvent::PlayerTapsPermanentForMana { permanent_type } => {
@@ -2481,6 +2503,11 @@ fn write_trigger_effect(
             write_pay_mana_player(out, *player);
             out.push_str(" may pay ");
             write_pay_mana_amount(out, amount);
+            out.push('.');
+        }
+        TriggerEffect::YouMayDrawCards { count } => {
+            out.push_str("you may draw ");
+            write_card_count_object(out, *count);
             out.push('.');
         }
         TriggerEffect::PreventDamage {

@@ -1145,8 +1145,9 @@ non_color_word = { ^"non" ~ color_word }
 target_creature_type = { ^"target" ~ creature_type }
 permanent_type_choice = { permanent_type ~ ((("," ~ permanent_type)* ~ ","? ~ ^"or") ~ permanent_type)? }
 activated_draw_cards = {
-    ^"draw" ~ (activated_draw_one_card | activated_draw_counted_cards) ~ "."
+    ^"draw" ~ draw_card_object ~ "."
 }
+draw_card_object = _{ activated_draw_one_card | activated_draw_counted_cards }
 activated_draw_one_card = { article ~ ^"card" }
 activated_draw_counted_cards = { draw_count ~ ^"cards" }
 create_token = {
@@ -1518,7 +1519,13 @@ permanent_controller = { ^"you" ~ ^"control" | article ~ ^"opponent" ~ ^"control
 player_taps_permanent_for_mana = {
     article ~ ^"player" ~ ^"taps" ~ article ~ permanent_type ~ ^"for" ~ ^"mana"
 }
-player_casts_colored_spell = { article ~ ^"player" ~ ^"casts" ~ article ~ color_word ~ ^"spell" }
+player_casts_colored_spell = {
+    (you_cast_spell_actor ~ ^"cast" | player_cast_spell_actor ~ ^"casts")
+  ~ article ~ cast_spell_descriptor ~ ^"spell"
+}
+you_cast_spell_actor = { ^"you" }
+player_cast_spell_actor = { article ~ ^"player" }
+cast_spell_descriptor = _{ color_word | permanent_type }
 you_play_permanent = { ^"you" ~ ^"play" ~ article ~ permanent_type }
 one_or_more_creatures_you_control_attack = {
     ^"one" ~ ^"or" ~ ^"more" ~ ^"creatures" ~ ^"you" ~ ^"control" ~ ^"attack"
@@ -1594,6 +1601,7 @@ trigger_effect = _{
   | unless_you_pay_mana_do_actions
   | you_may_put_this_card_onto_the_battlefield
   | player_may_pay_mana
+  | you_may_draw_cards
   | damage_prevention_effect_sentence
   | tap_enchanted_object
   | if_you_do_gain_life
@@ -1798,6 +1806,9 @@ that_player_pay_mana_player = { ^"that" ~ ^"player" }
 pay_mana_amount = _{ any_amount_of_mana | mana_cost }
 any_amount_of_mana = { ^"any" ~ ^"amount" ~ ^"of" ~ ^"mana" }
 you_may_pay_mana = _{ player_may_pay_mana }
+you_may_draw_cards = {
+    ^"you" ~ ^"may" ~ activated_draw_cards
+}
 tap_enchanted_object = { ^"tap" ~ ^"enchanted" ~ enchanted_object ~ "." }
 you_may_put_this_card_onto_the_battlefield = {
     ^"you" ~ ^"may" ~ ^"put" ~ ^"this" ~ ^"card" ~ ^"onto"

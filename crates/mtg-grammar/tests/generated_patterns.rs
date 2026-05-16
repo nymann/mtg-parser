@@ -341,3 +341,5 @@ mod twiddle;
 mod two_headed_giant_of_foriys;
 #[path = "generated_patterns/unsummon.rs"]
 mod unsummon;
+#[path = "generated_patterns/verduran_enchantress.rs"]
+mod verduran_enchantress;
