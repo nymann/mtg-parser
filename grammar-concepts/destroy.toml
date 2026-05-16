@@ -12,6 +12,7 @@ values = [
     "target_creature_type",
     "target_basic_lands_count",
     "destroy_all",
+    "all_non_creature_type_creatures_player_controls_that_didnt_attack_this_turn",
 ]
 
 [[axis]]
@@ -30,6 +31,7 @@ values = [
     "sentence",
     "modal_mode",
     "activated_effect",
+    "trigger_effect",
 ]
 
 [boundary]
@@ -42,6 +44,7 @@ includes = [
     "Destroy effects using existing destroy target selectors.",
     "Color-qualified target permanent destruction through target_colored_permanent.",
     "Sentence, modal mode, and activated ability surfaces for destroy target colored permanent actions.",
+    "Trigger effects that destroy all non-creature-type creatures a player controls that didn't attack this turn.",
 ]
 
 [concept]
@@ -50,9 +53,16 @@ pest_rules = [
     "destroy",
     "destroy_target",
     "destroy_target_colored_permanent_action",
+    "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn",
 ]
-rules_queries = ["lex: destroy target permanent"]
+rules_queries = [
+    "lex: destroy target permanent",
+    "lex: destroy all non-Goblin creatures that player controls that didn't attack this turn",
+]
 rules_terms = [
+    "attack",
+    "control",
+    "creature type",
     "destroy",
     "permanent",
     "target",
@@ -85,17 +95,21 @@ text = "• Destroy target red permanent."
 [[example]]
 text = "{U}: Destroy target red permanent."
 
+[[example]]
+text = "Destroy all non-Goblin creatures that player controls that didn't attack this turn."
+
 [grammar_query]
 candidate_rules = [
     "destroy",
     "destroy_target",
     "destroy_target_colored_permanent_action",
+    "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn",
     "target_colored_permanent",
     "counter_target_colored_spell_action",
     "exile",
     "target_spell_or_permanent_becomes_color",
 ]
-selected_rule = "destroy_target_colored_permanent_action"
+selected_rule = "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn"
 
 [maturity]
 blockers = []
