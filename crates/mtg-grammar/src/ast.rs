@@ -1031,9 +1031,9 @@ pub enum TriggerEvent {
     EnchantedPermanentDies { permanent_type: PermanentType },
     /// "this <source> dies"
     SourceDies { source: SourceObject },
-    /// "enchanted <object> becomes <status>"
-    EnchantedObjectBecomesStatus {
-        object: EnchantedObject,
+    /// "<object> becomes <status>"
+    ObjectBecomesStatus {
+        object: ObjectStatusSubject,
         status: ObjectStatus,
     },
     /// "the beginning of the next end step"
@@ -1374,6 +1374,14 @@ pub enum ObjectStatus {
 pub enum TappedForManaSubject {
     /// "a/an <basic_land_type>"
     BasicLandType(BasicLandType),
+    /// "enchanted <object>"
+    Enchanted(EnchantedObject),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ObjectStatusSubject {
+    /// "this <source>"
+    Source(SourceObject),
     /// "enchanted <object>"
     Enchanted(EnchantedObject),
 }

@@ -22,10 +22,10 @@ use crate::ast::{
     LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
     ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
     NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
-    ObjectStatus, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PlayRestriction,
-    PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter, PreventionRecipient,
-    PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
+    ObjectStatus, ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
+    PlayRestriction, PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter,
+    PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
     RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
     SpellType, Statement, StaticAbility, StaticDamagePreventionEffect, StaticDamageSource,
@@ -2844,8 +2844,15 @@ fn enchanted_object_becomes_status_from_pair(pair: Pair<Rule>) -> Result<Trigger
     let status_pair = inner.next().ok_or(ParseError::Internal(
         "enchanted_object_becomes_status missing status",
     ))?;
-    Ok(TriggerEvent::EnchantedObjectBecomesStatus {
-        object: enchanted_object_from_pair(object_pair)?,
+    let object = match object_pair.as_rule() {
+        Rule::source_object => ObjectStatusSubject::Source(source_object_from_pair(object_pair)?),
+        Rule::permanent_type | Rule::creature_type => {
+            ObjectStatusSubject::Enchanted(enchanted_object_from_pair(object_pair)?)
+        }
+        _ => return Err(ParseError::Internal("becomes-status object")),
+    };
+    Ok(TriggerEvent::ObjectBecomesStatus {
+        object,
         status: object_status_from_pair(status_pair)?,
     })
 }

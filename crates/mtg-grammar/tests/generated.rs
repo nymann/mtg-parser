@@ -82,6 +82,8 @@ mod chaoslace;
 mod circle_of_protection_blue;
 #[path = "generated/city_in_a_bottle.rs"]
 mod city_in_a_bottle;
+#[path = "generated/city_of_brass.rs"]
+mod city_of_brass;
 #[path = "generated/clockwork_beast.rs"]
 mod clockwork_beast;
 #[path = "generated/clone.rs"]

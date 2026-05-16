@@ -20,15 +20,15 @@ use crate::ast::{
     LifeTotalFloorCause, LifeTotalFloorPlayer, ManaAbilitySourceLimit, ManaCost,
     ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
     NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
-    OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
-    PermanentController, PermanentType, PhysicalAction, PlayRestriction, PlayRestrictionAction,
-    PlayRestrictionAffected, PlayRestrictionFilter, PreventionRecipient, PtModifier,
-    ReferencedCard, ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject,
-    ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
-    StaticDamagePreventionEffect, StaticDamageSource, StaticUntapRestriction,
-    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
-    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
+    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PlayRestriction,
+    PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter, PreventionRecipient,
+    PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
+    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect, StaticDamageSource,
+    StaticUntapRestriction, StatusCreatureController, StatusCreatureGetDuration, Step,
+    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -2437,7 +2437,7 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::YouAreDealtDamage
         | TriggerEvent::SourceIsDealtDamage { .. }
         | TriggerEvent::SourceDealsDamageToAnOpponent { .. }
-        | TriggerEvent::EnchantedObjectBecomesStatus { .. }
+        | TriggerEvent::ObjectBecomesStatus { .. }
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
@@ -2589,9 +2589,8 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             write_source_object(out, source);
             out.push_str(" dies");
         }
-        TriggerEvent::EnchantedObjectBecomesStatus { object, status } => {
-            out.push_str("enchanted ");
-            write_enchanted_object(out, object);
+        TriggerEvent::ObjectBecomesStatus { object, status } => {
+            write_object_status_subject(out, object);
             out.push_str(" becomes ");
             out.push_str(object_status_name(status));
         }
@@ -2679,6 +2678,16 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::YouControlNoBasicLands { land_type } => {
             out.push_str("you control no ");
             out.push_str(basic_land_type_plural_name(land_type));
+        }
+    }
+}
+
+fn write_object_status_subject(out: &mut String, subject: ObjectStatusSubject) {
+    match subject {
+        ObjectStatusSubject::Source(source) => write_source_object(out, source),
+        ObjectStatusSubject::Enchanted(object) => {
+            out.push_str("enchanted ");
+            write_enchanted_object(out, object);
         }
     }
 }

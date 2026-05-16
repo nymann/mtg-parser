@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 952,
-  "passing": 813,
+  "passing": 814,
   "cards": {
     "2ed/Air Elemental": {
       "status": "pass"
@@ -950,8 +950,7 @@
       "status": "pass"
     },
     "arn/City of Brass": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:15\n  |\n1 | Whenever this land becomes tapped, it deals 1 damage to you.\n  |               ^---\n  |\n  = expected aura_source_object or permanent_object"
+      "status": "pass"
     },
     "arn/Cuombajj Witches": {
       "status": "fail",

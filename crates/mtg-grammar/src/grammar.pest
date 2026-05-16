@@ -1697,7 +1697,7 @@ permanent_dealt_damage_by_source_this_turn_dies = {
 enchanted_permanent_dies = { ^"enchanted" ~ permanent_type ~ ^"dies" }
 source_dies = { source_object ~ ^"dies" }
 enchanted_object_becomes_status = {
-    ^"enchanted" ~ enchanted_object ~ ^"becomes" ~ object_status
+    (^"enchanted" ~ enchanted_object | source_object) ~ ^"becomes" ~ object_status
 }
 you_control_no_basic_lands = { ^"you" ~ ^"control" ~ ^"no" ~ basic_land_type_plural }
 permanent_enters        = { article ~ permanent_type ~ ^"enters" }
