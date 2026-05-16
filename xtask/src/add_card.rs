@@ -11,6 +11,7 @@
 //! scope (single playbook, single pre-computed context block) but the
 //! same deterministic-around-claude shape.
 
+use std::collections::BTreeSet;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
@@ -453,7 +454,7 @@ fn run_one_iteration(
     });
     let transcript_path = log_dir.join("transcript.ndjson");
     let mut agent_ran = false;
-    let mut generalization_report = None::<String>;
+    let mut agent_generalization_path = None::<String>;
     let pattern_prompt = if focused_before.success() {
         None
     } else {
@@ -491,16 +492,13 @@ fn run_one_iteration(
         agent_ran = true;
         let agent_outcome = invoke_agent(opts.agent, &pattern_prompt, &transcript_path, sink)?;
         std::fs::write(log_dir.join("response.md"), &agent_outcome.assistant_text)?;
-        generalization_report = extract_generalization_report(&agent_outcome.assistant_text);
-        match &generalization_report {
-            Some(report) => std::fs::write(log_dir.join("generalization_report.txt"), report)?,
-            None => {
-                std::fs::write(log_dir.join("generalization_report.txt"), "missing\n")?;
-                sink.emit(FlowEvent::Note {
-                    level: NoteLevel::Warn,
-                    text: "agent response did not include GENERALIZATION_PATH report block".into(),
-                });
-            }
+        if let Some(report) = extract_generalization_report(&agent_outcome.assistant_text) {
+            agent_generalization_path = generalization_path_from_report(&report);
+        } else {
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Warn,
+                text: "agent response did not include GENERALIZATION_PATH; deterministic report fields will be synthesized".into(),
+            });
         }
         sink.emit(FlowEvent::StepFinished {
             index: 8,
@@ -581,6 +579,7 @@ fn run_one_iteration(
         grammar_audit::report_markdown(&audit_report),
     )?;
     let audit_summary = grammar_audit_summary(&audit_report);
+    let mut final_audit_report = audit_report.clone();
     sink.emit(FlowEvent::StepFinished {
         index: 10,
         ok: true,
@@ -663,6 +662,7 @@ fn run_one_iteration(
                 grammar_audit_summary(&repaired_audit_report)
             ),
         });
+        final_audit_report = repaired_audit_report;
         sink.emit(FlowEvent::StepFinished {
             index: 11,
             ok: true,
@@ -675,6 +675,15 @@ fn run_one_iteration(
             summary: Some("skipped; no block-candidate findings".into()),
         });
     }
+
+    let generalization_report = synthesize_generalization_report(
+        agent_generalization_path.as_deref(),
+        &final_audit_report,
+    )?;
+    std::fs::write(
+        log_dir.join("generalization_report.txt"),
+        &generalization_report,
+    )?;
 
     // Step 12 — tier 1 + tier 2.
     sink.emit(FlowEvent::StepStarted {
@@ -788,7 +797,7 @@ fn run_one_iteration(
         new_passes,
         new_pass_count,
         total,
-        generalization_report.as_deref(),
+        Some(generalization_report.as_str()),
     );
     std::fs::write(log_dir.join("commit_message.txt"), &commit_msg)?;
     sink.emit(FlowEvent::StepStarted {
@@ -1402,6 +1411,129 @@ fn extract_generalization_report(text: &str) -> Option<String> {
     None
 }
 
+fn generalization_path_from_report(report: &str) -> Option<String> {
+    report
+        .lines()
+        .find_map(|line| line.strip_prefix("GENERALIZATION_PATH:"))
+        .map(str::trim)
+        .filter(|path| matches!(*path, "a" | "b" | "c" | "d"))
+        .map(str::to_string)
+}
+
+fn synthesize_generalization_report(
+    agent_path: Option<&str>,
+    audit_report: &grammar_audit::AuditReport,
+) -> Result<String> {
+    let new_rules = audit_report
+        .new_rules
+        .iter()
+        .map(|rule| rule.name.as_str())
+        .collect::<Vec<_>>();
+    let generalized_rules = generalized_existing_pest_rules()?;
+    let path = agent_path.unwrap_or_else(|| {
+        if !new_rules.is_empty() {
+            "d"
+        } else if !generalized_rules.is_empty() {
+            "b"
+        } else {
+            "a"
+        }
+    });
+    let why = if new_rules.is_empty() {
+        "n/a".to_string()
+    } else {
+        "detected new pest rule declarations in grammar.pest diff".to_string()
+    };
+    Ok(format!(
+        "GENERALIZATION_PATH: {path}\nNEW_PEST_RULES: {new_rules}\nGENERALIZED_RULES: {generalized_rules}\nWHY_NEW_RULES: {why}",
+        new_rules = comma_or_none(new_rules),
+        generalized_rules = comma_or_none(generalized_rules.iter().map(String::as_str).collect()),
+    ))
+}
+
+fn generalized_existing_pest_rules() -> Result<Vec<String>> {
+    let grammar = std::fs::read_to_string(grammar_pest_path()).context("read grammar.pest")?;
+    let rule_names = pest_rule_names(&grammar);
+    let diff = git_worktree_diff_for(&["crates/mtg-grammar/src/grammar.pest"])?;
+    let new_rule_names = diff
+        .lines()
+        .filter_map(|line| {
+            let added = line.strip_prefix('+')?;
+            if line.starts_with("+++") {
+                return None;
+            }
+            pest_rule_name_from_declaration(added)
+        })
+        .collect::<BTreeSet<_>>();
+    let mut refs = BTreeSet::new();
+    for line in diff.lines() {
+        let Some(added) = line.strip_prefix('+') else {
+            continue;
+        };
+        if line.starts_with("+++") || pest_rule_name_from_declaration(added).is_some() {
+            continue;
+        }
+        for ident in pest_identifiers(added) {
+            if rule_names.contains(&ident) && !new_rule_names.contains(&ident) {
+                refs.insert(ident);
+            }
+        }
+    }
+    Ok(refs.into_iter().collect())
+}
+
+fn pest_rule_names(grammar: &str) -> BTreeSet<String> {
+    grammar
+        .lines()
+        .filter_map(pest_rule_name_from_declaration)
+        .collect()
+}
+
+fn pest_rule_name_from_declaration(line: &str) -> Option<String> {
+    let trimmed = line.trim_start();
+    if trimmed.is_empty() || trimmed.starts_with("//") {
+        return None;
+    }
+    let first = trimmed.chars().next().unwrap_or(' ');
+    if !(first.is_ascii_lowercase() || first == '_') {
+        return None;
+    }
+    let eq_pos = trimmed.find('=')?;
+    let head = trimmed[..eq_pos].trim();
+    if head.is_empty() {
+        return None;
+    }
+    if head
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+    {
+        Some(head.to_string())
+    } else {
+        None
+    }
+}
+
+fn pest_identifiers(line: &str) -> Vec<String> {
+    line.split(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+        .filter(|token| {
+            !token.is_empty()
+                && token
+                    .chars()
+                    .next()
+                    .is_some_and(|ch| ch.is_ascii_lowercase() || ch == '_')
+        })
+        .map(str::to_string)
+        .collect()
+}
+
+fn comma_or_none(items: Vec<&str>) -> String {
+    if items.is_empty() {
+        "none".to_string()
+    } else {
+        items.join(", ")
+    }
+}
+
 fn is_pest_rule_declaration(line: &str) -> bool {
     let trimmed = line.trim_start();
     if trimmed.is_empty() || trimmed.starts_with("//") {
@@ -1506,9 +1638,8 @@ fn build_pattern_prompt(
              1. Start from the code map above instead of re-reading the whole repository.\n\
              2. Inspect additional code only if the map is insufficient.\n\
              3. Generalize an existing grammar/AST/parser/unparser rule to cover this card's phenomenon if a near-neighbour rule exists. Add a new rule only when no existing rule can be widened along a single axis (verb, subject, recipient, quantity, polarity). Touch semantic files only because the focused failure points there.\n\
-             4. Run the focused generated test command(s) shown above until they pass.\n\
-             5. Do not run `cargo xtask corpus`; the orchestrator owns corpus regression checks.\n\
-             6. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n\n",
+             4. Do not run tests or broad gates; the orchestrator owns focused validation, tier 2, corpus, and commit.\n\
+             5. Stop after making the focused repair and writing the final report block.\n\n",
         );
         prompt.push_str(GENERALIZATION_REPORT_BLOCK);
         return Ok(prompt);
@@ -1519,9 +1650,8 @@ fn build_pattern_prompt(
          1. Start from the code map above instead of re-reading the whole repository.\n\
          2. Inspect additional code only if the map is insufficient.\n\
          3. Generalize an existing grammar/AST/parser/unparser rule to cover this card's phenomenon if a near-neighbour rule exists. Add a new rule only when no existing rule can be widened along a single axis. Touch semantic files only if the focused failure points there.\n\
-         4. Run the focused generated test command(s) shown above until they pass.\n\
-         5. Do not run `cargo xtask corpus`; the orchestrator owns corpus regression checks.\n\
-         6. Stop after focused tests pass. The orchestrator will run tier 2, corpus, and commit.\n\n",
+         4. Do not run tests or broad gates; the orchestrator owns focused validation, tier 2, corpus, and commit.\n\
+         5. Stop after making the focused repair and writing the final report block.\n\n",
     );
     prompt.push_str(GENERALIZATION_REPORT_BLOCK);
     Ok(prompt)
@@ -1543,15 +1673,79 @@ fn render_context_block(
     test_paths: &[&Path],
     rules_block: &str,
 ) -> String {
+    let reachability = render_existing_rule_reachability_hint(normalized, patterns);
+    let rules = if reachability.is_empty() {
+        rules_block.to_string()
+    } else {
+        "## Comprehensive Rules\n\n_Skipped in prompt because an existing grammar-rule reachability hint was found. Full retrieval is still saved in the add-card log._\n\n".to_string()
+    };
     format!(
         "{rules}## Retrieved Context\n\n\
          The orchestrator selected these snippets from the generated tests and likely grammar \
          edit sites. Use this context first; inspect whole files only if it is insufficient.\n\n\
-         {tests}{code_map}",
-        rules = rules_block,
+         {reachability}{tests}{code_map}",
+        rules = rules,
+        reachability = reachability,
         tests = render_generated_test_context(test_paths),
         code_map = render_code_map(card, error, normalized, patterns)
     )
+}
+
+fn render_existing_rule_reachability_hint(normalized: &str, patterns: &[PatternCase]) -> String {
+    let Ok(grammar) = std::fs::read_to_string(grammar_pest_path()) else {
+        return String::new();
+    };
+    let rules = collect_pest_rule_bodies(&grammar);
+    let query_words = patterns
+        .iter()
+        .map(|p| p.text.as_str())
+        .chain(std::iter::once(normalized))
+        .flat_map(reachability_words)
+        .collect::<BTreeSet<_>>();
+    if query_words.is_empty() {
+        return String::new();
+    }
+
+    let mut candidates = rules
+        .iter()
+        .filter_map(|(name, body)| {
+            let rhs_words = reachability_words(body).collect::<BTreeSet<_>>();
+            let score = query_words.intersection(&rhs_words).count();
+            if score < 3 {
+                return None;
+            }
+            Some((score, name.as_str(), body.as_str()))
+        })
+        .collect::<Vec<_>>();
+    candidates.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(b.1)));
+    candidates.truncate(3);
+    if candidates.is_empty() {
+        return String::new();
+    }
+
+    let mut out = String::from("### Existing Rule Reachability Hint\n\n");
+    out.push_str(
+        "The orchestrator found existing pest rules whose literal words overlap the failing text. \
+         Check whether one should be reused from a different parent before adding a new rule.\n\n",
+    );
+    for (_, name, body) in candidates {
+        let parents = rules
+            .iter()
+            .filter_map(|(parent, parent_body)| {
+                if parent == name || !parent_body.contains(name) {
+                    return None;
+                }
+                Some(parent.as_str())
+            })
+            .collect::<Vec<_>>();
+        out.push_str(&format!(
+            "- `{name}` currently referenced by: {parents}\n  RHS: `{rhs}`\n",
+            parents = comma_or_none(parents),
+            rhs = one_line_snippet(body, 160)
+        ));
+    }
+    out.push('\n');
+    out
 }
 
 fn render_generated_test_context(test_paths: &[&Path]) -> String {
@@ -1571,6 +1765,65 @@ fn render_generated_test_context(test_paths: &[&Path]) -> String {
         out.push_str("```\n\n");
     }
     out
+}
+
+fn collect_pest_rule_bodies(grammar: &str) -> Vec<(String, String)> {
+    let lines = grammar.lines().collect::<Vec<_>>();
+    let mut out = Vec::new();
+    let mut i = 0usize;
+    while i < lines.len() {
+        let Some(name) = pest_rule_name_from_declaration(lines[i]) else {
+            i += 1;
+            continue;
+        };
+        let mut body = lines[i]
+            .split_once('=')
+            .map(|(_, rhs)| rhs.trim().to_string())
+            .unwrap_or_default();
+        i += 1;
+        while i < lines.len() && pest_rule_name_from_declaration(lines[i]).is_none() {
+            body.push(' ');
+            body.push_str(lines[i].trim());
+            i += 1;
+        }
+        out.push((name, body));
+    }
+    out
+}
+
+fn reachability_words(text: &str) -> impl Iterator<Item = String> + '_ {
+    text.split(|c: char| !c.is_ascii_alphanumeric())
+        .map(str::to_ascii_lowercase)
+        .filter(|word| {
+            word.len() >= 3
+                && !matches!(
+                    word.as_str(),
+                    "the"
+                        | "and"
+                        | "you"
+                        | "your"
+                        | "this"
+                        | "that"
+                        | "with"
+                        | "from"
+                        | "into"
+                        | "onto"
+                        | "until"
+                        | "card"
+                        | "parse"
+                        | "error"
+                        | "expected"
+                )
+        })
+}
+
+fn one_line_snippet(text: &str, max_chars: usize) -> String {
+    let one_line = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    if one_line.len() <= max_chars {
+        one_line
+    } else {
+        format!("{}...", &one_line[..max_chars])
+    }
 }
 
 fn render_code_map(card: &Card, error: &str, normalized: &str, patterns: &[PatternCase]) -> String {
@@ -1949,6 +2202,9 @@ WHY_NEW_RULES: <free text, or \"n/a\">
 Use `a` when an existing rule already covered it, `b` when you widened a
 near-neighbour rule, `c` when you only added vocabulary to an existing closed
 set, and `d` when you added a new rule or AST shape.
+
+The orchestrator derives NEW_PEST_RULES and GENERALIZED_RULES from the diff
+afterward, so fill them in if obvious but do not spend time auditing them.
 ";
 
 const PROMPT_INTRO: &str = "\
@@ -1976,8 +2232,7 @@ even when it's an improvement in pass count.
    Abilities, §120 Damage, §614 Replacement Effects, §615 Prevention).
 3. Look for prior art before reaching for new code. In this order:
    a. Does an existing pest rule already describe this phenomenon? If
-      yes, the card may be passing already on a fresh build — re-run
-      the focused test and confirm.
+      yes, reuse or rewire that rule; the orchestrator will validate.
    b. Does an existing rule describe a near-neighbour phenomenon that
       differs from this card by ONE axis (verb, subject, recipient,
       quantity, polarity)? If yes, *generalize that rule* by factoring
@@ -1994,10 +2249,10 @@ even when it's an improvement in pass count.
 5. Inspect additional source only when the retrieved snippets are
    insufficient. Prefer narrow line ranges around the relevant rule,
    enum, parser branch, or unparser branch.
-6. Run only the focused generated test command(s) supplied by the
-   orchestrator.
-7. Stop once focused generated tests pass. The orchestrator runs tier 2,
-   corpus, and commit gates.";
+6. Do not run tests or broad gates. The orchestrator owns focused
+   validation, tier 2, corpus, and commit gates.
+7. Keep the final response concise: the path sentence plus the required
+   report block. Avoid progress narration.";
 
 const CONSTRAINTS_BLOCK: &str = "\
 ## Constraints
@@ -2026,8 +2281,9 @@ const CONSTRAINTS_BLOCK: &str = "\
    `mtg-semantic` only if the focused failure requires semantic
    handling. Do not touch generated tests, `mtg-scryfall`, `mtg-corpus`,
    or `xtask` for ordinary card repairs.
-6. **Do not run broad gates.** The orchestrator owns `cargo xtask test
-   --tier 2`, `cargo xtask corpus`, and commit.
+6. **Do not run tests or broad gates.** The orchestrator owns focused
+   validation, `cargo xtask test --tier 2`, `cargo xtask corpus`, and
+   commit.
 7. **If you can't solve it, say so.** Better to surface \"I don't see
    how to extend the grammar without restructuring X\" than to ship a
    hack. The orchestrator will leave the working tree as-is for human
@@ -2745,6 +3001,19 @@ fn git_push() -> Result<()> {
 
 fn git_push_args() -> Vec<&'static str> {
     vec!["push"]
+}
+
+fn git_worktree_diff_for(paths: &[&str]) -> Result<String> {
+    let mut args = vec!["diff", "--"];
+    args.extend(paths.iter().copied());
+    let out = Command::new("git")
+        .args(args)
+        .current_dir(repo_root())
+        .output()?;
+    if !out.status.success() {
+        bail!("git diff failed");
+    }
+    Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
 fn git_diff_against_head_parent() -> Result<String> {

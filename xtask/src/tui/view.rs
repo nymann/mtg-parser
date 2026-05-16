@@ -680,10 +680,11 @@ fn round_trip_error_lines(oracle_text: &str, error: &str) -> Vec<Line<'static>> 
             Span::styled(summary.parsed_prefix, Style::default().fg(C_GOOD)),
         ]));
     }
-    if !summary.unsupported_suffix.is_empty() {
+    if !summary.unsupported_token.is_empty() || !summary.trailing_suffix.is_empty() {
         lines.push(Line::from(vec![
             Span::styled("  │ gap:    ", Style::default().fg(C_FAINT)),
-            Span::styled(summary.unsupported_suffix, Style::default().fg(C_BAD)),
+            Span::styled(summary.unsupported_token, Style::default().fg(C_BAD)),
+            Span::styled(summary.trailing_suffix, Style::default().fg(C_WARN)),
         ]));
     }
     lines.push(Line::from(vec![
@@ -718,7 +719,8 @@ fn raw_round_trip_error_lines(error: &str) -> Vec<Line<'static>> {
 struct RoundTripErrorSummary {
     headline: String,
     parsed_prefix: String,
-    unsupported_suffix: String,
+    unsupported_token: String,
+    trailing_suffix: String,
     expected: String,
     rule_hint: Option<String>,
     location: String,
@@ -750,13 +752,14 @@ fn parse_round_trip_error(error: &str, oracle_text: &str) -> Option<RoundTripErr
     let (line_no, col_no) = line_col.unwrap_or((1, 1));
     let split_at = byte_index_for_column(&source_line, col_no).unwrap_or(0);
     let parsed_prefix = source_line[..split_at].trim_end().to_string();
-    let unsupported_suffix = source_line[split_at..].trim_start().to_string();
+    let (unsupported_token, trailing_suffix) = split_current_token(&source_line[split_at..]);
     let expected_label = human_expected(&expected);
 
     Some(RoundTripErrorSummary {
         headline: format!("Parser stopped at line {line_no}, column {col_no}."),
         parsed_prefix,
-        unsupported_suffix,
+        unsupported_token,
+        trailing_suffix,
         expected: expected_label,
         rule_hint: rule_hint(&expected),
         location: location.unwrap_or_else(|| format!("{line_no}:{col_no}")),
@@ -767,6 +770,22 @@ fn parse_line_col(location: &str) -> Option<(usize, usize)> {
     let (_, rest) = location.rsplit_once(' ')?;
     let (line, col) = rest.split_once(':')?;
     Some((line.parse().ok()?, col.parse().ok()?))
+}
+
+fn split_current_token(text: &str) -> (String, String) {
+    let trimmed = text.trim_start();
+    let Some((end, _)) = trimmed
+        .char_indices()
+        .find(|(_, ch)| ch.is_whitespace() || matches!(ch, '.' | ',' | ';' | ':' | ')' | '('))
+    else {
+        return (trimmed.to_string(), String::new());
+    };
+    if end == 0 {
+        let mut chars = trimmed.chars();
+        let first = chars.next().unwrap_or_default();
+        return (first.to_string(), chars.as_str().to_string());
+    }
+    (trimmed[..end].to_string(), trimmed[end..].to_string())
 }
 
 fn byte_index_for_column(text: &str, col_no: usize) -> Option<usize> {
