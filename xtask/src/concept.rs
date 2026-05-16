@@ -433,7 +433,7 @@ enum ExperimentDecision {
     None,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct ExistingGrammarMapReport {
     rule_count: usize,
     concept_count: usize,
@@ -445,7 +445,7 @@ struct ExistingGrammarMapReport {
     unmapped_rules: Vec<UnmappedGrammarRule>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct ConceptRuleMap {
     concept: String,
     maturity: String,
@@ -456,13 +456,13 @@ struct ConceptRuleMap {
     missing_rules: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct RuleLocationSummary {
     name: String,
     line: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct UnmappedGrammarRule {
     name: String,
     line: usize,
@@ -515,6 +515,20 @@ struct ConceptGrindIterationSummary {
     unmapped_rule_count_before: usize,
     unmapped_rule_count_after: usize,
     committed: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct BoundaryBlockedCandidate {
+    target_rule: String,
+    concept: String,
+    reason: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ConceptGrindSessionState {
+    workflow: String,
+    session_dir: PathBuf,
+    boundary_blocked_candidates: Vec<BoundaryBlockedCandidate>,
 }
 
 #[derive(Debug, Serialize)]
@@ -2006,12 +2020,13 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         baseline_grammar_rules: concept_grind_rule_count(),
     });
 
-    let mut blocked_targets = BTreeSet::new();
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
     let mut metrics = ConceptGrindMetrics::new(session_dir.clone());
     metrics.write(&session_dir)?;
+    let mut session_state = ConceptGrindSessionState::new(session_dir.clone());
+    session_state.write(&session_dir)?;
     sink.emit(FlowEvent::Note {
         level: NoteLevel::Info,
         text: format!("concept-grind log: {}", session_dir.display()),
@@ -2031,12 +2046,27 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         fs::create_dir_all(&iteration_dir)
             .with_context(|| format!("create {}", iteration_dir.display()))?;
 
+        let excluded_targets = session_state.excluded_target_rules();
         let before = run_map_existing(MapExistingOptions {
             json: false,
             expand_deps: true,
         })?;
-        write_json(iteration_dir.join("map_before.json"), &before)?;
-        let gap = select_concept_gap_excluding(&before, &options, &blocked_targets)?;
+        let mut candidate_map = before.clone();
+        let filtered_targets = filter_unmapped_rules(&mut candidate_map, &excluded_targets);
+        write_json(iteration_dir.join("map_before.json"), &candidate_map)?;
+        if !filtered_targets.is_empty() {
+            write_json(iteration_dir.join("map_before_raw.json"), &before)?;
+        }
+        if !filtered_targets.is_empty() {
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Info,
+                text: format!(
+                    "excluded boundary-blocked target(s) from candidate map: {}",
+                    filtered_targets.join(", ")
+                ),
+            });
+        }
+        let gap = select_concept_gap_excluding(&candidate_map, &options, &excluded_targets)?;
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
         sink.emit(FlowEvent::WorkflowIterationStarted {
@@ -2058,12 +2088,12 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             true,
             Some(format!(
                 "mapped={} unmapped={}",
-                before.mapped_rule_count, before.unmapped_rule_count
+                candidate_map.mapped_rule_count, candidate_map.unmapped_rule_count
             )),
         )?;
 
         metrics.step_started(sink, iteration, 2, "build boundary prompt");
-        let boundary_prompt = build_boundary_prompt(&gap, &before)?;
+        let boundary_prompt = build_boundary_prompt(&gap, &candidate_map)?;
         fs::write(iteration_dir.join("boundary_prompt.md"), &boundary_prompt).with_context(
             || {
                 format!(
@@ -2119,6 +2149,8 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             &boundary_decision,
         )?;
         if let BoundaryOwner::Blocked(reason) = &boundary_decision.owner {
+            session_state.record_boundary_blocked(&gap, reason);
+            session_state.write(&session_dir)?;
             metrics.step_finished(
                 sink,
                 &session_dir,
@@ -2137,7 +2169,6 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     gap.target_rule
                 ),
             });
-            blocked_targets.insert(gap.target_rule);
             continue;
         }
         let gap = apply_boundary_decision(gap, &boundary_decision)?;
@@ -2345,6 +2376,57 @@ fn concept_step_started(sink: &mut dyn FlowSink, index: u8, label: &str) {
 
 fn concept_step_finished(sink: &mut dyn FlowSink, index: u8, ok: bool, summary: Option<String>) {
     sink.emit(FlowEvent::StepFinished { index, ok, summary });
+}
+
+impl ConceptGrindSessionState {
+    fn new(session_dir: PathBuf) -> Self {
+        Self {
+            workflow: "concept-grind".to_string(),
+            session_dir,
+            boundary_blocked_candidates: Vec::new(),
+        }
+    }
+
+    fn excluded_target_rules(&self) -> BTreeSet<String> {
+        self.boundary_blocked_candidates
+            .iter()
+            .map(|candidate| candidate.target_rule.clone())
+            .collect()
+    }
+
+    fn record_boundary_blocked(&mut self, gap: &ConceptGap, reason: &str) {
+        self.boundary_blocked_candidates
+            .push(BoundaryBlockedCandidate {
+                target_rule: gap.target_rule.clone(),
+                concept: gap.concept.clone(),
+                reason: reason.to_string(),
+            });
+    }
+
+    fn write(&self, session_dir: &Path) -> Result<()> {
+        write_json(session_dir.join("session_state.json"), self)
+    }
+}
+
+fn filter_unmapped_rules(
+    report: &mut ExistingGrammarMapReport,
+    excluded_rules: &BTreeSet<String>,
+) -> Vec<String> {
+    if excluded_rules.is_empty() {
+        return Vec::new();
+    }
+
+    let mut removed = Vec::new();
+    report.unmapped_rules.retain(|rule| {
+        if excluded_rules.contains(&rule.name) {
+            removed.push(rule.name.clone());
+            false
+        } else {
+            true
+        }
+    });
+    report.unmapped_rule_count = report.unmapped_rules.len();
+    removed
 }
 
 impl ConceptGrindMetrics {
@@ -4294,6 +4376,60 @@ mod tests {
         let gap = select_concept_gap_excluding(&report, &options, &excluded)
             .expect("should skip blocked suggestion");
         assert_eq!(gap.target_rule, "destroy_target");
+    }
+
+    #[test]
+    fn boundary_blocked_session_state_records_candidate_details() {
+        let mut state = ConceptGrindSessionState::new(PathBuf::from(".grammar-concept-runs/test"));
+        let gap = ConceptGap {
+            concept: "counter_target_spell".to_string(),
+            query: "counter target".to_string(),
+            target_rule: "counter_name".to_string(),
+            target_line: 10,
+            suggested_existing_owner: true,
+            reason: "test".to_string(),
+        };
+
+        state.record_boundary_blocked(&gap, "shared counter plumbing");
+
+        assert_eq!(state.boundary_blocked_candidates.len(), 1);
+        let blocked = &state.boundary_blocked_candidates[0];
+        assert_eq!(blocked.target_rule, "counter_name");
+        assert_eq!(blocked.concept, "counter_target_spell");
+        assert_eq!(blocked.reason, "shared counter plumbing");
+        assert!(state.excluded_target_rules().contains("counter_name"));
+    }
+
+    #[test]
+    fn boundary_blocked_targets_are_removed_from_candidate_map() {
+        let mut report = ExistingGrammarMapReport {
+            rule_count: 2,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 2,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "counter_name".to_string(),
+                    line: 10,
+                    suggested_concept: Some("counter_target_spell".to_string()),
+                },
+                UnmappedGrammarRule {
+                    name: "destroy_target".to_string(),
+                    line: 20,
+                    suggested_concept: None,
+                },
+            ],
+        };
+        let excluded = BTreeSet::from(["counter_name".to_string()]);
+
+        let removed = filter_unmapped_rules(&mut report, &excluded);
+
+        assert_eq!(removed, vec!["counter_name"]);
+        assert_eq!(report.unmapped_rule_count, 1);
+        assert_eq!(report.unmapped_rules[0].name, "destroy_target");
     }
 
     #[test]
