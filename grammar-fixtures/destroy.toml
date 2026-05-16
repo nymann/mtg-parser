@@ -39,6 +39,14 @@ rule = "trigger_effect"
 text = "Destroy all creatures blocking or blocked by it."
 
 [[example]]
+rule = "trigger_effect"
+text = "Destroy that creature if it attacked this turn."
+
+[[example]]
+rule = "destroy_that_creature_if_it_attacked_this_turn"
+text = "Destroy that creature if it attacked this turn."
+
+[[example]]
 rule = "destroy_all_creatures_blocking_or_blocked_by_it"
 text = "Destroy all creatures blocking or blocked by it."
 
@@ -62,6 +70,26 @@ reason = "Exact-consumption guard."
 rule = "trigger_effect"
 text = "Exile all non-Goblin creatures that player controls that didn't attack this turn."
 reason = "Exile is a different zone-change action even with the same selector shape."
+
+[[counterexample]]
+rule = "trigger_effect"
+text = "Counter that creature spell if it attacked this turn."
+reason = "Counter is a different action even with the same anaphoric creature and condition wording."
+
+[[counterexample]]
+rule = "trigger_effect"
+text = "Exile that creature if it attacked this turn."
+reason = "Exile is a different zone-change action even with the same anaphoric creature and condition wording."
+
+[[counterexample]]
+rule = "destroy_that_creature_if_it_attacked_this_turn"
+text = "Counter that creature spell if it attacked this turn."
+reason = "The attacked-this-turn boundary belongs to destroy, not counter."
+
+[[counterexample]]
+rule = "destroy_that_creature_if_it_attacked_this_turn"
+text = "Exile that creature if it attacked this turn."
+reason = "The attacked-this-turn boundary belongs to destroy, not exile."
 
 [[counterexample]]
 text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."

@@ -1966,7 +1966,7 @@ activate_only_as_sorcery = {
 }
 
 destroy_that_creature_if_it_attacked_this_turn = {
-    ^"destroy" ~ ^"that" ~ ^"creature" ~ ^"if" ~ ^"it"
+    ^"destroy" ~ that_creature_subject ~ ^"if" ~ ^"it"
   ~ ^"attacked" ~ ^"this" ~ ^"turn" ~ "."
 }
 

@@ -11,9 +11,18 @@ values = [
     "target_qualified_creature",
     "target_creature_type",
     "target_basic_lands_count",
+    "that_creature",
     "destroy_all",
     "all_non_creature_type_creatures_player_controls_that_didnt_attack_this_turn",
     "all_creatures_blocking_or_blocked_by_it",
+]
+
+[[axis]]
+name = "condition"
+values = [
+    "none",
+    "if_it_attacked_this_turn",
+    "that_didnt_attack_this_turn",
 ]
 
 [[axis]]
@@ -39,6 +48,7 @@ values = [
 excludes = [
     "Countering target colored spells.",
     "Exiling target permanents or creatures even when they share target selector grammar.",
+    "Countering or exiling that creature under the attacked-this-turn condition.",
     "Color-changing effects that mention a target spell or permanent becoming a color.",
 ]
 includes = [
@@ -47,6 +57,7 @@ includes = [
     "Sentence, modal mode, and activated ability surfaces for destroy target colored permanent actions.",
     "Trigger effects that destroy all non-creature-type creatures a player controls that didn't attack this turn.",
     "Sentence and trigger-effect surfaces for destroying all creatures blocking or blocked by it.",
+    "Trigger effects that destroy that creature if it attacked this turn.",
 ]
 
 [concept]
@@ -57,11 +68,13 @@ pest_rules = [
     "destroy_target_colored_permanent_action",
     "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn",
     "destroy_all_creatures_blocking_or_blocked_by_it",
+    "destroy_that_creature_if_it_attacked_this_turn",
 ]
 rules_queries = [
     "lex: destroy target permanent",
     "lex: destroy all non-Goblin creatures that player controls that didn't attack this turn",
     "lex: destroy all creatures blocking or blocked by it",
+    "lex: destroy that creature if it attacked this turn",
 ]
 rules_terms = [
     "attack",
@@ -80,6 +93,14 @@ text = "Counter target red spell."
 [[counterexample]]
 reason = "Exile is a different zone-change action even when it reuses destroy target selector grammar."
 text = "Exile target red permanent."
+
+[[counterexample]]
+reason = "Counter is a different action even with the same anaphoric creature and condition wording."
+text = "Counter that creature spell if it attacked this turn."
+
+[[counterexample]]
+reason = "Exile is a different zone-change action even with the same anaphoric creature and condition wording."
+text = "Exile that creature if it attacked this turn."
 
 [[counterexample]]
 reason = "Color-setting effect, not a destroy effect."
@@ -107,6 +128,9 @@ text = "Destroy all non-Goblin creatures that player controls that didn't attack
 text = "Destroy all creatures blocking or blocked by it."
 
 [[example]]
+text = "Destroy that creature if it attacked this turn."
+
+[[example]]
 text = "When this creature dies, destroy all creatures blocking or blocked by it."
 
 [grammar_query]
@@ -116,12 +140,13 @@ candidate_rules = [
     "destroy_target_colored_permanent_action",
     "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn",
     "destroy_all_creatures_blocking_or_blocked_by_it",
+    "destroy_that_creature_if_it_attacked_this_turn",
     "target_colored_permanent",
     "counter_target_colored_spell_action",
     "exile",
     "target_spell_or_permanent_becomes_color",
 ]
-selected_rule = "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn"
+selected_rule = "destroy_that_creature_if_it_attacked_this_turn"
 
 [maturity]
 blockers = []
