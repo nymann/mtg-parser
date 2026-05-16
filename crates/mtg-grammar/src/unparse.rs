@@ -13,23 +13,23 @@ use crate::ast::{
     DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
     DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
     DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, EachPlayerAction,
-    EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect, ImperativeAction, InterveningIf,
-    Keyword, LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer,
-    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
-    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
-    ObjectStatus, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
-    PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
-    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticDamageSource, StaticUntapRestriction, Step,
-    TapAllPermanentsActor, TapUntapAction, TappedForManaSubject, TargetHandPlayer,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
-    TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
-    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, DrawReplacementEffect,
+    EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount,
+    LifeLossPlayer, ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol,
+    MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, OtherCreatureTypeSubject,
+    PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType,
+    PhysicalAction, PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature,
+    RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
+    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
+    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TappedForManaSubject,
+    TargetHandPlayer, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCastActor, TriggerCastSpell,
+    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -167,6 +167,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::IfYouWouldEventYouMaySkipThatInstead { event } => {
             write_skip_replacement_effect(out, *event);
+        }
+        Statement::VariableCantBeNumber { variable, value } => {
+            out.push_str(variable_name(*variable));
+            out.push_str(" can't be ");
+            write!(out, "{value}.").expect("writing to String cannot fail");
         }
         Statement::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder { count } => {
             out.push_str("Look at the top ");
@@ -581,6 +586,7 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
             | Statement::ItsControllerGainsLife { .. }
             | Statement::NamedSourceDealsDamage { .. }
             | Statement::ItCantBeRegenerated { .. }
+            | Statement::VariableCantBeNumber { .. }
             | Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn
             | Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn
             | Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep { .. }
@@ -1632,6 +1638,10 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
         ActivatedEffect::LookAtTargetPlayersHand => {
             out.push_str("Look at target player's hand.");
         }
+        ActivatedEffect::NextCardDrawReplacement { replacement } => {
+            out.push_str("The next time you would draw a card this turn, instead look at the top ");
+            write_draw_replacement_effect(out, replacement);
+        }
         ActivatedEffect::DrawCards { count } => {
             out.push_str("Draw ");
             write_card_count_object(out, *count);
@@ -1777,6 +1787,15 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(" leaves the battlefield.");
         }
         ActivatedEffect::PhysicalAction(action) => write_physical_action(out, *action),
+    }
+}
+
+fn write_draw_replacement_effect(out: &mut String, effect: &DrawReplacementEffect) {
+    match effect {
+        DrawReplacementEffect::FilterTopLibraryCards { count } => {
+            write_card_count(out, *count);
+            out.push_str(" cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card.");
+        }
     }
 }
 

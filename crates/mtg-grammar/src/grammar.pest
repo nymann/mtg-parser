@@ -59,6 +59,7 @@ sentence_statement = _{
   | you_gain_life_equal_damage
   | you_dont_lose_game_for_having_zero_or_less_life
   | if_you_would_gain_life_draw_that_many_cards_instead
+  | variable_cant_be_number
   | if_you_cant_you_lose_the_game
   | it_cant_be_regenerated
   | if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn
@@ -365,6 +366,10 @@ you_dont_lose_game_for_having_zero_or_less_life = {
 if_you_would_gain_life_draw_that_many_cards_instead = {
     ^"if" ~ ^"you" ~ ^"would" ~ ^"gain" ~ ^"life" ~ ","
   ~ ^"draw" ~ ^"that" ~ ^"many" ~ ^"cards" ~ ^"instead" ~ "."
+}
+
+variable_cant_be_number = {
+    variable_name ~ ^"can't" ~ ^"be" ~ unsigned_number ~ "."
 }
 
 if_you_cant_you_lose_the_game = {
@@ -1213,6 +1218,7 @@ activated_effect = _{
   | untap_source
   | untap_enchanted_object
   | take_extra_turn_after_this_one
+  | next_card_draw_replacement
   | activated_draw_cards
   | create_token
   | look_at_target_players_hand
@@ -1261,6 +1267,18 @@ activated_draw_cards = {
 draw_card_object = _{ activated_draw_one_card | activated_draw_counted_cards }
 activated_draw_one_card = { article ~ ^"card" }
 activated_draw_counted_cards = { draw_count ~ ^"cards" }
+next_card_draw_replacement = {
+    ^"the" ~ ^"next" ~ ^"time" ~ ^"you" ~ ^"would" ~ ^"draw"
+  ~ article ~ ^"card" ~ ^"this" ~ ^"turn" ~ "," ~ ^"instead"
+  ~ filter_top_library_cards
+}
+filter_top_library_cards = {
+    ^"look" ~ ^"at" ~ ^"the" ~ ^"top" ~ draw_count ~ ^"cards"
+  ~ ^"of" ~ ^"your" ~ ^"library" ~ "," ~ ^"put" ~ ^"all" ~ ^"but"
+  ~ ^"one" ~ ^"of" ~ ^"them" ~ ^"on" ~ ^"the" ~ ^"bottom" ~ ^"of"
+  ~ ^"your" ~ ^"library" ~ ^"in" ~ article ~ ^"random" ~ ^"order"
+  ~ "," ~ ^"then" ~ ^"draw" ~ article ~ ^"card" ~ "."
+}
 create_token = {
     ^"create" ~ article ~ unsigned_number ~ "/" ~ unsigned_number
   ~ token_color? ~ creature_type? ~ permanent_type+ ~ ^"token"

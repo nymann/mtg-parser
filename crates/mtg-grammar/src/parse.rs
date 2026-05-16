@@ -16,22 +16,23 @@ use crate::ast::{
     DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
-    EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount,
-    LifeLossPlayer, ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol,
-    MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, OtherCreatureTypeSubject,
-    PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature,
-    RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
-    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
-    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TappedForManaSubject,
-    TargetHandPlayer, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
-    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCastActor, TriggerCastSpell,
-    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    DrawReplacementEffect, EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount,
+    LifeLossAmount, LifeLossPlayer, ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose,
+    ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
+    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost,
+    OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
+    ReferencedCard, ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject,
+    ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
+    StaticDamageSource, StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction,
+    TappedForManaSubject, TargetHandPlayer, TargetPermanentEndOfTurnEffect,
+    TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
+    TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -172,6 +173,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::if_you_would_event_you_may_skip_that_instead => {
             if_you_would_event_you_may_skip_that_instead_from_pair(pair)
         }
+        Rule::variable_cant_be_number => variable_cant_be_number_from_pair(pair),
         Rule::look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order => {
             look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order_from_pair(
                 pair,
@@ -1659,6 +1661,24 @@ fn card_count_from_pair(count_pair: Pair<Rule>) -> Result<CardCount, ParseError>
         _ => return Err(ParseError::Internal("draw_count")),
     };
     Ok(count)
+}
+
+fn variable_cant_be_number_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let variable_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("variable can't be missing variable"))?;
+    let value_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("variable can't be missing value"))?;
+    let value = value_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("variable can't be value"))?;
+    Ok(Statement::VariableCantBeNumber {
+        variable: variable_from_str(variable_pair.as_str())?,
+        value,
+    })
 }
 
 fn look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order_from_pair(
@@ -4620,6 +4640,12 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
         }
         Rule::destroy => activated_destroy_from_pair(pair),
         Rule::look_at_target_players_hand => Ok(ActivatedEffect::LookAtTargetPlayersHand),
+        Rule::next_card_draw_replacement => {
+            let replacement_pair = only_inner(pair, "next card draw replacement missing effect")?;
+            Ok(ActivatedEffect::NextCardDrawReplacement {
+                replacement: draw_replacement_effect_from_pair(replacement_pair)?,
+            })
+        }
         Rule::activated_draw_cards => {
             let count_pair = pair
                 .into_inner()
@@ -4835,6 +4861,20 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             physical_action_from_pair(pair)?,
         )),
         _ => Err(ParseError::Internal("activated_effect")),
+    }
+}
+
+fn draw_replacement_effect_from_pair(
+    pair: Pair<Rule>,
+) -> Result<DrawReplacementEffect, ParseError> {
+    match pair.as_rule() {
+        Rule::filter_top_library_cards => {
+            let count_pair = only_inner(pair, "filter top library cards missing count")?;
+            Ok(DrawReplacementEffect::FilterTopLibraryCards {
+                count: card_count_from_pair(count_pair)?,
+            })
+        }
+        _ => Err(ParseError::Internal("draw replacement effect")),
     }
 }
 

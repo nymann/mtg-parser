@@ -116,6 +116,11 @@ pub enum Statement {
     IfYouWouldEventYouMaySkipThatInstead {
         event: SkipReplacementEvent,
     },
+    /// "<variable> can't be N." — restriction on a printed variable value.
+    VariableCantBeNumber {
+        variable: Variable,
+        value: u32,
+    },
     /// "Look at the top N cards of target player's library, then put them
     /// back in any order."
     LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder {
@@ -370,10 +375,11 @@ pub enum Statement {
     TriggeredAbility(TriggeredAbility),
     /// Physical dexterity instructions and their conditional results.
     PhysicalAction(PhysicalAction),
-    /// Two or more abilities printed on one card, in source order,
-    /// separated by newlines on the printed face. A single-ability
-    /// card is never wrapped in `Compound`, so each piece of card
-    /// text has exactly one canonical AST.
+    /// Two or more abilities printed on one card, in source order. Most
+    /// members are separated by newlines on the printed face; a few
+    /// dependent sentence shapes are same-line continuations when unparsed.
+    /// A single-ability card is never wrapped in `Compound`, so each piece
+    /// of card text has exactly one canonical AST.
     Compound(Vec<Statement>),
 }
 
@@ -1416,6 +1422,10 @@ pub enum ActivatedEffect {
     },
     /// "Look at target player's hand."
     LookAtTargetPlayersHand,
+    /// CR 614 replacement effect for the next card draw this turn.
+    NextCardDrawReplacement {
+        replacement: DrawReplacementEffect,
+    },
     /// "Draw N cards."
     DrawCards {
         count: CardCount,
@@ -1501,6 +1511,14 @@ pub enum ActivatedEffect {
         source: SourceObject,
     },
     PhysicalAction(PhysicalAction),
+}
+
+/// Replacement effect applied to a card-draw event.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DrawReplacementEffect {
+    /// Look at the top N cards of your library, keep one draw, and put the
+    /// rest on the bottom in a random order.
+    FilterTopLibraryCards { count: CardCount },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
