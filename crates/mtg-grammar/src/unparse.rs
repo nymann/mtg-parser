@@ -2573,6 +2573,9 @@ fn write_trigger_effect(
             write_creature_type(out, *excluded_type);
             out.push_str(" creatures that player controls that didn't attack this turn.");
         }
+        TriggerEffect::DestroyAllCreaturesBlockingOrBlockedByIt => {
+            out.push_str("destroy all creatures blocking or blocked by it.");
+        }
         TriggerEffect::DestroyIt => {
             out.push_str("destroy it.");
         }

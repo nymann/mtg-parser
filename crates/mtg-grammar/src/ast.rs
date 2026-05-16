@@ -1100,6 +1100,8 @@ pub enum TriggerEffect {
     DestroyAllNonCreatureTypeCreaturesThatPlayerControlsThatDidntAttackThisTurn {
         excluded_type: CreatureType,
     },
+    /// "destroy all creatures blocking or blocked by it"
+    DestroyAllCreaturesBlockingOrBlockedByIt,
     /// "destroy it"
     DestroyIt,
     /// "destroy that creature at end of combat"

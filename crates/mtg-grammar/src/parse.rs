@@ -2424,6 +2424,9 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         Rule::destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn => {
             destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn_from_pair(pair)
         }
+        Rule::destroy_all_creatures_blocking_or_blocked_by_it => {
+            Ok(TriggerEffect::DestroyAllCreaturesBlockingOrBlockedByIt)
+        }
         Rule::destroy_it => Ok(TriggerEffect::DestroyIt),
         Rule::destroy_that_creature_at_end_of_combat => {
             Ok(TriggerEffect::DestroyThatCreatureAtEndOfCombat)

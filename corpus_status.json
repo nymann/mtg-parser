@@ -1,9 +1,1208 @@
 {
   "_v": 1,
   "generated_at": "2026-05-16",
-  "total": 290,
-  "passing": 261,
+  "total": 952,
+  "passing": 804,
   "cards": {
+    "2ed/Air Elemental": {
+      "status": "pass"
+    },
+    "2ed/Ancestral Recall": {
+      "status": "pass"
+    },
+    "2ed/Animate Artifact": {
+      "status": "pass"
+    },
+    "2ed/Animate Dead": {
+      "status": "pass"
+    },
+    "2ed/Animate Wall": {
+      "status": "pass"
+    },
+    "2ed/Ankh of Mishra": {
+      "status": "pass"
+    },
+    "2ed/Armageddon": {
+      "status": "pass"
+    },
+    "2ed/Aspect of Wolf": {
+      "status": "pass"
+    },
+    "2ed/Bad Moon": {
+      "status": "pass"
+    },
+    "2ed/Badlands": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Balance": {
+      "status": "pass"
+    },
+    "2ed/Basalt Monolith": {
+      "status": "pass"
+    },
+    "2ed/Bayou": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Benalish Hero": {
+      "status": "pass"
+    },
+    "2ed/Berserk": {
+      "status": "pass"
+    },
+    "2ed/Birds of Paradise": {
+      "status": "pass"
+    },
+    "2ed/Black Knight": {
+      "status": "pass"
+    },
+    "2ed/Black Lotus": {
+      "status": "pass"
+    },
+    "2ed/Black Vise": {
+      "status": "pass"
+    },
+    "2ed/Black Ward": {
+      "status": "pass"
+    },
+    "2ed/Blaze of Glory": {
+      "status": "pass"
+    },
+    "2ed/Blessing": {
+      "status": "pass"
+    },
+    "2ed/Blue Elemental Blast": {
+      "status": "pass"
+    },
+    "2ed/Blue Ward": {
+      "status": "pass"
+    },
+    "2ed/Bog Wraith": {
+      "status": "pass"
+    },
+    "2ed/Braingeyser": {
+      "status": "pass"
+    },
+    "2ed/Burrowing": {
+      "status": "pass"
+    },
+    "2ed/Camouflage": {
+      "status": "pass"
+    },
+    "2ed/Castle": {
+      "status": "pass"
+    },
+    "2ed/Celestial Prism": {
+      "status": "pass"
+    },
+    "2ed/Channel": {
+      "status": "pass"
+    },
+    "2ed/Chaos Orb": {
+      "status": "pass"
+    },
+    "2ed/Chaoslace": {
+      "status": "pass"
+    },
+    "2ed/Circle of Protection: Black": {
+      "status": "pass"
+    },
+    "2ed/Circle of Protection: Blue": {
+      "status": "pass"
+    },
+    "2ed/Circle of Protection: Green": {
+      "status": "pass"
+    },
+    "2ed/Circle of Protection: Red": {
+      "status": "pass"
+    },
+    "2ed/Circle of Protection: White": {
+      "status": "pass"
+    },
+    "2ed/Clockwork Beast": {
+      "status": "pass"
+    },
+    "2ed/Clone": {
+      "status": "pass"
+    },
+    "2ed/Cockatrice": {
+      "status": "pass"
+    },
+    "2ed/Consecrate Land": {
+      "status": "pass"
+    },
+    "2ed/Conservator": {
+      "status": "pass"
+    },
+    "2ed/Contract from Below": {
+      "status": "pass"
+    },
+    "2ed/Control Magic": {
+      "status": "pass"
+    },
+    "2ed/Conversion": {
+      "status": "pass"
+    },
+    "2ed/Copper Tablet": {
+      "status": "pass"
+    },
+    "2ed/Copy Artifact": {
+      "status": "pass"
+    },
+    "2ed/Counterspell": {
+      "status": "pass"
+    },
+    "2ed/Craw Wurm": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Creature Bond": {
+      "status": "pass"
+    },
+    "2ed/Crusade": {
+      "status": "pass"
+    },
+    "2ed/Crystal Rod": {
+      "status": "pass"
+    },
+    "2ed/Cursed Land": {
+      "status": "pass"
+    },
+    "2ed/Cyclopean Tomb": {
+      "status": "pass"
+    },
+    "2ed/Dark Ritual": {
+      "status": "pass"
+    },
+    "2ed/Darkpact": {
+      "status": "pass"
+    },
+    "2ed/Death Ward": {
+      "status": "pass"
+    },
+    "2ed/Deathgrip": {
+      "status": "pass"
+    },
+    "2ed/Deathlace": {
+      "status": "pass"
+    },
+    "2ed/Demonic Attorney": {
+      "status": "pass"
+    },
+    "2ed/Demonic Hordes": {
+      "status": "pass"
+    },
+    "2ed/Demonic Tutor": {
+      "status": "pass"
+    },
+    "2ed/Dingus Egg": {
+      "status": "pass"
+    },
+    "2ed/Disenchant": {
+      "status": "pass"
+    },
+    "2ed/Disintegrate": {
+      "status": "pass"
+    },
+    "2ed/Disrupting Scepter": {
+      "status": "pass"
+    },
+    "2ed/Dragon Whelp": {
+      "status": "pass"
+    },
+    "2ed/Drain Life": {
+      "status": "pass"
+    },
+    "2ed/Drain Power": {
+      "status": "pass"
+    },
+    "2ed/Drudge Skeletons": {
+      "status": "pass"
+    },
+    "2ed/Dwarven Demolition Team": {
+      "status": "pass"
+    },
+    "2ed/Dwarven Warriors": {
+      "status": "pass"
+    },
+    "2ed/Earth Elemental": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Earthbind": {
+      "status": "pass"
+    },
+    "2ed/Earthquake": {
+      "status": "pass"
+    },
+    "2ed/Elvish Archers": {
+      "status": "pass"
+    },
+    "2ed/Evil Presence": {
+      "status": "pass"
+    },
+    "2ed/False Orders": {
+      "status": "pass"
+    },
+    "2ed/Farmstead": {
+      "status": "pass"
+    },
+    "2ed/Fastbond": {
+      "status": "pass"
+    },
+    "2ed/Fear": {
+      "status": "pass"
+    },
+    "2ed/Feedback": {
+      "status": "pass"
+    },
+    "2ed/Fire Elemental": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Fireball": {
+      "status": "pass"
+    },
+    "2ed/Firebreathing": {
+      "status": "pass"
+    },
+    "2ed/Flashfires": {
+      "status": "pass"
+    },
+    "2ed/Flight": {
+      "status": "pass"
+    },
+    "2ed/Fog": {
+      "status": "pass"
+    },
+    "2ed/Force of Nature": {
+      "status": "pass"
+    },
+    "2ed/Forcefield": {
+      "status": "pass"
+    },
+    "2ed/Forest": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Fork": {
+      "status": "pass"
+    },
+    "2ed/Frozen Shade": {
+      "status": "pass"
+    },
+    "2ed/Fungusaur": {
+      "status": "pass"
+    },
+    "2ed/Gaea's Liege": {
+      "status": "pass"
+    },
+    "2ed/Gauntlet of Might": {
+      "status": "pass"
+    },
+    "2ed/Giant Growth": {
+      "status": "pass"
+    },
+    "2ed/Giant Spider": {
+      "status": "pass"
+    },
+    "2ed/Glasses of Urza": {
+      "status": "pass"
+    },
+    "2ed/Gloom": {
+      "status": "pass"
+    },
+    "2ed/Goblin Balloon Brigade": {
+      "status": "pass"
+    },
+    "2ed/Goblin King": {
+      "status": "pass"
+    },
+    "2ed/Granite Gargoyle": {
+      "status": "pass"
+    },
+    "2ed/Gray Ogre": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Green Ward": {
+      "status": "pass"
+    },
+    "2ed/Grizzly Bears": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Guardian Angel": {
+      "status": "pass"
+    },
+    "2ed/Healing Salve": {
+      "status": "pass"
+    },
+    "2ed/Helm of Chatzuk": {
+      "status": "pass"
+    },
+    "2ed/Hill Giant": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Holy Armor": {
+      "status": "pass"
+    },
+    "2ed/Holy Strength": {
+      "status": "pass"
+    },
+    "2ed/Howl from Beyond": {
+      "status": "pass"
+    },
+    "2ed/Howling Mine": {
+      "status": "pass"
+    },
+    "2ed/Hurloon Minotaur": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Hurricane": {
+      "status": "pass"
+    },
+    "2ed/Hypnotic Specter": {
+      "status": "pass"
+    },
+    "2ed/Ice Storm": {
+      "status": "pass"
+    },
+    "2ed/Icy Manipulator": {
+      "status": "pass"
+    },
+    "2ed/Illusionary Mask": {
+      "status": "pass"
+    },
+    "2ed/Instill Energy": {
+      "status": "pass"
+    },
+    "2ed/Invisibility": {
+      "status": "pass"
+    },
+    "2ed/Iron Star": {
+      "status": "pass"
+    },
+    "2ed/Ironclaw Orcs": {
+      "status": "pass"
+    },
+    "2ed/Ironroot Treefolk": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Island": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Island Sanctuary": {
+      "status": "pass"
+    },
+    "2ed/Ivory Cup": {
+      "status": "pass"
+    },
+    "2ed/Jade Monolith": {
+      "status": "pass"
+    },
+    "2ed/Jade Statue": {
+      "status": "pass"
+    },
+    "2ed/Jayemdae Tome": {
+      "status": "pass"
+    },
+    "2ed/Juggernaut": {
+      "status": "pass"
+    },
+    "2ed/Jump": {
+      "status": "pass"
+    },
+    "2ed/Karma": {
+      "status": "pass"
+    },
+    "2ed/Keldon Warlord": {
+      "status": "pass"
+    },
+    "2ed/Kormus Bell": {
+      "status": "pass"
+    },
+    "2ed/Kudzu": {
+      "status": "pass"
+    },
+    "2ed/Lance": {
+      "status": "pass"
+    },
+    "2ed/Ley Druid": {
+      "status": "pass"
+    },
+    "2ed/Library of Leng": {
+      "status": "pass"
+    },
+    "2ed/Lich": {
+      "status": "pass"
+    },
+    "2ed/Lifeforce": {
+      "status": "pass"
+    },
+    "2ed/Lifelace": {
+      "status": "pass"
+    },
+    "2ed/Lifetap": {
+      "status": "pass"
+    },
+    "2ed/Lightning Bolt": {
+      "status": "pass"
+    },
+    "2ed/Living Artifact": {
+      "status": "pass"
+    },
+    "2ed/Living Lands": {
+      "status": "pass"
+    },
+    "2ed/Living Wall": {
+      "status": "pass"
+    },
+    "2ed/Llanowar Elves": {
+      "status": "pass"
+    },
+    "2ed/Lord of Atlantis": {
+      "status": "pass"
+    },
+    "2ed/Lord of the Pit": {
+      "status": "pass"
+    },
+    "2ed/Lure": {
+      "status": "pass"
+    },
+    "2ed/Magical Hack": {
+      "status": "pass"
+    },
+    "2ed/Mahamoti Djinn": {
+      "status": "pass"
+    },
+    "2ed/Mana Flare": {
+      "status": "pass"
+    },
+    "2ed/Mana Short": {
+      "status": "pass"
+    },
+    "2ed/Mana Vault": {
+      "status": "pass"
+    },
+    "2ed/Manabarbs": {
+      "status": "pass"
+    },
+    "2ed/Meekstone": {
+      "status": "pass"
+    },
+    "2ed/Merfolk of the Pearl Trident": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Mesa Pegasus": {
+      "status": "pass"
+    },
+    "2ed/Mind Twist": {
+      "status": "pass"
+    },
+    "2ed/Mons's Goblin Raiders": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Mountain": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Mox Emerald": {
+      "status": "pass"
+    },
+    "2ed/Mox Jet": {
+      "status": "pass"
+    },
+    "2ed/Mox Pearl": {
+      "status": "pass"
+    },
+    "2ed/Mox Ruby": {
+      "status": "pass"
+    },
+    "2ed/Mox Sapphire": {
+      "status": "pass"
+    },
+    "2ed/Natural Selection": {
+      "status": "pass"
+    },
+    "2ed/Nether Shadow": {
+      "status": "pass"
+    },
+    "2ed/Nettling Imp": {
+      "status": "pass"
+    },
+    "2ed/Nevinyrral's Disk": {
+      "status": "pass"
+    },
+    "2ed/Nightmare": {
+      "status": "pass"
+    },
+    "2ed/Northern Paladin": {
+      "status": "pass"
+    },
+    "2ed/Obsianus Golem": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Orcish Artillery": {
+      "status": "pass"
+    },
+    "2ed/Orcish Oriflamme": {
+      "status": "pass"
+    },
+    "2ed/Paralyze": {
+      "status": "pass"
+    },
+    "2ed/Pearled Unicorn": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Personal Incarnation": {
+      "status": "pass"
+    },
+    "2ed/Pestilence": {
+      "status": "pass"
+    },
+    "2ed/Phantasmal Forces": {
+      "status": "pass"
+    },
+    "2ed/Phantasmal Terrain": {
+      "status": "pass"
+    },
+    "2ed/Phantom Monster": {
+      "status": "pass"
+    },
+    "2ed/Pirate Ship": {
+      "status": "pass"
+    },
+    "2ed/Plague Rats": {
+      "status": "pass"
+    },
+    "2ed/Plains": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Plateau": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Power Leak": {
+      "status": "pass"
+    },
+    "2ed/Power Sink": {
+      "status": "pass"
+    },
+    "2ed/Power Surge": {
+      "status": "pass"
+    },
+    "2ed/Prodigal Sorcerer": {
+      "status": "pass"
+    },
+    "2ed/Psionic Blast": {
+      "status": "pass"
+    },
+    "2ed/Psychic Venom": {
+      "status": "pass"
+    },
+    "2ed/Purelace": {
+      "status": "pass"
+    },
+    "2ed/Raging River": {
+      "status": "pass"
+    },
+    "2ed/Raise Dead": {
+      "status": "pass"
+    },
+    "2ed/Red Elemental Blast": {
+      "status": "pass"
+    },
+    "2ed/Red Ward": {
+      "status": "pass"
+    },
+    "2ed/Regeneration": {
+      "status": "pass"
+    },
+    "2ed/Regrowth": {
+      "status": "pass"
+    },
+    "2ed/Resurrection": {
+      "status": "pass"
+    },
+    "2ed/Reverse Damage": {
+      "status": "pass"
+    },
+    "2ed/Righteousness": {
+      "status": "pass"
+    },
+    "2ed/Roc of Kher Ridges": {
+      "status": "pass"
+    },
+    "2ed/Rock Hydra": {
+      "status": "pass"
+    },
+    "2ed/Rod of Ruin": {
+      "status": "pass"
+    },
+    "2ed/Royal Assassin": {
+      "status": "pass"
+    },
+    "2ed/Sacrifice": {
+      "status": "pass"
+    },
+    "2ed/Samite Healer": {
+      "status": "pass"
+    },
+    "2ed/Savannah": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Savannah Lions": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Scathe Zombies": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Scavenging Ghoul": {
+      "status": "pass"
+    },
+    "2ed/Scrubland": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Scryb Sprites": {
+      "status": "pass"
+    },
+    "2ed/Sea Serpent": {
+      "status": "pass"
+    },
+    "2ed/Sedge Troll": {
+      "status": "pass"
+    },
+    "2ed/Sengir Vampire": {
+      "status": "pass"
+    },
+    "2ed/Serra Angel": {
+      "status": "pass"
+    },
+    "2ed/Shanodin Dryads": {
+      "status": "pass"
+    },
+    "2ed/Shatter": {
+      "status": "pass"
+    },
+    "2ed/Shivan Dragon": {
+      "status": "pass"
+    },
+    "2ed/Simulacrum": {
+      "status": "pass"
+    },
+    "2ed/Sinkhole": {
+      "status": "pass"
+    },
+    "2ed/Siren's Call": {
+      "status": "pass"
+    },
+    "2ed/Sleight of Mind": {
+      "status": "pass"
+    },
+    "2ed/Smoke": {
+      "status": "pass"
+    },
+    "2ed/Sol Ring": {
+      "status": "pass"
+    },
+    "2ed/Soul Net": {
+      "status": "pass"
+    },
+    "2ed/Spell Blast": {
+      "status": "pass"
+    },
+    "2ed/Stasis": {
+      "status": "pass"
+    },
+    "2ed/Steal Artifact": {
+      "status": "pass"
+    },
+    "2ed/Stone Giant": {
+      "status": "pass"
+    },
+    "2ed/Stone Rain": {
+      "status": "pass"
+    },
+    "2ed/Stream of Life": {
+      "status": "pass"
+    },
+    "2ed/Sunglasses of Urza": {
+      "status": "pass"
+    },
+    "2ed/Swamp": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Swords to Plowshares": {
+      "status": "pass"
+    },
+    "2ed/Taiga": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Terror": {
+      "status": "pass"
+    },
+    "2ed/The Hive": {
+      "status": "pass"
+    },
+    "2ed/Thicket Basilisk": {
+      "status": "pass"
+    },
+    "2ed/Thoughtlace": {
+      "status": "pass"
+    },
+    "2ed/Throne of Bone": {
+      "status": "pass"
+    },
+    "2ed/Timber Wolves": {
+      "status": "pass"
+    },
+    "2ed/Time Vault": {
+      "status": "pass"
+    },
+    "2ed/Time Walk": {
+      "status": "pass"
+    },
+    "2ed/Timetwister": {
+      "status": "pass"
+    },
+    "2ed/Tranquility": {
+      "status": "pass"
+    },
+    "2ed/Tropical Island": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Tsunami": {
+      "status": "pass"
+    },
+    "2ed/Tundra": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Tunnel": {
+      "status": "pass"
+    },
+    "2ed/Twiddle": {
+      "status": "pass"
+    },
+    "2ed/Two-Headed Giant of Foriys": {
+      "status": "pass"
+    },
+    "2ed/Underground Sea": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Unholy Strength": {
+      "status": "pass"
+    },
+    "2ed/Unsummon": {
+      "status": "pass"
+    },
+    "2ed/Uthden Troll": {
+      "status": "pass"
+    },
+    "2ed/Verduran Enchantress": {
+      "status": "pass"
+    },
+    "2ed/Vesuvan Doppelganger": {
+      "status": "pass"
+    },
+    "2ed/Veteran Bodyguard": {
+      "status": "pass"
+    },
+    "2ed/Volcanic Eruption": {
+      "status": "pass"
+    },
+    "2ed/Volcanic Island": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Wall of Air": {
+      "status": "pass"
+    },
+    "2ed/Wall of Bone": {
+      "status": "pass"
+    },
+    "2ed/Wall of Brambles": {
+      "status": "pass"
+    },
+    "2ed/Wall of Fire": {
+      "status": "pass"
+    },
+    "2ed/Wall of Ice": {
+      "status": "pass"
+    },
+    "2ed/Wall of Stone": {
+      "status": "pass"
+    },
+    "2ed/Wall of Swords": {
+      "status": "pass"
+    },
+    "2ed/Wall of Water": {
+      "status": "pass"
+    },
+    "2ed/Wall of Wood": {
+      "status": "pass"
+    },
+    "2ed/Wanderlust": {
+      "status": "pass"
+    },
+    "2ed/War Mammoth": {
+      "status": "pass"
+    },
+    "2ed/Warp Artifact": {
+      "status": "pass"
+    },
+    "2ed/Water Elemental": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "2ed/Weakness": {
+      "status": "pass"
+    },
+    "2ed/Web": {
+      "status": "pass"
+    },
+    "2ed/Wheel of Fortune": {
+      "status": "pass"
+    },
+    "2ed/White Knight": {
+      "status": "pass"
+    },
+    "2ed/White Ward": {
+      "status": "pass"
+    },
+    "2ed/Wild Growth": {
+      "status": "pass"
+    },
+    "2ed/Will-o'-the-Wisp": {
+      "status": "pass"
+    },
+    "2ed/Winter Orb": {
+      "status": "pass"
+    },
+    "2ed/Wooden Sphere": {
+      "status": "pass"
+    },
+    "2ed/Word of Command": {
+      "status": "pass"
+    },
+    "2ed/Wrath of God": {
+      "status": "pass"
+    },
+    "2ed/Zombie Master": {
+      "status": "pass"
+    },
+    "arn/Abu Ja'far": {
+      "status": "pass"
+    },
+    "arn/Aladdin": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:17\n  |\n1 | {1}{R}{R}, {T}: Gain control of target artifact for as long as you control this creature.\n  |                 ^---\n  |\n  = expected colored_target_effect, counter_target_colored_spell_action, destroy, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, create_token, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, untap_target_permanent, untap_source, untap_enchanted_object, take_extra_turn_after_this_one, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, next_damage_event_effect, next_damage_redirection_effect, activated_damage_prevention_effect, put_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
+    },
+    "arn/Aladdin's Lamp": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:25\n  |\n1 | {X}, {T}: The next time you would draw a card this turn, instead look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card. X can't be 0.\n  |                         ^---\n  |\n  = expected colored_damage_source, unblocked_creature_damage_source, or chosen_damage_source"
+    },
+    "arn/Aladdin's Ring": {
+      "status": "pass"
+    },
+    "arn/Ali Baba": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:17\n  |\n1 | {R}: Tap target Wall.\n  |                 ^---\n  |\n  = expected permanent_type"
+    },
+    "arn/Ali from Cairo": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Damage that would reduce your life total to less than 1 reduces it to 1 instead.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "arn/Army of Allah": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:3\n  |\n1 | Attacking creatures get +2/+0 until end of turn.\n  |   ^---\n  |\n  = expected trigger_event_clause"
+    },
+    "arn/Bazaar of Baghdad": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {T}: Draw two cards, then discard three cards.\n  |           ^---\n  |\n  = expected activated_draw_one_card"
+    },
+    "arn/Bird Maiden": {
+      "status": "pass"
+    },
+    "arn/Bottle of Suleiman": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:31\n  |\n1 | {1}, Sacrifice this artifact: Flip a coin. If you win the flip, create a 5/5 colorless Djinn artifact creature token with flying. If you lose the flip, this artifact deals 5 damage to you.\n  |                               ^---\n  |\n  = expected colored_target_effect, counter_target_colored_spell_action, destroy, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, create_token, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, untap_target_permanent, untap_source, untap_enchanted_object, take_extra_turn_after_this_one, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, next_damage_event_effect, next_damage_redirection_effect, activated_damage_prevention_effect, put_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
+    },
+    "arn/Brass Man": {
+      "status": "pass"
+    },
+    "arn/Camel": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 2:29\n  |\n2 | As long as this creature is attacking, prevent all damage Deserts would deal to this creature and to creatures banded with this creature.\n  |                             ^---\n  |\n  = expected object_status"
+    },
+    "arn/City in a Bottle": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:10\n  |\n1 | Whenever one or more other nontoken permanents with a name originally printed in the Arabian Nights expansion are on the battlefield, their controllers sacrifice them.\n  |          ^---\n  |\n  = expected trigger_event_clause"
+    },
+    "arn/City of Brass": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:15\n  |\n1 | Whenever this land becomes tapped, it deals 1 damage to you.\n  |               ^---\n  |\n  = expected aura_source_object or permanent_object"
+    },
+    "arn/Cuombajj Witches": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:65\n  |\n1 | {T}: This creature deals 1 damage to any target and 1 damage to any target of an opponent's choice.\n  |                                                                 ^---\n  |\n  = expected you_damage_recipient"
+    },
+    "arn/Cyclone": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:61\n  |\n1 | At the beginning of your upkeep, put a wind counter on this enchantment, then sacrifice this enchantment unless you pay {G} for each wind counter on it. If you pay, this enchantment deals damage equal to the number of wind counters on it to each creature and each player.\n  |                                                             ^---\n  |\n  = expected aura_source_object or permanent_object"
+    },
+    "arn/Dancing Scimitar": {
+      "status": "pass"
+    },
+    "arn/Dandân": {
+      "status": "pass"
+    },
+    "arn/Desert": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 2:41\n  |\n2 | {T}: This land deals 1 damage to target attacking creature. Activate only during the end of combat step.\n  |                                         ^---\n  |\n  = expected permanent_type"
+    },
+    "arn/Desert Nomads": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Desertwalk\n  | ^---\n  |\n  = expected card_text"
+    },
+    "arn/Desert Twister": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:16\n  |\n1 | Destroy target permanent.\n  |                ^---\n  |\n  = expected permanent_type, color_word, creature_type, creature_status, non_permanent_type, or non_color_word"
+    },
+    "arn/Diamond Valley": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:16\n  |\n1 | {T}, Sacrifice a creature: You gain life equal to the sacrificed creature's toughness.\n  |                ^---\n  |\n  = expected source_object"
+    },
+    "arn/Drop of Honey": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:34\n  |\n1 | At the beginning of your upkeep, destroy the creature with the least power. It can't be regenerated. If two or more creatures are tied for least power, you choose one of them.\n  |                                  ^---\n  |\n  = expected trigger_intervening_if_clause, trigger_effect_sequence, or trigger_effect_fragment_sequence"
+    },
+    "arn/Ebony Horse": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:24\n  |\n1 | {2}, {T}: Untap target attacking creature you control. Prevent all combat damage that would be dealt to and dealt by that creature this turn.\n  |                        ^---\n  |\n  = expected permanent_type"
+    },
+    "arn/El-Hajjâj": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:15\n  |\n1 | Whenever this creature deals damage, you gain that much life.\n  |               ^---\n  |\n  = expected aura_source_object or permanent_object"
+    },
+    "arn/Elephant Graveyard": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 2:17\n  |\n2 | {T}: Regenerate target Elephant.\n  |                 ^---\n  |\n  = expected source_object"
+    },
+    "arn/Erg Raiders": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:4\n  |\n1 | At the beginning of your end step, if this creature didn't attack this turn, it deals 2 damage to you unless it came under your control this turn.\n  |    ^---\n  |\n  = expected trigger_event_clause"
+    },
+    "arn/Erhnam Djinn": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:34\n  |\n1 | At the beginning of your upkeep, target non-Wall creature an opponent controls gains forestwalk until your next upkeep.\n  |                                  ^---\n  |\n  = expected trigger_intervening_if_clause, trigger_effect_sequence, or trigger_effect_fragment_sequence"
+    },
+    "arn/Eye for an Eye": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:75\n  |\n1 | The next time a source of your choice would deal damage to you this turn, instead that source deals that much damage to you and Eye for an Eye deals that much damage to that source's controller.\n  |                                                                           ^---\n  |\n  = expected prevent_that_damage, prevent_all_but_that_damage, or redirect_that_damage_to_you"
+    },
+    "arn/Fishliver Oil": {
+      "status": "pass"
+    },
+    "arn/Flying Carpet": {
+      "status": "pass"
+    },
+    "arn/Flying Men": {
+      "status": "pass"
+    },
+    "arn/Ghazbán Ogre": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:37\n  |\n1 | At the beginning of your upkeep, if a player has more life than each other player, the player with the most life gains control of this creature.\n  |                                     ^---\n  |\n  = expected its_on_the_battlefield, no_permanents_are_on_the_battlefield, this_card_in_your_graveyard_with_cards_above_it, enchanted_has_keyword, it_wasnt_first_permanent_you_played_this_turn, or source_object"
+    },
+    "arn/Giant Tortoise": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:37\n  |\n1 | This creature gets +0/+3 as long as it's untapped.\n  |                                     ^---\n  |\n  = expected proper_name, you_control_basic_land, enchanted_isnt, or source_object"
+    },
+    "arn/Guardian Beast": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:39\n  |\n1 | As long as this creature is untapped, noncreature artifacts you control can't be enchanted, they have indestructible, and other players can't gain control of them. This effect doesn't remove Auras already attached to those artifacts.\n  |                                       ^---\n  |\n  = expected static_untap_restriction_during_untap_steps, damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead, becomes_pt_from_mv, source_pt_equal_to_basic_lands_controlled, or source_object"
+    },
+    "arn/Hasran Ogress": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:15\n  |\n1 | Whenever this creature attacks, it deals 3 damage to you unless you pay {2}.\n  |               ^---\n  |\n  = expected aura_source_object or permanent_object"
+    },
+    "arn/Hurr Jackal": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:22\n  |\n1 | {T}: Target creature can't be regenerated this turn.\n  |                      ^---\n  |\n  = expected target_permanent_gains_keyword_eot_effect"
+    },
+    "arn/Ifh-Bíff Efreet": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 2:38\n  |\n2 | {G}: This creature deals 1 damage to each creature with flying and each player. Any player may activate this ability.\n  |                                      ^---\n  |\n  = expected any_target_prevention_recipient, target_permanent_damage_recipient, or you_damage_recipient"
+    },
+    "arn/Island Fish Jasconius": {
+      "status": "pass"
+    },
+    "arn/Island of Wak-Wak": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:22\n  |\n1 | {T}: Target creature with flying has base power 0 until end of turn.\n  |                      ^---\n  |\n  = expected target_permanent_gains_keyword_eot_effect"
+    },
+    "arn/Jandor's Ring": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {2}, {T}, Discard the last card you drew this turn: Draw a card.\n  |           ^---\n  |\n  = expected mana_symbol, tap_symbol, variable_mana_symbol, sacrifice_source, or remove_named_counter_from_source"
+    },
+    "arn/Jandor's Saddlebags": {
+      "status": "pass"
+    },
+    "arn/Jeweled Bird": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 2:6\n  |\n2 | {T}: Ante this artifact. If you do, put all other cards you own from the ante into your graveyard, then draw a card.\n  |      ^---\n  |\n  = expected colored_target_effect, counter_target_colored_spell_action, destroy, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, create_token, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, untap_target_permanent, untap_source, untap_enchanted_object, take_extra_turn_after_this_one, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, next_damage_event_effect, next_damage_redirection_effect, activated_damage_prevention_effect, put_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
+    },
+    "arn/Jihad": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:36\n  |\n1 | As this enchantment enters, choose a color and an opponent.\n  |                                    ^---\n  |\n  = expected opponent_choice or basic_land_type_choice"
+    },
+    "arn/Junún Efreet": {
+      "status": "pass"
+    },
+    "arn/Juzám Djinn": {
+      "status": "pass"
+    },
+    "arn/Khabál Ghoul": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:64\n  |\n1 | At the beginning of each end step, put a +1/+1 counter on this creature for each creature that died this turn.\n  |                                                                ^---\n  |\n  = expected aura_source_object or permanent_object"
+    },
+    "arn/King Suleiman": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:21\n  |\n1 | {T}: Destroy target Djinn or Efreet.\n  |                     ^---\n  |\n  = expected permanent_type, color_word, creature_type, creature_status, non_permanent_type, or non_color_word"
+    },
+    "arn/Kird Ape": {
+      "status": "pass"
+    },
+    "arn/Library of Alexandria": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 2:19\n  |\n2 | {T}: Draw a card. Activate only if you have exactly seven cards in hand.\n  |                   ^---\n  |\n  = expected EOI, modal_mode, this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first, destroy, exile, counter_target_spell, regenerate_target_creature, it_cant_be_regenerated, copy_target_spell_except_copy_is_color, you_may_choose_new_targets_for_the_copy, damage_event_statement, damage_prevention_effect_sentence, spend_only_color_mana_on_variable, as_source_enters_you_lose_life_equal_to_your_life_total, you_dont_lose_game_for_having_zero_or_less_life, if_you_would_gain_life_draw_that_many_cards_instead, if_you_cant_you_lose_the_game, you_gain_life_equal_damage, if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn, draw_cards, target_player_discards_cards_at_random, if_you_would_event_you_may_skip_that_instead, target_player_gains_life, its_controller_gains_life, look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order, you_may_have_that_player_shuffle, tap_all_permanents_then_mana_loss, player_payment_failure, target_player_activates_mana_ability_of_each_permanent_they_control, controller_ref, controlled_player_ref, activation_limit_context, conditional_control_player_effect, then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way, ante_play_restriction, you_own_target_card_in_zone, return_target_card_from_your_zone_to_zone, exchange_that_card_with_top_card_of_your_library, imperative_action_sequence, each_player_performs_action, until_eot_you_may_pay_cost_at_timing, if_you_do_effect, if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords, each_player_equalizes_controlled_permanents, players_do_actions_the_same_way, as_source_enters_choose, cast_restriction, color_word, static_as_long_as, static_mana_spending_permission, static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate, static_other_creature_type_get_and_have_keyword, creature_status, static_enchanted_gets, static_enchanted_gets_with_definitions, static_enchanted_has_keyword, static_enchanted_has_triggered_ability, static_enchanted_loses_keyword, static_enchanted_is_basic_land_type, static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras, static_enchanted_can_attack_as_though_it_had, static_enchanted_can_attack_as_though_it_didnt_have, static_enchanted_cant_be_blocked_except_by_creature_type, static_all_creatures_able_to_block_enchanted_do_so, static_you_control_enchanted, static_you_may_play_any_number_of_permanents_on_each_of_your_turns, static_you_may_have_source_enter_as_copy, static_you_have_no_maximum_hand_size, static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead, static_effect_doesnt_remove_this_aura, static_basic_lands_are_basic_lands, static_basic_lands_are_pt_colored_creatures_still_lands, static_that_permanent_is_basic_land_type_while_has_named_counter, static_untap_restriction_during_untap_steps, static_named_source_pt_equal_to_count, remove_target_creature_defending_player_controls_from_combat, creatures_it_was_blocking_become_unblocked, you_may_have_it_block_attacking_creature, creatures_attack_this_turn_if_able, it_blocks_each_attacking_creature_if_able, ignore_this_effect_for_each_creature_player_didnt_control_continuously, this_turn_defending_players_make_random_blocking_piles, additional_blockers_may_be_put_into_additional_piles, assign_each_pile_to_attacking_creature_at_random, creatures_in_assigned_pile_block_if_able, then_for_each_attacking_creature_choose_label_blocking_restriction, activated_cost, add_mana, tap_target_permanent_choice, take_extra_turn_after_this_one, next_damage_event_effect, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, triggered_ability, triggered_ability_fragment, target_spell_or_permanent_becomes_color, change_text_of_target_spell_or_permanent_replacing_basic_land_type, target_permanent_until_eot, for_each_damage_prevented_by_removing_pt_counter, this_ability_cant_cause_total_pt_counters_greater_than, if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_step, if_you_do_cast_that_card_face_down_without_paying_mana_cost, if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead, activate_only_during_your_upkeep, activate_only_during_combat, activate_only_during_your_turn_and_only_once_each_turn, activate_only_during_your_turn, activate_only_during_opponents_turn_before_attackers_declared, activate_only_as_sorcery, destroy_referenced_creature_at_beginning_of_next_end_step, as_additional_cost_to_cast_this_spell, if_you_cant_source_deals_damage_to_you, only_sources_owner_may_activate_this_ability, source_object, or that_permanents_controller"
+    },
+    "arn/Magnetic Mountain": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Blue creatures don't untap during their controllers' untap steps.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "arn/Merchant Ship": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 2:15\n  |\n2 | Whenever this creature attacks and isn't blocked, you gain 2 life.\n  |               ^---\n  |\n  = expected aura_source_object or permanent_object"
+    },
+    "arn/Metamorphosis": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 2:5\n  |\n2 | Add X mana of any one color, where X is 1 plus the sacrificed creature's mana value. Spend this mana only to cast creature spells.\n  |     ^---\n  |\n  = expected mana_symbol or amount_of_mana_equal_to_sacrificed_permanent_mana_value"
+    },
+    "arn/Mijae Djinn": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:15\n  |\n1 | Whenever this creature attacks, flip a coin. If you lose the flip, remove this creature from combat and tap it.\n  |               ^---\n  |\n  = expected aura_source_object or permanent_object"
+    },
+    "arn/Moorish Cavalry": {
+      "status": "pass"
+    },
+    "arn/Mountain": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "arn/Nafs Asp": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:15\n  |\n1 | Whenever this creature deals damage to a player, that player loses 1 life at the beginning of their next draw step unless they pay {1} before that draw step.\n  |               ^---\n  |\n  = expected aura_source_object or permanent_object"
+    },
+    "arn/Oasis": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:55\n  |\n1 | {T}: Prevent the next 1 damage that would be dealt to target creature this turn.\n  |                                                       ^---\n  |\n  = expected any_target_prevention_recipient, you_damage_recipient, or source_object"
+    },
+    "arn/Old Man of the Sea": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | You may choose not to untap this creature during your untap step.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "arn/Oubliette": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | When this enchantment enters, target creature phases out until this enchantment leaves the battlefield. Tap that creature as it phases in this way.\n  |           ^---\n  |\n  = expected aura_source_object or permanent_object"
+    },
+    "arn/Piety": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:1\n  |\n1 | Blocking creatures get +0/+3 until end of turn.\n  | ^---\n  |\n  = expected card_text"
+    },
+    "arn/Pyramids": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {2}: Choose one —\n  |      ^---\n  |\n  = expected colored_target_effect, counter_target_colored_spell_action, destroy, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, create_token, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, untap_target_permanent, untap_source, untap_enchanted_object, take_extra_turn_after_this_one, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, next_damage_event_effect, next_damage_redirection_effect, activated_damage_prevention_effect, put_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
+    },
+    "arn/Repentant Blacksmith": {
+      "status": "pass"
+    },
+    "arn/Ring of Ma'rûf": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:11\n  |\n1 | {5}, {T}, Exile this artifact: The next time you would draw a card this turn, instead put a card you own from outside the game into your hand.\n  |           ^---\n  |\n  = expected mana_symbol, tap_symbol, variable_mana_symbol, sacrifice_source, or remove_named_counter_from_source"
+    },
+    "arn/Rukh Egg": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:26\n  |\n1 | When this creature dies, create a 4/4 red Bird creature token with flying at the beginning of the next end step.\n  |                          ^---\n  |\n  = expected trigger_intervening_if_clause, trigger_effect_sequence, or trigger_effect_fragment_sequence"
+    },
+    "arn/Sandals of Abdallah": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:68\n  |\n1 | {2}, {T}: Target creature gains islandwalk until end of turn. When that creature dies this turn, destroy this artifact.\n  |                                                                    ^---\n  |\n  = expected trigger_event_clause"
+    },
+    "arn/Sandstorm": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:29\n  |\n1 | Sandstorm deals 1 damage to each attacking creature.\n  |                             ^---\n  |\n  = expected any_target_prevention_recipient, damage_recipient, or you_damage_recipient"
+    },
+    "arn/Serendib Djinn": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 2:44\n  |\n2 | At the beginning of your upkeep, sacrifice a land. If you sacrifice an Island this way, this creature deals 3 damage to you.\n  |                                            ^---\n  |\n  = expected source_object"
+    },
+    "arn/Serendib Efreet": {
+      "status": "pass"
+    },
+    "arn/Shahrazad": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:9\n  |\n1 | Players play a Magic subgame, using their libraries as their decks. Each player who doesn't win the subgame loses half their life, rounded up.\n  |         ^---\n  |\n  = expected discard_cards_action or sacrifice_permanents_action"
+    },
+    "arn/Sindbad": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:6\n  |\n1 | {T}: Draw a card and reveal it. If it isn't a land card, discard it.\n  |      ^---\n  |\n  = expected colored_target_effect, counter_target_colored_spell_action, destroy, add_mana_of_any_one_color, add_one_mana_of_any_color, add_mana, tap_target_permanent_choice, activated_draw_cards, create_token, target_permanent_becomes_basic_land_type_until_source_leaves, regenerate_source, untap_target_permanent, untap_source, untap_enchanted_object, take_extra_turn_after_this_one, look_at_target_players_hand, target_player_discards_cards, choose_target_non_creature_type_creature_active_player_controlled_continuously, target_creature_with_power_or_less_cant_be_blocked, target_permanent_gains_keyword_until_eot, activated_enchanted_gets_until_eot, next_damage_event_effect, next_damage_redirection_effect, activated_damage_prevention_effect, put_pt_counters_on_source, put_named_counter_on_target_non_basic_land, choose_creature_card_in_hand_payable_by_mana_spent_on_variable, if_source_on_battlefield_flip_onto_battlefield_from_height, if_source_turns_over_destroy_touched_nontoken_permanents, then_destroy_source, or source_object"
+    },
+    "arn/Singing Tree": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:32\n  |\n1 | {T}: Target attacking creature has base power 0 until end of turn.\n  |                                ^---\n  |\n  = expected target_permanent_gains_keyword_eot_effect"
+    },
+    "arn/Sorceress Queen": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:22\n  |\n1 | {T}: Target creature other than this creature has base power and toughness 0/2 until end of turn.\n  |                      ^---\n  |\n  = expected target_permanent_gains_keyword_eot_effect"
+    },
+    "arn/Stone-Throwing Devils": {
+      "status": "pass"
+    },
+    "arn/Unstable Mutation": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 3:91\n  |\n3 | At the beginning of the upkeep of enchanted creature's controller, put a -1/-1 counter on that creature.\n  |                                                                                           ^---\n  |\n  = expected trigger_counter_recipient"
+    },
+    "arn/War Elephant": {
+      "status": "pass"
+    },
+    "arn/Wyluli Wolf": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:22\n  |\n1 | {T}: Target creature gets +1/+1 until end of turn.\n  |                      ^---\n  |\n  = expected target_permanent_gains_keyword_eot_effect"
+    },
+    "arn/Ydwen Efreet": {
+      "status": "fail",
+      "error": "parse: parse error:  --> 1:15\n  |\n1 | Whenever this creature blocks, flip a coin. If you lose the flip, remove this creature from combat and it can't block this turn. Creatures it was blocking that had become blocked by only this creature this combat become unblocked.\n  |               ^---\n  |\n  = expected aura_source_object or permanent_object"
+    },
     "lea/Air Elemental": {
       "status": "pass"
     },
@@ -901,6 +2100,912 @@
       "status": "pass"
     },
     "lea/Zombie Master": {
+      "status": "pass"
+    },
+    "leb/Air Elemental": {
+      "status": "pass"
+    },
+    "leb/Ancestral Recall": {
+      "status": "pass"
+    },
+    "leb/Animate Artifact": {
+      "status": "pass"
+    },
+    "leb/Animate Dead": {
+      "status": "pass"
+    },
+    "leb/Animate Wall": {
+      "status": "pass"
+    },
+    "leb/Ankh of Mishra": {
+      "status": "pass"
+    },
+    "leb/Armageddon": {
+      "status": "pass"
+    },
+    "leb/Aspect of Wolf": {
+      "status": "pass"
+    },
+    "leb/Bad Moon": {
+      "status": "pass"
+    },
+    "leb/Badlands": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Balance": {
+      "status": "pass"
+    },
+    "leb/Basalt Monolith": {
+      "status": "pass"
+    },
+    "leb/Bayou": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Benalish Hero": {
+      "status": "pass"
+    },
+    "leb/Berserk": {
+      "status": "pass"
+    },
+    "leb/Birds of Paradise": {
+      "status": "pass"
+    },
+    "leb/Black Knight": {
+      "status": "pass"
+    },
+    "leb/Black Lotus": {
+      "status": "pass"
+    },
+    "leb/Black Vise": {
+      "status": "pass"
+    },
+    "leb/Black Ward": {
+      "status": "pass"
+    },
+    "leb/Blaze of Glory": {
+      "status": "pass"
+    },
+    "leb/Blessing": {
+      "status": "pass"
+    },
+    "leb/Blue Elemental Blast": {
+      "status": "pass"
+    },
+    "leb/Blue Ward": {
+      "status": "pass"
+    },
+    "leb/Bog Wraith": {
+      "status": "pass"
+    },
+    "leb/Braingeyser": {
+      "status": "pass"
+    },
+    "leb/Burrowing": {
+      "status": "pass"
+    },
+    "leb/Camouflage": {
+      "status": "pass"
+    },
+    "leb/Castle": {
+      "status": "pass"
+    },
+    "leb/Celestial Prism": {
+      "status": "pass"
+    },
+    "leb/Channel": {
+      "status": "pass"
+    },
+    "leb/Chaos Orb": {
+      "status": "pass"
+    },
+    "leb/Chaoslace": {
+      "status": "pass"
+    },
+    "leb/Circle of Protection: Black": {
+      "status": "pass"
+    },
+    "leb/Circle of Protection: Blue": {
+      "status": "pass"
+    },
+    "leb/Circle of Protection: Green": {
+      "status": "pass"
+    },
+    "leb/Circle of Protection: Red": {
+      "status": "pass"
+    },
+    "leb/Circle of Protection: White": {
+      "status": "pass"
+    },
+    "leb/Clockwork Beast": {
+      "status": "pass"
+    },
+    "leb/Clone": {
+      "status": "pass"
+    },
+    "leb/Cockatrice": {
+      "status": "pass"
+    },
+    "leb/Consecrate Land": {
+      "status": "pass"
+    },
+    "leb/Conservator": {
+      "status": "pass"
+    },
+    "leb/Contract from Below": {
+      "status": "pass"
+    },
+    "leb/Control Magic": {
+      "status": "pass"
+    },
+    "leb/Conversion": {
+      "status": "pass"
+    },
+    "leb/Copper Tablet": {
+      "status": "pass"
+    },
+    "leb/Copy Artifact": {
+      "status": "pass"
+    },
+    "leb/Counterspell": {
+      "status": "pass"
+    },
+    "leb/Craw Wurm": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Creature Bond": {
+      "status": "pass"
+    },
+    "leb/Crusade": {
+      "status": "pass"
+    },
+    "leb/Crystal Rod": {
+      "status": "pass"
+    },
+    "leb/Cursed Land": {
+      "status": "pass"
+    },
+    "leb/Cyclopean Tomb": {
+      "status": "pass"
+    },
+    "leb/Dark Ritual": {
+      "status": "pass"
+    },
+    "leb/Darkpact": {
+      "status": "pass"
+    },
+    "leb/Death Ward": {
+      "status": "pass"
+    },
+    "leb/Deathgrip": {
+      "status": "pass"
+    },
+    "leb/Deathlace": {
+      "status": "pass"
+    },
+    "leb/Demonic Attorney": {
+      "status": "pass"
+    },
+    "leb/Demonic Hordes": {
+      "status": "pass"
+    },
+    "leb/Demonic Tutor": {
+      "status": "pass"
+    },
+    "leb/Dingus Egg": {
+      "status": "pass"
+    },
+    "leb/Disenchant": {
+      "status": "pass"
+    },
+    "leb/Disintegrate": {
+      "status": "pass"
+    },
+    "leb/Disrupting Scepter": {
+      "status": "pass"
+    },
+    "leb/Dragon Whelp": {
+      "status": "pass"
+    },
+    "leb/Drain Life": {
+      "status": "pass"
+    },
+    "leb/Drain Power": {
+      "status": "pass"
+    },
+    "leb/Drudge Skeletons": {
+      "status": "pass"
+    },
+    "leb/Dwarven Demolition Team": {
+      "status": "pass"
+    },
+    "leb/Dwarven Warriors": {
+      "status": "pass"
+    },
+    "leb/Earth Elemental": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Earthbind": {
+      "status": "pass"
+    },
+    "leb/Earthquake": {
+      "status": "pass"
+    },
+    "leb/Elvish Archers": {
+      "status": "pass"
+    },
+    "leb/Evil Presence": {
+      "status": "pass"
+    },
+    "leb/False Orders": {
+      "status": "pass"
+    },
+    "leb/Farmstead": {
+      "status": "pass"
+    },
+    "leb/Fastbond": {
+      "status": "pass"
+    },
+    "leb/Fear": {
+      "status": "pass"
+    },
+    "leb/Feedback": {
+      "status": "pass"
+    },
+    "leb/Fire Elemental": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Fireball": {
+      "status": "pass"
+    },
+    "leb/Firebreathing": {
+      "status": "pass"
+    },
+    "leb/Flashfires": {
+      "status": "pass"
+    },
+    "leb/Flight": {
+      "status": "pass"
+    },
+    "leb/Fog": {
+      "status": "pass"
+    },
+    "leb/Force of Nature": {
+      "status": "pass"
+    },
+    "leb/Forcefield": {
+      "status": "pass"
+    },
+    "leb/Forest": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Fork": {
+      "status": "pass"
+    },
+    "leb/Frozen Shade": {
+      "status": "pass"
+    },
+    "leb/Fungusaur": {
+      "status": "pass"
+    },
+    "leb/Gaea's Liege": {
+      "status": "pass"
+    },
+    "leb/Gauntlet of Might": {
+      "status": "pass"
+    },
+    "leb/Giant Growth": {
+      "status": "pass"
+    },
+    "leb/Giant Spider": {
+      "status": "pass"
+    },
+    "leb/Glasses of Urza": {
+      "status": "pass"
+    },
+    "leb/Gloom": {
+      "status": "pass"
+    },
+    "leb/Goblin Balloon Brigade": {
+      "status": "pass"
+    },
+    "leb/Goblin King": {
+      "status": "pass"
+    },
+    "leb/Granite Gargoyle": {
+      "status": "pass"
+    },
+    "leb/Gray Ogre": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Green Ward": {
+      "status": "pass"
+    },
+    "leb/Grizzly Bears": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Guardian Angel": {
+      "status": "pass"
+    },
+    "leb/Healing Salve": {
+      "status": "pass"
+    },
+    "leb/Helm of Chatzuk": {
+      "status": "pass"
+    },
+    "leb/Hill Giant": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Holy Armor": {
+      "status": "pass"
+    },
+    "leb/Holy Strength": {
+      "status": "pass"
+    },
+    "leb/Howl from Beyond": {
+      "status": "pass"
+    },
+    "leb/Howling Mine": {
+      "status": "pass"
+    },
+    "leb/Hurloon Minotaur": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Hurricane": {
+      "status": "pass"
+    },
+    "leb/Hypnotic Specter": {
+      "status": "pass"
+    },
+    "leb/Ice Storm": {
+      "status": "pass"
+    },
+    "leb/Icy Manipulator": {
+      "status": "pass"
+    },
+    "leb/Illusionary Mask": {
+      "status": "pass"
+    },
+    "leb/Instill Energy": {
+      "status": "pass"
+    },
+    "leb/Invisibility": {
+      "status": "pass"
+    },
+    "leb/Iron Star": {
+      "status": "pass"
+    },
+    "leb/Ironclaw Orcs": {
+      "status": "pass"
+    },
+    "leb/Ironroot Treefolk": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Island": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Island Sanctuary": {
+      "status": "pass"
+    },
+    "leb/Ivory Cup": {
+      "status": "pass"
+    },
+    "leb/Jade Monolith": {
+      "status": "pass"
+    },
+    "leb/Jade Statue": {
+      "status": "pass"
+    },
+    "leb/Jayemdae Tome": {
+      "status": "pass"
+    },
+    "leb/Juggernaut": {
+      "status": "pass"
+    },
+    "leb/Jump": {
+      "status": "pass"
+    },
+    "leb/Karma": {
+      "status": "pass"
+    },
+    "leb/Keldon Warlord": {
+      "status": "pass"
+    },
+    "leb/Kormus Bell": {
+      "status": "pass"
+    },
+    "leb/Kudzu": {
+      "status": "pass"
+    },
+    "leb/Lance": {
+      "status": "pass"
+    },
+    "leb/Ley Druid": {
+      "status": "pass"
+    },
+    "leb/Library of Leng": {
+      "status": "pass"
+    },
+    "leb/Lich": {
+      "status": "pass"
+    },
+    "leb/Lifeforce": {
+      "status": "pass"
+    },
+    "leb/Lifelace": {
+      "status": "pass"
+    },
+    "leb/Lifetap": {
+      "status": "pass"
+    },
+    "leb/Lightning Bolt": {
+      "status": "pass"
+    },
+    "leb/Living Artifact": {
+      "status": "pass"
+    },
+    "leb/Living Lands": {
+      "status": "pass"
+    },
+    "leb/Living Wall": {
+      "status": "pass"
+    },
+    "leb/Llanowar Elves": {
+      "status": "pass"
+    },
+    "leb/Lord of Atlantis": {
+      "status": "pass"
+    },
+    "leb/Lord of the Pit": {
+      "status": "pass"
+    },
+    "leb/Lure": {
+      "status": "pass"
+    },
+    "leb/Magical Hack": {
+      "status": "pass"
+    },
+    "leb/Mahamoti Djinn": {
+      "status": "pass"
+    },
+    "leb/Mana Flare": {
+      "status": "pass"
+    },
+    "leb/Mana Short": {
+      "status": "pass"
+    },
+    "leb/Mana Vault": {
+      "status": "pass"
+    },
+    "leb/Manabarbs": {
+      "status": "pass"
+    },
+    "leb/Meekstone": {
+      "status": "pass"
+    },
+    "leb/Merfolk of the Pearl Trident": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Mesa Pegasus": {
+      "status": "pass"
+    },
+    "leb/Mind Twist": {
+      "status": "pass"
+    },
+    "leb/Mons's Goblin Raiders": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Mountain": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Mox Emerald": {
+      "status": "pass"
+    },
+    "leb/Mox Jet": {
+      "status": "pass"
+    },
+    "leb/Mox Pearl": {
+      "status": "pass"
+    },
+    "leb/Mox Ruby": {
+      "status": "pass"
+    },
+    "leb/Mox Sapphire": {
+      "status": "pass"
+    },
+    "leb/Natural Selection": {
+      "status": "pass"
+    },
+    "leb/Nether Shadow": {
+      "status": "pass"
+    },
+    "leb/Nettling Imp": {
+      "status": "pass"
+    },
+    "leb/Nevinyrral's Disk": {
+      "status": "pass"
+    },
+    "leb/Nightmare": {
+      "status": "pass"
+    },
+    "leb/Northern Paladin": {
+      "status": "pass"
+    },
+    "leb/Obsianus Golem": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Orcish Artillery": {
+      "status": "pass"
+    },
+    "leb/Orcish Oriflamme": {
+      "status": "pass"
+    },
+    "leb/Paralyze": {
+      "status": "pass"
+    },
+    "leb/Pearled Unicorn": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Personal Incarnation": {
+      "status": "pass"
+    },
+    "leb/Pestilence": {
+      "status": "pass"
+    },
+    "leb/Phantasmal Forces": {
+      "status": "pass"
+    },
+    "leb/Phantasmal Terrain": {
+      "status": "pass"
+    },
+    "leb/Phantom Monster": {
+      "status": "pass"
+    },
+    "leb/Pirate Ship": {
+      "status": "pass"
+    },
+    "leb/Plague Rats": {
+      "status": "pass"
+    },
+    "leb/Plains": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Plateau": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Power Leak": {
+      "status": "pass"
+    },
+    "leb/Power Sink": {
+      "status": "pass"
+    },
+    "leb/Power Surge": {
+      "status": "pass"
+    },
+    "leb/Prodigal Sorcerer": {
+      "status": "pass"
+    },
+    "leb/Psionic Blast": {
+      "status": "pass"
+    },
+    "leb/Psychic Venom": {
+      "status": "pass"
+    },
+    "leb/Purelace": {
+      "status": "pass"
+    },
+    "leb/Raging River": {
+      "status": "pass"
+    },
+    "leb/Raise Dead": {
+      "status": "pass"
+    },
+    "leb/Red Elemental Blast": {
+      "status": "pass"
+    },
+    "leb/Red Ward": {
+      "status": "pass"
+    },
+    "leb/Regeneration": {
+      "status": "pass"
+    },
+    "leb/Regrowth": {
+      "status": "pass"
+    },
+    "leb/Resurrection": {
+      "status": "pass"
+    },
+    "leb/Reverse Damage": {
+      "status": "pass"
+    },
+    "leb/Righteousness": {
+      "status": "pass"
+    },
+    "leb/Roc of Kher Ridges": {
+      "status": "pass"
+    },
+    "leb/Rock Hydra": {
+      "status": "pass"
+    },
+    "leb/Rod of Ruin": {
+      "status": "pass"
+    },
+    "leb/Royal Assassin": {
+      "status": "pass"
+    },
+    "leb/Sacrifice": {
+      "status": "pass"
+    },
+    "leb/Samite Healer": {
+      "status": "pass"
+    },
+    "leb/Savannah": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Savannah Lions": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Scathe Zombies": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Scavenging Ghoul": {
+      "status": "pass"
+    },
+    "leb/Scrubland": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Scryb Sprites": {
+      "status": "pass"
+    },
+    "leb/Sea Serpent": {
+      "status": "pass"
+    },
+    "leb/Sedge Troll": {
+      "status": "pass"
+    },
+    "leb/Sengir Vampire": {
+      "status": "pass"
+    },
+    "leb/Serra Angel": {
+      "status": "pass"
+    },
+    "leb/Shanodin Dryads": {
+      "status": "pass"
+    },
+    "leb/Shatter": {
+      "status": "pass"
+    },
+    "leb/Shivan Dragon": {
+      "status": "pass"
+    },
+    "leb/Simulacrum": {
+      "status": "pass"
+    },
+    "leb/Sinkhole": {
+      "status": "pass"
+    },
+    "leb/Siren's Call": {
+      "status": "pass"
+    },
+    "leb/Sleight of Mind": {
+      "status": "pass"
+    },
+    "leb/Smoke": {
+      "status": "pass"
+    },
+    "leb/Sol Ring": {
+      "status": "pass"
+    },
+    "leb/Soul Net": {
+      "status": "pass"
+    },
+    "leb/Spell Blast": {
+      "status": "pass"
+    },
+    "leb/Stasis": {
+      "status": "pass"
+    },
+    "leb/Steal Artifact": {
+      "status": "pass"
+    },
+    "leb/Stone Giant": {
+      "status": "pass"
+    },
+    "leb/Stone Rain": {
+      "status": "pass"
+    },
+    "leb/Stream of Life": {
+      "status": "pass"
+    },
+    "leb/Sunglasses of Urza": {
+      "status": "pass"
+    },
+    "leb/Swamp": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Swords to Plowshares": {
+      "status": "pass"
+    },
+    "leb/Taiga": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Terror": {
+      "status": "pass"
+    },
+    "leb/The Hive": {
+      "status": "pass"
+    },
+    "leb/Thicket Basilisk": {
+      "status": "pass"
+    },
+    "leb/Thoughtlace": {
+      "status": "pass"
+    },
+    "leb/Throne of Bone": {
+      "status": "pass"
+    },
+    "leb/Timber Wolves": {
+      "status": "pass"
+    },
+    "leb/Time Vault": {
+      "status": "pass"
+    },
+    "leb/Time Walk": {
+      "status": "pass"
+    },
+    "leb/Timetwister": {
+      "status": "pass"
+    },
+    "leb/Tranquility": {
+      "status": "pass"
+    },
+    "leb/Tropical Island": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Tsunami": {
+      "status": "pass"
+    },
+    "leb/Tundra": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Tunnel": {
+      "status": "pass"
+    },
+    "leb/Twiddle": {
+      "status": "pass"
+    },
+    "leb/Two-Headed Giant of Foriys": {
+      "status": "pass"
+    },
+    "leb/Underground Sea": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Unholy Strength": {
+      "status": "pass"
+    },
+    "leb/Unsummon": {
+      "status": "pass"
+    },
+    "leb/Uthden Troll": {
+      "status": "pass"
+    },
+    "leb/Verduran Enchantress": {
+      "status": "pass"
+    },
+    "leb/Vesuvan Doppelganger": {
+      "status": "pass"
+    },
+    "leb/Veteran Bodyguard": {
+      "status": "pass"
+    },
+    "leb/Volcanic Eruption": {
+      "status": "pass"
+    },
+    "leb/Volcanic Island": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Wall of Air": {
+      "status": "pass"
+    },
+    "leb/Wall of Bone": {
+      "status": "pass"
+    },
+    "leb/Wall of Brambles": {
+      "status": "pass"
+    },
+    "leb/Wall of Fire": {
+      "status": "pass"
+    },
+    "leb/Wall of Ice": {
+      "status": "pass"
+    },
+    "leb/Wall of Stone": {
+      "status": "pass"
+    },
+    "leb/Wall of Swords": {
+      "status": "pass"
+    },
+    "leb/Wall of Water": {
+      "status": "pass"
+    },
+    "leb/Wall of Wood": {
+      "status": "pass"
+    },
+    "leb/Wanderlust": {
+      "status": "pass"
+    },
+    "leb/War Mammoth": {
+      "status": "pass"
+    },
+    "leb/Warp Artifact": {
+      "status": "pass"
+    },
+    "leb/Water Elemental": {
+      "status": "fail",
+      "error": "empty oracle text (vanilla card)"
+    },
+    "leb/Weakness": {
+      "status": "pass"
+    },
+    "leb/Web": {
+      "status": "pass"
+    },
+    "leb/Wheel of Fortune": {
+      "status": "pass"
+    },
+    "leb/White Knight": {
+      "status": "pass"
+    },
+    "leb/White Ward": {
+      "status": "pass"
+    },
+    "leb/Wild Growth": {
+      "status": "pass"
+    },
+    "leb/Will-o'-the-Wisp": {
+      "status": "pass"
+    },
+    "leb/Winter Orb": {
+      "status": "pass"
+    },
+    "leb/Wooden Sphere": {
+      "status": "pass"
+    },
+    "leb/Word of Command": {
+      "status": "pass"
+    },
+    "leb/Wrath of God": {
+      "status": "pass"
+    },
+    "leb/Zombie Master": {
       "status": "pass"
     }
   }

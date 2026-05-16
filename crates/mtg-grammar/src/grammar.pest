@@ -1709,6 +1709,7 @@ object_status = @{ ^"tapped" | ^"untapped" }
 
 trigger_effect = _{
     destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn
+  | destroy_all_creatures_blocking_or_blocked_by_it
   | destroy_that_creature_if_it_attacked_this_turn
   | destroy_it
   | destroy_that_creature_at_end_of_combat
@@ -1748,6 +1749,11 @@ destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_t
     ^"destroy" ~ ^"all" ~ ^"non-" ~ creature_type ~ ^"creatures"
   ~ ^"that" ~ ^"player" ~ ^"controls" ~ ^"that" ~ ^"didn't"
   ~ ^"attack" ~ ^"this" ~ ^"turn" ~ "."
+}
+
+destroy_all_creatures_blocking_or_blocked_by_it = {
+    ^"destroy" ~ ^"all" ~ ^"creatures" ~ ^"blocking" ~ ^"or"
+  ~ ^"blocked" ~ ^"by" ~ ^"it" ~ "."
 }
 
 defending_player_divides_creatures_without_keyword_into_labeled_piles = {
