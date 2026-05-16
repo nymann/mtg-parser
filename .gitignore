@@ -1,5 +1,6 @@
 /target
 .add-card/
+.grammar-concept-runs/
 .scryfall-cache/
 *.swp
 .DS_Store

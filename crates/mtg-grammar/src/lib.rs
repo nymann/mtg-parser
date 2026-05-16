@@ -21,4 +21,5 @@ pub use ast::{
     VariablePtModifier, Zone,
 };
 pub use parse::{parse, ParseError};
+pub use parse::{parse_pest_rule, pest_rule_names, RuleParseError};
 pub use unparse::unparse;

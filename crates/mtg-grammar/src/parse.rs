@@ -42,6 +42,8 @@ use crate::ast::{
 #[grammar = "grammar.pest"]
 struct MtgParser;
 
+include!(concat!(env!("OUT_DIR"), "/rule_lookup.rs"));
+
 #[derive(Debug, thiserror::Error)]
 pub enum ParseError {
     #[error("parse error: {0}")]
@@ -54,6 +56,41 @@ impl From<pest::error::Error<Rule>> for ParseError {
     fn from(value: pest::error::Error<Rule>) -> Self {
         ParseError::Pest(Box::new(value))
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RuleParseError {
+    #[error("unknown pest rule {0:?}")]
+    UnknownRule(String),
+    #[error("pest rule {rule:?} matched only through byte {offset}; trailing input remains")]
+    TrailingInput { rule: String, offset: usize },
+    #[error("pest rule {0:?} produced no parse pairs")]
+    EmptyMatch(String),
+    #[error("parse error: {0}")]
+    Pest(#[from] Box<pest::error::Error<Rule>>),
+}
+
+impl From<pest::error::Error<Rule>> for RuleParseError {
+    fn from(value: pest::error::Error<Rule>) -> Self {
+        RuleParseError::Pest(Box::new(value))
+    }
+}
+
+pub fn parse_pest_rule(rule_name: &str, text: &str) -> Result<(), RuleParseError> {
+    let rule =
+        rule_by_name(rule_name).ok_or_else(|| RuleParseError::UnknownRule(rule_name.into()))?;
+    let mut pairs = MtgParser::parse(rule, text)?;
+    let pair = pairs
+        .next()
+        .ok_or_else(|| RuleParseError::EmptyMatch(rule_name.into()))?;
+    let span = pair.as_span();
+    if span.start() != 0 || span.end() != text.len() {
+        return Err(RuleParseError::TrailingInput {
+            rule: rule_name.into(),
+            offset: span.end(),
+        });
+    }
+    Ok(())
 }
 
 fn next_inner<'i>(

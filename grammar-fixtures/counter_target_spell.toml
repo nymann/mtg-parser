@@ -1,0 +1,37 @@
+[fixture]
+concept = "counter_target_spell"
+rule = "counter_target_spell"
+
+[[example]]
+text = "Counter target spell unless its controller pays {X}."
+
+[[example]]
+text = "Counter target spell with mana value X."
+
+[[example]]
+text = "Counter target spell."
+
+[[counterexample]]
+text = "Destroy target creature."
+reason = "Baseline unrelated effect."
+
+[[counterexample]]
+text = "Counter target spell unless its controller pays {X}. trailing"
+reason = "Exact-consumption guard."
+
+[[counterexample]]
+text = "{B}{B}: Counter target green spell."
+reason = "Nearby corpus wording not accepted by the selected grammar rule."
+
+[[counterexample]]
+text = "{G}{G}: Counter target black spell."
+reason = "Nearby corpus wording not accepted by the selected grammar rule."
+
+[[counterexample]]
+text = "• Counter target blue spell."
+reason = "Nearby corpus wording not accepted by the selected grammar rule."
+
+[[counterexample]]
+text = "• Counter target red spell."
+reason = "Nearby corpus wording not accepted by the selected grammar rule."
+

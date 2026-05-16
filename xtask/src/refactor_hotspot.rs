@@ -1274,6 +1274,21 @@ fn collect_assistant_text(
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_ascii_lowercase();
+            if kind == "item.completed" || kind == "item_completed" {
+                if let Some(item) = parsed.get("item") {
+                    let item_type = item
+                        .get("type")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_ascii_lowercase();
+                    if matches!(item_type.as_str(), "agent_message" | "assistant_message") {
+                        if let Some(text) = item.get("text").and_then(|v| v.as_str()) {
+                            assistant_text.push(text.to_string());
+                            return;
+                        }
+                    }
+                }
+            }
             if !(kind.contains("assistant") || kind.contains("message") || kind.contains("text")) {
                 return;
             }

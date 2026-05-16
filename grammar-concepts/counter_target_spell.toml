@@ -1,0 +1,90 @@
+[[axis]]
+evidence = ["x"]
+name = "amount"
+
+[[axis]]
+evidence = ["counter"]
+name = "event"
+
+[[axis]]
+evidence = ["unless"]
+name = "polarity"
+
+[[axis]]
+evidence = ["target"]
+name = "recipient"
+
+[boundary]
+excludes = [
+    "Nearby corpus clauses that do not match the selected PEST rule.",
+    "Parser, unparser, lowering, generated card tests, and corpus pass status.",
+]
+includes = [
+    "Corpus clauses matching the selected PEST rule counter_target_spell.",
+    "Rules-grounded wording discovered from qmd and Oracle corpus clustering.",
+]
+
+[concept]
+name = "counter_target_spell"
+pest_rules = ["counter_target_spell"]
+rules_queries = ["lex: counter target spell"]
+rules_terms = [
+    "counter",
+    "target",
+    "spell",
+]
+
+[[counterexample]]
+reason = "Baseline unrelated effect."
+text = "Destroy target creature."
+
+[[counterexample]]
+card = "Blue Elemental Blast"
+reason = "Nearby corpus wording not accepted by the selected grammar rule."
+text = "• Counter target red spell."
+
+[[counterexample]]
+card = "Deathgrip"
+reason = "Nearby corpus wording not accepted by the selected grammar rule."
+text = "{B}{B}: Counter target green spell."
+
+[[counterexample]]
+card = "Lifeforce"
+reason = "Nearby corpus wording not accepted by the selected grammar rule."
+text = "{G}{G}: Counter target black spell."
+
+[[counterexample]]
+card = "Red Elemental Blast"
+reason = "Nearby corpus wording not accepted by the selected grammar rule."
+text = "• Counter target blue spell."
+
+[[example]]
+card = "Counterspell"
+text = "Counter target spell."
+
+[[example]]
+card = "Power Sink"
+text = "Counter target spell unless its controller pays {X}."
+
+[[example]]
+card = "Spell Blast"
+text = "Counter target spell with mana value X."
+
+[grammar_query]
+candidate_rules = [
+    "counter_target_colored_spell_action",
+    "counter_target_spell",
+    "counter_target_colored_spell",
+    "this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first",
+    "copy_target_spell_except_copy_is_color",
+    "target_spell_or_permanent_becomes_color",
+    "change_text_of_target_spell_or_permanent_replacing_basic_land_type",
+    "put_named_counter_on_target_non_basic_land",
+    "target_basic_lands_count",
+    "regenerate_target_creature",
+]
+selected_rule = "counter_target_spell"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

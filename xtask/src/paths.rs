@@ -37,6 +37,18 @@ pub fn add_card_log_root() -> PathBuf {
     repo_root().join(".add-card")
 }
 
+pub fn grammar_concepts_dir() -> PathBuf {
+    repo_root().join("grammar-concepts")
+}
+
+pub fn grammar_fixtures_dir() -> PathBuf {
+    repo_root().join("grammar-fixtures")
+}
+
+pub fn grammar_concept_log_root() -> PathBuf {
+    repo_root().join(".grammar-concept-runs")
+}
+
 pub fn refactor_hotspot_log_root() -> PathBuf {
     repo_root().join(".refactor-hotspot")
 }

@@ -8,10 +8,12 @@ use std::process::ExitCode;
 mod add_card;
 mod agent_events;
 mod ast_coverage;
+mod concept;
 mod console_sink;
 mod corpus_cmd;
 mod flow;
 mod grammar_audit;
+mod grammar_query;
 mod grind;
 mod next_card;
 mod paths;
@@ -51,6 +53,29 @@ Commands:
   rules-context \"<query>\"     Render the Comprehensive Rules prompt block for a
                               given oracle phrase. Lets you inspect retrieval
                               quality without invoking the full add-card loop.
+  concept-discover --query TEXT
+                              Create a grammar-first discovery run from qmd rules
+                              search, corpus clustering, and inferred grammar axes.
+                              Writes .grammar-concept-runs/<ts>-<concept>/.
+  concept-grow --query TEXT --concept NAME
+                              Run the grammar-first loop end to end: discover,
+                              choose a PEST rule, write concept and fixture files,
+                              run fixtures, and update grammar maturity.
+  concept-grammar-test CONCEPT
+                              Run grammar-fixtures/<concept>.toml at PEST-rule
+                              level. Does not require AST, unparse, lowering, or
+                              card corpus success.
+  concept-grammar-query --query TEXT
+                              Query grammar.pest for candidate rules, dependencies,
+                              reverse dependencies, and duplicate RHS shape drift.
+  concept-maturity CONCEPT    Report grammar-only maturity from concept and fixture
+                              artifacts. Does not mark cards passing.
+  concept-map-existing        Inventory grammar.pest rules against committed concept
+                              files and report mapped versus legacy/unmapped rules.
+  concept-grind --agent codex
+                              Autonomous grammar-first loop: pick a concept gap,
+                              run boundary and PEST patch agents, gate fixtures,
+                              update maturity, and commit.
   refactor-hotspot            Run a qmd-grounded autonomous refactor workflow.
               [--theme THEME] Defaults to grammar-core. Other themes include
               [--target PATH] damage, destroy, prevention, keyword-abilities,
@@ -142,6 +167,13 @@ fn main() -> ExitCode {
         Some("refresh-corpus") => corpus_cmd::refresh(&args[1..]),
         Some("rules-split") => rules_split::run(&args[1..]),
         Some("rules-context") => rules_context::run_cli(&args[1..]),
+        Some("concept-discover") => concept::discover(&args[1..]),
+        Some("concept-grow") => concept::grow(&args[1..]),
+        Some("concept-grammar-test") => concept::grammar_test(&args[1..]),
+        Some("concept-grammar-query") => concept::grammar_query(&args[1..]),
+        Some("concept-maturity") => concept::maturity(&args[1..]),
+        Some("concept-map-existing") => concept::map_existing(&args[1..]),
+        Some("concept-grind") => concept::grind(&args[1..]),
         Some("tui-view") => match parse_tui_view_args(&args[1..]) {
             Ok(event_log) => match tui::run_viewer(event_log) {
                 Ok(code) => code,

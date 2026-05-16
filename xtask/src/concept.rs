@@ -1,0 +1,3259 @@
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::{Command, ExitCode};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use anyhow::{anyhow, bail, Context, Result};
+use mtg_corpus::normalize_oracle_text;
+use mtg_grammar::parse_pest_rule;
+use mtg_scryfall::ScryfallClient;
+use serde::{Deserialize, Serialize};
+
+use crate::console_sink::ConsoleSink;
+use crate::flow::AgentProvider;
+use crate::grammar_query as grammar_query_engine;
+use crate::grammar_query::GrammarQuery;
+use crate::paths::{
+    corpus_sets_path, grammar_concept_log_root, grammar_concepts_dir, grammar_fixtures_dir,
+    grammar_pest_path, repo_root,
+};
+use crate::refactor_hotspot;
+use crate::rules_context;
+
+const DISCOVER_USAGE: &str = "\
+cargo xtask concept-discover --query TEXT [--concept NAME] [--set CODE] [--limit N]
+
+Creates a grammar-first discovery run under .grammar-concept-runs/.
+This command searches qmd rules context and cached/refreshable corpus text.
+It does not edit grammar, parser, generated card tests, or corpus status.
+";
+
+const GROW_USAGE: &str = "\
+cargo xtask concept-grow --query TEXT --concept NAME [--rule RULE] [--set CODE] [--limit N] [--force]
+
+Runs the grammar-first loop end to end:
+- qmd rules search, corpus clustering, axes, and grammar-neighbor discovery
+- choose a candidate PEST rule
+- write grammar-concepts/<concept>.toml and grammar-fixtures/<concept>.toml
+- run grammar fixtures and update [maturity].pest_grammar
+
+This command still stops at grammar maturity. It does not edit parser, unparser,
+lowering, generated card tests, or corpus status.
+";
+
+const GRAMMAR_TEST_USAGE: &str = "\
+cargo xtask concept-grammar-test CONCEPT [--json]
+cargo xtask concept-grammar-test --fixture PATH [--json]
+
+Runs grammar-fixtures/<concept>.toml at PEST-rule level.
+This command does not require AST construction, unparse, lowering, or card tests.
+";
+
+const GRAMMAR_QUERY_USAGE: &str = "\
+cargo xtask concept-grammar-query --query TEXT [--rule NAME] [--limit N] [--json]
+
+Queries grammar.pest for candidate rules, dependencies, reverse dependencies,
+and duplicate/similar RHS shape drift.
+";
+
+const MATURITY_USAGE: &str = "\
+cargo xtask concept-maturity CONCEPT [--json] [--update]
+
+Reports grammar-first maturity from grammar-concepts/ and grammar-fixtures/.
+With --update, writes [maturity].pest_grammar and blockers back to the concept file.
+";
+
+const MAP_EXISTING_USAGE: &str = "\
+cargo xtask concept-map-existing [--json] [--no-expand-deps]
+
+Inventories current grammar.pest rules against committed grammar-concepts/*.toml.
+Concept files own rules through [concept].pest_rules. By default, ownership
+expands through PEST dependencies until shared grammar primitives. The report
+shows mapped rules, unmapped legacy rules, and likely owner suggestions by
+rule-name prefix.
+";
+
+const GRIND_USAGE: &str = "\
+cargo xtask concept-grind [--agent codex|claude] [--max-iterations N]
+                          [--concept NAME] [--target-rule RULE] [--query TEXT]
+                          [--repair-attempts N] [--dry-run]
+                          [--allow-dirty] [--no-commit]
+
+Autonomous grammar-first loop. Each iteration maps existing grammar, selects the
+next concept gap, runs a read-only boundary agent, runs a PEST patch agent,
+gates grammar fixtures and grammar debt, repairs failures when allowed, updates
+maturity, and commits. It does not run add-card or try to make cards pass.
+";
+
+pub fn discover(args: &[String]) -> ExitCode {
+    match parse_discover_options(args).and_then(run_discover) {
+        Ok(report) => {
+            println!(
+                "Wrote grammar concept discovery run: {}",
+                report.run_dir.display()
+            );
+            println!("  query          : {}", report.query);
+            println!("  concept        : {}", report.concept);
+            println!("  corpus examples: {}", report.corpus_examples);
+            println!("  qmd queries    : {}", report.rules_queries);
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn grow(args: &[String]) -> ExitCode {
+    match parse_grow_options(args).and_then(run_grow) {
+        Ok(report) => {
+            println!("concept: {}", report.concept);
+            println!("run    : {}", report.run_dir.display());
+            println!("rule   : {}", report.rule);
+            println!("concept file: {}", report.concept_file.display());
+            println!("fixture file: {}", report.fixture_file.display());
+            println!(
+                "fixture: {} ({} case(s), {} failure(s))",
+                if report.fixture_passed {
+                    "pass"
+                } else {
+                    "fail"
+                },
+                report.fixture_cases,
+                report.fixture_failures
+            );
+            println!("maturity: {}", report.maturity_state);
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn grammar_test(args: &[String]) -> ExitCode {
+    match parse_grammar_test_options(args).and_then(run_grammar_test) {
+        Ok(report) => {
+            if report.json {
+                match serde_json::to_string_pretty(&report.result) {
+                    Ok(json) => println!("{json}"),
+                    Err(e) => {
+                        eprintln!("error: {e:#}");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                print_fixture_report(&report.result);
+            }
+            if report.result.passed {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
+        }
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn grammar_query(args: &[String]) -> ExitCode {
+    match parse_grammar_query_options(args).and_then(run_grammar_query) {
+        Ok(report) => {
+            if report.json {
+                match serde_json::to_string_pretty(&report.report) {
+                    Ok(json) => println!("{json}"),
+                    Err(e) => {
+                        eprintln!("error: {e:#}");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                print_grammar_query_report(&report.report);
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn maturity(args: &[String]) -> ExitCode {
+    match parse_maturity_options(args).and_then(|options| {
+        let json = options.json;
+        run_maturity(options).map(|report| (report, json))
+    }) {
+        Ok((report, json)) => {
+            if json {
+                match serde_json::to_string_pretty(&report) {
+                    Ok(json) => println!("{json}"),
+                    Err(e) => {
+                        eprintln!("error: {e:#}");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                println!("concept: {}", report.concept);
+                println!("state  : {}", report.state);
+                println!(
+                    "concept file: {}",
+                    display_optional_path(&report.concept_file)
+                );
+                println!(
+                    "fixture file: {}",
+                    display_optional_path(&report.fixture_file)
+                );
+                for blocker in &report.blockers {
+                    println!("blocker: {blocker}");
+                }
+                if report.updated {
+                    println!("updated: maturity written to concept file");
+                }
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn map_existing(args: &[String]) -> ExitCode {
+    match parse_map_existing_options(args).and_then(|options| {
+        let json = options.json;
+        run_map_existing(options).map(|report| (report, json))
+    }) {
+        Ok((report, json)) => {
+            if json {
+                match serde_json::to_string_pretty(&report) {
+                    Ok(json) => println!("{json}"),
+                    Err(e) => {
+                        eprintln!("error: {e:#}");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                print_map_existing_report(&report);
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn grind(args: &[String]) -> ExitCode {
+    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
+        print!("{GRIND_USAGE}");
+        return ExitCode::SUCCESS;
+    }
+    let options = match parse_grind_options(args) {
+        Ok(options) => options,
+        Err(e) => {
+            eprintln!("concept-grind: {e:#}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let mut sink = ConsoleSink::new();
+    match run_grind(options, &mut sink) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("concept-grind: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct DiscoverOptions {
+    query: String,
+    concept: Option<String>,
+    sets: Vec<String>,
+    limit: usize,
+}
+
+#[derive(Debug)]
+struct GrowOptions {
+    discover: DiscoverOptions,
+    rule: Option<String>,
+    force: bool,
+}
+
+#[derive(Debug)]
+struct GrowRun {
+    concept: String,
+    run_dir: PathBuf,
+    rule: String,
+    concept_file: PathBuf,
+    fixture_file: PathBuf,
+    fixture_passed: bool,
+    fixture_cases: usize,
+    fixture_failures: usize,
+    maturity_state: String,
+}
+
+#[derive(Debug)]
+struct DiscoverRun {
+    query: String,
+    concept: String,
+    run_dir: PathBuf,
+    corpus_examples: usize,
+    rules_queries: u32,
+}
+
+#[derive(Debug)]
+struct GrammarTestOptions {
+    concept: Option<String>,
+    fixture: Option<PathBuf>,
+    json: bool,
+}
+
+#[derive(Debug)]
+struct GrammarTestRun {
+    result: FixtureRunResult,
+    json: bool,
+}
+
+#[derive(Debug)]
+struct GrammarQueryOptions {
+    query: String,
+    rule_names: Vec<String>,
+    limit: usize,
+    json: bool,
+}
+
+#[derive(Debug)]
+struct GrammarQueryRun {
+    report: grammar_query_engine::GrammarQueryReport,
+    json: bool,
+}
+
+#[derive(Debug)]
+struct MaturityOptions {
+    concept: String,
+    json: bool,
+    update: bool,
+}
+
+#[derive(Debug)]
+struct MapExistingOptions {
+    json: bool,
+    expand_deps: bool,
+}
+
+#[derive(Debug, Clone)]
+struct ConceptGrindOptions {
+    agent: AgentProvider,
+    max_iterations: u32,
+    concept: Option<String>,
+    target_rule: Option<String>,
+    query: Option<String>,
+    repair_attempts: u8,
+    dry_run: bool,
+    allow_dirty: bool,
+    no_commit: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ExistingGrammarMapReport {
+    rule_count: usize,
+    concept_count: usize,
+    dependency_expansion: bool,
+    shared_rule_count: usize,
+    mapped_rule_count: usize,
+    unmapped_rule_count: usize,
+    concepts: Vec<ConceptRuleMap>,
+    unmapped_rules: Vec<UnmappedGrammarRule>,
+}
+
+#[derive(Debug, Serialize)]
+struct ConceptRuleMap {
+    concept: String,
+    maturity: String,
+    concept_file: PathBuf,
+    declared_rules: Vec<String>,
+    found_rules: Vec<RuleLocationSummary>,
+    owned_rules: Vec<RuleLocationSummary>,
+    missing_rules: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct RuleLocationSummary {
+    name: String,
+    line: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct UnmappedGrammarRule {
+    name: String,
+    line: usize,
+    suggested_concept: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ConceptGap {
+    concept: String,
+    query: String,
+    target_rule: String,
+    target_line: usize,
+    suggested_existing_owner: bool,
+    reason: String,
+}
+
+#[derive(Debug)]
+struct ConceptGrindGateFailure {
+    label: String,
+    output: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct BoundaryDecision {
+    owner: BoundaryOwner,
+    owner_raw: String,
+    axes: String,
+    examples_to_accept: String,
+    counterexamples_to_reject: String,
+    pest_patch_intent: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "kind", content = "value")]
+enum BoundaryOwner {
+    Existing(String),
+    New(String),
+    Blocked(String),
+}
+
+#[derive(Debug, Serialize)]
+struct ConceptGrindIterationSummary {
+    iteration: u32,
+    concept: String,
+    query: String,
+    target_rule: String,
+    fixture_passed: bool,
+    mapped_rule_count_before: usize,
+    mapped_rule_count_after: usize,
+    unmapped_rule_count_before: usize,
+    unmapped_rule_count_after: usize,
+    committed: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct MaturityReport {
+    concept: String,
+    state: String,
+    concept_file: Option<PathBuf>,
+    fixture_file: Option<PathBuf>,
+    blockers: Vec<String>,
+    updated: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    fixture_result: Option<FixtureRunResult>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConceptDocument {
+    concept: ConceptHeader,
+    #[serde(default)]
+    boundary: Option<ConceptBoundary>,
+    #[serde(default)]
+    axis: Vec<ConceptAxis>,
+    #[serde(default)]
+    example: Vec<ConceptExample>,
+    #[serde(default)]
+    counterexample: Vec<ConceptCounterexample>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConceptHeader {
+    name: String,
+    #[serde(default)]
+    rules_terms: Vec<String>,
+    #[serde(default)]
+    rules_queries: Vec<String>,
+    #[serde(default)]
+    pest_rules: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConceptBoundary {
+    #[serde(default)]
+    includes: Vec<String>,
+    #[serde(default)]
+    excludes: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConceptAxis {
+    name: String,
+    #[serde(default)]
+    values: Vec<String>,
+    #[serde(default)]
+    evidence: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConceptExample {
+    text: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConceptCounterexample {
+    text: String,
+}
+
+#[derive(Debug, Serialize)]
+struct RulesArtifact {
+    query: String,
+    rendered_markdown: String,
+    always_loaded: Vec<PathBuf>,
+    dynamic_hits: Vec<PathBuf>,
+    notes: Vec<String>,
+    query_logs: Vec<RulesQueryArtifact>,
+}
+
+#[derive(Debug, Serialize)]
+struct RulesQueryArtifact {
+    query: String,
+    hits: Vec<String>,
+    error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct CorpusClusterArtifact {
+    query: String,
+    sets: Vec<String>,
+    query_terms: Vec<String>,
+    total_cards_scanned: usize,
+    total_matching_clauses: usize,
+    examples: Vec<CorpusExample>,
+    skeletons: Vec<SkeletonCount>,
+}
+
+#[derive(Debug, Serialize)]
+struct CorpusExample {
+    card: String,
+    set: String,
+    collector_number: String,
+    clause: String,
+    skeleton: String,
+}
+
+#[derive(Debug, Serialize)]
+struct SkeletonCount {
+    skeleton: String,
+    count: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct AxisArtifact {
+    concept: String,
+    axes: Vec<AxisCandidate>,
+}
+
+#[derive(Debug, Serialize)]
+struct AxisCandidate {
+    name: &'static str,
+    evidence: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct DiscoveryMaturityArtifact {
+    concept: String,
+    pest_grammar: &'static str,
+    blockers: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct FixtureDocument {
+    fixture: FixtureHeader,
+    #[serde(default)]
+    example: Vec<FixtureCase>,
+    #[serde(default)]
+    counterexample: Vec<FixtureCase>,
+}
+
+#[derive(Debug, Deserialize)]
+struct FixtureHeader {
+    concept: String,
+    rule: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct FixtureCase {
+    text: String,
+    #[serde(default)]
+    rule: Option<String>,
+    #[serde(default)]
+    expect: Option<String>,
+    #[serde(default)]
+    reason: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct FixtureRunResult {
+    concept: String,
+    fixture_path: PathBuf,
+    passed: bool,
+    total: usize,
+    failures: usize,
+    grammar_drift: GrammarDriftSummary,
+    cases: Vec<FixtureCaseResult>,
+}
+
+#[derive(Debug, Serialize)]
+struct GrammarDriftSummary {
+    duplicate_rhs_shape_groups: usize,
+    quantity_like_duplicate_rhs_shape_groups: usize,
+    similar_rhs_shape_pairs: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct FixtureCaseResult {
+    kind: &'static str,
+    rule: String,
+    text: String,
+    expected: String,
+    matched: bool,
+    passed: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
+}
+
+fn parse_discover_options(args: &[String]) -> Result<DiscoverOptions> {
+    let mut query = None;
+    let mut concept = None;
+    let mut sets = Vec::new();
+    let mut limit = 25usize;
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{DISCOVER_USAGE}"),
+            "--query" => query = iter.next().cloned(),
+            "--concept" => concept = iter.next().cloned(),
+            "--set" => {
+                let set = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--set requires a value"))?;
+                sets.push(set.to_lowercase());
+            }
+            "--limit" => {
+                let raw = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--limit requires a value"))?;
+                limit = raw
+                    .parse()
+                    .with_context(|| format!("parse --limit value {raw:?}"))?;
+            }
+            s if s.starts_with("--query=") => {
+                query = Some(s["--query=".len()..].to_string());
+            }
+            s if s.starts_with("--concept=") => {
+                concept = Some(s["--concept=".len()..].to_string());
+            }
+            s if s.starts_with("--set=") => {
+                sets.push(s["--set=".len()..].to_lowercase());
+            }
+            s if s.starts_with("--limit=") => {
+                let raw = &s["--limit=".len()..];
+                limit = raw
+                    .parse()
+                    .with_context(|| format!("parse --limit value {raw:?}"))?;
+            }
+            other => bail!("unknown argument: {other}\n\n{DISCOVER_USAGE}"),
+        }
+    }
+    let query = query.ok_or_else(|| anyhow!("--query is required\n\n{DISCOVER_USAGE}"))?;
+    if query.trim().is_empty() {
+        bail!("--query must not be empty");
+    }
+    if limit == 0 {
+        bail!("--limit must be greater than zero");
+    }
+    if sets.is_empty() {
+        sets = tracked_sets()?;
+    }
+    Ok(DiscoverOptions {
+        query,
+        concept,
+        sets,
+        limit,
+    })
+}
+
+fn parse_grow_options(args: &[String]) -> Result<GrowOptions> {
+    let mut query = None;
+    let mut concept = None;
+    let mut rule = None;
+    let mut sets = Vec::new();
+    let mut limit = 25usize;
+    let mut force = false;
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{GROW_USAGE}"),
+            "--force" => force = true,
+            "--query" => query = iter.next().cloned(),
+            "--concept" => concept = iter.next().cloned(),
+            "--rule" => rule = iter.next().cloned(),
+            "--set" => {
+                let set = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--set requires a value"))?;
+                sets.push(set.to_lowercase());
+            }
+            "--limit" => {
+                let raw = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--limit requires a value"))?;
+                limit = raw
+                    .parse()
+                    .with_context(|| format!("parse --limit value {raw:?}"))?;
+            }
+            s if s.starts_with("--query=") => query = Some(s["--query=".len()..].to_string()),
+            s if s.starts_with("--concept=") => concept = Some(s["--concept=".len()..].to_string()),
+            s if s.starts_with("--rule=") => rule = Some(s["--rule=".len()..].to_string()),
+            s if s.starts_with("--set=") => sets.push(s["--set=".len()..].to_lowercase()),
+            s if s.starts_with("--limit=") => {
+                let raw = &s["--limit=".len()..];
+                limit = raw
+                    .parse()
+                    .with_context(|| format!("parse --limit value {raw:?}"))?;
+            }
+            other => bail!("unknown argument: {other}\n\n{GROW_USAGE}"),
+        }
+    }
+    let query = query.ok_or_else(|| anyhow!("--query is required\n\n{GROW_USAGE}"))?;
+    let concept = concept.ok_or_else(|| anyhow!("--concept is required\n\n{GROW_USAGE}"))?;
+    if query.trim().is_empty() {
+        bail!("--query must not be empty");
+    }
+    if concept.trim().is_empty() {
+        bail!("--concept must not be empty");
+    }
+    if limit == 0 {
+        bail!("--limit must be greater than zero");
+    }
+    if sets.is_empty() {
+        sets = tracked_sets()?;
+    }
+    Ok(GrowOptions {
+        discover: DiscoverOptions {
+            query,
+            concept: Some(concept),
+            sets,
+            limit,
+        },
+        rule,
+        force,
+    })
+}
+
+fn run_discover(options: DiscoverOptions) -> Result<DiscoverRun> {
+    let concept = options
+        .concept
+        .clone()
+        .unwrap_or_else(|| slug(&options.query).replace('-', "_"));
+    let run_dir = grammar_concept_log_root().join(format!("{}-{concept}", unix_timestamp()));
+    fs::create_dir_all(&run_dir).with_context(|| format!("create {}", run_dir.display()))?;
+
+    let (rules_markdown, rules_search) =
+        rules_context::render_rules_block_with_search(&options.query);
+    let rules_artifact = RulesArtifact {
+        query: options.query.clone(),
+        rendered_markdown: rules_markdown,
+        always_loaded: rules_search.always_loaded,
+        dynamic_hits: rules_search.dynamic_hits,
+        notes: rules_search.notes,
+        query_logs: rules_search
+            .query_logs
+            .into_iter()
+            .map(|log| RulesQueryArtifact {
+                query: log.query,
+                hits: log.hits,
+                error: log.error,
+            })
+            .collect(),
+    };
+    write_json(run_dir.join("rules_context.json"), &rules_artifact)?;
+
+    let corpus = build_corpus_cluster(&options.query, &options.sets, options.limit)?;
+    write_json(run_dir.join("corpus_cluster.json"), &corpus)?;
+
+    let axes = AxisArtifact {
+        concept: concept.clone(),
+        axes: infer_axes(&corpus.examples),
+    };
+    write_json(run_dir.join("axes.json"), &axes)?;
+
+    let grammar_neighbors = build_grammar_query_report(&options.query, Vec::new(), options.limit)?;
+    write_json(run_dir.join("grammar_neighbors.json"), &grammar_neighbors)?;
+
+    let blockers = discovery_blockers(&rules_artifact, &corpus, &axes);
+    let maturity = DiscoveryMaturityArtifact {
+        concept: concept.clone(),
+        pest_grammar: if blockers.is_empty() {
+            "discovered"
+        } else {
+            "blocked"
+        },
+        blockers,
+    };
+    write_json(run_dir.join("maturity.json"), &maturity)?;
+    write_concept_stub(
+        run_dir.join("concept_stub.toml"),
+        &concept,
+        &options.query,
+        &corpus,
+        &axes,
+    )?;
+
+    Ok(DiscoverRun {
+        query: options.query,
+        concept,
+        run_dir,
+        corpus_examples: corpus.examples.len(),
+        rules_queries: rules_artifact.query_logs.len() as u32,
+    })
+}
+
+fn run_grow(options: GrowOptions) -> Result<GrowRun> {
+    let discover = run_discover(options.discover.clone())?;
+    let concept = discover.concept.clone();
+    let concept_file = grammar_concepts_dir().join(format!("{concept}.toml"));
+    let fixture_file = grammar_fixtures_dir().join(format!("{concept}.toml"));
+    if !options.force {
+        if concept_file.exists() {
+            bail!(
+                "{} already exists; pass --force to overwrite",
+                concept_file.display()
+            );
+        }
+        if fixture_file.exists() {
+            bail!(
+                "{} already exists; pass --force to overwrite",
+                fixture_file.display()
+            );
+        }
+    }
+
+    let corpus = build_corpus_cluster(
+        &options.discover.query,
+        &options.discover.sets,
+        options.discover.limit,
+    )?;
+    let axes = AxisArtifact {
+        concept: concept.clone(),
+        axes: infer_axes(&corpus.examples),
+    };
+    let grammar_report = build_grammar_query_report(
+        &options.discover.query,
+        options.rule.clone().into_iter().collect(),
+        options.discover.limit,
+    )?;
+    let rule = choose_fixture_rule(&concept, options.rule.as_deref(), &grammar_report)?;
+    let fixture = build_fixture_document(&concept, &rule, &corpus)?;
+
+    fs::create_dir_all(grammar_concepts_dir()).context("create grammar-concepts")?;
+    fs::create_dir_all(grammar_fixtures_dir()).context("create grammar-fixtures")?;
+    write_grown_concept_file(
+        &concept_file,
+        &concept,
+        &options.discover.query,
+        &rule,
+        &corpus,
+        &axes,
+        &grammar_report,
+    )?;
+    fs::write(&fixture_file, fixture)
+        .with_context(|| format!("write {}", fixture_file.display()))?;
+
+    let fixture_result = run_fixture_file(&fixture_file)?;
+    let maturity = run_maturity(MaturityOptions {
+        concept: concept.clone(),
+        json: false,
+        update: true,
+    })?;
+
+    Ok(GrowRun {
+        concept,
+        run_dir: discover.run_dir,
+        rule,
+        concept_file,
+        fixture_file,
+        fixture_passed: fixture_result.passed,
+        fixture_cases: fixture_result.total,
+        fixture_failures: fixture_result.failures,
+        maturity_state: maturity.state,
+    })
+}
+
+fn parse_grammar_query_options(args: &[String]) -> Result<GrammarQueryOptions> {
+    let mut query = None;
+    let mut rule_names = Vec::new();
+    let mut limit = 25usize;
+    let mut json = false;
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{GRAMMAR_QUERY_USAGE}"),
+            "--json" => json = true,
+            "--query" => query = iter.next().cloned(),
+            "--rule" => {
+                let rule = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--rule requires a value"))?;
+                rule_names.push(rule.clone());
+            }
+            "--limit" => {
+                let raw = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--limit requires a value"))?;
+                limit = raw
+                    .parse()
+                    .with_context(|| format!("parse --limit value {raw:?}"))?;
+            }
+            s if s.starts_with("--query=") => {
+                query = Some(s["--query=".len()..].to_string());
+            }
+            s if s.starts_with("--rule=") => {
+                rule_names.push(s["--rule=".len()..].to_string());
+            }
+            s if s.starts_with("--limit=") => {
+                let raw = &s["--limit=".len()..];
+                limit = raw
+                    .parse()
+                    .with_context(|| format!("parse --limit value {raw:?}"))?;
+            }
+            other => bail!("unknown argument: {other}\n\n{GRAMMAR_QUERY_USAGE}"),
+        }
+    }
+    let query = query.ok_or_else(|| anyhow!("--query is required\n\n{GRAMMAR_QUERY_USAGE}"))?;
+    if query.trim().is_empty() {
+        bail!("--query must not be empty");
+    }
+    if limit == 0 {
+        bail!("--limit must be greater than zero");
+    }
+    Ok(GrammarQueryOptions {
+        query,
+        rule_names,
+        limit,
+        json,
+    })
+}
+
+fn run_grammar_query(options: GrammarQueryOptions) -> Result<GrammarQueryRun> {
+    let report = build_grammar_query_report(&options.query, options.rule_names, options.limit)?;
+    Ok(GrammarQueryRun {
+        report,
+        json: options.json,
+    })
+}
+
+fn parse_grammar_test_options(args: &[String]) -> Result<GrammarTestOptions> {
+    let mut concept = None;
+    let mut fixture = None;
+    let mut json = false;
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{GRAMMAR_TEST_USAGE}"),
+            "--json" => json = true,
+            "--fixture" => {
+                fixture = Some(PathBuf::from(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--fixture requires a value"))?,
+                ));
+            }
+            s if s.starts_with("--fixture=") => {
+                fixture = Some(PathBuf::from(&s["--fixture=".len()..]));
+            }
+            other if other.starts_with('-') => {
+                bail!("unknown argument: {other}\n\n{GRAMMAR_TEST_USAGE}");
+            }
+            positional => {
+                if concept.replace(positional.to_string()).is_some() {
+                    bail!("only one concept may be provided\n\n{GRAMMAR_TEST_USAGE}");
+                }
+            }
+        }
+    }
+    if concept.is_none() && fixture.is_none() {
+        bail!("concept or --fixture is required\n\n{GRAMMAR_TEST_USAGE}");
+    }
+    Ok(GrammarTestOptions {
+        concept,
+        fixture,
+        json,
+    })
+}
+
+fn run_grammar_test(options: GrammarTestOptions) -> Result<GrammarTestRun> {
+    let fixture_path = match options.fixture {
+        Some(path) => path,
+        None => grammar_fixtures_dir().join(format!(
+            "{}.toml",
+            options.concept.expect("checked by parser")
+        )),
+    };
+    let result = run_fixture_file(&fixture_path)?;
+    Ok(GrammarTestRun {
+        result,
+        json: options.json,
+    })
+}
+
+fn parse_maturity_options(args: &[String]) -> Result<MaturityOptions> {
+    let mut concept = None;
+    let mut json = false;
+    let mut update = false;
+    for arg in args {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{MATURITY_USAGE}"),
+            "--json" => json = true,
+            "--update" => update = true,
+            other if other.starts_with('-') => {
+                bail!("unknown argument: {other}\n\n{MATURITY_USAGE}")
+            }
+            positional => {
+                if concept.replace(positional.to_string()).is_some() {
+                    bail!("only one concept may be provided\n\n{MATURITY_USAGE}");
+                }
+            }
+        }
+    }
+    let concept = concept.ok_or_else(|| anyhow!("concept is required\n\n{MATURITY_USAGE}"))?;
+    Ok(MaturityOptions {
+        concept,
+        json,
+        update,
+    })
+}
+
+fn parse_map_existing_options(args: &[String]) -> Result<MapExistingOptions> {
+    let mut json = false;
+    let mut expand_deps = true;
+    for arg in args {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{MAP_EXISTING_USAGE}"),
+            "--json" => json = true,
+            "--no-expand-deps" => expand_deps = false,
+            other => bail!("unknown argument: {other}\n\n{MAP_EXISTING_USAGE}"),
+        }
+    }
+    Ok(MapExistingOptions { json, expand_deps })
+}
+
+fn parse_grind_options(args: &[String]) -> Result<ConceptGrindOptions> {
+    let mut agent = AgentProvider::Codex;
+    let mut max_iterations = 1u32;
+    let mut concept = None::<String>;
+    let mut target_rule = None::<String>;
+    let mut query = None::<String>;
+    let mut repair_attempts = 1u8;
+    let mut dry_run = false;
+    let mut allow_dirty = false;
+    let mut no_commit = false;
+
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{GRIND_USAGE}"),
+            "--agent" => {
+                let value = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--agent requires a value"))?;
+                agent = parse_agent_provider(value)?;
+            }
+            s if s.starts_with("--agent=") => {
+                agent = parse_agent_provider(&s["--agent=".len()..])?;
+            }
+            "--max-iterations" => {
+                let value = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--max-iterations requires a value"))?;
+                max_iterations = value
+                    .parse()
+                    .with_context(|| format!("--max-iterations value: {value:?}"))?;
+            }
+            s if s.starts_with("--max-iterations=") => {
+                max_iterations = s["--max-iterations=".len()..]
+                    .parse()
+                    .with_context(|| format!("--max-iterations value: {s:?}"))?;
+            }
+            "--concept" => {
+                concept = Some(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--concept requires a value"))?
+                        .to_string(),
+                );
+            }
+            s if s.starts_with("--concept=") => {
+                concept = Some(s["--concept=".len()..].to_string());
+            }
+            "--target-rule" => {
+                target_rule = Some(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--target-rule requires a value"))?
+                        .to_string(),
+                );
+            }
+            s if s.starts_with("--target-rule=") => {
+                target_rule = Some(s["--target-rule=".len()..].to_string());
+            }
+            "--query" => {
+                query = Some(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--query requires a value"))?
+                        .to_string(),
+                );
+            }
+            s if s.starts_with("--query=") => {
+                query = Some(s["--query=".len()..].to_string());
+            }
+            "--repair-attempts" => {
+                let value = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--repair-attempts requires a value"))?;
+                repair_attempts = value
+                    .parse()
+                    .with_context(|| format!("--repair-attempts value: {value:?}"))?;
+            }
+            s if s.starts_with("--repair-attempts=") => {
+                repair_attempts = s["--repair-attempts=".len()..]
+                    .parse()
+                    .with_context(|| format!("--repair-attempts value: {s:?}"))?;
+            }
+            "--dry-run" => dry_run = true,
+            "--allow-dirty" => allow_dirty = true,
+            "--no-commit" => no_commit = true,
+            "--ui" => {
+                let _ = iter.next();
+            }
+            s if s.starts_with("--ui=") => {}
+            other => bail!("unknown argument: {other}\n\n{GRIND_USAGE}"),
+        }
+    }
+
+    if max_iterations == 0 {
+        bail!("--max-iterations must be greater than zero");
+    }
+    if concept.as_deref().is_some_and(str::is_empty) {
+        bail!("--concept must not be empty");
+    }
+    if query.as_deref().is_some_and(str::is_empty) {
+        bail!("--query must not be empty");
+    }
+    if target_rule.as_deref().is_some_and(str::is_empty) {
+        bail!("--target-rule must not be empty");
+    }
+
+    Ok(ConceptGrindOptions {
+        agent,
+        max_iterations,
+        concept,
+        target_rule,
+        query,
+        repair_attempts,
+        dry_run,
+        allow_dirty,
+        no_commit,
+    })
+}
+
+fn parse_agent_provider(value: &str) -> Result<AgentProvider> {
+    match value {
+        "codex" => Ok(AgentProvider::Codex),
+        "claude" => Ok(AgentProvider::Claude),
+        other => bail!("--agent must be 'codex' or 'claude', got {other:?}"),
+    }
+}
+
+fn run_map_existing(options: MapExistingOptions) -> Result<ExistingGrammarMapReport> {
+    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+    let rule_by_name: BTreeMap<String, &grammar_query_engine::GrammarRuleDefinition> =
+        rules.iter().map(|rule| (rule.name.clone(), rule)).collect();
+    let concept_files = read_concept_files()?;
+    let mut concepts = Vec::new();
+    let mut mapped_rules = BTreeSet::new();
+
+    for (path, doc, maturity) in &concept_files {
+        let mut found_rules = Vec::new();
+        let mut missing_rules = Vec::new();
+        for rule_name in &doc.concept.pest_rules {
+            if let Some(rule) = rule_by_name.get(rule_name) {
+                mapped_rules.insert(rule.name.clone());
+                found_rules.push(RuleLocationSummary {
+                    name: rule.name.clone(),
+                    line: rule.line,
+                });
+            } else {
+                missing_rules.push(rule_name.clone());
+            }
+        }
+        let (owned_rule_names, expanded_missing_rules) =
+            concept_owned_rule_names(&rules, &doc.concept.pest_rules, options.expand_deps);
+        for missing in expanded_missing_rules {
+            if !missing_rules.contains(&missing) {
+                missing_rules.push(missing);
+            }
+        }
+        let owned_rules: Vec<RuleLocationSummary> = owned_rule_names
+            .iter()
+            .filter_map(|rule_name| rule_by_name.get(rule_name))
+            .map(|rule| RuleLocationSummary {
+                name: rule.name.clone(),
+                line: rule.line,
+            })
+            .collect();
+        mapped_rules.extend(owned_rule_names);
+        concepts.push(ConceptRuleMap {
+            concept: doc.concept.name.clone(),
+            maturity: maturity.clone(),
+            concept_file: path.clone(),
+            declared_rules: doc.concept.pest_rules.clone(),
+            found_rules,
+            owned_rules,
+            missing_rules,
+        });
+    }
+
+    let concept_names: Vec<String> = concept_files
+        .iter()
+        .map(|(_, doc, _)| doc.concept.name.clone())
+        .collect();
+    let unmapped_rules: Vec<UnmappedGrammarRule> = rules
+        .iter()
+        .filter(|rule| !mapped_rules.contains(&rule.name))
+        .filter(|rule| !is_shared_grammar_stop_rule(&rule.name))
+        .map(|rule| UnmappedGrammarRule {
+            name: rule.name.clone(),
+            line: rule.line,
+            suggested_concept: suggest_concept_owner(&rule.name, &concept_names),
+        })
+        .collect();
+
+    Ok(ExistingGrammarMapReport {
+        rule_count: rules.len(),
+        concept_count: concepts.len(),
+        dependency_expansion: options.expand_deps,
+        shared_rule_count: rules
+            .iter()
+            .filter(|rule| is_shared_grammar_stop_rule(&rule.name))
+            .count(),
+        mapped_rule_count: mapped_rules.len(),
+        unmapped_rule_count: unmapped_rules.len(),
+        concepts,
+        unmapped_rules,
+    })
+}
+
+const SHARED_GRAMMAR_STOP_RULES: &[&str] = &[
+    "WHITESPACE",
+    "abilities",
+    "ability_word",
+    "activated_ability",
+    "activated_effect",
+    "activated_effect_sentence",
+    "activated_effect_statement",
+    "activated_effects",
+    "activated_then_effect",
+    "additional_cost",
+    "article",
+    "basic_land_type",
+    "basic_land_type_plural",
+    "card_name",
+    "card_text",
+    "card_type",
+    "card_type_plural",
+    "choose_one",
+    "color",
+    "color_word",
+    "colored_mana_symbol",
+    "colors",
+    "cost",
+    "creature_subtype",
+    "creature_subtype_plural",
+    "creature_type",
+    "creature_type_plural",
+    "generic",
+    "keyword_ability",
+    "land_subtype",
+    "land_subtype_plural",
+    "line",
+    "mana_body",
+    "mana_cost",
+    "mana_symbol",
+    "modal_choice",
+    "modal_effect",
+    "modal_mode",
+    "number_word",
+    "permanent_type",
+    "permanent_type_plural",
+    "phrase_statement",
+    "proper_name",
+    "sentence_chain",
+    "sentence_statement",
+    "source_object",
+    "spell_type_choice",
+    "static_ability",
+    "static_effect",
+    "subtype",
+    "supertype",
+    "tap_symbol",
+    "that_object",
+    "this_turn_period",
+    "trigger_effect",
+    "trigger_sentence",
+    "triggered_ability",
+    "unsigned_number",
+    "variable_name",
+    "where_clause",
+    "zone",
+];
+
+fn concept_owned_rule_names(
+    rules: &[grammar_query_engine::GrammarRuleDefinition],
+    roots: &[String],
+    expand_deps: bool,
+) -> (BTreeSet<String>, Vec<String>) {
+    let rule_names: BTreeSet<&str> = rules.iter().map(|rule| rule.name.as_str()).collect();
+    let mut owned = BTreeSet::new();
+    let mut missing = Vec::new();
+    let mut stack = Vec::new();
+
+    for root in roots {
+        if rule_names.contains(root.as_str()) {
+            owned.insert(root.clone());
+            if expand_deps {
+                stack.push(root.clone());
+            }
+        } else {
+            missing.push(root.clone());
+        }
+    }
+
+    while let Some(rule_name) = stack.pop() {
+        for dependency in grammar_query_engine::direct_dependencies(rules, &rule_name) {
+            if is_shared_grammar_stop_rule(&dependency) {
+                continue;
+            }
+            if owned.insert(dependency.clone()) {
+                stack.push(dependency);
+            }
+        }
+    }
+
+    (owned, missing)
+}
+
+fn is_shared_grammar_stop_rule(rule_name: &str) -> bool {
+    SHARED_GRAMMAR_STOP_RULES.contains(&rule_name)
+}
+
+fn run_grind(options: ConceptGrindOptions, sink: &mut dyn crate::flow::FlowSink) -> Result<()> {
+    if !options.dry_run && !options.allow_dirty {
+        ensure_clean_working_tree()
+            .context("working tree must be clean before concept-grind, or pass --allow-dirty")?;
+    }
+
+    let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
+    fs::create_dir_all(&session_dir)
+        .with_context(|| format!("create {}", session_dir.display()))?;
+    println!("concept-grind log: {}", session_dir.display());
+
+    for iteration in 1..=options.max_iterations {
+        let iteration_dir = session_dir.join(format!("iteration-{iteration:03}"));
+        fs::create_dir_all(&iteration_dir)
+            .with_context(|| format!("create {}", iteration_dir.display()))?;
+
+        let before = run_map_existing(MapExistingOptions {
+            json: false,
+            expand_deps: true,
+        })?;
+        write_json(iteration_dir.join("map_before.json"), &before)?;
+        let gap = select_concept_gap(&before, &options)?;
+        write_json(iteration_dir.join("gap.json"), &gap)?;
+
+        println!(
+            "iteration {iteration}: concept={} target_rule={} query={:?}",
+            gap.concept, gap.target_rule, gap.query
+        );
+
+        let boundary_prompt = build_boundary_prompt(&gap, &before)?;
+        fs::write(iteration_dir.join("boundary_prompt.md"), &boundary_prompt).with_context(
+            || {
+                format!(
+                    "write {}",
+                    iteration_dir.join("boundary_prompt.md").display()
+                )
+            },
+        )?;
+
+        if options.dry_run {
+            println!(
+                "dry-run: wrote {}",
+                iteration_dir.join("boundary_prompt.md").display()
+            );
+            return Ok(());
+        }
+
+        let boundary = refactor_hotspot::invoke_agent(
+            options.agent,
+            &boundary_prompt,
+            &iteration_dir.join("boundary_transcript.ndjson"),
+            sink,
+        )?;
+        fs::write(
+            iteration_dir.join("boundary_response.md"),
+            &boundary.assistant_text,
+        )
+        .with_context(|| {
+            format!(
+                "write {}",
+                iteration_dir.join("boundary_response.md").display()
+            )
+        })?;
+        if !boundary.success {
+            bail!(
+                "{} boundary agent exited with status {}; transcript: {}",
+                options.agent.label(),
+                boundary.exit_code,
+                iteration_dir.join("boundary_transcript.ndjson").display()
+            );
+        }
+        let boundary_decision = parse_boundary_decision(&boundary.assistant_text)?;
+        write_json(
+            iteration_dir.join("boundary_decision.json"),
+            &boundary_decision,
+        )?;
+        let gap = apply_boundary_decision(gap, &boundary_decision)?;
+
+        let patch_prompt = build_patch_prompt(&gap, &boundary_decision, &boundary.assistant_text)?;
+        fs::write(iteration_dir.join("patch_prompt.md"), &patch_prompt).with_context(|| {
+            format!("write {}", iteration_dir.join("patch_prompt.md").display())
+        })?;
+        let patch = refactor_hotspot::invoke_agent(
+            options.agent,
+            &patch_prompt,
+            &iteration_dir.join("patch_transcript.ndjson"),
+            sink,
+        )?;
+        fs::write(
+            iteration_dir.join("patch_response.md"),
+            &patch.assistant_text,
+        )
+        .with_context(|| {
+            format!(
+                "write {}",
+                iteration_dir.join("patch_response.md").display()
+            )
+        })?;
+        if !patch.success {
+            bail!(
+                "{} patch agent exited with status {}; transcript: {}",
+                options.agent.label(),
+                patch.exit_code,
+                iteration_dir.join("patch_transcript.ndjson").display()
+            );
+        }
+
+        let mut gate = run_concept_grind_gates(&gap, &iteration_dir);
+        for repair_index in 1..=options.repair_attempts {
+            let Err(failure) = gate else {
+                break;
+            };
+            fs::write(
+                iteration_dir.join(format!("repair-{repair_index}-failure.txt")),
+                format!("{}\n\n{}", failure.label, failure.output),
+            )?;
+            let repair_prompt = build_repair_prompt(&gap, &failure)?;
+            fs::write(
+                iteration_dir.join(format!("repair-{repair_index}-prompt.md")),
+                &repair_prompt,
+            )?;
+            let repair = refactor_hotspot::invoke_agent(
+                options.agent,
+                &repair_prompt,
+                &iteration_dir.join(format!("repair-{repair_index}-transcript.ndjson")),
+                sink,
+            )?;
+            fs::write(
+                iteration_dir.join(format!("repair-{repair_index}-response.md")),
+                &repair.assistant_text,
+            )?;
+            if !repair.success {
+                bail!(
+                    "{} repair agent exited with status {}; transcript: {}",
+                    options.agent.label(),
+                    repair.exit_code,
+                    iteration_dir
+                        .join(format!("repair-{repair_index}-transcript.ndjson"))
+                        .display()
+                );
+            }
+            gate = run_concept_grind_gates(&gap, &iteration_dir);
+        }
+        gate.map_err(|failure| anyhow!("{} failed\n{}", failure.label, failure.output))?;
+
+        let after = run_map_existing(MapExistingOptions {
+            json: false,
+            expand_deps: true,
+        })?;
+        write_json(iteration_dir.join("map_after.json"), &after)?;
+        verify_gap_closed(&gap, &before, &after)?;
+        let maturity = run_maturity(MaturityOptions {
+            concept: gap.concept.clone(),
+            json: false,
+            update: true,
+        })?;
+        write_json(iteration_dir.join("maturity.json"), &maturity)?;
+
+        let committed = if options.no_commit {
+            false
+        } else {
+            commit_concept_grind_iteration(&gap, iteration)?
+        };
+        let fixture =
+            run_fixture_file(&grammar_fixtures_dir().join(format!("{}.toml", gap.concept)))?;
+        let summary = ConceptGrindIterationSummary {
+            iteration,
+            concept: gap.concept.clone(),
+            query: gap.query.clone(),
+            target_rule: gap.target_rule.clone(),
+            fixture_passed: fixture.passed,
+            mapped_rule_count_before: before.mapped_rule_count,
+            mapped_rule_count_after: after.mapped_rule_count,
+            unmapped_rule_count_before: before.unmapped_rule_count,
+            unmapped_rule_count_after: after.unmapped_rule_count,
+            committed,
+        };
+        write_json(iteration_dir.join("summary.json"), &summary)?;
+        println!(
+            "iteration {iteration}: fixture={} mapped {} -> {}, unmapped {} -> {}, committed={committed}",
+            if summary.fixture_passed { "pass" } else { "fail" },
+            summary.mapped_rule_count_before,
+            summary.mapped_rule_count_after,
+            summary.unmapped_rule_count_before,
+            summary.unmapped_rule_count_after
+        );
+    }
+
+    Ok(())
+}
+
+fn select_concept_gap(
+    report: &ExistingGrammarMapReport,
+    options: &ConceptGrindOptions,
+) -> Result<ConceptGap> {
+    if let Some(concept) = &options.concept {
+        let query = options
+            .query
+            .clone()
+            .unwrap_or_else(|| concept.replace('_', " "));
+        let rule = if let Some(target_rule) = &options.target_rule {
+            report
+                .unmapped_rules
+                .iter()
+                .find(|rule| rule.name == *target_rule)
+                .ok_or_else(|| {
+                    anyhow!("--target-rule {target_rule:?} is not an unmapped grammar rule")
+                })?
+        } else {
+            report
+                .unmapped_rules
+                .iter()
+                .find(|rule| rule.suggested_concept.as_deref() == Some(concept.as_str()))
+                .or_else(|| {
+                    report
+                        .unmapped_rules
+                        .iter()
+                        .find(|rule| rule.name.starts_with(concept))
+                })
+                .ok_or_else(|| {
+                    anyhow!(
+                        "--concept {concept:?} has no suggested or prefix-matching unmapped rule; pass --target-rule RULE to make the target explicit"
+                    )
+                })?
+        };
+        return Ok(ConceptGap {
+            concept: concept.clone(),
+            query,
+            target_rule: rule.name.clone(),
+            target_line: rule.line,
+            suggested_existing_owner: rule.suggested_concept.is_some(),
+            reason: "explicit --concept".to_string(),
+        });
+    }
+
+    if options.target_rule.is_some() {
+        bail!("--target-rule requires --concept so ownership is explicit");
+    }
+
+    if let Some(rule) = report
+        .unmapped_rules
+        .iter()
+        .find(|rule| rule.suggested_concept.is_some())
+    {
+        let concept = rule.suggested_concept.clone().expect("checked");
+        let query = options
+            .query
+            .clone()
+            .unwrap_or_else(|| rule.name.replace('_', " "));
+        return Ok(ConceptGap {
+            concept,
+            query,
+            target_rule: rule.name.clone(),
+            target_line: rule.line,
+            suggested_existing_owner: true,
+            reason: "unmapped rule has existing concept-name prefix owner".to_string(),
+        });
+    }
+
+    let rule = report
+        .unmapped_rules
+        .first()
+        .ok_or_else(|| anyhow!("no unmapped grammar rules remain"))?;
+    let concept = slug(&rule.name).replace('-', "_");
+    Ok(ConceptGap {
+        concept,
+        query: options
+            .query
+            .clone()
+            .unwrap_or_else(|| rule.name.replace('_', " ")),
+        target_rule: rule.name.clone(),
+        target_line: rule.line,
+        suggested_existing_owner: false,
+        reason: "first unmapped non-shared grammar rule".to_string(),
+    })
+}
+
+fn build_boundary_prompt(gap: &ConceptGap, report: &ExistingGrammarMapReport) -> Result<String> {
+    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+    let grammar_report = build_grammar_query_report(&gap.query, vec![gap.target_rule.clone()], 16)?;
+    let concept_path = grammar_concepts_dir().join(format!("{}.toml", gap.concept));
+    let concept_text = fs::read_to_string(&concept_path).unwrap_or_else(|_| {
+        format!(
+            "# No committed concept file exists yet for {}.\n",
+            gap.concept
+        )
+    });
+    let target = rules
+        .iter()
+        .find(|rule| rule.name == gap.target_rule)
+        .ok_or_else(|| anyhow!("target rule {} not found", gap.target_rule))?;
+    let dependencies = grammar_query_engine::direct_dependencies(&rules, &gap.target_rule);
+    let reverse_dependencies = grammar_query_engine::reverse_dependencies(&rules, &gap.target_rule);
+    let rules_block = rules_context::render_rules_block(&gap.query);
+
+    Ok(format!(
+        r#"You are the CONCEPT_BOUNDARY_REVIEW agent for mtg-parser.
+
+This is a grammar-first workflow. Do not edit files in this stage. Do not run add-card. Do not try to make generated card tests pass.
+
+Goal: decide whether the selected unmapped PEST rule should widen an existing concept, become a new concept, or be blocked as shared/plumbing.
+
+Concept candidate:
+- concept: {concept}
+- query: {query}
+- target PEST rule: {target_rule}:{target_line}
+- selection reason: {reason}
+- existing owner suggestion: {suggested_existing_owner}
+
+Current map:
+- grammar rules: {rule_count}
+- mapped rules: {mapped_rule_count}
+- unmapped non-shared rules: {unmapped_rule_count}
+
+Target PEST rule:
+```pest
+{target_name} = {target_rhs}
+```
+
+Direct dependencies: {dependencies}
+Reverse dependencies: {reverse_dependencies}
+
+Committed concept file:
+```toml
+{concept_text}
+```
+
+Grammar-neighbor report:
+```json
+{grammar_json}
+```
+
+Comprehensive Rules context:
+{rules_block}
+
+Return a concise decision block:
+
+CONCEPT_BOUNDARY_DECISION:
+OWNER: existing:{concept} | new:<name> | blocked:<reason>
+AXES: <axis names and values to add or preserve>
+EXAMPLES_TO_ACCEPT: <grammar fixture examples>
+COUNTEREXAMPLES_TO_REJECT: <true boundary negatives only>
+PEST_PATCH_INTENT: <specific grammar change, or none>
+WHY_NOT_CARD_PASS: grammar fixture maturity only
+"#,
+        concept = gap.concept,
+        query = gap.query,
+        target_rule = gap.target_rule,
+        target_line = gap.target_line,
+        reason = gap.reason,
+        suggested_existing_owner = gap.suggested_existing_owner,
+        rule_count = report.rule_count,
+        mapped_rule_count = report.mapped_rule_count,
+        unmapped_rule_count = report.unmapped_rule_count,
+        target_name = target.name,
+        target_rhs = target.rhs,
+        dependencies = dependencies.join(", "),
+        reverse_dependencies = reverse_dependencies.join(", "),
+        concept_text = concept_text,
+        grammar_json = serde_json::to_string_pretty(&grammar_report)?,
+        rules_block = rules_block,
+    ))
+}
+
+fn parse_boundary_decision(response: &str) -> Result<BoundaryDecision> {
+    if !response.contains("CONCEPT_BOUNDARY_DECISION") {
+        bail!("boundary agent response missing CONCEPT_BOUNDARY_DECISION block");
+    }
+    let owner_raw = required_decision_field(response, "OWNER")?;
+    let owner = parse_boundary_owner(&owner_raw)?;
+    if matches!(owner, BoundaryOwner::Blocked(_)) {
+        return Ok(BoundaryDecision {
+            owner,
+            owner_raw,
+            axes: optional_decision_field(response, "AXES").unwrap_or_default(),
+            examples_to_accept: optional_decision_field(response, "EXAMPLES_TO_ACCEPT")
+                .unwrap_or_default(),
+            counterexamples_to_reject: optional_decision_field(
+                response,
+                "COUNTEREXAMPLES_TO_REJECT",
+            )
+            .unwrap_or_default(),
+            pest_patch_intent: optional_decision_field(response, "PEST_PATCH_INTENT")
+                .unwrap_or_default(),
+        });
+    }
+    let axes = optional_decision_field(response, "AXES").unwrap_or_default();
+    let examples_to_accept =
+        optional_decision_field(response, "EXAMPLES_TO_ACCEPT").unwrap_or_default();
+    let counterexamples_to_reject =
+        optional_decision_field(response, "COUNTEREXAMPLES_TO_REJECT").unwrap_or_default();
+    let pest_patch_intent = required_decision_field(response, "PEST_PATCH_INTENT")?;
+    Ok(BoundaryDecision {
+        owner,
+        owner_raw,
+        axes,
+        examples_to_accept,
+        counterexamples_to_reject,
+        pest_patch_intent,
+    })
+}
+
+fn parse_boundary_owner(owner: &str) -> Result<BoundaryOwner> {
+    let owner = owner.trim();
+    if let Some(concept) = owner.strip_prefix("existing:") {
+        let concept = concept.trim();
+        validate_concept_name(concept)?;
+        return Ok(BoundaryOwner::Existing(concept.to_string()));
+    }
+    if let Some(concept) = owner.strip_prefix("new:") {
+        let concept = concept.trim();
+        validate_concept_name(concept)?;
+        return Ok(BoundaryOwner::New(concept.to_string()));
+    }
+    if let Some(reason) = owner.strip_prefix("blocked:") {
+        let reason = reason.trim();
+        if reason.is_empty() {
+            bail!("blocked OWNER must include a reason");
+        }
+        return Ok(BoundaryOwner::Blocked(reason.to_string()));
+    }
+    bail!("OWNER must be existing:<concept>, new:<concept>, or blocked:<reason>; got {owner:?}");
+}
+
+fn apply_boundary_decision(gap: ConceptGap, decision: &BoundaryDecision) -> Result<ConceptGap> {
+    let owner = match &decision.owner {
+        BoundaryOwner::Existing(concept) | BoundaryOwner::New(concept) => concept,
+        BoundaryOwner::Blocked(reason) => {
+            bail!("boundary decision blocked concept-grind: {reason}");
+        }
+    };
+    let mut gap = gap;
+    if gap.concept != *owner {
+        gap.reason = format!("{}; boundary owner changed to {owner}", gap.reason);
+        gap.query = owner.replace('_', " ");
+        gap.concept = owner.clone();
+    }
+    Ok(gap)
+}
+
+fn required_decision_field(response: &str, field: &str) -> Result<String> {
+    optional_decision_field(response, field)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| anyhow!("boundary decision missing {field}: line"))
+}
+
+fn optional_decision_field(response: &str, field: &str) -> Option<String> {
+    let prefix = format!("{field}:");
+    response
+        .lines()
+        .find_map(|line| line.trim_start().strip_prefix(&prefix))
+        .map(str::trim)
+        .map(str::to_string)
+}
+
+fn validate_concept_name(name: &str) -> Result<()> {
+    if name.is_empty() {
+        bail!("concept name must not be empty");
+    }
+    if !name
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+    {
+        bail!("concept name {name:?} must be snake_case ASCII");
+    }
+    if name
+        .chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_digit() || c == '_')
+    {
+        bail!("concept name {name:?} must start with a lowercase letter");
+    }
+    Ok(())
+}
+
+fn build_patch_prompt(
+    gap: &ConceptGap,
+    boundary_decision: &BoundaryDecision,
+    boundary_response: &str,
+) -> Result<String> {
+    let concept_path = grammar_concepts_dir().join(format!("{}.toml", gap.concept));
+    let fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
+    Ok(format!(
+        r#"You are the PEST_PATCH agent for mtg-parser's grammar-first concept workflow.
+
+Implement the boundary decision below. This is not an add-card run.
+
+Hard constraints:
+- Do not run `cargo xtask add-card`.
+- Do not edit `crates/mtg-grammar/tests/generated/` or `crates/mtg-grammar/tests/generated_patterns/`.
+- Do not try to make cards pass.
+- Prefer widening existing PEST rules over adding one-rule-per-card rules.
+- If the target wording is a real axis of `{concept}`, encode it as concept data and grammar fixture coverage, not as a nearby reject.
+- Keep edits scoped to `crates/mtg-grammar/src/grammar.pest`, `grammar-concepts/`, and `grammar-fixtures/` unless xtask concept tooling itself is clearly wrong.
+- The orchestrator owns validation, maturity, and commit.
+
+Expected files:
+- concept file: `{concept_path}`
+- fixture file: `{fixture_path}`
+- target PEST rule: `{target_rule}`
+
+Boundary decision:
+```json
+{boundary_json}
+```
+
+Raw boundary response:
+```text
+{boundary_response}
+```
+
+Before finishing, ensure the fixture file contains examples that should now match and true counterexamples that should reject.
+
+Return:
+CONCEPT_GRIND_RESULT:
+CONCEPT: {concept}
+PEST_RULES: <roots owned by this concept>
+FIXTURE_EXAMPLES: <count>
+GRAMMAR_CHANGE: <summary>
+BLOCKERS: <none or list>
+"#,
+        concept = gap.concept,
+        concept_path = concept_path.display(),
+        fixture_path = fixture_path.display(),
+        target_rule = gap.target_rule,
+        boundary_json = serde_json::to_string_pretty(boundary_decision)?,
+        boundary_response = boundary_response,
+    ))
+}
+
+fn build_repair_prompt(gap: &ConceptGap, failure: &ConceptGrindGateFailure) -> Result<String> {
+    Ok(format!(
+        r#"You are the GRAMMAR_FIXTURE_REPAIR agent for mtg-parser's grammar-first concept workflow.
+
+Repair the failed grammar-first gate. Do not run add-card. Do not edit generated tests. Do not try to make cards pass.
+
+Concept: {concept}
+Target rule: {target_rule}
+Failed gate: {label}
+
+Gate output:
+```text
+{output}
+```
+
+Keep the fix scoped to PEST grammar, grammar concept files, grammar fixtures, or xtask concept tooling if the gate exposes an orchestrator bug.
+
+Return:
+CONCEPT_REPAIR_RESULT:
+CONCEPT: {concept}
+FIX: <summary>
+BLOCKERS: <none or list>
+"#,
+        concept = gap.concept,
+        target_rule = gap.target_rule,
+        label = failure.label,
+        output = failure.output,
+    ))
+}
+
+fn run_concept_grind_gates(
+    gap: &ConceptGap,
+    iteration_dir: &Path,
+) -> Result<(), ConceptGrindGateFailure> {
+    let fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
+    let fixture = run_fixture_file(&fixture_path).map_err(|e| ConceptGrindGateFailure {
+        label: "grammar fixture".to_string(),
+        output: format!("{e:#}"),
+    })?;
+    write_json(iteration_dir.join("fixture_result.json"), &fixture).map_err(|e| {
+        ConceptGrindGateFailure {
+            label: "write fixture result".to_string(),
+            output: format!("{e:#}"),
+        }
+    })?;
+    if !fixture.passed {
+        return Err(ConceptGrindGateFailure {
+            label: "grammar fixture".to_string(),
+            output: serde_json::to_string_pretty(&fixture).unwrap_or_else(|e| e.to_string()),
+        });
+    }
+
+    let maturity = run_maturity(MaturityOptions {
+        concept: gap.concept.clone(),
+        json: false,
+        update: false,
+    })
+    .map_err(|e| ConceptGrindGateFailure {
+        label: "concept maturity".to_string(),
+        output: format!("{e:#}"),
+    })?;
+    write_json(iteration_dir.join("maturity_preview.json"), &maturity).map_err(|e| {
+        ConceptGrindGateFailure {
+            label: "write maturity".to_string(),
+            output: format!("{e:#}"),
+        }
+    })?;
+    if maturity.state != "grammar_fixture_green" {
+        return Err(ConceptGrindGateFailure {
+            label: "concept maturity".to_string(),
+            output: serde_json::to_string_pretty(&maturity).unwrap_or_else(|e| e.to_string()),
+        });
+    }
+
+    let map = run_map_existing(MapExistingOptions {
+        json: false,
+        expand_deps: true,
+    })
+    .map_err(|e| ConceptGrindGateFailure {
+        label: "grammar map".to_string(),
+        output: format!("{e:#}"),
+    })?;
+    write_json(iteration_dir.join("grammar_debt.json"), &map).map_err(|e| {
+        ConceptGrindGateFailure {
+            label: "write grammar debt".to_string(),
+            output: format!("{e:#}"),
+        }
+    })?;
+
+    command_gate(
+        "cargo check -p xtask",
+        "cargo",
+        &["check", "-p", "xtask"],
+        iteration_dir,
+    )?;
+    command_gate(
+        "cargo test -p mtg-grammar",
+        "cargo",
+        &["test", "-p", "mtg-grammar"],
+        iteration_dir,
+    )?;
+    Ok(())
+}
+
+fn verify_gap_closed(
+    gap: &ConceptGap,
+    before: &ExistingGrammarMapReport,
+    after: &ExistingGrammarMapReport,
+) -> Result<()> {
+    if after
+        .unmapped_rules
+        .iter()
+        .any(|rule| rule.name == gap.target_rule)
+    {
+        bail!(
+            "selected gap still unmapped after patch: {} -> {}",
+            gap.concept,
+            gap.target_rule
+        );
+    }
+
+    let before_owned = concept_owned_rule_set(before, &gap.concept);
+    let after_owned = concept_owned_rule_set(after, &gap.concept);
+    if after_owned.is_empty() {
+        bail!("concept {:?} has no owned rules after patch", gap.concept);
+    }
+
+    let target_still_exists = grammar_query_engine::parse_grammar_file(grammar_pest_path())?
+        .iter()
+        .any(|rule| rule.name == gap.target_rule);
+    let target_owned = after_owned.contains(&gap.target_rule);
+    let gained_ownership = after_owned.iter().any(|rule| !before_owned.contains(rule));
+    let counts_improved = after.mapped_rule_count > before.mapped_rule_count
+        || after.unmapped_rule_count < before.unmapped_rule_count;
+
+    if target_still_exists && !target_owned {
+        bail!(
+            "target rule {} still exists but is not owned by concept {}",
+            gap.target_rule,
+            gap.concept
+        );
+    }
+    if !gained_ownership && target_still_exists {
+        bail!(
+            "concept {} did not gain ownership for target rule {}",
+            gap.concept,
+            gap.target_rule
+        );
+    }
+    if !counts_improved {
+        bail!(
+            "grammar map did not improve: mapped {} -> {}, unmapped {} -> {}",
+            before.mapped_rule_count,
+            after.mapped_rule_count,
+            before.unmapped_rule_count,
+            after.unmapped_rule_count
+        );
+    }
+
+    Ok(())
+}
+
+fn concept_owned_rule_set(report: &ExistingGrammarMapReport, concept: &str) -> BTreeSet<String> {
+    report
+        .concepts
+        .iter()
+        .find(|entry| entry.concept == concept)
+        .map(|entry| {
+            entry
+                .owned_rules
+                .iter()
+                .map(|rule| rule.name.clone())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn command_gate(
+    label: &str,
+    program: &str,
+    args: &[&str],
+    iteration_dir: &Path,
+) -> Result<(), ConceptGrindGateFailure> {
+    let output = Command::new(program)
+        .args(args)
+        .current_dir(repo_root())
+        .output()
+        .map_err(|e| ConceptGrindGateFailure {
+            label: label.to_string(),
+            output: format!("{e:#}"),
+        })?;
+    let text = command_output_text(&output);
+    let log_name = label
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .collect::<String>();
+    fs::write(iteration_dir.join(format!("{log_name}.txt")), &text).map_err(|e| {
+        ConceptGrindGateFailure {
+            label: format!("write {label} output"),
+            output: format!("{e:#}"),
+        }
+    })?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(ConceptGrindGateFailure {
+            label: label.to_string(),
+            output: text,
+        })
+    }
+}
+
+fn command_output_text(output: &std::process::Output) -> String {
+    let mut text = String::new();
+    text.push_str(&String::from_utf8_lossy(&output.stdout));
+    if !output.stderr.is_empty() {
+        if !text.ends_with('\n') && !text.is_empty() {
+            text.push('\n');
+        }
+        text.push_str(&String::from_utf8_lossy(&output.stderr));
+    }
+    text
+}
+
+fn ensure_clean_working_tree() -> Result<()> {
+    let output = Command::new("git")
+        .args(["status", "--porcelain"])
+        .current_dir(repo_root())
+        .output()
+        .context("git status --porcelain")?;
+    if !output.status.success() {
+        bail!("git status failed\n{}", command_output_text(&output));
+    }
+    if !String::from_utf8_lossy(&output.stdout).trim().is_empty() {
+        bail!("working tree has uncommitted changes");
+    }
+    Ok(())
+}
+
+const CONCEPT_GRIND_COMMIT_PATHS: &[&str] = &[
+    "crates/mtg-grammar/src/grammar.pest",
+    "grammar-concepts",
+    "grammar-fixtures",
+];
+
+fn commit_concept_grind_iteration(gap: &ConceptGap, iteration: u32) -> Result<bool> {
+    validate_concept_grind_changed_paths()?;
+    let add = Command::new("git")
+        .arg("add")
+        .args(CONCEPT_GRIND_COMMIT_PATHS)
+        .current_dir(repo_root())
+        .output()
+        .context("git add concept-grind paths")?;
+    if !add.status.success() {
+        bail!("git add failed\n{}", command_output_text(&add));
+    }
+    validate_concept_grind_cached_paths()?;
+    let diff = Command::new("git")
+        .args(["diff", "--cached", "--quiet"])
+        .current_dir(repo_root())
+        .status()
+        .context("git diff --cached --quiet")?;
+    if diff.success() {
+        return Ok(false);
+    }
+    let message = format!(
+        "Advance grammar concept {}\n\nconcept-grind iteration: {iteration}\ntarget rule: {}\nquery: {}\n",
+        gap.concept, gap.target_rule, gap.query
+    );
+    let commit = Command::new("git")
+        .args(["commit", "--no-verify", "-m", &message])
+        .current_dir(repo_root())
+        .output()
+        .context("git commit")?;
+    if !commit.status.success() {
+        bail!("git commit failed\n{}", command_output_text(&commit));
+    }
+    Ok(true)
+}
+
+fn validate_concept_grind_changed_paths() -> Result<()> {
+    let paths = git_changed_paths(&["status", "--porcelain"])?;
+    let unexpected: Vec<String> = paths
+        .into_iter()
+        .filter(|path| !is_concept_grind_commit_path(path))
+        .collect();
+    if !unexpected.is_empty() {
+        bail!(
+            "concept-grind refuses to commit unexpected changed path(s): {}",
+            unexpected.join(", ")
+        );
+    }
+    Ok(())
+}
+
+fn validate_concept_grind_cached_paths() -> Result<()> {
+    let paths = git_changed_paths(&["diff", "--cached", "--name-only"])?;
+    let unexpected: Vec<String> = paths
+        .into_iter()
+        .filter(|path| !is_concept_grind_commit_path(path))
+        .collect();
+    if !unexpected.is_empty() {
+        bail!(
+            "concept-grind staged unexpected path(s): {}",
+            unexpected.join(", ")
+        );
+    }
+    Ok(())
+}
+
+fn git_changed_paths(args: &[&str]) -> Result<Vec<String>> {
+    let output = Command::new("git")
+        .args(args)
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("git {}", args.join(" ")))?;
+    if !output.status.success() {
+        bail!(
+            "git {} failed\n{}",
+            args.join(" "),
+            command_output_text(&output)
+        );
+    }
+    let mut paths = Vec::new();
+    for line in String::from_utf8_lossy(&output.stdout).lines() {
+        let path = if args.first() == Some(&"status") {
+            line.get(3..).unwrap_or("").trim()
+        } else {
+            line.trim()
+        };
+        let path = path
+            .rsplit_once(" -> ")
+            .map(|(_, right)| right)
+            .unwrap_or(path);
+        if !path.is_empty() {
+            paths.push(path.to_string());
+        }
+    }
+    Ok(paths)
+}
+
+fn is_concept_grind_commit_path(path: &str) -> bool {
+    CONCEPT_GRIND_COMMIT_PATHS
+        .iter()
+        .any(|allowed| path == *allowed || path.starts_with(&format!("{allowed}/")))
+}
+
+fn read_concept_files() -> Result<Vec<(PathBuf, ConceptDocument, String)>> {
+    let dir = grammar_concepts_dir();
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+    let mut paths = Vec::new();
+    for entry in fs::read_dir(&dir).with_context(|| format!("read {}", dir.display()))? {
+        let entry = entry.with_context(|| format!("read entry in {}", dir.display()))?;
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) == Some("toml") {
+            paths.push(path);
+        }
+    }
+    paths.sort();
+
+    let mut docs = Vec::new();
+    for path in paths {
+        let text = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+        let doc: ConceptDocument =
+            toml::from_str(&text).with_context(|| format!("parse {}", path.display()))?;
+        let maturity = concept_maturity_from_toml(&text).unwrap_or_else(|| "unknown".to_string());
+        docs.push((path, doc, maturity));
+    }
+    Ok(docs)
+}
+
+fn concept_maturity_from_toml(text: &str) -> Option<String> {
+    let value: toml::Value = toml::from_str(text).ok()?;
+    value
+        .get("maturity")?
+        .get("pest_grammar")?
+        .as_str()
+        .map(str::to_string)
+}
+
+fn suggest_concept_owner(rule_name: &str, concepts: &[String]) -> Option<String> {
+    concepts
+        .iter()
+        .filter_map(|concept| {
+            let score = shared_prefix_segments(rule_name, concept);
+            (score > 0).then_some((score, concept))
+        })
+        .max_by(|(left_score, left), (right_score, right)| {
+            left_score
+                .cmp(right_score)
+                .then_with(|| right.len().cmp(&left.len()))
+        })
+        .map(|(_, concept)| concept.clone())
+}
+
+fn shared_prefix_segments(rule_name: &str, concept: &str) -> usize {
+    rule_name
+        .split('_')
+        .zip(concept.split('_'))
+        .take_while(|(left, right)| left == right)
+        .count()
+}
+
+fn print_map_existing_report(report: &ExistingGrammarMapReport) {
+    println!("grammar rules : {}", report.rule_count);
+    println!("concepts      : {}", report.concept_count);
+    println!(
+        "dependency map: {}",
+        if report.dependency_expansion {
+            "expanded"
+        } else {
+            "declared only"
+        }
+    );
+    println!("shared rules  : {}", report.shared_rule_count);
+    println!("mapped rules  : {}", report.mapped_rule_count);
+    println!("unmapped rules: {}", report.unmapped_rule_count);
+    for concept in &report.concepts {
+        println!(
+            "  {} [{}]: {} root(s), {} owned, {} missing",
+            concept.concept,
+            concept.maturity,
+            concept.found_rules.len(),
+            concept.owned_rules.len(),
+            concept.missing_rules.len()
+        );
+        if !concept.owned_rules.is_empty() {
+            let owned = concept
+                .owned_rules
+                .iter()
+                .take(12)
+                .map(|rule| rule.name.as_str())
+                .collect::<Vec<_>>()
+                .join(", ");
+            let suffix = if concept.owned_rules.len() > 12 {
+                ", ..."
+            } else {
+                ""
+            };
+            println!("    owned: {owned}{suffix}");
+        }
+        if !concept.missing_rules.is_empty() {
+            println!("    missing: {}", concept.missing_rules.join(", "));
+        }
+    }
+    let suggested = report
+        .unmapped_rules
+        .iter()
+        .filter(|rule| rule.suggested_concept.is_some())
+        .count();
+    println!("unmapped with concept-name suggestion: {suggested}");
+    for rule in report.unmapped_rules.iter().take(20) {
+        match &rule.suggested_concept {
+            Some(concept) => println!("  {}:{} -> {}", rule.name, rule.line, concept),
+            None => println!("  {}:{}", rule.name, rule.line),
+        }
+    }
+}
+
+fn run_maturity(options: MaturityOptions) -> Result<MaturityReport> {
+    let concept_file = grammar_concepts_dir().join(format!("{}.toml", options.concept));
+    let fixture_file = grammar_fixtures_dir().join(format!("{}.toml", options.concept));
+    let concept_file = concept_file.exists().then_some(concept_file);
+    let fixture_file = fixture_file.exists().then_some(fixture_file);
+    let mut blockers = Vec::new();
+
+    let concept_valid = match &concept_file {
+        Some(path) => {
+            let concept_blockers = validate_concept_file(path, &options.concept)?;
+            let valid = concept_blockers.is_empty();
+            blockers.extend(concept_blockers);
+            valid
+        }
+        None => {
+            blockers.push("missing grammar-concepts/<concept>.toml".to_string());
+            false
+        }
+    };
+    if options.update && concept_file.is_none() {
+        blockers.push("cannot update maturity without a concept file".to_string());
+    }
+    let fixture_result = match &fixture_file {
+        Some(path) => match run_fixture_file(path) {
+            Ok(result) => {
+                if !result.passed {
+                    blockers.push(format!(
+                        "{} grammar fixture case(s) failed",
+                        result.failures
+                    ));
+                }
+                Some(result)
+            }
+            Err(e) => {
+                blockers.push(format!("fixture could not run: {e:#}"));
+                None
+            }
+        },
+        None => {
+            blockers.push("missing grammar-fixtures/<concept>.toml".to_string());
+            None
+        }
+    };
+
+    let state = if concept_valid && fixture_result.as_ref().is_some_and(|r| r.passed) {
+        "grammar_fixture_green"
+    } else if concept_valid {
+        "bounded"
+    } else if concept_file.is_some() {
+        "blocked"
+    } else {
+        "discovered"
+    }
+    .to_string();
+
+    let updated = if options.update {
+        if let Some(path) = &concept_file {
+            write_maturity_to_concept(path, &state, &blockers)?;
+            true
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+    Ok(MaturityReport {
+        concept: options.concept,
+        state,
+        concept_file,
+        fixture_file,
+        blockers,
+        updated,
+        fixture_result,
+    })
+}
+
+fn validate_concept_file(path: &Path, expected_name: &str) -> Result<Vec<String>> {
+    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+    let doc: ConceptDocument =
+        toml::from_str(&text).with_context(|| format!("parse {}", path.display()))?;
+    let mut blockers = Vec::new();
+    if doc.concept.name != expected_name {
+        blockers.push(format!(
+            "concept.name is {:?}, expected {:?}",
+            doc.concept.name, expected_name
+        ));
+    }
+    if doc.concept.rules_terms.is_empty() && doc.concept.rules_queries.is_empty() {
+        blockers.push("concept must include rules_terms or rules_queries".to_string());
+    }
+    match &doc.boundary {
+        Some(boundary) => {
+            if boundary.includes.is_empty() {
+                blockers.push("boundary.includes must not be empty".to_string());
+            }
+            if boundary.excludes.is_empty() {
+                blockers.push("boundary.excludes must not be empty".to_string());
+            }
+        }
+        None => blockers.push("missing [boundary] section".to_string()),
+    }
+    if doc.axis.is_empty() {
+        blockers.push("at least one [[axis]] is required".to_string());
+    }
+    for axis in &doc.axis {
+        if axis.name.trim().is_empty() {
+            blockers.push("axis name must not be empty".to_string());
+        }
+        if axis.values.is_empty() && axis.evidence.is_empty() {
+            blockers.push(format!(
+                "axis {:?} must include values or evidence",
+                axis.name
+            ));
+        }
+    }
+    if doc.example.is_empty() {
+        blockers.push("at least one [[example]] is required".to_string());
+    }
+    if doc.counterexample.is_empty() {
+        blockers.push("at least one [[counterexample]] is required".to_string());
+    }
+    for example in &doc.example {
+        if example.text.trim().is_empty() {
+            blockers.push("example text must not be empty".to_string());
+        }
+    }
+    for counterexample in &doc.counterexample {
+        if counterexample.text.trim().is_empty() {
+            blockers.push("counterexample text must not be empty".to_string());
+        }
+    }
+    Ok(blockers)
+}
+
+fn write_maturity_to_concept(path: &Path, state: &str, blockers: &[String]) -> Result<()> {
+    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+    let mut value: toml::Value =
+        toml::from_str(&text).with_context(|| format!("parse {}", path.display()))?;
+    let root = value
+        .as_table_mut()
+        .ok_or_else(|| anyhow!("{} must be a TOML table", path.display()))?;
+    let maturity = root
+        .entry("maturity")
+        .or_insert_with(|| toml::Value::Table(Default::default()))
+        .as_table_mut()
+        .ok_or_else(|| anyhow!("[maturity] in {} must be a table", path.display()))?;
+    maturity.insert(
+        "pest_grammar".to_string(),
+        toml::Value::String(state.to_string()),
+    );
+    maturity.insert(
+        "blockers".to_string(),
+        toml::Value::Array(
+            blockers
+                .iter()
+                .map(|blocker| toml::Value::String(blocker.clone()))
+                .collect(),
+        ),
+    );
+    let updated = toml::to_string_pretty(&value).context("serialize concept TOML")?;
+    fs::write(path, updated).with_context(|| format!("write {}", path.display()))
+}
+
+fn choose_fixture_rule(
+    concept: &str,
+    explicit_rule: Option<&str>,
+    report: &grammar_query_engine::GrammarQueryReport,
+) -> Result<String> {
+    if let Some(rule) = explicit_rule {
+        if report
+            .candidates
+            .iter()
+            .any(|candidate| candidate.name == rule)
+        {
+            return Ok(rule.to_string());
+        }
+        bail!("--rule {rule:?} was not found in grammar query candidates");
+    }
+    if report
+        .candidates
+        .iter()
+        .any(|candidate| candidate.name == concept)
+    {
+        return Ok(concept.to_string());
+    }
+    report
+        .candidates
+        .iter()
+        .find(|candidate| candidate.name.ends_with(concept) || candidate.name.contains(concept))
+        .or_else(|| report.candidates.first())
+        .map(|candidate| candidate.name.clone())
+        .ok_or_else(|| anyhow!("grammar query returned no candidate rules"))
+}
+
+fn build_fixture_document(
+    concept: &str,
+    rule: &str,
+    corpus: &CorpusClusterArtifact,
+) -> Result<String> {
+    let mut examples = Vec::new();
+    let mut nearby_rejects = Vec::new();
+    for example in &corpus.examples {
+        if parse_pest_rule(rule, &example.clause).is_ok() {
+            examples.push(example.clause.clone());
+        } else {
+            nearby_rejects.push(example.clause.clone());
+        }
+    }
+    examples.sort();
+    examples.dedup();
+    nearby_rejects.sort();
+    nearby_rejects.dedup();
+    if examples.is_empty() {
+        bail!("no corpus examples matched selected rule {rule:?}");
+    }
+
+    let mut out = String::new();
+    out.push_str("[fixture]\n");
+    out.push_str(&format!("concept = {:?}\n", concept));
+    out.push_str(&format!("rule = {:?}\n\n", rule));
+    for text in examples.iter().take(8) {
+        out.push_str("[[example]]\n");
+        out.push_str(&format!("text = {:?}\n\n", text));
+    }
+    out.push_str("[[counterexample]]\n");
+    out.push_str("text = \"Destroy target creature.\"\n");
+    out.push_str("reason = \"Baseline unrelated effect.\"\n\n");
+    if let Some(first) = examples.first() {
+        out.push_str("[[counterexample]]\n");
+        out.push_str(&format!("text = {:?}\n", format!("{first} trailing")));
+        out.push_str("reason = \"Exact-consumption guard.\"\n\n");
+    }
+    for text in nearby_rejects.iter().take(8) {
+        out.push_str("[[counterexample]]\n");
+        out.push_str(&format!("text = {:?}\n", text));
+        out.push_str(
+            "reason = \"Nearby corpus wording not accepted by the selected grammar rule.\"\n\n",
+        );
+    }
+    Ok(out)
+}
+
+fn write_grown_concept_file(
+    path: &Path,
+    concept: &str,
+    query: &str,
+    rule: &str,
+    corpus: &CorpusClusterArtifact,
+    axes: &AxisArtifact,
+    grammar_report: &grammar_query_engine::GrammarQueryReport,
+) -> Result<()> {
+    let matched_examples: Vec<&CorpusExample> = corpus
+        .examples
+        .iter()
+        .filter(|example| parse_pest_rule(rule, &example.clause).is_ok())
+        .collect();
+    let rejected_nearby: Vec<&CorpusExample> = corpus
+        .examples
+        .iter()
+        .filter(|example| parse_pest_rule(rule, &example.clause).is_err())
+        .collect();
+    let mut out = String::new();
+    out.push_str("[concept]\n");
+    out.push_str(&format!("name = {:?}\n", concept));
+    out.push_str(&format!("rules_terms = {:?}\n", query_terms(query)));
+    out.push_str(&format!(
+        "rules_queries = {:?}\n",
+        vec![format!("lex: {query}")]
+    ));
+    out.push_str(&format!("pest_rules = {:?}\n\n", vec![rule.to_string()]));
+
+    out.push_str("[boundary]\n");
+    out.push_str(&format!(
+        "includes = {:?}\n",
+        vec![
+            format!("Corpus clauses matching the selected PEST rule {rule}."),
+            "Rules-grounded wording discovered from qmd and Oracle corpus clustering.".to_string(),
+        ]
+    ));
+    out.push_str(&format!(
+        "excludes = {:?}\n\n",
+        vec![
+            "Nearby corpus clauses that do not match the selected PEST rule.".to_string(),
+            "Parser, unparser, lowering, generated card tests, and corpus pass status.".to_string(),
+        ]
+    ));
+
+    for axis in &axes.axes {
+        out.push_str("[[axis]]\n");
+        out.push_str(&format!("name = {:?}\n", axis.name));
+        out.push_str(&format!("evidence = {:?}\n\n", axis.evidence));
+    }
+    if axes.axes.is_empty() {
+        out.push_str("[[axis]]\n");
+        out.push_str("name = \"wording\"\n");
+        out.push_str(&format!("evidence = {:?}\n\n", query_terms(query)));
+    }
+
+    for example in matched_examples.iter().take(8) {
+        out.push_str("[[example]]\n");
+        out.push_str(&format!("card = {:?}\n", example.card));
+        out.push_str(&format!("text = {:?}\n\n", example.clause));
+    }
+    out.push_str("[[counterexample]]\n");
+    out.push_str("text = \"Destroy target creature.\"\n");
+    out.push_str("reason = \"Baseline unrelated effect.\"\n\n");
+    for example in rejected_nearby.iter().take(8) {
+        out.push_str("[[counterexample]]\n");
+        out.push_str(&format!("card = {:?}\n", example.card));
+        out.push_str(&format!("text = {:?}\n", example.clause));
+        out.push_str(
+            "reason = \"Nearby corpus wording not accepted by the selected grammar rule.\"\n\n",
+        );
+    }
+
+    out.push_str("[maturity]\n");
+    out.push_str("pest_grammar = \"bounded\"\n");
+    out.push_str("blockers = []\n\n");
+
+    out.push_str("[grammar_query]\n");
+    out.push_str(&format!("selected_rule = {:?}\n", rule));
+    out.push_str(&format!(
+        "candidate_rules = {:?}\n",
+        grammar_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.name.clone())
+            .take(10)
+            .collect::<Vec<_>>()
+    ));
+    fs::write(path, out).with_context(|| format!("write {}", path.display()))
+}
+
+fn build_grammar_query_report(
+    query: &str,
+    rule_names: Vec<String>,
+    limit: usize,
+) -> Result<grammar_query_engine::GrammarQueryReport> {
+    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+    let mut report = grammar_query_engine::grammar_query_report(
+        &rules,
+        &GrammarQuery {
+            query: query.to_string(),
+            terms: query_terms(query),
+            rule_names,
+            max_candidates: Some(limit),
+        },
+    );
+    report.duplicate_rhs_shapes.truncate(limit);
+    report.similar_rhs_shapes.truncate(limit);
+    Ok(report)
+}
+
+fn print_grammar_query_report(report: &grammar_query_engine::GrammarQueryReport) {
+    println!("query     : {}", report.query);
+    println!("rules     : {}", report.rule_count);
+    println!("terms     : {}", report.terms.join(", "));
+    println!("candidates: {}", report.candidates.len());
+    for candidate in &report.candidates {
+        println!("  {}:{}", candidate.name, candidate.line);
+        if !candidate.matched_by.is_empty() {
+            println!("    matched by: {}", candidate.matched_by.join(", "));
+        }
+        if !candidate.direct_dependencies.is_empty() {
+            println!(
+                "    deps      : {}",
+                candidate.direct_dependencies.join(", ")
+            );
+        }
+        if !candidate.reverse_dependencies.is_empty() {
+            println!(
+                "    reverse   : {}",
+                candidate.reverse_dependencies.join(", ")
+            );
+        }
+    }
+    let quantity_groups = report
+        .duplicate_rhs_shapes
+        .iter()
+        .filter(|group| group.quantity_like)
+        .count();
+    println!(
+        "duplicate RHS shape groups: {} ({} quantity-like)",
+        report.duplicate_rhs_shapes.len(),
+        quantity_groups
+    );
+    println!(
+        "similar RHS shape pairs   : {}",
+        report.similar_rhs_shapes.len()
+    );
+}
+
+fn build_corpus_cluster(
+    query: &str,
+    sets: &[String],
+    limit: usize,
+) -> Result<CorpusClusterArtifact> {
+    let query_terms = query_terms(query);
+    let client = ScryfallClient::new()?;
+    let mut total_cards_scanned = 0usize;
+    let mut total_matching_clauses = 0usize;
+    let mut examples = Vec::new();
+    let mut skeleton_counts: BTreeMap<String, usize> = BTreeMap::new();
+
+    for set in sets {
+        let cards = client
+            .cards_in_set(set)
+            .with_context(|| format!("fetch set {set}"))?;
+        for card in cards {
+            total_cards_scanned += 1;
+            let normalized = normalize_oracle_text(&card.oracle_text);
+            for clause in oracle_clauses(&normalized) {
+                if !matches_terms(&clause, &query_terms) {
+                    continue;
+                }
+                total_matching_clauses += 1;
+                let skeleton = skeletonize_clause(&clause);
+                *skeleton_counts.entry(skeleton.clone()).or_default() += 1;
+                if examples.len() < limit {
+                    examples.push(CorpusExample {
+                        card: card.name.clone(),
+                        set: card.set_code.clone(),
+                        collector_number: card.collector_number.clone(),
+                        clause,
+                        skeleton,
+                    });
+                }
+            }
+        }
+    }
+
+    let mut skeletons: Vec<SkeletonCount> = skeleton_counts
+        .into_iter()
+        .map(|(skeleton, count)| SkeletonCount { skeleton, count })
+        .collect();
+    skeletons.sort_by(|a, b| {
+        b.count
+            .cmp(&a.count)
+            .then_with(|| a.skeleton.cmp(&b.skeleton))
+    });
+    skeletons.truncate(limit);
+
+    Ok(CorpusClusterArtifact {
+        query: query.to_string(),
+        sets: sets.to_vec(),
+        query_terms,
+        total_cards_scanned,
+        total_matching_clauses,
+        examples,
+        skeletons,
+    })
+}
+
+fn run_fixture_file(path: &Path) -> Result<FixtureRunResult> {
+    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+    let doc: FixtureDocument =
+        toml::from_str(&text).with_context(|| format!("parse {}", path.display()))?;
+    let mut cases = Vec::new();
+
+    for case in &doc.example {
+        cases.push(run_fixture_case(
+            "example",
+            &doc.fixture.rule,
+            case,
+            "match",
+        ));
+    }
+    for case in &doc.counterexample {
+        cases.push(run_fixture_case(
+            "counterexample",
+            &doc.fixture.rule,
+            case,
+            "reject",
+        ));
+    }
+
+    let failures = cases.iter().filter(|case| !case.passed).count();
+    let grammar_drift = grammar_drift_summary()?;
+    Ok(FixtureRunResult {
+        concept: doc.fixture.concept,
+        fixture_path: path.to_path_buf(),
+        passed: failures == 0,
+        total: cases.len(),
+        failures,
+        grammar_drift,
+        cases,
+    })
+}
+
+fn run_fixture_case(
+    kind: &'static str,
+    default_rule: &str,
+    case: &FixtureCase,
+    default_expect: &str,
+) -> FixtureCaseResult {
+    let rule = case.rule.as_deref().unwrap_or(default_rule).to_string();
+    let expected = case.expect.as_deref().unwrap_or(default_expect).to_string();
+    let parse_result = parse_pest_rule(&rule, &case.text);
+    let matched = parse_result.is_ok();
+    let passed = match expected.as_str() {
+        "match" => matched,
+        "reject" => !matched,
+        _ => false,
+    };
+    FixtureCaseResult {
+        kind,
+        rule,
+        text: case.text.clone(),
+        expected,
+        matched,
+        passed,
+        reason: case.reason.clone(),
+        error: parse_result.err().map(|e| e.to_string()),
+    }
+}
+
+fn print_fixture_report(result: &FixtureRunResult) {
+    println!("concept: {}", result.concept);
+    println!("fixture: {}", result.fixture_path.display());
+    println!(
+        "result : {} ({} case(s), {} failure(s))",
+        if result.passed { "pass" } else { "fail" },
+        result.total,
+        result.failures
+    );
+    println!(
+        "drift  : {} duplicate RHS group(s), {} quantity-like, {} similar pair(s)",
+        result.grammar_drift.duplicate_rhs_shape_groups,
+        result
+            .grammar_drift
+            .quantity_like_duplicate_rhs_shape_groups,
+        result.grammar_drift.similar_rhs_shape_pairs
+    );
+    for case in &result.cases {
+        let status = if case.passed { "ok" } else { "FAIL" };
+        println!(
+            "  {status} {} rule={} expected={} matched={} text={:?}",
+            case.kind, case.rule, case.expected, case.matched, case.text
+        );
+        if !case.passed {
+            if let Some(error) = &case.error {
+                println!("    error: {error}");
+            }
+        }
+    }
+}
+
+fn grammar_drift_summary() -> Result<GrammarDriftSummary> {
+    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+    let duplicate_rhs_shapes = grammar_query_engine::duplicate_rhs_shape_groups(&rules);
+    let quantity_like_duplicate_rhs_shape_groups = duplicate_rhs_shapes
+        .iter()
+        .filter(|group| group.quantity_like)
+        .count();
+    let similar_rhs_shape_pairs = grammar_query_engine::similar_rhs_shapes(&rules).len();
+    Ok(GrammarDriftSummary {
+        duplicate_rhs_shape_groups: duplicate_rhs_shapes.len(),
+        quantity_like_duplicate_rhs_shape_groups,
+        similar_rhs_shape_pairs,
+    })
+}
+
+fn tracked_sets() -> Result<Vec<String>> {
+    let path = corpus_sets_path();
+    let text = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+    let sets: Vec<String> =
+        serde_json::from_str(&text).with_context(|| format!("parse {}", path.display()))?;
+    if sets.is_empty() {
+        bail!("{} must contain at least one set code", path.display());
+    }
+    Ok(sets)
+}
+
+fn query_terms(query: &str) -> Vec<String> {
+    let mut terms = Vec::new();
+    let mut current = String::new();
+    for ch in query.chars() {
+        if ch.is_ascii_alphanumeric() || ch == '\'' {
+            current.push(ch.to_ascii_lowercase());
+        } else if !current.is_empty() {
+            push_query_term(&mut terms, &mut current);
+        }
+    }
+    if !current.is_empty() {
+        push_query_term(&mut terms, &mut current);
+    }
+    terms
+}
+
+fn push_query_term(terms: &mut Vec<String>, current: &mut String) {
+    let term = std::mem::take(current);
+    if term.len() > 2 && !STOP_WORDS.contains(&term.as_str()) && !terms.contains(&term) {
+        terms.push(term);
+    }
+}
+
+const STOP_WORDS: &[&str] = &[
+    "a", "an", "and", "are", "be", "by", "for", "from", "in", "is", "it", "of", "or", "that",
+    "the", "this", "to", "with", "would", "you", "your",
+];
+
+fn oracle_clauses(text: &str) -> Vec<String> {
+    let mut clauses = Vec::new();
+    for line in text.lines().map(str::trim).filter(|line| !line.is_empty()) {
+        let mut start = 0usize;
+        for (idx, ch) in line.char_indices() {
+            if matches!(ch, '.' | ';') {
+                let clause = line[start..=idx].trim();
+                if !clause.is_empty() {
+                    clauses.push(clause.to_string());
+                }
+                start = idx + ch.len_utf8();
+            }
+        }
+        let rest = line[start..].trim();
+        if !rest.is_empty() {
+            clauses.push(rest.to_string());
+        }
+    }
+    clauses
+}
+
+fn matches_terms(clause: &str, terms: &[String]) -> bool {
+    let lower = clause.to_ascii_lowercase();
+    terms.iter().all(|term| lower.contains(term))
+}
+
+fn skeletonize_clause(clause: &str) -> String {
+    let mut out = Vec::new();
+    for raw in clause.split_whitespace() {
+        let token = raw.trim_matches(|c: char| c.is_ascii_punctuation() && c != '+');
+        let skeleton = if token.chars().all(|c| c.is_ascii_digit()) {
+            "N".to_string()
+        } else if token.eq_ignore_ascii_case("x") {
+            "X".to_string()
+        } else if token.starts_with('{') && token.ends_with('}') {
+            "MANA".to_string()
+        } else if token.contains("+1/+") || token.contains("-1/-") {
+            "PT_COUNTER".to_string()
+        } else {
+            token.to_ascii_lowercase()
+        };
+        if !skeleton.is_empty() {
+            out.push(skeleton);
+        }
+    }
+    out.join(" ")
+}
+
+fn infer_axes(examples: &[CorpusExample]) -> Vec<AxisCandidate> {
+    let mut evidence: BTreeMap<&'static str, BTreeSet<String>> = BTreeMap::new();
+    for example in examples {
+        let lower = example.clause.to_ascii_lowercase();
+        maybe_axis(
+            &mut evidence,
+            "amount",
+            &lower,
+            &["all", "next", "x", "up to"],
+        );
+        maybe_axis(
+            &mut evidence,
+            "event",
+            &lower,
+            &[
+                "damage", "destroy", "counter", "draw", "discard", "gain", "lose",
+            ],
+        );
+        maybe_axis(&mut evidence, "source", &lower, &["source", "by", "from"]);
+        maybe_axis(
+            &mut evidence,
+            "recipient",
+            &lower,
+            &["target", "you", "player", "creature", "permanent"],
+        );
+        maybe_axis(
+            &mut evidence,
+            "duration",
+            &lower,
+            &["this turn", "until", "as long as"],
+        );
+        maybe_axis(
+            &mut evidence,
+            "condition",
+            &lower,
+            &["if", "when", "whenever", "the next time"],
+        );
+        maybe_axis(
+            &mut evidence,
+            "zone",
+            &lower,
+            &[
+                "graveyard",
+                "library",
+                "hand",
+                "battlefield",
+                "exile",
+                "ante",
+            ],
+        );
+        maybe_axis(
+            &mut evidence,
+            "polarity",
+            &lower,
+            &["can't", "can", "prevent", "instead", "unless"],
+        );
+    }
+    evidence
+        .into_iter()
+        .map(|(name, evidence)| AxisCandidate {
+            name,
+            evidence: evidence.into_iter().take(5).collect(),
+        })
+        .collect()
+}
+
+fn maybe_axis(
+    evidence: &mut BTreeMap<&'static str, BTreeSet<String>>,
+    name: &'static str,
+    text: &str,
+    needles: &[&str],
+) {
+    for needle in needles {
+        if text.contains(needle) {
+            evidence
+                .entry(name)
+                .or_default()
+                .insert((*needle).to_string());
+        }
+    }
+}
+
+fn discovery_blockers(
+    rules: &RulesArtifact,
+    corpus: &CorpusClusterArtifact,
+    axes: &AxisArtifact,
+) -> Vec<String> {
+    let mut blockers = Vec::new();
+    if rules.query_logs.is_empty() {
+        blockers.push("no qmd rules queries were attempted".to_string());
+    }
+    if corpus.examples.is_empty() {
+        blockers.push("no corpus examples matched the query".to_string());
+    }
+    if axes.axes.is_empty() {
+        blockers.push("no grammar axes inferred from examples".to_string());
+    }
+    blockers
+}
+
+fn write_concept_stub(
+    path: PathBuf,
+    concept: &str,
+    query: &str,
+    corpus: &CorpusClusterArtifact,
+    axes: &AxisArtifact,
+) -> Result<()> {
+    let mut out = String::new();
+    out.push_str("[concept]\n");
+    out.push_str(&format!("name = {:?}\n", concept));
+    out.push_str(&format!("discovery_query = {:?}\n\n", query));
+    out.push_str("[maturity]\n");
+    out.push_str("pest_grammar = \"discovered\"\n\n");
+    for axis in &axes.axes {
+        out.push_str("[[axis]]\n");
+        out.push_str(&format!("name = {:?}\n", axis.name));
+        out.push_str(&format!("evidence = {:?}\n\n", axis.evidence));
+    }
+    for example in &corpus.examples {
+        out.push_str("[[example]]\n");
+        out.push_str(&format!("card = {:?}\n", example.card));
+        out.push_str(&format!("text = {:?}\n\n", example.clause));
+    }
+    fs::write(&path, out).with_context(|| format!("write {}", path.display()))
+}
+
+fn write_json<T: Serialize>(path: PathBuf, value: &T) -> Result<()> {
+    let json = serde_json::to_string_pretty(value).context("serialize json")?;
+    fs::write(&path, json).with_context(|| format!("write {}", path.display()))
+}
+
+fn unix_timestamp() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock before unix epoch")
+        .as_secs()
+}
+
+fn slug(input: &str) -> String {
+    let mut out = String::new();
+    let mut last_dash = false;
+    for ch in input.chars() {
+        if ch.is_ascii_alphanumeric() {
+            out.push(ch.to_ascii_lowercase());
+            last_dash = false;
+        } else if !last_dash && !out.is_empty() {
+            out.push('-');
+            last_dash = true;
+        }
+    }
+    out.trim_matches('-').to_string()
+}
+
+fn display_optional_path(path: &Option<PathBuf>) -> String {
+    path.as_ref()
+        .map(|path| path.display().to_string())
+        .unwrap_or_else(|| "missing".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn query_terms_drop_stop_words() {
+        assert_eq!(
+            query_terms("prevent the next damage"),
+            vec!["prevent", "next", "damage"]
+        );
+    }
+
+    #[test]
+    fn oracle_clauses_split_lines_and_sentences() {
+        assert_eq!(
+            oracle_clauses("Flying\nDestroy target creature. Draw a card."),
+            vec!["Flying", "Destroy target creature.", "Draw a card."]
+        );
+    }
+
+    #[test]
+    fn skeletonize_replaces_numeric_tokens() {
+        assert_eq!(
+            skeletonize_clause("prevent the next 1 damage."),
+            "prevent the next N damage"
+        );
+    }
+
+    #[test]
+    fn parses_boundary_decision_owner() {
+        let decision = parse_boundary_decision(
+            "CONCEPT_BOUNDARY_DECISION:\n\
+             OWNER: existing:counter_target_spell\n\
+             AXES: color=red|blue\n\
+             EXAMPLES_TO_ACCEPT: Counter target red spell.\n\
+             COUNTEREXAMPLES_TO_REJECT: Destroy target creature.\n\
+             PEST_PATCH_INTENT: widen counter_target_spell\n",
+        )
+        .expect("decision parses");
+        assert!(matches!(
+            &decision.owner,
+            BoundaryOwner::Existing(concept) if concept == "counter_target_spell"
+        ));
+        assert!(decision.pest_patch_intent.contains("widen"));
+    }
+
+    #[test]
+    fn rejects_malformed_boundary_decision() {
+        let err = parse_boundary_decision("OWNER: existing:counter_target_spell")
+            .expect_err("missing block marker");
+        assert!(err.to_string().contains("CONCEPT_BOUNDARY_DECISION"));
+    }
+
+    #[test]
+    fn explicit_concept_does_not_fall_back_to_unrelated_rule() {
+        let report = ExistingGrammarMapReport {
+            rule_count: 1,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 1,
+            concepts: Vec::new(),
+            unmapped_rules: vec![UnmappedGrammarRule {
+                name: "destroy_target".to_string(),
+                line: 10,
+                suggested_concept: None,
+            }],
+        };
+        let options = ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: Some("counter_target_spell".to_string()),
+            target_rule: None,
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            no_commit: true,
+        };
+        let err = select_concept_gap(&report, &options).expect_err("should require target-rule");
+        assert!(err.to_string().contains("--target-rule"));
+    }
+
+    #[test]
+    fn concept_grind_commit_paths_are_scoped() {
+        assert!(is_concept_grind_commit_path(
+            "crates/mtg-grammar/src/grammar.pest"
+        ));
+        assert!(is_concept_grind_commit_path(
+            "grammar-fixtures/counter_target_spell.toml"
+        ));
+        assert!(!is_concept_grind_commit_path("xtask/src/concept.rs"));
+    }
+}
