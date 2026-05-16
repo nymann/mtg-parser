@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
@@ -598,7 +599,7 @@ struct FixtureCase {
     reason: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct FixtureRunResult {
     concept: String,
     fixture_path: PathBuf,
@@ -609,16 +610,16 @@ struct FixtureRunResult {
     cases: Vec<FixtureCaseResult>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct GrammarDriftSummary {
     duplicate_rhs_shape_groups: usize,
     quantity_like_duplicate_rhs_shape_groups: usize,
     similar_rhs_shape_pairs: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct FixtureCaseResult {
-    kind: &'static str,
+    kind: String,
     rule: String,
     text: String,
     expected: String,
@@ -1927,10 +1928,7 @@ fn run_concept_grind_gates(
     iteration_dir: &Path,
 ) -> Result<(), ConceptGrindGateFailure> {
     let fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
-    let fixture = run_fixture_file(&fixture_path).map_err(|e| ConceptGrindGateFailure {
-        label: "grammar fixture".to_string(),
-        output: format!("{e:#}"),
-    })?;
+    let fixture = run_fixture_file_fresh(&fixture_path)?;
     write_json(iteration_dir.join("fixture_result.json"), &fixture).map_err(|e| {
         ConceptGrindGateFailure {
             label: "write fixture result".to_string(),
@@ -1995,6 +1993,40 @@ fn run_concept_grind_gates(
     )?;
     run_gap_closure_gate(gap, before, &map)?;
     Ok(())
+}
+
+fn run_fixture_file_fresh(
+    fixture_path: &Path,
+) -> Result<FixtureRunResult, ConceptGrindGateFailure> {
+    let args = concept_grammar_test_command_args(fixture_path);
+    let output = Command::new("cargo")
+        .args(&args)
+        .current_dir(repo_root())
+        .output()
+        .map_err(|e| ConceptGrindGateFailure {
+            label: "grammar fixture".to_string(),
+            output: format!("{e:#}"),
+        })?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let fixture =
+        serde_json::from_str::<FixtureRunResult>(&stdout).map_err(|e| ConceptGrindGateFailure {
+            label: "grammar fixture".to_string(),
+            output: format!(
+                "failed to parse concept-grammar-test JSON: {e:#}\n\n{}",
+                command_output_text(&output)
+            ),
+        })?;
+    Ok(fixture)
+}
+
+fn concept_grammar_test_command_args(fixture_path: &Path) -> Vec<OsString> {
+    vec![
+        OsString::from("xtask"),
+        OsString::from("concept-grammar-test"),
+        OsString::from("--json"),
+        OsString::from("--fixture"),
+        fixture_path.as_os_str().to_owned(),
+    ]
 }
 
 fn run_gap_closure_gate(
@@ -2871,7 +2903,7 @@ fn run_fixture_case(
         _ => false,
     };
     FixtureCaseResult {
-        kind,
+        kind: kind.to_string(),
         rule,
         text: case.text.clone(),
         expected,
@@ -3286,6 +3318,27 @@ mod tests {
         .expect_err("gap should still be open");
         assert_eq!(failure.label, "gap closure");
         assert!(failure.output.contains("still unmapped"));
+    }
+
+    #[test]
+    fn concept_grind_fixture_gate_uses_fresh_xtask_process() {
+        let args = concept_grammar_test_command_args(Path::new(
+            "grammar-fixtures/counter_target_spell.toml",
+        ));
+        let args: Vec<_> = args
+            .iter()
+            .map(|arg| arg.to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(
+            args,
+            vec![
+                "xtask",
+                "concept-grammar-test",
+                "--json",
+                "--fixture",
+                "grammar-fixtures/counter_target_spell.toml",
+            ]
+        );
     }
 
     fn map_report_for_test(target_owned: bool) -> ExistingGrammarMapReport {
