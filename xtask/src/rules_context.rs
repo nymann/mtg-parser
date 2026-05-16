@@ -400,7 +400,7 @@ fn truncate_lines(text: &str, max: usize) -> String {
 }
 
 fn qmd_query_one(query: &str) -> Result<Vec<QmdHit>, String> {
-    ensure_qmd_paths()?;
+    ensure_qmd_collection()?;
     let structured_query = format!("lex: {query}");
     let output = qmd_command()
         .args([
@@ -433,7 +433,7 @@ fn qmd_query_one(query: &str) -> Result<Vec<QmdHit>, String> {
 }
 
 fn qmd_search_one(query: &str) -> Result<Vec<QmdHit>, String> {
-    ensure_qmd_paths()?;
+    ensure_qmd_collection()?;
     let output = qmd_command()
         .args([
             "search",
@@ -492,11 +492,92 @@ fn ensure_qmd_paths() -> Result<(), String> {
     Ok(())
 }
 
+fn ensure_qmd_collection() -> Result<(), String> {
+    ensure_qmd_paths()?;
+    let rules_dir = repo_root().join("resources/rules");
+    if !rules_dir.is_dir() {
+        return Err(format!(
+            "resources/rules is missing; run `just rules` from {} before querying qmd",
+            repo_root().display()
+        ));
+    }
+
+    let show = qmd_command()
+        .args(["collection", "show", QMD_COLLECTION])
+        .output()
+        .map_err(|e| format!("invoke qmd collection show: {e}"))?;
+    if show.status.success() {
+        return Ok(());
+    }
+
+    let add = qmd_command()
+        .args(["collection", "add"])
+        .arg(&rules_dir)
+        .args(["--name", QMD_COLLECTION])
+        .output()
+        .map_err(|e| format!("invoke qmd collection add: {e}"))?;
+    if !add.status.success() {
+        return Err(format!(
+            "qmd collection {QMD_COLLECTION:?} was missing, and automatic add failed: {}",
+            qmd_output_summary(&add)
+        ));
+    }
+
+    let context = "Magic: The Gathering Comprehensive Rules, split per-section and per-glossary-entry. Canonical source for keyword definitions, damage/replacement/prevention shapes, and game vocabulary. The mtg-parser grammar should mirror this wording.";
+    let context_add = qmd_command()
+        .args(["context", "add", "qmd://mtg-rules", context])
+        .output()
+        .map_err(|e| format!("invoke qmd context add: {e}"))?;
+    if !context_add.status.success() {
+        return Err(format!(
+            "qmd collection {QMD_COLLECTION:?} was added, but automatic context setup failed: {}",
+            qmd_output_summary(&context_add)
+        ));
+    }
+
+    let exclude = qmd_command()
+        .args(["collection", "exclude", QMD_COLLECTION])
+        .output()
+        .map_err(|e| format!("invoke qmd collection exclude: {e}"))?;
+    if !exclude.status.success() {
+        return Err(format!(
+            "qmd collection {QMD_COLLECTION:?} was added, but automatic exclude setup failed: {}",
+            qmd_output_summary(&exclude)
+        ));
+    }
+
+    let update = qmd_command()
+        .arg("update")
+        .output()
+        .map_err(|e| format!("invoke qmd update: {e}"))?;
+    if !update.status.success() {
+        return Err(format!(
+            "qmd collection {QMD_COLLECTION:?} was added, but automatic update failed: {}",
+            qmd_output_summary(&update)
+        ));
+    }
+
+    Ok(())
+}
+
 fn qmd_command() -> Command {
     let mut command = Command::new("qmd");
     command.env("INDEX_PATH", qmd_index_path());
     command.env("XDG_CONFIG_HOME", qmd_config_home());
     command
+}
+
+fn qmd_output_summary(output: &std::process::Output) -> String {
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = stdout.trim();
+    let stderr = stderr.trim();
+    match (stdout.is_empty(), stderr.is_empty()) {
+        (true, true) => output.status.to_string(),
+        (false, true) => format!("{}: {stdout}", output.status),
+        (true, false) => format!("{}: {stderr}", output.status),
+        (false, false) => format!("{}: {stdout}; {stderr}", output.status),
+    }
 }
 
 /// BM25 is brittle around apostrophe-s, terminal punctuation, and
