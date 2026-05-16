@@ -1,0 +1,77 @@
+[[axis]]
+name = "permanent"
+values = ["permanent_type"]
+
+[[axis]]
+name = "damage_source"
+values = ["source_object"]
+
+[[axis]]
+name = "temporal_scope"
+values = ["this_turn"]
+
+[[axis]]
+name = "outcome"
+values = ["dies"]
+
+[boundary]
+excludes = [
+    "Tap-for-mana trigger events owned by permanent_tapped_for_mana.",
+    "Unqualified enchanted-permanent death triggers owned by enchanted_permanent_dies.",
+    "Damage amount expressions that refer to damage dealt to a player this turn.",
+    "Events where the source object is dealt damage rather than a permanent damaged by the source dying.",
+]
+includes = [
+    "Triggered events where a permanent of a named permanent type dies after being dealt damage by a source object this turn.",
+    "This-turn temporal scope with the damage source expressed as this object or that source.",
+]
+
+[concept]
+name = "permanent_dealt_damage_by_source_this_turn_dies"
+pest_rules = ["permanent_dealt_damage_by_source_this_turn_dies"]
+rules_queries = [
+    "lex: a creature dealt damage by this creature this turn dies",
+    "lex: an artifact dealt damage by that source this turn dies",
+]
+rules_terms = [
+    "damage",
+    "dies",
+    "permanent",
+    "source",
+    "this turn",
+]
+
+[[counterexample]]
+reason = "Tap-for-mana trigger event, owned by permanent_tapped_for_mana."
+text = "a player taps a land for mana"
+
+[[counterexample]]
+reason = "Unqualified enchanted-permanent death trigger, not damage-by-source this-turn wording."
+text = "enchanted creature dies"
+
+[[counterexample]]
+reason = "Damage amount expression, not a trigger event where the damaged permanent dies."
+text = "damage dealt to you this turn"
+
+[[counterexample]]
+reason = "Source object damage event, not a permanent damaged by a source dying."
+text = "this creature is dealt damage"
+
+[[example]]
+text = "a creature dealt damage by this creature this turn dies"
+
+[[example]]
+text = "an artifact dealt damage by that source this turn dies"
+
+[grammar_query]
+candidate_rules = [
+    "permanent_dealt_damage_by_source_this_turn_dies",
+    "permanent_put_into_graveyard_from_battlefield",
+    "source_is_dealt_damage",
+    "player_taps_permanent_for_mana",
+]
+selected_rule = "permanent_dealt_damage_by_source_this_turn_dies"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

@@ -2188,7 +2188,7 @@ that_player_discards_card_at_random = {
 its_controller_adds_an_additional_mana = {
     ^"its" ~ ^"controller" ~ ^"adds" ~ article ~ ^"additional" ~ mana_symbol ~ "."
 }
-source_object = { "CARDNAME" | (^"this" ~ source_object_kind) }
+source_object = { "CARDNAME" | (^"this" ~ source_object_kind) | (^"that" ~ ^"source") }
 source_object_kind = _{ aura_source_object | permanent_object | permanent_type }
 aura_source_object = { ^"aura" }
 permanent_object = { ^"permanent" }

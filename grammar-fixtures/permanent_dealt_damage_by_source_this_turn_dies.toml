@@ -1,0 +1,31 @@
+[fixture]
+concept = "permanent_dealt_damage_by_source_this_turn_dies"
+rule = "permanent_dealt_damage_by_source_this_turn_dies"
+
+[[example]]
+text = "a creature dealt damage by this creature this turn dies"
+reason = "Creature permanent type, this-creature damage source, this-turn scope, and dies outcome."
+
+[[example]]
+text = "an artifact dealt damage by that source this turn dies"
+reason = "Artifact permanent type, that-source damage source, this-turn scope, and dies outcome."
+
+[[counterexample]]
+text = "a player taps a land for mana"
+reason = "Tap-for-mana trigger event, owned by permanent_tapped_for_mana."
+
+[[counterexample]]
+text = "enchanted creature dies"
+reason = "Unqualified enchanted-permanent death trigger, not damage-by-source this-turn wording."
+
+[[counterexample]]
+text = "damage dealt to you this turn"
+reason = "Damage amount expression, not a trigger event where the damaged permanent dies."
+
+[[counterexample]]
+text = "this creature is dealt damage"
+reason = "Source object damage event, not a permanent damaged by a source dying."
+
+[[counterexample]]
+text = "a creature dealt damage by this creature this turn dies trailing"
+reason = "Exact-consumption guard."
