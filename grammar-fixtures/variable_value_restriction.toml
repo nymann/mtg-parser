@@ -1,0 +1,41 @@
+[fixture]
+concept = "variable_value_restriction"
+rule = "variable_cant_be_number"
+
+[[example]]
+text = "X can't be 0."
+reason = "Direct variable-value restriction using X and prohibited value 0."
+
+[[example]]
+text = "X can't be 1."
+reason = "Direct variable-value restriction using another unsigned-number value."
+
+[[example]]
+text = "Y can't be 0."
+reason = "Direct variable-value restriction using a non-X variable name."
+
+[[example]]
+rule = "variable_name"
+text = "Y"
+reason = "Variable axis uses the shared variable_name grammar."
+
+[[example]]
+rule = "unsigned_number"
+text = "1"
+reason = "Prohibited-value axis uses the shared unsigned_number grammar."
+
+[[counterexample]]
+text = "Spend only black mana on X."
+reason = "Spend-only mana restriction scoped to a variable, owned by variable_mana_spending_restriction."
+
+[[counterexample]]
+text = "X is the number of cards in their hand minus 1."
+reason = "Variable value definition or calculation, not a prohibited variable value."
+
+[[counterexample]]
+text = "You may spend black mana as though it were green mana."
+reason = "As-though mana-quality permission, not a prohibited variable value."
+
+[[counterexample]]
+text = "X can't be 0. trailing"
+reason = "Exact-consumption guard."

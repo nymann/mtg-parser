@@ -1,0 +1,76 @@
+[[axis]]
+name = "variable"
+values = [
+    "X",
+    "Y",
+]
+
+[[axis]]
+name = "prohibited_value"
+values = ["unsigned_number"]
+
+[[axis]]
+name = "polarity"
+values = ["can't"]
+
+[[axis]]
+name = "scope"
+values = ["variable_value"]
+
+[boundary]
+excludes = [
+    "Spend-only mana restrictions scoped to a variable, owned by variable_mana_spending_restriction.",
+    "Variable value definitions or calculations that set a variable's value rather than prohibit a value.",
+    "Mana-quality permission effects using as-though wording rather than restricting a variable value.",
+]
+includes = [
+    "Restrictions of the form variable can't be unsigned_number.",
+    "Variable name and prohibited unsigned-number value are concept data axes.",
+]
+
+[concept]
+name = "variable_value_restriction"
+pest_rules = ["variable_cant_be_number"]
+rules_queries = [
+    "lex: X can't be 0",
+    "lex: variable can't be number",
+]
+rules_terms = [
+    "X",
+    "variable",
+    "number",
+]
+
+[[counterexample]]
+reason = "Spend-only mana restriction scoped to a variable, not a prohibited variable value."
+text = "Spend only black mana on X."
+
+[[counterexample]]
+reason = "Variable value definition or calculation, not a prohibited variable value."
+text = "X is the number of cards in their hand minus 1."
+
+[[counterexample]]
+reason = "As-though mana-quality permission, not a prohibited variable value."
+text = "You may spend black mana as though it were green mana."
+
+[[example]]
+text = "X can't be 0."
+
+[[example]]
+text = "X can't be 1."
+
+[[example]]
+text = "Y can't be 0."
+
+[grammar_query]
+candidate_rules = [
+    "variable_cant_be_number",
+    "variable_name",
+    "unsigned_number",
+    "spend_only_color_mana_on_variable",
+]
+selected_rule = "variable_cant_be_number"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
