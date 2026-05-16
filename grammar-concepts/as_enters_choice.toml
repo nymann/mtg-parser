@@ -1,0 +1,83 @@
+[[axis]]
+name = "ability_timing"
+values = ["as_enters"]
+
+[[axis]]
+name = "source"
+values = ["source_object"]
+
+[[axis]]
+name = "effect"
+values = ["choose"]
+
+[[axis]]
+name = "choice"
+values = ["as_enters_choice"]
+
+[boundary]
+excludes = [
+    "As-enters life-loss templates owned by as_enters_life_loss.",
+    "Bare enters events and enters-static templates owned by permanent_enters or adjacent enters concepts.",
+    "Modal choice headers and other standalone choose templates outside as-enters replacement wording.",
+    "Target-retargeting permission for spell or ability copies owned by copy_target_selection_permission.",
+]
+includes = [
+    "As-enters source-object templates that instruct choosing an as-enters choice value.",
+    "As-enters choice values including a color, an opponent, or a basic land type.",
+]
+
+[concept]
+name = "as_enters_choice"
+pest_rules = ["as_source_enters_choose"]
+rules_queries = [
+    "lex: as this creature enters choose a color",
+    "lex: as this permanent enters choose a color",
+]
+rules_terms = [
+    "as enters",
+    "choose",
+    "color",
+]
+
+[[counterexample]]
+reason = "As-enters life-loss template, not a choice effect."
+text = "As this creature enters, you lose life equal to your life total."
+
+[[counterexample]]
+reason = "Enters-static template, not an as-enters choice effect."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "Modal choice header, not source-object as-enters choice wording."
+text = "Choose one —"
+
+[[counterexample]]
+reason = "Copy target-selection permission, not an as-enters choice effect."
+text = "You may choose new targets for the copy."
+
+[[example]]
+text = "As this creature enters, choose a color."
+
+[[example]]
+text = "As this permanent enters, choose a color."
+
+[[example]]
+text = "As this creature enters, choose an opponent."
+
+[[example]]
+text = "As this permanent enters, choose a basic land type."
+
+[grammar_query]
+candidate_rules = [
+    "as_source_enters_choose",
+    "as_enters_choice",
+    "as_source_enters_you_lose_life_equal_to_your_life_total",
+    "permanent_enters",
+    "modal_choice",
+    "you_may_choose_new_targets_for_the_copy",
+]
+selected_rule = "as_source_enters_choose"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

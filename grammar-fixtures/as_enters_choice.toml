@@ -1,0 +1,39 @@
+[fixture]
+concept = "as_enters_choice"
+rule = "as_source_enters_choose"
+
+[[example]]
+text = "As this creature enters, choose a color."
+reason = "As-enters source-object choice template with creature source and color choice."
+
+[[example]]
+text = "As this permanent enters, choose a color."
+reason = "As-enters source-object choice template with permanent source and color choice."
+
+[[example]]
+text = "As this creature enters, choose an opponent."
+reason = "As-enters source-object choice template using an existing opponent choice value."
+
+[[example]]
+text = "As this permanent enters, choose a basic land type."
+reason = "As-enters source-object choice template using an existing basic-land-type choice value."
+
+[[counterexample]]
+text = "As this creature enters, you lose life equal to your life total."
+reason = "As-enters life-loss template, not a choice effect."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Enters-static template, not an as-enters choice effect."
+
+[[counterexample]]
+text = "Choose one —"
+reason = "Modal choice header, not source-object as-enters choice wording."
+
+[[counterexample]]
+text = "You may choose new targets for the copy."
+reason = "Copy target-selection permission, not an as-enters choice effect."
+
+[[counterexample]]
+text = "As this creature enters, choose a color. trailing"
+reason = "Exact-consumption guard."

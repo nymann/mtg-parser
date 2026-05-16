@@ -723,7 +723,7 @@ players_do_actions_the_same_way = {
 as_source_enters_choose = {
     ^"as" ~ source_object ~ ^"enters" ~ "," ~ ^"choose" ~ as_enters_choice ~ "."
 }
-as_enters_choice = _{ opponent_choice | basic_land_type_choice }
+as_enters_choice = _{ opponent_choice | basic_land_type_choice | article ~ ^"color" }
 opponent_choice = { article ~ ^"opponent" }
 basic_land_type_choice = { article ~ ^"basic" ~ ^"land" ~ ^"type" }
 
