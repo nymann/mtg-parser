@@ -147,6 +147,10 @@ impl FlowSink for ConsoleSink {
                         "--dry-run: not invoking an agent, not writing tests, not committing."
                     );
                 }
+                SessionEndReason::StopRequested => {
+                    println!();
+                    println!("Stopped after the current iteration.");
+                }
                 // The IterationFinished message already covered this case.
                 SessionEndReason::SurfacedToHuman(_) => {}
             },

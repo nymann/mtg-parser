@@ -10,7 +10,9 @@
 use std::io::{Read, Seek, SeekFrom, Stdout, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
+use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, SystemTime};
 
@@ -44,6 +46,7 @@ enum ViewerExit {
 /// Sink that pushes events into a channel for the TUI to consume.
 pub struct TuiSink {
     tx: Sender<FlowEvent>,
+    stop_requested: Arc<AtomicBool>,
 }
 
 impl FlowSink for TuiSink {
@@ -52,10 +55,15 @@ impl FlowSink for TuiSink {
         // there's no useful action the orchestrator could take here.
         let _ = self.tx.send(event);
     }
+
+    fn stop_requested(&self) -> bool {
+        self.stop_requested.load(Ordering::Relaxed)
+    }
 }
 
 struct EventLogSink {
     file: std::fs::File,
+    stop_request_path: PathBuf,
 }
 
 impl FlowSink for EventLogSink {
@@ -64,6 +72,10 @@ impl FlowSink for EventLogSink {
             let _ = writeln!(self.file);
             let _ = self.file.flush();
         }
+    }
+
+    fn stop_requested(&self) -> bool {
+        self.stop_request_path.exists()
     }
 }
 
@@ -116,10 +128,15 @@ where
     F: FnOnce(&mut dyn FlowSink) -> Result<std::process::ExitCode> + Send + 'static,
 {
     let (tx, rx) = mpsc::channel::<FlowEvent>();
+    let stop_requested = Arc::new(AtomicBool::new(false));
 
     // Orchestrator on background thread; sink owned by the thread.
+    let orchestrator_stop_requested = Arc::clone(&stop_requested);
     let orchestrator_handle = thread::spawn(move || -> Result<std::process::ExitCode> {
-        let mut sink: Box<dyn FlowSink> = Box::new(TuiSink { tx });
+        let mut sink: Box<dyn FlowSink> = Box::new(TuiSink {
+            tx,
+            stop_requested: orchestrator_stop_requested,
+        });
         match orchestrator(sink.as_mut()) {
             Ok(code) => Ok(code),
             Err(err) => {
@@ -138,7 +155,7 @@ where
 
     // TUI on the main thread.
     let mut terminal = setup_terminal().context("set up terminal")?;
-    let tui_result = run_event_loop(&mut terminal, rx);
+    let tui_result = run_event_loop(&mut terminal, rx, stop_requested);
     teardown_terminal(&mut terminal).ok();
 
     // Wait for orchestrator to finish (it will after the user quits or
@@ -162,6 +179,8 @@ where
     F: FnOnce(&mut dyn FlowSink) -> Result<std::process::ExitCode> + Send + 'static,
 {
     let event_log = hot_reload_event_log_path(workflow);
+    let stop_request_path = hot_reload_stop_request_path(&event_log);
+    let _ = std::fs::remove_file(&stop_request_path);
     if let Some(parent) = event_log.parent() {
         std::fs::create_dir_all(parent)?;
     }
@@ -169,7 +188,10 @@ where
         .with_context(|| format!("create TUI hot-reload event log {}", event_log.display()))?;
 
     let orchestrator_handle = thread::spawn(move || -> Result<std::process::ExitCode> {
-        let mut sink: Box<dyn FlowSink> = Box::new(EventLogSink { file });
+        let mut sink: Box<dyn FlowSink> = Box::new(EventLogSink {
+            file,
+            stop_request_path,
+        });
         match orchestrator(sink.as_mut()) {
             Ok(code) => Ok(code),
             Err(err) => {
@@ -206,6 +228,10 @@ fn hot_reload_event_log_path(workflow: &str) -> PathBuf {
         "mtg-parser-{workflow}-tui-{}.ndjson",
         std::process::id()
     ))
+}
+
+fn hot_reload_stop_request_path(event_log: &Path) -> PathBuf {
+    event_log.with_extension("stop")
 }
 
 fn spawn_hot_reload_viewer(event_log: &Path) -> Result<Child> {
@@ -253,6 +279,7 @@ fn teardown_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Resul
 fn run_event_loop(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     rx: Receiver<FlowEvent>,
+    stop_requested: Arc<AtomicBool>,
 ) -> Result<()> {
     let mut state = AppState::new();
     let poll_timeout = Duration::from_millis(50);
@@ -296,6 +323,9 @@ fn run_event_loop(
             match event::read()? {
                 Event::Key(key) => match input::handle(key, &mut state) {
                     input::Action::Quit => break,
+                    input::Action::StopAfterCurrent => {
+                        stop_requested.store(true, Ordering::Relaxed);
+                    }
                     input::Action::YankVisual => yank_visual_to_clipboard(&mut state),
                     input::Action::OpenCard => open_active_card(&mut state),
                     input::Action::None => {}
@@ -306,6 +336,9 @@ fn run_event_loop(
                 }
                 Event::Mouse(mouse) => match input::handle_mouse(mouse, &mut state) {
                     input::Action::Quit => break,
+                    input::Action::StopAfterCurrent => {
+                        stop_requested.store(true, Ordering::Relaxed);
+                    }
                     input::Action::YankVisual => yank_visual_to_clipboard(&mut state),
                     input::Action::OpenCard => open_active_card(&mut state),
                     input::Action::None => {}
@@ -323,6 +356,7 @@ fn run_event_loop_from_log(
 ) -> Result<ViewerExit> {
     let mut state = AppState::new();
     let mut reader = EventLogReader::new(event_log.to_path_buf());
+    let stop_request_path = hot_reload_stop_request_path(event_log);
     let poll_timeout = Duration::from_millis(50);
     let mut last_area = terminal.size()?;
     let mut last_ui_mtime = tui_source_mtime()?;
@@ -342,6 +376,9 @@ fn run_event_loop_from_log(
                 terminal.clear()?;
             }
         }
+        if stop_request_path.exists() {
+            state.stop_after_current = true;
+        }
 
         terminal.autoresize()?;
         let area = terminal.size()?;
@@ -355,6 +392,9 @@ fn run_event_loop_from_log(
             match event::read()? {
                 Event::Key(key) => match input::handle(key, &mut state) {
                     input::Action::Quit => return Ok(ViewerExit::Quit),
+                    input::Action::StopAfterCurrent => {
+                        std::fs::write(&stop_request_path, b"stop after current iteration")?;
+                    }
                     input::Action::YankVisual => yank_visual_to_clipboard(&mut state),
                     input::Action::OpenCard => open_active_card(&mut state),
                     input::Action::None => {}
@@ -365,6 +405,9 @@ fn run_event_loop_from_log(
                 }
                 Event::Mouse(mouse) => match input::handle_mouse(mouse, &mut state) {
                     input::Action::Quit => return Ok(ViewerExit::Quit),
+                    input::Action::StopAfterCurrent => {
+                        std::fs::write(&stop_request_path, b"stop after current iteration")?;
+                    }
                     input::Action::YankVisual => yank_visual_to_clipboard(&mut state),
                     input::Action::OpenCard => open_active_card(&mut state),
                     input::Action::None => {}

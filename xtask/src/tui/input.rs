@@ -12,6 +12,7 @@ pub enum Action {
     Quit,
     YankVisual,
     OpenCard,
+    StopAfterCurrent,
 }
 
 pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
@@ -99,14 +100,8 @@ pub fn handle(key: KeyEvent, state: &mut AppState) -> Action {
         }
         (KeyCode::Char('p'), _) if state.normal.leader => {
             state.normal.clear();
-            if state.autoscroll {
-                state.pause_output();
-            } else {
-                state.scroll = state.output_bottom_scroll();
-                state.output_cursor = state.output_line_count.saturating_sub(1);
-                state.autoscroll = true;
-            }
-            Action::None
+            state.stop_after_current = true;
+            Action::StopAfterCurrent
         }
 
         (KeyCode::Char(c), _) if c.is_ascii_digit() && key.modifiers.is_empty() => {
@@ -316,6 +311,10 @@ fn handle_command_key(key: KeyEvent, state: &mut AppState) -> Action {
             match command.as_str() {
                 "q" | "quit" => Action::Quit,
                 "open-card-on-scryfall" | "open-card" => Action::OpenCard,
+                "stop-after-current" | "stop" => {
+                    state.stop_after_current = true;
+                    Action::StopAfterCurrent
+                }
                 _ => Action::None,
             }
         }
@@ -720,6 +719,31 @@ mod tests {
         let action = handle(key(KeyCode::Char('c')), &mut state);
 
         assert!(matches!(action, Action::OpenCard));
+    }
+
+    #[test]
+    fn leader_p_requests_stop_after_current() {
+        let mut state = AppState::new();
+
+        handle(key(KeyCode::Char(' ')), &mut state);
+        let action = handle(key(KeyCode::Char('p')), &mut state);
+
+        assert!(matches!(action, Action::StopAfterCurrent));
+        assert!(state.stop_after_current);
+    }
+
+    #[test]
+    fn command_stop_requests_stop_after_current() {
+        let mut state = AppState::new();
+
+        handle(key(KeyCode::Char(':')), &mut state);
+        for ch in "stop".chars() {
+            handle(key(KeyCode::Char(ch)), &mut state);
+        }
+        let action = handle(key(KeyCode::Enter), &mut state);
+
+        assert!(matches!(action, Action::StopAfterCurrent));
+        assert!(state.stop_after_current);
     }
 
     #[test]

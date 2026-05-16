@@ -128,6 +128,10 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
             }
             Ok(outcome) => match outcome {
                 IterationOutcome::AllPass => {
+                    if sink.stop_requested() {
+                        end_reason = Some(SessionEndReason::StopRequested);
+                        break;
+                    }
                     if auto_advance {
                         match try_advance_set(&current_set, sink) {
                             Ok(Some(new_set)) => {
@@ -165,6 +169,10 @@ pub fn run_with_sink(opts: Options, sink: &mut dyn FlowSink) -> Result<ExitCode>
                 IterationOutcome::Committed => {
                     iter += 1;
                     supervisor_attempts = 0;
+                    if sink.stop_requested() {
+                        end_reason = Some(SessionEndReason::StopRequested);
+                        break;
+                    }
                 }
             },
         }

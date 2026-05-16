@@ -24,6 +24,7 @@ pub struct AppState {
     pub events: Vec<TimelineRow>,
     pub session_end: Option<SessionEndReason>,
     pub orchestrator_done: bool,
+    pub stop_after_current: bool,
 
     // view state
     pub scroll: u16, // first row visible in the output pane
@@ -148,11 +149,6 @@ impl AppState {
         if self.autoscroll {
             self.output_cursor = self.output_line_count.saturating_sub(1);
         }
-    }
-
-    pub fn pause_output(&mut self) {
-        self.materialize_output_scroll();
-        self.autoscroll = false;
     }
 
     pub fn visual_text(&self) -> String {
@@ -883,6 +879,7 @@ fn output_session_end(reason: &SessionEndReason) -> String {
             "session · corpus complete (no more paper sets)".to_string()
         }
         SessionEndReason::DryRunStop => "session · dry-run complete".to_string(),
+        SessionEndReason::StopRequested => "session · stopped after current iteration".to_string(),
         SessionEndReason::MaxIterationsReached(n) => {
             format!(
                 "session · reached --max-iterations={}",

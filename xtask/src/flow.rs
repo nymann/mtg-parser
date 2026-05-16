@@ -90,6 +90,7 @@ pub enum SessionEndReason {
     AllPass,
     DryRunStop,
     MaxIterationsReached(u32),
+    StopRequested,
     /// Auto-advance walked off the end of Scryfall's paper expansion
     /// list — every tracked set is fully covered, no more sets to add.
     CorpusComplete,
@@ -126,4 +127,8 @@ impl AgentProvider {
 /// a TUI).
 pub trait FlowSink: Send {
     fn emit(&mut self, event: FlowEvent);
+
+    fn stop_requested(&self) -> bool {
+        false
+    }
 }

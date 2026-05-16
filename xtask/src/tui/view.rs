@@ -458,17 +458,17 @@ fn responsive_left_width(total: u16) -> u16 {
     if total < 96 {
         (total / 2).clamp(44, 58)
     } else {
-        (total / 3).clamp(52, 72)
+        ((total as u32 * 38 / 100) as u16).clamp(60, 88)
     }
 }
 
 fn render_left_column(f: &mut Frame<'_>, area: Rect, state: &mut AppState) {
     let rows = Layout::default()
         .direction(Direction::Vertical)
-        // 13 lines for the step list: 1 top border + 1 title + 9 step rows
-        // + 1 spacing + 1 bottom border. The card panel takes everything
+        // Give the step list room for all rows plus status/duration text.
+        // The card panel takes everything
         // else (Min(8) lets it shrink only when the terminal is short).
-        .constraints([Constraint::Min(8), Constraint::Length(13)])
+        .constraints([Constraint::Min(8), Constraint::Length(15)])
         .split(area);
 
     render_card_panel(f, rows[0], state);
@@ -1032,6 +1032,7 @@ fn session_end_line(reason: &SessionEndReason) -> Line<'static> {
             ("session · corpus complete (no more paper sets)", C_GOOD)
         }
         SessionEndReason::DryRunStop => ("session · dry-run complete", C_DIM),
+        SessionEndReason::StopRequested => ("session · stopped after current iteration", C_GOOD),
         SessionEndReason::MaxIterationsReached(n) => {
             return Line::from(Span::styled(
                 format!(
@@ -1400,15 +1401,17 @@ fn render_status_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
             Style::default().fg(C_DIM),
         ),
     ];
-    let right = format!(
-        "{} · {} events",
-        if state.autoscroll {
-            "autoscroll"
-        } else {
-            "paused"
-        },
-        state.events.len()
-    );
+    let scroll_state = if state.autoscroll {
+        "autoscroll"
+    } else {
+        "manual scroll"
+    };
+    let stop_state = if state.stop_after_current {
+        " · stop after current"
+    } else {
+        ""
+    };
+    let right = format!("{scroll_state}{stop_state} · {} events", state.events.len());
     f.render_widget(Paragraph::new(Line::from(left)), cols[0]);
     f.render_widget(
         Paragraph::new(Line::from(Span::styled(right, Style::default().fg(C_DIM))))
