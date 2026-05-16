@@ -567,6 +567,28 @@ struct RuleExpansionNode {
     children: Vec<RuleExpansionNode>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PersistedBlockedExclusion {
+    target_rule: String,
+    normalized_blocked_owner: String,
+    normalized_blocked_reason: String,
+    structural_exclusion_reason: String,
+    matched_feature: String,
+    evidence_rule_or_parent: String,
+    source_iteration: u32,
+    timestamp_unix_ms: u128,
+}
+
+#[derive(Debug, Serialize)]
+struct CandidateBuildAudit {
+    persisted_exclusions: Vec<PersistedBlockedExclusion>,
+    plumbing_cooldown_selection: PlumbingCooldownSelection,
+    excluded_count: usize,
+    excluded_rules: Vec<String>,
+    remaining_candidate_count: usize,
+    selected_post_filter_candidate: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 struct PlumbingCooldownSelection {
     exact_blocked_target_rules: Vec<String>,
@@ -2262,6 +2284,145 @@ fn plumbing_cooldown_selection(
     }
 }
 
+fn blocked_exclusions_path(session_dir: &Path) -> PathBuf {
+    session_dir.join("blocked_exclusions.json")
+}
+
+fn read_persisted_blocked_exclusions(session_dir: &Path) -> Result<Vec<PersistedBlockedExclusion>> {
+    let path = blocked_exclusions_path(session_dir);
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let text = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+    serde_json::from_str(&text).with_context(|| format!("parse {}", path.display()))
+}
+
+fn persist_blocked_boundary_exclusion(
+    session_dir: &Path,
+    gap: &ConceptGap,
+    decision: &BoundaryDecision,
+    source_iteration: u32,
+) -> Result<PersistedBlockedExclusion> {
+    let BoundaryOwner::Blocked(reason) = &decision.owner else {
+        bail!("cannot persist non-blocked boundary decision as exclusion");
+    };
+    let record = blocked_exclusion_record(gap, decision, reason, source_iteration);
+    let mut records = read_persisted_blocked_exclusions(session_dir)?;
+    if let Some(existing) = records
+        .iter_mut()
+        .find(|existing| existing.target_rule == record.target_rule)
+    {
+        *existing = record.clone();
+    } else {
+        records.push(record.clone());
+    }
+    records.sort_by(|left, right| left.target_rule.cmp(&right.target_rule));
+    write_json(blocked_exclusions_path(session_dir), &records)?;
+    Ok(record)
+}
+
+fn blocked_exclusion_record(
+    gap: &ConceptGap,
+    decision: &BoundaryDecision,
+    reason: &str,
+    source_iteration: u32,
+) -> PersistedBlockedExclusion {
+    let normalized_reason = normalize_blocked_reason(reason);
+    PersistedBlockedExclusion {
+        target_rule: gap.target_rule.clone(),
+        normalized_blocked_owner: normalize_blocked_owner(&decision.owner_raw),
+        normalized_blocked_reason: normalized_reason.clone(),
+        structural_exclusion_reason: "boundary_blocked_decision".to_string(),
+        matched_feature: blocked_reason_feature(&normalized_reason),
+        evidence_rule_or_parent: gap.target_rule.clone(),
+        source_iteration,
+        timestamp_unix_ms: unix_timestamp_ms(),
+    }
+}
+
+fn normalize_blocked_owner(owner: &str) -> String {
+    owner
+        .trim()
+        .strip_prefix("blocked:")
+        .map(str::trim)
+        .map(normalize_blocked_reason)
+        .unwrap_or_else(|| normalize_blocked_reason(owner))
+}
+
+fn normalize_blocked_reason(reason: &str) -> String {
+    let mut out = String::new();
+    let mut last_was_separator = false;
+    for ch in reason.trim().chars() {
+        if ch.is_ascii_alphanumeric() {
+            out.push(ch.to_ascii_lowercase());
+            last_was_separator = false;
+        } else if !last_was_separator && !out.is_empty() {
+            out.push('_');
+            last_was_separator = true;
+        }
+    }
+    while out.ends_with('_') {
+        out.pop();
+    }
+    if out.is_empty() {
+        "unspecified".to_string()
+    } else {
+        out
+    }
+}
+
+fn blocked_reason_feature(normalized_reason: &str) -> String {
+    if normalized_reason.contains("lexical") {
+        "lexical_plumbing".to_string()
+    } else if normalized_reason.contains("wrapper") {
+        "wrapper_rule".to_string()
+    } else if normalized_reason.contains("aggregator") {
+        "aggregator_rule".to_string()
+    } else if normalized_reason.contains("shared") || normalized_reason.contains("plumbing") {
+        "shared_plumbing".to_string()
+    } else {
+        normalized_reason.to_string()
+    }
+}
+
+fn persisted_exclusion_target_rules(records: &[PersistedBlockedExclusion]) -> BTreeSet<String> {
+    records
+        .iter()
+        .map(|record| record.target_rule.clone())
+        .collect()
+}
+
+fn candidate_build_audit(
+    report: &ExistingGrammarMapReport,
+    persisted_exclusions: Vec<PersistedBlockedExclusion>,
+    cooldown_selection: PlumbingCooldownSelection,
+    selected_gap: &ConceptGap,
+) -> CandidateBuildAudit {
+    let excluded_rules: BTreeSet<String> = cooldown_selection
+        .excluded_rules
+        .iter()
+        .cloned()
+        .chain(
+            persisted_exclusions
+                .iter()
+                .map(|record| record.target_rule.clone()),
+        )
+        .collect();
+    let remaining_candidate_count = report
+        .unmapped_rules
+        .iter()
+        .filter(|rule| !excluded_rules.contains(&rule.name))
+        .count();
+    CandidateBuildAudit {
+        persisted_exclusions,
+        plumbing_cooldown_selection: cooldown_selection,
+        excluded_count: excluded_rules.len(),
+        excluded_rules: excluded_rules.into_iter().collect(),
+        remaining_candidate_count,
+        selected_post_filter_candidate: Some(selected_gap.target_rule.clone()),
+    }
+}
+
 fn derive_plumbing_cooldown(
     report: &ExistingGrammarMapReport,
     blocked_target_rule: &str,
@@ -2487,7 +2648,6 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         baseline_grammar_rules: concept_grind_rule_count(),
     });
 
-    let mut blocked_targets = BTreeSet::new();
     let mut plumbing_cooldown = PlumbingCooldownState::default();
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
@@ -2518,16 +2678,21 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
+        let persisted_exclusions = read_persisted_blocked_exclusions(&session_dir)?;
+        let blocked_targets = persisted_exclusion_target_rules(&persisted_exclusions);
         let cooldown_selection =
             plumbing_cooldown_selection(&before, &blocked_targets, &plumbing_cooldown);
-        write_json(
-            iteration_dir.join("plumbing_cooldown_selection.json"),
-            &cooldown_selection,
-        )?;
         let excluded_rules: BTreeSet<String> =
             cooldown_selection.excluded_rules.iter().cloned().collect();
         let gap = select_concept_gap_excluding(&before, &options, &excluded_rules)?;
         write_json(iteration_dir.join("gap.json"), &gap)?;
+        write_json(
+            iteration_dir.join("plumbing_cooldown_selection.json"),
+            &cooldown_selection,
+        )?;
+        let build_audit =
+            candidate_build_audit(&before, persisted_exclusions, cooldown_selection, &gap);
+        write_json(iteration_dir.join("candidate_build.json"), &build_audit)?;
 
         sink.emit(FlowEvent::WorkflowIterationStarted {
             index: iteration,
@@ -2609,6 +2774,16 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             &boundary_decision,
         )?;
         if let BoundaryOwner::Blocked(reason) = &boundary_decision.owner {
+            let blocked_record = persist_blocked_boundary_exclusion(
+                &session_dir,
+                &gap,
+                &boundary_decision,
+                iteration,
+            )?;
+            write_json(
+                iteration_dir.join("blocked_exclusion.json"),
+                &blocked_record,
+            )?;
             metrics.step_finished(
                 sink,
                 &session_dir,
@@ -2652,7 +2827,6 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     ),
                 });
             }
-            blocked_targets.insert(gap.target_rule);
             continue;
         }
         let gap = apply_boundary_decision(gap, &boundary_decision)?;
@@ -5077,6 +5251,153 @@ mod tests {
         let gap = select_concept_gap_excluding(&report, &options, &excluded)
             .expect("should skip blocked suggestion");
         assert_eq!(gap.target_rule, "destroy_target");
+    }
+
+    #[test]
+    fn persisted_blocked_boundary_decisions_exclude_next_live_candidate_build() {
+        let session_dir = unique_test_dir("blocked-boundary-exclusions");
+        fs::create_dir_all(&session_dir).expect("create session dir");
+        let report = ExistingGrammarMapReport {
+            rule_count: 7,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 7,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "spell_type".to_string(),
+                    line: 10,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "variable_mana_symbol".to_string(),
+                    line: 20,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "variable_definition".to_string(),
+                    line: 30,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "colored_target_effect".to_string(),
+                    line: 40,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "colored_target_action".to_string(),
+                    line: 50,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "upper_alpha".to_string(),
+                    line: 60,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "life_gain_fixed_amount".to_string(),
+                    line: 70,
+                    suggested_concept: None,
+                },
+            ],
+        };
+        let options = ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: None,
+            target_rule: None,
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            no_commit: true,
+        };
+        let blocked_batch_9 = [
+            (
+                "spell_type",
+                "shared lexical/card-type plumbing, not part of additional-cost semantics",
+            ),
+            ("colored_target_effect", "cross_concept_effect_wrapper"),
+            (
+                "colored_target_action",
+                "shared/plumbing aggregator over existing keyword-action concepts",
+            ),
+            ("upper_alpha", "lexical_plumbing"),
+        ];
+
+        for (index, (target_rule, reason)) in blocked_batch_9.iter().enumerate() {
+            let rule = report
+                .unmapped_rules
+                .iter()
+                .find(|rule| rule.name == *target_rule)
+                .expect("blocked target is in test report");
+            let gap = ConceptGap {
+                concept: slug(target_rule).replace('-', "_"),
+                query: target_rule.replace('_', " "),
+                target_rule: (*target_rule).to_string(),
+                target_line: rule.line,
+                suggested_existing_owner: false,
+                reason: "batch-9 blocked outcome replay".to_string(),
+            };
+            let decision = BoundaryDecision {
+                owner: BoundaryOwner::Blocked((*reason).to_string()),
+                owner_raw: format!("blocked:{reason}"),
+                axes: String::new(),
+                examples_to_accept: String::new(),
+                counterexamples_to_reject: String::new(),
+                pest_patch_intent: String::new(),
+            };
+            persist_blocked_boundary_exclusion(&session_dir, &gap, &decision, (index + 1) as u32)
+                .expect("persist blocked exclusion");
+
+            let persisted =
+                read_persisted_blocked_exclusions(&session_dir).expect("read persisted exclusions");
+            let persisted_targets = persisted_exclusion_target_rules(&persisted);
+            let cooldown = PlumbingCooldownState::default();
+            let cooldown_selection =
+                plumbing_cooldown_selection(&report, &persisted_targets, &cooldown);
+            let excluded_rules: BTreeSet<String> =
+                cooldown_selection.excluded_rules.iter().cloned().collect();
+            let selected = select_concept_gap_excluding(&report, &options, &excluded_rules)
+                .expect("select post-filter candidate");
+            let audit = candidate_build_audit(&report, persisted, cooldown_selection, &selected);
+
+            assert!(audit.excluded_rules.contains(&(*target_rule).to_string()));
+            assert_ne!(selected.target_rule, *target_rule);
+            let record = audit
+                .persisted_exclusions
+                .iter()
+                .find(|record| record.target_rule == *target_rule)
+                .expect("audit carries persisted record");
+            assert!(!record.normalized_blocked_owner.is_empty());
+            assert!(!record.normalized_blocked_reason.is_empty());
+            assert_eq!(
+                record.structural_exclusion_reason,
+                "boundary_blocked_decision"
+            );
+            assert!(!record.matched_feature.is_empty());
+            assert_eq!(record.evidence_rule_or_parent, *target_rule);
+            assert!(record.source_iteration > 0);
+            assert!(record.timestamp_unix_ms > 0);
+        }
+
+        let persisted =
+            read_persisted_blocked_exclusions(&session_dir).expect("read final records");
+        let persisted_targets = persisted_exclusion_target_rules(&persisted);
+        assert!(!persisted_targets.contains("variable_definition"));
+        assert!(!persisted_targets.contains("variable_mana_symbol"));
+        let cooldown = PlumbingCooldownState::default();
+        let cooldown_selection =
+            plumbing_cooldown_selection(&report, &persisted_targets, &cooldown);
+        let excluded_rules: BTreeSet<String> =
+            cooldown_selection.excluded_rules.iter().cloned().collect();
+        let selected = select_concept_gap_excluding(&report, &options, &excluded_rules)
+            .expect("valid grammar-green candidate remains selectable");
+        assert_eq!(selected.target_rule, "variable_mana_symbol");
+
+        let _ = fs::remove_dir_all(&session_dir);
     }
 
     #[test]
