@@ -66,6 +66,8 @@ mod bottle_of_suleiman;
 mod braingeyser;
 #[path = "generated/burrowing.rs"]
 mod burrowing;
+#[path = "generated/camel.rs"]
+mod camel;
 #[path = "generated/camouflage.rs"]
 mod camouflage;
 #[path = "generated/castle.rs"]

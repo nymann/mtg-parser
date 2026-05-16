@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 952,
-  "passing": 811,
+  "passing": 812,
   "cards": {
     "2ed/Air Elemental": {
       "status": "pass"
@@ -944,8 +944,7 @@
       "status": "pass"
     },
     "arn/Camel": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:29\n  |\n2 | As long as this creature is attacking, prevent all damage Deserts would deal to this creature and to creatures banded with this creature.\n  |                             ^---\n  |\n  = expected object_status"
+      "status": "pass"
     },
     "arn/City in a Bottle": {
       "status": "fail",
@@ -1032,7 +1031,7 @@
     },
     "arn/Guardian Beast": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:39\n  |\n1 | As long as this creature is untapped, noncreature artifacts you control can't be enchanted, they have indestructible, and other players can't gain control of them. This effect doesn't remove Auras already attached to those artifacts.\n  |                                       ^---\n  |\n  = expected static_untap_restriction_during_untap_steps, damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead, becomes_pt_from_mv, source_pt_equal_to_basic_lands_controlled, or source_object"
+      "error": "parse: parse error:  --> 1:39\n  |\n1 | As long as this creature is untapped, noncreature artifacts you control can't be enchanted, they have indestructible, and other players can't gain control of them. This effect doesn't remove Auras already attached to those artifacts.\n  |                                       ^---\n  |\n  = expected static_untap_restriction_during_untap_steps, static_damage_prevention_effect, damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead, becomes_pt_from_mv, source_pt_equal_to_basic_lands_controlled, or source_object"
     },
     "arn/Hasran Ogress": {
       "status": "fail",

@@ -1498,9 +1498,23 @@ source_is_object_status = { source_object ~ ^"is" ~ object_status }
 source_isnt_attacking = { proper_name ~ ^"isn't" ~ ^"attacking" }
 source_is_attacking   = { proper_name ~ ^"is" ~ ^"attacking" }
 
-continuous_effect       = _{ source_gets | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead | source_pt_equal_to_basic_lands_controlled | becomes_pt_from_mv | static_untap_restriction_during_untap_steps }
+continuous_effect       = _{ source_gets | static_damage_prevention_effect | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead | source_pt_equal_to_basic_lands_controlled | becomes_pt_from_mv | static_untap_restriction_during_untap_steps }
 source_gets = {
     source_object ~ ^"gets" ~ pt_modifier
+}
+static_damage_prevention_effect = {
+    ^"prevent" ~ damage_prevention_amount_axis ~ damage_kind? ~ ^"damage"
+  ~ static_damage_prevention_source ~ ^"would" ~ ^"deal" ~ ^"to"
+  ~ static_damage_prevention_recipient ~ (^"and" ~ ^"to" ~ static_damage_prevention_recipient)*
+}
+static_damage_prevention_source = _{ land_subtype_plural }
+land_subtype_plural = @{ ^"deserts" }
+static_damage_prevention_recipient = _{
+    source_object_damage_recipient
+  | banded_creatures_prevention_recipient
+}
+banded_creatures_prevention_recipient = {
+    ^"creatures" ~ ^"banded" ~ ^"with" ~ source_object
 }
 damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead = {
     ^"all" ~ ^"damage" ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"
@@ -1749,7 +1763,7 @@ source_attacked_or_blocked_this_combat = {
     source_object ~ ^"attacked" ~ ^"or" ~ ^"blocked" ~ ^"this" ~ ^"combat"
 }
 source_object_is_status = { source_object ~ ^"is" ~ object_status }
-object_status = @{ ^"tapped" | ^"untapped" }
+object_status = { creature_status }
 
 trigger_effect = _{
     destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn

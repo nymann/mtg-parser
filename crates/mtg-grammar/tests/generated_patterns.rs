@@ -55,6 +55,8 @@ mod bottle_of_suleiman;
 mod braingeyser;
 #[path = "generated_patterns/burrowing.rs"]
 mod burrowing;
+#[path = "generated_patterns/camel.rs"]
+mod camel;
 #[path = "generated_patterns/camouflage.rs"]
 mod camouflage;
 #[path = "generated_patterns/castle.rs"]

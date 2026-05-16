@@ -14,19 +14,20 @@ use crate::ast::{
     CopyGrantedAbility, CounterAmount, CounterTargetSpellCondition, CreatureQuality,
     CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern,
     DamageKind, DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount,
-    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
-    DamageRecipients, DamageRedirectionDestination, DestroyReferencedCreatureCondition,
-    DestroyTarget, DiesWording, DrawReplacementEffect, EachPlayerAction, EnchantObject,
-    EnchantedObject, GrantedAbility, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause,
-    LifeTotalFloorPlayer, ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol,
-    MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
-    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, OtherCreatureTypeSubject,
-    PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType,
-    PhysicalAction, PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature,
-    RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
-    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
+    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent,
+    DamagePreventionSource, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
+    DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, DrawReplacementEffect,
+    EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LandSubtype, LifeAmount,
+    LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
+    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
+    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
+    ObjectStatus, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
+    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
+    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect, StaticDamageSource,
     StaticUntapRestriction, StatusCreatureController, StatusCreatureGetDuration, Step,
     TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
@@ -2037,6 +2038,18 @@ fn prevention_recipient_from_pair(pair: Pair<Rule>) -> Result<PreventionRecipien
         Rule::any_target_prevention_recipient => Ok(PreventionRecipient::AnyTarget),
         Rule::that_permanent_or_player_prevention_recipient => {
             Ok(PreventionRecipient::ThatPermanentOrPlayer)
+        }
+        Rule::source_object_damage_recipient => {
+            let source_pair = only_inner(pair, "damage prevention missing source object")?;
+            Ok(PreventionRecipient::SourceObject(source_object_from_pair(
+                source_pair,
+            )?))
+        }
+        Rule::banded_creatures_prevention_recipient => {
+            let source_pair = only_inner(pair, "banded damage prevention missing source object")?;
+            Ok(PreventionRecipient::CreaturesBandedWithSource(
+                source_object_from_pair(source_pair)?,
+            ))
         }
         _ => Err(ParseError::Internal("prevention recipient")),
     }
@@ -5411,6 +5424,16 @@ fn basic_land_type_from_plural_pair(pair: Pair<Rule>) -> Result<BasicLandType, P
     }
 }
 
+fn land_subtype_from_plural_pair(pair: Pair<Rule>) -> Result<LandSubtype, ParseError> {
+    if pair.as_rule() != Rule::land_subtype_plural {
+        return Err(ParseError::Internal("land_subtype_plural"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "deserts" => Ok(LandSubtype::Desert),
+        _ => Err(ParseError::Internal("land_subtype_plural variant")),
+    }
+}
+
 fn basic_land_type_reference_from_pair(
     pair: Pair<Rule>,
 ) -> Result<BasicLandTypeReference, ParseError> {
@@ -5543,6 +5566,40 @@ fn is_condition_rule(rule: Rule) -> bool {
     )
 }
 
+fn static_damage_prevention_effect_from_pair(
+    pair: Pair<Rule>,
+) -> Result<StaticDamagePreventionEffect, ParseError> {
+    let mut amount = None;
+    let mut kind = None;
+    let mut source = None;
+    let mut recipients = Vec::new();
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::damage_prevention_amount_axis => {
+                amount = Some(damage_prevention_amount_axis_from_pair(child)?);
+            }
+            Rule::damage_kind => {
+                kind = Some(damage_kind_from_pair(child)?);
+            }
+            Rule::land_subtype_plural => {
+                source = Some(DamagePreventionSource::LandSubtype(
+                    land_subtype_from_plural_pair(child)?,
+                ));
+            }
+            Rule::source_object_damage_recipient | Rule::banded_creatures_prevention_recipient => {
+                recipients.push(prevention_recipient_from_pair(child)?);
+            }
+            _ => return Err(ParseError::Internal("static damage prevention effect")),
+        }
+    }
+    Ok(StaticDamagePreventionEffect {
+        amount: amount.ok_or(ParseError::Internal("damage prevention missing amount"))?,
+        kind,
+        source: source.ok_or(ParseError::Internal("damage prevention missing source"))?,
+        recipients,
+    })
+}
+
 fn continuous_effect_from_pair(pair: Pair<Rule>) -> Result<ContinuousEffect, ParseError> {
     match pair.as_rule() {
         Rule::source_gets => {
@@ -5554,6 +5611,9 @@ fn continuous_effect_from_pair(pair: Pair<Rule>) -> Result<ContinuousEffect, Par
                 modifier: pt_modifier_from_pair(modifier_pair)?,
             })
         }
+        Rule::static_damage_prevention_effect => Ok(ContinuousEffect::PreventDamage {
+            effect: static_damage_prevention_effect_from_pair(pair)?,
+        }),
         Rule::damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead => {
             let mut inner = pair.into_inner();
             let source_pair = inner
@@ -5735,6 +5795,7 @@ fn object_status_from_pair(pair: Pair<Rule>) -> Result<ObjectStatus, ParseError>
     match pair.as_str().to_ascii_lowercase().as_str() {
         "tapped" => Ok(ObjectStatus::Tapped),
         "untapped" => Ok(ObjectStatus::Untapped),
+        "attacking" => Ok(ObjectStatus::Attacking),
         _ => Err(ParseError::Internal("object_status variant")),
     }
 }

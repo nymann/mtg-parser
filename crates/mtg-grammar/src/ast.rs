@@ -756,6 +756,24 @@ pub enum PreventionRecipient {
     AnyTarget,
     /// "that permanent or player"
     ThatPermanentOrPlayer,
+    /// "this <object>"
+    SourceObject(SourceObject),
+    /// "creatures banded with this <object>"
+    CreaturesBandedWithSource(SourceObject),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StaticDamagePreventionEffect {
+    pub amount: DamagePreventionAmount,
+    pub kind: Option<DamageKind>,
+    pub source: DamagePreventionSource,
+    pub recipients: Vec<PreventionRecipient>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DamagePreventionSource {
+    /// "<land_subtype>s"
+    LandSubtype(LandSubtype),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1338,6 +1356,7 @@ pub enum AsEntersChoice {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ObjectStatus {
+    Attacking,
     Tapped,
     Untapped,
 }
@@ -2345,6 +2364,11 @@ pub enum ContinuousEffect {
         source: StaticDamageSource,
         destination: SourceObject,
     },
+    /// "Prevent <amount> [combat] damage <source> would deal to <recipients>"
+    /// — CR 615 prevention effect expressed as a static continuous effect.
+    PreventDamage {
+        effect: StaticDamagePreventionEffect,
+    },
     /// "it's a/an <types> with power and toughness each equal to its
     /// mana value" — the enchanted permanent gains the listed types
     /// and a characteristic-defining P/T equal to its mana value.
@@ -2365,6 +2389,11 @@ pub enum ContinuousEffect {
 pub enum StaticDamageSource {
     /// "unblocked creatures"
     UnblockedCreatures,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LandSubtype {
+    Desert,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

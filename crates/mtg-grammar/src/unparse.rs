@@ -12,19 +12,20 @@ use crate::ast::{
     CopyGrantedAbility, CounterAmount, CounterTargetSpellCondition, CreatureQuality,
     CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
     DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
-    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
-    DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
-    DrawReplacementEffect, EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount,
-    LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
-    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
-    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
-    ObjectStatus, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
-    PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
-    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticDamageSource, StaticUntapRestriction,
+    DamagePreventionEffect, DamagePreventionEvent, DamagePreventionSource, DamageRecipient,
+    DamageRecipients, DamageRedirectionDestination, DestroyReferencedCreatureCondition,
+    DestroyTarget, DiesWording, DrawReplacementEffect, EachPlayerAction, EnchantObject,
+    EnchantedObject, GrantedAbility, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
+    LandCountController, LandSubtype, LifeAmount, LifeLossAmount, LifeLossPlayer,
+    LifeTotalFloorCause, LifeTotalFloorPlayer, ManaAbilitySourceLimit, ManaCost,
+    ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
+    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
+    OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
+    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
+    ReferencedCard, ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject,
+    ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
+    StaticDamagePreventionEffect, StaticDamageSource, StaticUntapRestriction,
     StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
     TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
@@ -1430,6 +1431,11 @@ fn write_prevention_recipient(out: &mut String, recipient: PreventionRecipient) 
     match recipient {
         PreventionRecipient::AnyTarget => out.push_str("any target"),
         PreventionRecipient::ThatPermanentOrPlayer => out.push_str("that permanent or player"),
+        PreventionRecipient::SourceObject(source) => write_source_object(out, source),
+        PreventionRecipient::CreaturesBandedWithSource(source) => {
+            out.push_str("creatures banded with ");
+            write_source_object(out, source);
+        }
     }
 }
 
@@ -3510,6 +3516,9 @@ fn write_continuous_effect(out: &mut String, eff: &ContinuousEffect) {
             write_source_object(out, *destination);
             out.push_str(" instead");
         }
+        ContinuousEffect::PreventDamage { effect } => {
+            write_static_damage_prevention_effect(out, effect);
+        }
         ContinuousEffect::BecomesWithPtFromManaValue { types } => {
             out.push_str("it's");
             if let Some(first) = types.first() {
@@ -3536,6 +3545,48 @@ fn write_continuous_effect(out: &mut String, eff: &ContinuousEffect) {
         }
         ContinuousEffect::UntapRestrictionDuringUntapSteps { restriction } => {
             write_static_untap_restriction(out, restriction, false);
+        }
+    }
+}
+
+fn write_static_damage_prevention_effect(out: &mut String, effect: &StaticDamagePreventionEffect) {
+    out.push_str("prevent ");
+    write_damage_prevention_amount_axis(out, effect.amount);
+    if let Some(kind) = effect.kind {
+        write_damage_kind_prefix(out, kind);
+    }
+    out.push_str("damage ");
+    write_damage_prevention_source(out, effect.source);
+    out.push_str(" would deal");
+    for (idx, recipient) in effect.recipients.iter().enumerate() {
+        if idx == 0 {
+            out.push_str(" to ");
+        } else {
+            out.push_str(" and to ");
+        }
+        write_prevention_recipient(out, *recipient);
+    }
+}
+
+fn write_damage_prevention_amount_axis(out: &mut String, amount: DamagePreventionAmount) {
+    match amount {
+        DamagePreventionAmount::All => out.push_str("all "),
+        DamagePreventionAmount::Next(amount) => {
+            out.push_str("the next ");
+            write_damage_amount(out, amount);
+            out.push(' ');
+        }
+        DamagePreventionAmount::Amount(amount) => {
+            write_damage_amount(out, amount);
+            out.push_str(" of ");
+        }
+    }
+}
+
+fn write_damage_prevention_source(out: &mut String, source: DamagePreventionSource) {
+    match source {
+        DamagePreventionSource::LandSubtype(subtype) => {
+            out.push_str(land_subtype_plural_name(subtype));
         }
     }
 }
@@ -3919,6 +3970,7 @@ fn creature_status_name(status: CreatureStatus) -> &'static str {
 
 fn object_status_name(status: ObjectStatus) -> &'static str {
     match status {
+        ObjectStatus::Attacking => "attacking",
         ObjectStatus::Tapped => "tapped",
         ObjectStatus::Untapped => "untapped",
     }
@@ -3974,6 +4026,12 @@ fn basic_land_type_plural_name(land_type: BasicLandType) -> &'static str {
         BasicLandType::Swamp => "Swamps",
         BasicLandType::Mountain => "Mountains",
         BasicLandType::Forest => "Forests",
+    }
+}
+
+fn land_subtype_plural_name(subtype: LandSubtype) -> &'static str {
+    match subtype {
+        LandSubtype::Desert => "Deserts",
     }
 }
 
