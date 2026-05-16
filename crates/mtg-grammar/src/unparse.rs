@@ -19,7 +19,7 @@ use crate::ast::{
     PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
     SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
     SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction, Step,
-    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TapAllPermanentsActor, TapUntapAction, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
     TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
     TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
@@ -124,6 +124,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             );
         }
         Statement::Destroy { target } => write_destroy(out, target),
+        Statement::TapUntapTargetPermanentChoice {
+            optional,
+            action,
+            permanent_types,
+        } => write_tap_target_permanent_choice(out, *optional, *action, permanent_types),
         Statement::Exile { target } => write_exile(out, target),
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of,
@@ -1372,11 +1377,10 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(u32_to_number_word(*amount));
             out.push_str(" mana of any one color.");
         }
-        ActivatedEffect::TapTargetPermanentChoice { permanent_types } => {
-            out.push_str("Tap target ");
-            write_permanent_type_choice(out, permanent_types);
-            out.push('.');
-        }
+        ActivatedEffect::TapTargetPermanentChoice {
+            action,
+            permanent_types,
+        } => write_tap_target_permanent_choice(out, false, *action, permanent_types),
         ActivatedEffect::Untap(source) => {
             write_untap_sentence(out, *source, SentenceCase::Upper);
         }
@@ -3087,13 +3091,39 @@ fn write_permanent_type_choice(out: &mut String, permanent_types: &[PermanentTyp
     for (index, permanent_type) in permanent_types.iter().enumerate() {
         if index > 0 {
             if index == permanent_types.len() - 1 {
-                out.push_str(" or ");
+                if permanent_types.len() > 2 {
+                    out.push_str(", or ");
+                } else {
+                    out.push_str(" or ");
+                }
             } else {
                 out.push_str(", ");
             }
         }
         out.push_str(permanent_type_name(*permanent_type));
     }
+}
+
+fn write_tap_target_permanent_choice(
+    out: &mut String,
+    optional: bool,
+    action: TapUntapAction,
+    permanent_types: &[PermanentType],
+) {
+    if optional {
+        out.push_str("You may ");
+    } else {
+        out.push_str("Tap");
+    }
+    match (optional, action) {
+        (true, TapUntapAction::Tap) => out.push_str("tap"),
+        (true, TapUntapAction::TapOrUntap) => out.push_str("tap or untap"),
+        (false, TapUntapAction::Tap) => {}
+        (false, TapUntapAction::TapOrUntap) => out.push_str(" or untap"),
+    }
+    out.push_str(" target ");
+    write_permanent_type_choice(out, permanent_types);
+    out.push('.');
 }
 
 fn write_destroy(out: &mut String, target: &DestroyTarget) {

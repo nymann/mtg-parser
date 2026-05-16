@@ -21,7 +21,7 @@ use crate::ast::{
     PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
     SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
     SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction, Step,
-    TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
+    TapAllPermanentsActor, TapUntapAction, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
     TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
     TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
@@ -105,6 +105,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             label: label_from_pair(pair)?,
         }),
         Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
+        Rule::tap_target_permanent_choice => tap_target_permanent_choice_statement_from_pair(pair),
         Rule::counter_target_spell => counter_target_spell_from_pair(pair),
         Rule::as_additional_cost_to_cast_this_spell => {
             as_additional_cost_to_cast_this_spell_from_pair(pair)
@@ -944,6 +945,35 @@ fn target_permanent_choice_from_pair(pair: Pair<Rule>) -> Result<Vec<PermanentTy
         "target_permanent_choice missing permanent_type_choice",
     )?;
     permanent_type_choice_from_pair(choice_pair)
+}
+
+fn tap_target_permanent_choice_parts(
+    pair: Pair<Rule>,
+) -> Result<(bool, TapUntapAction, Vec<PermanentType>), ParseError> {
+    let text = pair.as_str().to_ascii_lowercase();
+    let optional = text.starts_with("you may ");
+    let action = if text.contains("tap or untap") {
+        TapUntapAction::TapOrUntap
+    } else {
+        TapUntapAction::Tap
+    };
+    let choice_pair = only_inner(pair, "tap_target_permanent_choice missing target choice")?;
+    Ok((
+        optional,
+        action,
+        target_permanent_choice_from_pair(choice_pair)?,
+    ))
+}
+
+fn tap_target_permanent_choice_statement_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let (optional, action, permanent_types) = tap_target_permanent_choice_parts(pair)?;
+    Ok(Statement::TapUntapTargetPermanentChoice {
+        optional,
+        action,
+        permanent_types,
+    })
 }
 
 fn destroy_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
@@ -4100,12 +4130,11 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             Ok(ActivatedEffect::AddManaOfAnyOneColor { amount })
         }
         Rule::tap_target_permanent_choice => {
-            let choice_pair = only_inner(
-                pair,
-                "tap_target_permanent_choice missing target_permanent_choice",
-            )?;
-            let permanent_types = target_permanent_choice_from_pair(choice_pair)?;
-            Ok(ActivatedEffect::TapTargetPermanentChoice { permanent_types })
+            let (_optional, action, permanent_types) = tap_target_permanent_choice_parts(pair)?;
+            Ok(ActivatedEffect::TapTargetPermanentChoice {
+                action,
+                permanent_types,
+            })
         }
         Rule::untap_source => {
             let source_pair = pair

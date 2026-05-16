@@ -346,3 +346,5 @@ mod time_vault;
 mod time_walk;
 #[path = "generated/timetwister.rs"]
 mod timetwister;
+#[path = "generated/twiddle.rs"]
+mod twiddle;

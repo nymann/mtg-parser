@@ -43,6 +43,7 @@ sentence_statement = _{
   | copy_target_spell_except_copy_is_color
   | you_may_choose_new_targets_for_the_copy
   | imperative_action_sequence
+  | tap_target_permanent_choice
   | counter_target_spell
   | as_additional_cost_to_cast_this_spell
   | destroy
@@ -1119,7 +1120,9 @@ amount_of_mana_equal_to_sacrificed_permanent_mana_value = {
     article ~ ^"amount" ~ ^"of" ~ mana_symbol ~ ^"equal" ~ ^"to"
   ~ ^"the" ~ ^"sacrificed" ~ permanent_type ~ "'s" ~ ^"mana" ~ ^"value"
 }
-tap_target_permanent_choice = { ^"tap" ~ target_permanent_choice ~ "." }
+tap_target_permanent_choice = {
+    (^"you" ~ ^"may")? ~ ^"tap" ~ (^"or" ~ ^"untap")? ~ target_permanent_choice ~ "."
+}
 target_permanent_choice = { ^"target" ~ permanent_type_choice }
 target_colored_permanent = { ^"target" ~ color_word ~ ^"permanent" }
 target_status_creature = { ^"target" ~ creature_status ~ ^"creature" }

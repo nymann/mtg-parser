@@ -79,6 +79,13 @@ pub enum Statement {
     Destroy {
         target: DestroyTarget,
     },
+    /// "Tap target <permanent_type>..." / "You may tap or untap target
+    /// <permanent_type>..." — CR 701.21 tap/untap keyword actions.
+    TapUntapTargetPermanentChoice {
+        optional: bool,
+        action: TapUntapAction,
+        permanent_types: Vec<PermanentType>,
+    },
     /// CR 701.11 exile keyword action, sharing the same target/all/list axis
     /// currently used by destroy.
     Exile {
@@ -366,6 +373,12 @@ pub enum DestroyTarget {
     AllPermanents(Vec<PermanentType>),
     /// "all <basic_land_type>s"
     AllBasicLands(BasicLandType),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TapUntapAction {
+    Tap,
+    TapOrUntap,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1232,8 +1245,9 @@ pub enum ActivatedEffect {
     AddManaOfAnyOneColor {
         amount: u32,
     },
-    /// "Tap target <permanent_type>, <permanent_type>, or <permanent_type>."
+    /// "Tap [or untap] target <permanent_type>, <permanent_type>, or <permanent_type>."
     TapTargetPermanentChoice {
+        action: TapUntapAction,
         permanent_types: Vec<PermanentType>,
     },
     /// "Untap this <permanent_type>."
