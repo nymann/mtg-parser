@@ -3155,8 +3155,6 @@ fn build_patch_prompt(
 ) -> Result<String> {
     let concept_path = grammar_concepts_dir().join(format!("{}.toml", gap.concept));
     let fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
-    let required_pest_rules =
-        required_patch_concept_rules(&gap.target_rule, fixture_path.as_path())?;
     Ok(format!(
         r#"You are the PEST_PATCH agent for mtg-parser's grammar-first concept workflow.
 
@@ -3168,10 +3166,6 @@ Hard constraints:
 - Do not try to make cards pass.
 - Prefer widening existing PEST rules over adding one-rule-per-card rules.
 - If the target wording is a real axis of `{concept}`, encode it as concept data and grammar fixture coverage, not as a nearby reject.
-- In `{concept_path}`, `[concept].pest_rules` must declare every non-shared grammar rule that this boundary decision proves: the selected target rule and each non-shared rule used by matching fixture examples.
-- Required `[concept].pest_rules` entries from the selected target and current accepted fixture rules: {required_pest_rules}.
-- If you add or keep accepted fixture examples with per-case `rule = ...`, include those non-shared rules in `[concept].pest_rules` too when they belong to this same boundary decision.
-- Do not declare unrelated shared/plumbing vocabulary rules just because they are parser dependencies or wrapper infrastructure.
 - Keep edits scoped to `crates/mtg-grammar/src/grammar.pest`, `grammar-concepts/`, and `grammar-fixtures/` unless xtask concept tooling itself is clearly wrong.
 - The orchestrator owns validation, maturity, and commit.
 
@@ -3204,47 +3198,9 @@ BLOCKERS: <none or list>
         concept_path = concept_path.display(),
         fixture_path = fixture_path.display(),
         target_rule = gap.target_rule,
-        required_pest_rules = format_rule_list(&required_pest_rules),
         boundary_json = serde_json::to_string_pretty(boundary_decision)?,
         boundary_response = boundary_response,
     ))
-}
-
-fn required_patch_concept_rules(target_rule: &str, fixture_path: &Path) -> Result<Vec<String>> {
-    let mut rules = BTreeSet::new();
-    if !is_shared_grammar_stop_rule(target_rule) {
-        rules.insert(target_rule.to_string());
-    }
-
-    if fixture_path.exists() {
-        let text = fs::read_to_string(fixture_path)
-            .with_context(|| format!("read {}", fixture_path.display()))?;
-        let doc: FixtureDocument =
-            toml::from_str(&text).with_context(|| format!("parse {}", fixture_path.display()))?;
-        for case in &doc.example {
-            if case.expect.as_deref().unwrap_or("match") != "match" {
-                continue;
-            }
-            let rule = case.rule.as_deref().unwrap_or(&doc.fixture.rule);
-            if !is_shared_grammar_stop_rule(rule) {
-                rules.insert(rule.to_string());
-            }
-        }
-    }
-
-    Ok(rules.into_iter().collect())
-}
-
-fn format_rule_list(rules: &[String]) -> String {
-    if rules.is_empty() {
-        "<none>".to_string()
-    } else {
-        rules
-            .iter()
-            .map(|rule| format!("`{rule}`"))
-            .collect::<Vec<_>>()
-            .join(", ")
-    }
 }
 
 fn build_repair_prompt(gap: &ConceptGap, failure: &ConceptGrindGateFailure) -> Result<String> {
@@ -4953,64 +4909,6 @@ unrelated_rule = { "unrelated" }
                 "grammar-fixtures/counter_target_spell.toml",
             ]
         );
-    }
-
-    #[test]
-    fn patch_prompt_required_rules_include_target_and_accepted_fixture_rules() {
-        let fixture_path = unique_test_path("concept-fixture-rules.toml");
-        fs::write(
-            &fixture_path,
-            r#"
-[fixture]
-concept = "control_effect"
-rule = "control_duration"
-
-[[example]]
-text = "Gain control of target creature until end of turn."
-
-[[example]]
-rule = "control_player_effect"
-text = "Target player gains control of target creature."
-
-[[example]]
-rule = "trigger_effect"
-text = "When CARDNAME enters, gain control of target creature."
-
-[[example]]
-rule = "ignored_reject_override"
-expect = "reject"
-text = "Destroy target creature."
-
-[[counterexample]]
-rule = "unrelated_counterexample_rule"
-text = "Destroy target creature."
-"#,
-        )
-        .expect("write fixture");
-
-        let rules = required_patch_concept_rules("control_duration", &fixture_path)
-            .expect("extract required rules");
-        let _ = fs::remove_file(&fixture_path);
-
-        assert_eq!(
-            rules,
-            vec![
-                "control_duration".to_string(),
-                "control_player_effect".to_string(),
-            ]
-        );
-    }
-
-    fn unique_test_path(file_name: &str) -> PathBuf {
-        let mut path = std::env::temp_dir();
-        path.push(format!(
-            "mtg-parser-{file_name}-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("system time")
-                .as_nanos()
-        ));
-        path
     }
 
     fn map_report_for_test(target_owned: bool) -> ExistingGrammarMapReport {
