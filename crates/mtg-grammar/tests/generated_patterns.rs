@@ -5,6 +5,8 @@ mod abu_ja_far;
 mod aladdin;
 #[path = "generated_patterns/aladdin_s_lamp.rs"]
 mod aladdin_s_lamp;
+#[path = "generated_patterns/ali_baba.rs"]
+mod ali_baba;
 #[path = "generated_patterns/animate_wall.rs"]
 mod animate_wall;
 #[path = "generated_patterns/ankh_of_mishra.rs"]

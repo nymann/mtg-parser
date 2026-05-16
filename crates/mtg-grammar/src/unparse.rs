@@ -24,12 +24,13 @@ use crate::ast::{
     RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
     SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
     SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamageSource,
-    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TappedForManaSubject,
-    TargetHandPlayer, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
-    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCastActor, TriggerCastSpell,
-    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction, TapUntapTarget,
+    TappedForManaSubject, TargetHandPlayer, TargetPermanentEndOfTurnEffect,
+    TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
+    TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
+    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
+    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
+    VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -137,8 +138,8 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::TapUntapTargetPermanentChoice {
             optional,
             action,
-            permanent_types,
-        } => write_tap_target_permanent_choice(out, *optional, *action, permanent_types),
+            target,
+        } => write_tap_target_permanent_choice(out, *optional, *action, target),
         Statement::Exile { target } => write_exile(out, target),
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of,
@@ -1603,8 +1604,8 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
         }
         ActivatedEffect::TapTargetPermanentChoice {
             action,
-            permanent_types,
-        } => write_tap_target_permanent_choice(out, false, *action, permanent_types),
+            target,
+        } => write_tap_target_permanent_choice(out, false, *action, target),
         ActivatedEffect::Untap(source) => {
             write_untap_sentence(out, *source, SentenceCase::Upper);
         }
@@ -3517,7 +3518,7 @@ fn write_tap_target_permanent_choice(
     out: &mut String,
     optional: bool,
     action: TapUntapAction,
-    permanent_types: &[PermanentType],
+    target: &TapUntapTarget,
 ) {
     if optional {
         out.push_str("You may ");
@@ -3531,7 +3532,14 @@ fn write_tap_target_permanent_choice(
         (false, TapUntapAction::TapOrUntap) => out.push_str(" or untap"),
     }
     out.push_str(" target ");
-    write_permanent_type_choice(out, permanent_types);
+    match target {
+        TapUntapTarget::TargetPermanents(permanent_types) => {
+            write_permanent_type_choice(out, permanent_types);
+        }
+        TapUntapTarget::TargetCreatureType(creature_type) => {
+            write_creature_type(out, *creature_type);
+        }
+    }
     out.push('.');
 }
 

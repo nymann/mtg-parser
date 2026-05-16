@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 952,
-  "passing": 806,
+  "passing": 807,
   "cards": {
     "2ed/Air Elemental": {
       "status": "pass"
@@ -923,8 +923,7 @@
       "status": "pass"
     },
     "arn/Ali Baba": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:17\n  |\n1 | {R}: Tap target Wall.\n  |                 ^---\n  |\n  = expected permanent_type"
+      "status": "pass"
     },
     "arn/Ali from Cairo": {
       "status": "fail",

@@ -81,12 +81,12 @@ pub enum Statement {
     Destroy {
         target: DestroyTarget,
     },
-    /// "Tap target <permanent_type>..." / "You may tap or untap target
-    /// <permanent_type>..." — CR 701.21 tap/untap keyword actions.
+    /// "Tap target <target>..." / "You may tap or untap target <target>..."
+    /// — CR 701.21 tap/untap keyword actions.
     TapUntapTargetPermanentChoice {
         optional: bool,
         action: TapUntapAction,
-        permanent_types: Vec<PermanentType>,
+        target: TapUntapTarget,
     },
     /// CR 701.11 exile keyword action, sharing the same target/all/list axis
     /// currently used by destroy.
@@ -423,6 +423,14 @@ pub enum RegenerationRestrictionSubject {
 pub enum TapUntapAction {
     Tap,
     TapOrUntap,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TapUntapTarget {
+    /// "target <permanent_type> [or <permanent_type>]"
+    TargetPermanents(Vec<PermanentType>),
+    /// "target <creature_type>"
+    TargetCreatureType(CreatureType),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1390,10 +1398,10 @@ pub enum ActivatedEffect {
     AddManaOfAnyOneColor {
         amount: u32,
     },
-    /// "Tap [or untap] target <permanent_type>, <permanent_type>, or <permanent_type>."
+    /// "Tap [or untap] target <target>."
     TapTargetPermanentChoice {
         action: TapUntapAction,
-        permanent_types: Vec<PermanentType>,
+        target: TapUntapTarget,
     },
     /// "Untap this <permanent_type>."
     Untap(SourceObject),

@@ -1248,8 +1248,9 @@ amount_of_mana_equal_to_sacrificed_permanent_mana_value = {
   ~ ^"the" ~ ^"sacrificed" ~ permanent_type ~ "'s" ~ ^"mana" ~ ^"value"
 }
 tap_target_permanent_choice = {
-    (^"you" ~ ^"may")? ~ ^"tap" ~ (^"or" ~ ^"untap")? ~ target_permanent_choice ~ "."
+    (^"you" ~ ^"may")? ~ ^"tap" ~ (^"or" ~ ^"untap")? ~ tap_untap_target_choice ~ "."
 }
+tap_untap_target_choice = { target_permanent_choice | target_creature_type }
 target_permanent_choice = { ^"target" ~ permanent_type_choice }
 target_colored_permanent = { ^"target" ~ color_word ~ ^"permanent" }
 target_status_creature = { ^"target" ~ creature_status ~ ^"creature" }
