@@ -505,7 +505,15 @@ fn imperative_action_from_pair(pair: Pair<Rule>) -> Result<ImperativeAction, Par
             })
         }
         Rule::choose_card_from_it_action => Ok(ImperativeAction::ChooseCardFromIt),
-        Rule::discard_your_hand_action => Ok(ImperativeAction::DiscardYourHand),
+        Rule::discard_your_hand_action => {
+            if let Some(count_pair) = pair.into_inner().next() {
+                Ok(ImperativeAction::DiscardCards {
+                    count: discard_count_from_pair(count_pair)?,
+                })
+            } else {
+                Ok(ImperativeAction::DiscardYourHand)
+            }
+        }
         Rule::ante_top_card_of_your_library_action => {
             Ok(ImperativeAction::AnteTopCardOfYourLibrary)
         }
@@ -4744,6 +4752,12 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 )?,
             })
         }
+        Rule::imperative_action_sequence => match imperative_action_sequence_from_pair(pair)? {
+            Statement::ImperativeActionSequence { actions } => {
+                Ok(ActivatedEffect::ImperativeActionSequence { actions })
+            }
+            _ => Err(ParseError::Internal("activated imperative action sequence")),
+        },
         Rule::create_token => create_token_from_pair(pair),
         Rule::target_player_discards_cards => {
             let count_pair = pair

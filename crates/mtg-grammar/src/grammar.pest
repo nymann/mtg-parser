@@ -613,7 +613,7 @@ look_at_target_hand_action = {
 }
 target_hand_player = { ^"target player's" | ^"target opponent's" }
 choose_card_from_it_action = { ^"choose" ~ article ~ ^"card" ~ ^"from" ~ ^"it" }
-discard_your_hand_action = { ^"discard" ~ ^"your" ~ ^"hand" }
+discard_your_hand_action = { ^"discard" ~ (^"your" ~ ^"hand" | discard_counted_cards) }
 ante_top_card_of_your_library_action = {
     ^"ante" ~ ^"the" ~ ^"top" ~ ^"card" ~ ^"of" ~ ^"your" ~ ^"library"
 }
@@ -1234,6 +1234,7 @@ activated_effect = _{
   | untap_enchanted_object
   | take_extra_turn_after_this_one
   | next_card_draw_replacement
+  | imperative_action_sequence
   | activated_draw_cards
   | create_token
   | look_at_target_players_hand

@@ -936,6 +936,22 @@ fn write_imperative_action_sequence(out: &mut String, actions: &[ImperativeActio
                 out.push_str(", ");
             }
         }
+        if i == 0 {
+            match action {
+                ImperativeAction::DrawCards { count } => {
+                    out.push_str("Draw ");
+                    write_card_count(out, *count);
+                    out.push_str(" cards");
+                    continue;
+                }
+                ImperativeAction::DiscardCards { count } => {
+                    out.push_str("Discard ");
+                    write_discard_count(out, *count);
+                    continue;
+                }
+                _ => {}
+            }
+        }
         write_imperative_action(out, *action);
     }
     out.push('.');
@@ -967,6 +983,10 @@ fn write_imperative_action(out: &mut String, action: ImperativeAction) {
             out.push_str("draw ");
             write_card_count(out, count);
             out.push_str(" cards");
+        }
+        ImperativeAction::DiscardCards { count } => {
+            out.push_str("discard ");
+            write_discard_count(out, count);
         }
         ImperativeAction::TapSource { source } => {
             out.push_str("tap ");
@@ -1648,6 +1668,9 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str("Draw ");
             write_card_count_object(out, *count);
             out.push('.');
+        }
+        ActivatedEffect::ImperativeActionSequence { actions } => {
+            write_imperative_action_sequence(out, actions);
         }
         ActivatedEffect::CreateToken { token } => write_create_token(out, token),
         ActivatedEffect::TargetPlayerDiscardsCards { count } => {

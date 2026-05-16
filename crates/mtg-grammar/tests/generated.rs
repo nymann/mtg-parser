@@ -36,6 +36,8 @@ mod bad_moon;
 mod balance;
 #[path = "generated/basalt_monolith.rs"]
 mod basalt_monolith;
+#[path = "generated/bazaar_of_baghdad.rs"]
+mod bazaar_of_baghdad;
 #[path = "generated/benalish_hero.rs"]
 mod benalish_hero;
 #[path = "generated/berserk.rs"]

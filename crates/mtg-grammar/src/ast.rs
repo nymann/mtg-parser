@@ -832,6 +832,8 @@ pub enum ImperativeAction {
     Shuffle,
     /// "draw N cards"
     DrawCards { count: CardCount },
+    /// "discard N cards"
+    DiscardCards { count: CardCount },
     /// "tap this <source>"
     TapSource { source: SourceObject },
     /// "sacrifice a/an <permanent_type> of an opponent's choice"
@@ -1437,6 +1439,10 @@ pub enum ActivatedEffect {
     /// "Draw N cards."
     DrawCards {
         count: CardCount,
+    },
+    /// "<imperative action>, then <imperative action>."
+    ImperativeActionSequence {
+        actions: Vec<ImperativeAction>,
     },
     /// "Create a N/N [color] [creature_type] <types> token [with <keyword>] [named <name>]."
     /// CR 701.6 create keyword action.
