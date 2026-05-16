@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsString;
 use std::fs;
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
@@ -92,11 +94,14 @@ maturity, and commits. It does not run add-card or try to make cards pass.
 const GRIND_LOOP_USAGE: &str = "\
 cargo xtask concept-grind-loop [--agent codex|claude] [--batch-size N]
                                [--max-batches N] [--dry-run]
+cargo xtask concept-grind-loop --resume PATH
 
 Runs concept-grind in fixed-size batches. After each batch, an agent reviews
 metrics and quality artifacts, decides whether the previous optimization
 experiment passed or failed, reverts failed experiment commits, proposes the
-next experiment, applies it, compiles, and repeats.
+next experiment, applies it, compiles, and repeats. When an experiment commit
+is created, the loop re-execs itself through --resume before the next batch so
+wrapper changes take effect.
 ";
 
 pub fn discover(args: &[String]) -> ExitCode {
@@ -399,12 +404,21 @@ pub(crate) struct ConceptGrindOptions {
     no_commit: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct ConceptGrindLoopOptions {
     agent: AgentProvider,
     batch_size: u32,
     max_batches: u32,
     dry_run: bool,
+    #[serde(skip)]
+    resume: Option<PathBuf>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ConceptGrindLoopState {
+    options: ConceptGrindLoopOptions,
+    next_batch: u32,
+    active_experiment: Option<GrindLoopExperiment>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1361,6 +1375,7 @@ fn parse_grind_loop_options(args: &[String]) -> Result<ConceptGrindLoopOptions> 
     let mut batch_size = 5u32;
     let mut max_batches = 1u32;
     let mut dry_run = false;
+    let mut resume = None::<PathBuf>;
 
     let mut iter = args.iter();
     while let Some(arg) = iter.next() {
@@ -1401,6 +1416,15 @@ fn parse_grind_loop_options(args: &[String]) -> Result<ConceptGrindLoopOptions> 
                     .parse()
                     .with_context(|| format!("--max-batches value: {s:?}"))?;
             }
+            "--resume" => {
+                resume = Some(PathBuf::from(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--resume requires a value"))?,
+                ));
+            }
+            s if s.starts_with("--resume=") => {
+                resume = Some(PathBuf::from(&s["--resume=".len()..]));
+            }
             "--dry-run" => dry_run = true,
             other => bail!("unknown argument: {other}\n\n{GRIND_LOOP_USAGE}"),
         }
@@ -1418,6 +1442,7 @@ fn parse_grind_loop_options(args: &[String]) -> Result<ConceptGrindLoopOptions> 
         batch_size,
         max_batches,
         dry_run,
+        resume,
     })
 }
 
@@ -1430,12 +1455,31 @@ fn parse_agent_provider(value: &str) -> Result<AgentProvider> {
 }
 
 fn run_grind_loop(options: ConceptGrindLoopOptions) -> Result<()> {
-    if !options.dry_run {
-        ensure_clean_working_tree().context("concept-grind-loop requires a clean working tree")?;
-    }
-    let loop_dir = grammar_concept_log_root().join(format!("loop-{}", unix_timestamp()));
-    fs::create_dir_all(&loop_dir).with_context(|| format!("create {}", loop_dir.display()))?;
-    println!("concept-grind-loop log: {}", loop_dir.display());
+    let (loop_dir, mut state) = if let Some(resume_dir) = options.resume.as_ref() {
+        let state = read_grind_loop_state(resume_dir)?;
+        if !state.options.dry_run {
+            ensure_clean_working_tree()
+                .context("concept-grind-loop --resume requires a clean working tree")?;
+        }
+        println!("concept-grind-loop log: {} (resumed)", resume_dir.display());
+        (resume_dir.clone(), state)
+    } else {
+        if !options.dry_run {
+            ensure_clean_working_tree()
+                .context("concept-grind-loop requires a clean working tree")?;
+        }
+        let loop_dir = grammar_concept_log_root().join(format!("loop-{}", unix_timestamp()));
+        fs::create_dir_all(&loop_dir).with_context(|| format!("create {}", loop_dir.display()))?;
+        println!("concept-grind-loop log: {}", loop_dir.display());
+        let state = ConceptGrindLoopState {
+            options,
+            next_batch: 1,
+            active_experiment: None,
+        };
+        write_grind_loop_state(&loop_dir, &state)?;
+        (loop_dir, state)
+    };
+    let options = state.options.clone();
 
     if options.dry_run {
         write_json(loop_dir.join("options.json"), &options)?;
@@ -1443,9 +1487,13 @@ fn run_grind_loop(options: ConceptGrindLoopOptions) -> Result<()> {
     }
 
     let mut sink = ConsoleSink::new();
-    let mut active_experiment: Option<GrindLoopExperiment> = None;
+    let mut active_experiment = state.active_experiment.take();
 
-    for batch in 1..=options.max_batches {
+    for batch in state.next_batch..=options.max_batches {
+        state.next_batch = batch;
+        state.active_experiment = active_experiment.clone();
+        write_grind_loop_state(&loop_dir, &state)?;
+
         let batch_dir = loop_dir.join(format!("batch-{batch:03}"));
         fs::create_dir_all(&batch_dir)
             .with_context(|| format!("create {}", batch_dir.display()))?;
@@ -1492,6 +1540,7 @@ fn run_grind_loop(options: ConceptGrindLoopOptions) -> Result<()> {
         let review = parse_grind_loop_review(&review_outcome.assistant_text)?;
         write_json(batch_dir.join("review.json"), &review)?;
 
+        let mut should_reexec = false;
         if let Some(previous) = active_experiment.take() {
             match review.previous_decision {
                 ExperimentDecision::Pass | ExperimentDecision::None => {
@@ -1501,6 +1550,7 @@ fn run_grind_loop(options: ConceptGrindLoopOptions) -> Result<()> {
                     if let Some(commit) = &previous.commit {
                         git_revert_commit(commit)?;
                         run_loop_validation(&batch_dir)?;
+                        should_reexec = batch < options.max_batches;
                     }
                 }
             }
@@ -1524,11 +1574,59 @@ fn run_grind_loop(options: ConceptGrindLoopOptions) -> Result<()> {
                 next.commit = Some(commit);
             }
             write_json(experiment_dir.join("experiment_applied.json"), &next)?;
+            should_reexec = should_reexec || next.commit.is_some() && batch < options.max_batches;
             active_experiment = Some(next);
+        }
+
+        state.next_batch = batch + 1;
+        state.active_experiment = active_experiment.clone();
+        write_grind_loop_state(&loop_dir, &state)?;
+        if should_reexec {
+            reexec_grind_loop(&loop_dir)?;
         }
     }
 
     Ok(())
+}
+
+fn grind_loop_state_path(loop_dir: &Path) -> PathBuf {
+    loop_dir.join("loop_state.json")
+}
+
+fn read_grind_loop_state(loop_dir: &Path) -> Result<ConceptGrindLoopState> {
+    let path = grind_loop_state_path(loop_dir);
+    let text = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+    serde_json::from_str(&text).with_context(|| format!("parse {}", path.display()))
+}
+
+fn write_grind_loop_state(loop_dir: &Path, state: &ConceptGrindLoopState) -> Result<()> {
+    write_json(grind_loop_state_path(loop_dir), state)
+}
+
+fn reexec_grind_loop(loop_dir: &Path) -> Result<()> {
+    println!(
+        "concept-grind-loop re-exec: cargo xtask concept-grind-loop --resume {}",
+        loop_dir.display()
+    );
+    #[cfg(unix)]
+    {
+        let error = Command::new("cargo")
+            .args(["xtask", "concept-grind-loop", "--resume"])
+            .arg(loop_dir)
+            .current_dir(repo_root())
+            .exec();
+        Err(error).context("exec cargo xtask concept-grind-loop --resume")
+    }
+    #[cfg(not(unix))]
+    {
+        let status = Command::new("cargo")
+            .args(["xtask", "concept-grind-loop", "--resume"])
+            .arg(loop_dir)
+            .current_dir(repo_root())
+            .status()
+            .context("spawn cargo xtask concept-grind-loop --resume")?;
+        std::process::exit(status.code().unwrap_or(1));
+    }
 }
 
 fn run_grind_loop_batch(options: &ConceptGrindLoopOptions, batch_dir: &Path) -> Result<()> {
@@ -4691,6 +4789,18 @@ fn display_optional_path(path: &Option<PathBuf>) -> String {
 mod tests {
     use super::*;
 
+    fn unique_test_dir(name: &str) -> PathBuf {
+        let mut path = std::env::temp_dir();
+        path.push(format!(
+            "mtg-parser-{name}-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("system time")
+                .as_nanos()
+        ));
+        path
+    }
+
     #[test]
     fn query_terms_drop_stop_words() {
         assert_eq!(
@@ -4838,6 +4948,59 @@ mod tests {
         let gap = select_concept_gap_excluding(&report, &options, &excluded)
             .expect("should skip blocked suggestion");
         assert_eq!(gap.target_rule, "destroy_target");
+    }
+
+    #[test]
+    fn grind_loop_options_parse_resume_path() {
+        let options = parse_grind_loop_options(&[
+            "--resume".to_string(),
+            ".grammar-concept-runs/loop-123".to_string(),
+        ])
+        .expect("resume options parse");
+        assert_eq!(
+            options.resume,
+            Some(PathBuf::from(".grammar-concept-runs/loop-123"))
+        );
+    }
+
+    #[test]
+    fn grind_loop_state_round_trips_active_experiment() {
+        let loop_dir = unique_test_dir("concept-grind-loop-state");
+        fs::create_dir_all(&loop_dir).expect("create loop dir");
+        let state = ConceptGrindLoopState {
+            options: ConceptGrindLoopOptions {
+                agent: AgentProvider::Codex,
+                batch_size: 3,
+                max_batches: 10,
+                dry_run: false,
+                resume: None,
+            },
+            next_batch: 4,
+            active_experiment: Some(GrindLoopExperiment {
+                id: "exp_restart_wrapper".to_string(),
+                hypothesis: "restart applies wrapper changes".to_string(),
+                implementation_request: "change the loop wrapper".to_string(),
+                success_metric: "next batch uses changed wrapper".to_string(),
+                quality_checks: vec!["cargo check -p xtask".to_string()],
+                commit: Some("abc123".to_string()),
+            }),
+        };
+
+        write_grind_loop_state(&loop_dir, &state).expect("write state");
+        let read = read_grind_loop_state(&loop_dir).expect("read state");
+        let _ = fs::remove_dir_all(&loop_dir);
+
+        assert_eq!(read.next_batch, 4);
+        assert_eq!(read.options.batch_size, 3);
+        assert_eq!(
+            read.active_experiment.as_ref().map(|experiment| {
+                (
+                    experiment.id.as_str(),
+                    experiment.commit.as_deref().unwrap_or_default(),
+                )
+            }),
+            Some(("exp_restart_wrapper", "abc123"))
+        );
     }
 
     #[test]
