@@ -9,7 +9,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::agent_events::{self, ParsedAgentEvent};
+use crate::agent_events::{self, ParsedAgentEvent, TokenUsage};
 use crate::flow::{AgentProvider, IterationOutcomeSummary, NoteLevel, SessionEndReason};
 use crate::paths::repo_root;
 use crate::tui::state::{
@@ -176,16 +176,19 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         .count();
 
     let avg = state.avg_iteration_secs();
+    let avg_cost = state.avg_cost_per_committed_iteration();
     let elapsed_secs = state.elapsed().as_secs();
 
     let cols = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(20),
             Constraint::Percentage(16),
-            Constraint::Percentage(20),
-            Constraint::Percentage(30),
             Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(16),
+            Constraint::Percentage(14),
+            Constraint::Percentage(18),
+            Constraint::Percentage(8),
         ])
         .split(area);
 
@@ -219,6 +222,28 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         f,
         cols[2],
         vec![
+            label_span("cost/card"),
+            Span::raw(avg_cost.map(format_usd).unwrap_or_else(|| "—".into())),
+        ],
+        Alignment::Center,
+    );
+    render_bar_segment(
+        f,
+        cols[3],
+        vec![
+            label_span("context"),
+            Span::raw(
+                s.latest_context_tokens
+                    .map(format_tokens)
+                    .unwrap_or_else(|| "—".into()),
+            ),
+        ],
+        Alignment::Center,
+    );
+    render_bar_segment(
+        f,
+        cols[4],
+        vec![
             label_span("grammar"),
             Span::raw(format!(
                 "{}→{}",
@@ -230,7 +255,7 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     );
     render_bar_segment(
         f,
-        cols[3],
+        cols[5],
         vec![
             label_span("corpus"),
             Span::raw(format!(
@@ -246,10 +271,28 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
     );
     render_bar_segment(
         f,
-        cols[4],
+        cols[6],
         vec![label_span("elapsed"), Span::raw(format_secs(elapsed_secs))],
         Alignment::Right,
     );
+}
+
+fn format_usd(value: f64) -> String {
+    if value >= 1.0 {
+        format!("${value:.2}")
+    } else {
+        format!("${value:.4}")
+    }
+}
+
+fn format_tokens(tokens: u64) -> String {
+    if tokens >= 1_000_000 {
+        format!("{:.1}M", tokens as f64 / 1_000_000.0)
+    } else if tokens >= 1_000 {
+        format!("{:.0}k", tokens as f64 / 1_000.0)
+    } else {
+        tokens.to_string()
+    }
 }
 
 fn label_span(label: &'static str) -> Span<'static> {
@@ -850,11 +893,17 @@ fn step_line(index: u8, total: u8, step: &StepState) -> Line<'static> {
         label_style = Style::default().fg(Color::Rgb(0xb6, 0xcf, 0xa9));
     }
     let dur = step.duration_secs();
-    let extra = match (step.status, dur) {
+    let mut extra = match (step.status, dur) {
         (StepStatus::Running, Some(d)) => format!(" +{d}s"),
         (StepStatus::Done | StepStatus::Failed, Some(d)) if d > 0 => format!(" {d}s"),
         _ => String::new(),
     };
+    if step.usage.total_tokens() > 0 {
+        extra.push_str(&format!(" · {}", format_usage_compact(step.usage)));
+    }
+    if step.total_cost_usd > 0.0 {
+        extra.push_str(&format!(" · {}", format_usd(step.total_cost_usd)));
+    }
     // Pending slots have no label until their StepStarted arrives.
     // Show "(pending)" so the row visually communicates intent.
     let label_text = if step.label.is_empty() {
@@ -874,6 +923,35 @@ fn step_line(index: u8, total: u8, step: &StepState) -> Line<'static> {
         Span::styled(label_text, resolved_style),
         Span::styled(extra, Style::default().fg(C_FAINT)),
     ])
+}
+
+fn format_usage_compact(usage: TokenUsage) -> String {
+    let mut parts = Vec::new();
+    if usage.input_tokens > 0 {
+        parts.push(format!("in {}", format_tokens(usage.input_tokens)));
+    }
+    if usage.cached_input_tokens > 0 {
+        parts.push(format!(
+            "cache {}",
+            format_tokens(usage.cached_input_tokens)
+        ));
+    }
+    if usage.output_tokens > 0 {
+        parts.push(format!("out {}", format_tokens(usage.output_tokens)));
+    }
+    if usage.reasoning_output_tokens > 0 {
+        parts.push(format!(
+            "rsn {}",
+            format_tokens(usage.reasoning_output_tokens)
+        ));
+    }
+    if usage.cached_output_tokens > 0 {
+        parts.push(format!(
+            "out-cache {}",
+            format_tokens(usage.cached_output_tokens)
+        ));
+    }
+    parts.join(" ")
 }
 
 // ---------------------------------------------------------------------------
@@ -1172,13 +1250,24 @@ fn render_agent_row(
             subtype,
             num_turns,
             total_cost_usd,
+            usage,
         } => {
             let color = if subtype == "success" { C_GOOD } else { C_BAD };
+            let usage = usage
+                .map(format_usage_compact)
+                .filter(|s| !s.is_empty())
+                .map(|s| format!(" · {s}"))
+                .unwrap_or_default();
+            let cost = if *total_cost_usd > 0.0 {
+                format!(" · {}", format_usd(*total_cost_usd))
+            } else {
+                String::new()
+            };
             render_message_block(
                 row.delta,
                 label,
                 color,
-                &format!("done subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"),
+                &format!("done subtype={subtype} turns={num_turns}{usage}{cost}"),
                 Style::default().fg(color),
                 width,
             )

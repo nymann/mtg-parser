@@ -246,9 +246,26 @@ fn render_agent_for_console(
             subtype,
             num_turns,
             total_cost_usd,
+            usage,
         } => {
+            let usage = usage
+                .map(|usage| {
+                    format!(
+                        " input={} cached_input={} output={} reasoning={}",
+                        usage.input_tokens,
+                        usage.cached_input_tokens,
+                        usage.output_tokens,
+                        usage.reasoning_output_tokens
+                    )
+                })
+                .unwrap_or_default();
+            let cost = if *total_cost_usd > 0.0 {
+                format!(" cost=${total_cost_usd:.4}")
+            } else {
+                String::new()
+            };
             vec![format!(
-                "[{label} done] subtype={subtype} turns={num_turns} cost=${total_cost_usd:.4}"
+                "[{label} done] subtype={subtype} turns={num_turns}{usage}{cost}"
             )]
         }
         ParsedAgentEvent::Other => Vec::new(),

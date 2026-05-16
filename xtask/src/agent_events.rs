@@ -28,10 +28,36 @@ pub enum ParsedAgentEvent {
         subtype: String,
         num_turns: u64,
         total_cost_usd: f64,
+        usage: Option<TokenUsage>,
     },
     /// Event we don't render specially (rare; system messages other
     /// than `init`, etc.).
     Other,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TokenUsage {
+    pub input_tokens: u64,
+    pub cached_input_tokens: u64,
+    pub output_tokens: u64,
+    pub cached_output_tokens: u64,
+    pub reasoning_output_tokens: u64,
+}
+
+impl TokenUsage {
+    pub fn add(self, other: TokenUsage) -> TokenUsage {
+        TokenUsage {
+            input_tokens: self.input_tokens + other.input_tokens,
+            cached_input_tokens: self.cached_input_tokens + other.cached_input_tokens,
+            output_tokens: self.output_tokens + other.output_tokens,
+            cached_output_tokens: self.cached_output_tokens + other.cached_output_tokens,
+            reasoning_output_tokens: self.reasoning_output_tokens + other.reasoning_output_tokens,
+        }
+    }
+
+    pub fn total_tokens(self) -> u64 {
+        self.input_tokens + self.output_tokens + self.reasoning_output_tokens
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -93,6 +119,7 @@ fn parse_claude(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
                 subtype,
                 num_turns,
                 total_cost_usd,
+                usage: token_usage(ev),
             }]
         }
         _ => vec![ParsedAgentEvent::Other],
@@ -131,6 +158,7 @@ fn parse_codex(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
                 .or_else(|| ev.get("cost_usd"))
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.0),
+            usage: token_usage(ev),
         }];
     }
 
@@ -184,6 +212,7 @@ fn parse_codex(ev: &serde_json::Value) -> Vec<ParsedAgentEvent> {
                 .or_else(|| ev.get("cost_usd"))
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.0),
+            usage: token_usage(ev),
         }];
     }
 
@@ -334,6 +363,35 @@ fn string_at_path(ev: &serde_json::Value, path: &[&str]) -> Option<String> {
 fn bool_at(ev: &serde_json::Value, keys: &[&str]) -> bool {
     keys.iter()
         .any(|k| ev.get(*k).and_then(|v| v.as_bool()).unwrap_or(false))
+}
+
+fn token_usage(ev: &serde_json::Value) -> Option<TokenUsage> {
+    let usage = ev.get("usage").or_else(|| ev.get("token_usage"))?;
+    let out = TokenUsage {
+        input_tokens: u64_at(usage, &["input_tokens", "input"]),
+        cached_input_tokens: u64_at(
+            usage,
+            &[
+                "cached_input_tokens",
+                "cache_read_input_tokens",
+                "cache_read",
+            ],
+        ),
+        output_tokens: u64_at(usage, &["output_tokens", "output"]),
+        cached_output_tokens: u64_at(usage, &["cached_output_tokens", "cached_output"]),
+        reasoning_output_tokens: u64_at(
+            usage,
+            &["reasoning_output_tokens", "reasoning_tokens", "reasoning"],
+        ),
+    };
+    (out.total_tokens() > 0 || out.cached_input_tokens > 0 || out.cached_output_tokens > 0)
+        .then_some(out)
+}
+
+fn u64_at(ev: &serde_json::Value, keys: &[&str]) -> u64 {
+    keys.iter()
+        .find_map(|k| ev.get(*k).and_then(|v| v.as_u64()))
+        .unwrap_or(0)
 }
 
 fn first_text(ev: &serde_json::Value) -> Option<String> {
@@ -504,8 +562,30 @@ mod tests {
         let out = parse(AgentProvider::Claude, &v);
         assert!(matches!(
             &out[0],
-            ParsedAgentEvent::Done { subtype, num_turns: 12, total_cost_usd }
+            ParsedAgentEvent::Done { subtype, num_turns: 12, total_cost_usd, .. }
                 if subtype == "success" && (total_cost_usd - 0.0234).abs() < 1e-6
+        ));
+    }
+
+    #[test]
+    fn parses_codex_done_usage() {
+        let v: serde_json::Value = serde_json::from_str(
+            r#"{"type":"turn.completed","usage":{"input_tokens":145035,"cached_input_tokens":128000,"output_tokens":1204,"reasoning_output_tokens":21}}"#,
+        )
+        .unwrap();
+        let out = parse(AgentProvider::Codex, &v);
+        assert!(matches!(
+            &out[0],
+            ParsedAgentEvent::Done {
+                usage: Some(TokenUsage {
+                    input_tokens: 145035,
+                    cached_input_tokens: 128000,
+                    output_tokens: 1204,
+                    reasoning_output_tokens: 21,
+                    ..
+                }),
+                ..
+            }
         ));
     }
 
