@@ -511,6 +511,56 @@ enum BoundaryOwner {
     Blocked(String),
 }
 
+#[derive(Debug, Default, Clone, Serialize)]
+struct PlumbingCooldownState {
+    cooled_target_rules: BTreeSet<String>,
+    derivations: Vec<PlumbingCooldownDerivation>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct PlumbingCooldownDerivation {
+    blocked_target_rule: String,
+    blocked_target_expansion_tree: RuleExpansionNode,
+    blocked_target_normalized_leaf_rules: Vec<String>,
+    blocked_target_leaf_owning_concepts: BTreeMap<String, Vec<String>>,
+    cooled_target_rules: Vec<PlumbingCooldownCandidate>,
+    fallback_status: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct PlumbingCooldownCandidate {
+    target_rule: String,
+    expansion_tree: RuleExpansionNode,
+    normalized_leaf_rules: Vec<String>,
+    leaf_owning_concepts: BTreeMap<String, Vec<String>>,
+    relationship_type: PlumbingCooldownRelationship,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum PlumbingCooldownRelationship {
+    Equal,
+    Wrapper,
+    Child,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuleExpansionNode {
+    rule: String,
+    line: Option<usize>,
+    pure_wrapper_or_alternation: bool,
+    normalized_leaf_rules: Vec<String>,
+    children: Vec<RuleExpansionNode>,
+}
+
+#[derive(Debug, Serialize)]
+struct PlumbingCooldownSelection {
+    exact_blocked_target_rules: Vec<String>,
+    cooled_target_rules: Vec<String>,
+    excluded_rules: Vec<String>,
+    fallback_status: String,
+}
+
 #[derive(Debug, Serialize)]
 struct ConceptGrindIterationSummary {
     iteration: u32,
@@ -2062,6 +2112,242 @@ fn is_shared_grammar_stop_rule(rule_name: &str) -> bool {
     SHARED_GRAMMAR_STOP_RULES.contains(&rule_name)
 }
 
+fn is_shared_plumbing_block_reason(reason: &str) -> bool {
+    let reason = reason.trim().to_ascii_lowercase();
+    reason.starts_with("shared") || reason.starts_with("shared/plumbing")
+}
+
+fn plumbing_cooldown_selection(
+    report: &ExistingGrammarMapReport,
+    blocked_targets: &BTreeSet<String>,
+    cooldown: &PlumbingCooldownState,
+) -> PlumbingCooldownSelection {
+    let non_cooled_candidate_exists = report.unmapped_rules.iter().any(|rule| {
+        !blocked_targets.contains(&rule.name) && !cooldown.cooled_target_rules.contains(&rule.name)
+    });
+    let mut excluded_rules = blocked_targets.clone();
+    let fallback_status = if non_cooled_candidate_exists {
+        excluded_rules.extend(cooldown.cooled_target_rules.iter().cloned());
+        "cooldown_active_non_cooled_candidate_available"
+    } else if cooldown.cooled_target_rules.is_empty() {
+        "no_cooled_candidates"
+    } else {
+        "fallback_to_cooled_candidates"
+    };
+
+    PlumbingCooldownSelection {
+        exact_blocked_target_rules: blocked_targets.iter().cloned().collect(),
+        cooled_target_rules: cooldown.cooled_target_rules.iter().cloned().collect(),
+        excluded_rules: excluded_rules.into_iter().collect(),
+        fallback_status: fallback_status.to_string(),
+    }
+}
+
+fn derive_plumbing_cooldown(
+    report: &ExistingGrammarMapReport,
+    blocked_target_rule: &str,
+) -> Result<PlumbingCooldownDerivation> {
+    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+    Ok(derive_plumbing_cooldown_from_rules(
+        report,
+        &rules,
+        blocked_target_rule,
+    ))
+}
+
+fn derive_plumbing_cooldown_from_rules(
+    report: &ExistingGrammarMapReport,
+    rules: &[grammar_query_engine::GrammarRuleDefinition],
+    blocked_target_rule: &str,
+) -> PlumbingCooldownDerivation {
+    let rule_by_name: BTreeMap<&str, &grammar_query_engine::GrammarRuleDefinition> = rules
+        .iter()
+        .map(|rule| (rule.name.as_str(), rule))
+        .collect();
+    let blocked_target_expansion_tree =
+        expand_rule_leaf_set(rules, &rule_by_name, blocked_target_rule, 2, None);
+    let blocked_leaf_set: BTreeSet<String> = blocked_target_expansion_tree
+        .normalized_leaf_rules
+        .iter()
+        .cloned()
+        .collect();
+    let mut cooled_target_rules = Vec::new();
+
+    for candidate in &report.unmapped_rules {
+        if candidate.name == blocked_target_rule {
+            continue;
+        }
+        let expansion_tree = expand_rule_leaf_set(
+            rules,
+            &rule_by_name,
+            &candidate.name,
+            2,
+            Some((blocked_target_rule, &blocked_target_expansion_tree)),
+        );
+        let candidate_leaf_set: BTreeSet<String> = expansion_tree
+            .normalized_leaf_rules
+            .iter()
+            .cloned()
+            .collect();
+        let Some(relationship_type) =
+            plumbing_cooldown_relationship(&blocked_leaf_set, &candidate_leaf_set)
+        else {
+            continue;
+        };
+        cooled_target_rules.push(PlumbingCooldownCandidate {
+            target_rule: candidate.name.clone(),
+            leaf_owning_concepts: leaf_owning_concepts(report, &candidate_leaf_set),
+            normalized_leaf_rules: expansion_tree.normalized_leaf_rules.clone(),
+            expansion_tree,
+            relationship_type,
+        });
+    }
+
+    PlumbingCooldownDerivation {
+        blocked_target_rule: blocked_target_rule.to_string(),
+        blocked_target_leaf_owning_concepts: leaf_owning_concepts(report, &blocked_leaf_set),
+        blocked_target_normalized_leaf_rules: blocked_target_expansion_tree
+            .normalized_leaf_rules
+            .clone(),
+        blocked_target_expansion_tree,
+        cooled_target_rules,
+        fallback_status: "not_evaluated_until_next_selection".to_string(),
+    }
+}
+
+fn plumbing_cooldown_relationship(
+    blocked_leaf_set: &BTreeSet<String>,
+    candidate_leaf_set: &BTreeSet<String>,
+) -> Option<PlumbingCooldownRelationship> {
+    if blocked_leaf_set.is_empty() || candidate_leaf_set.is_empty() {
+        return None;
+    }
+    if candidate_leaf_set == blocked_leaf_set {
+        return Some(PlumbingCooldownRelationship::Equal);
+    }
+    if candidate_leaf_set.is_superset(blocked_leaf_set) {
+        return Some(PlumbingCooldownRelationship::Wrapper);
+    }
+    if candidate_leaf_set.is_subset(blocked_leaf_set) {
+        return Some(PlumbingCooldownRelationship::Child);
+    }
+    None
+}
+
+fn expand_rule_leaf_set(
+    rules: &[grammar_query_engine::GrammarRuleDefinition],
+    rule_by_name: &BTreeMap<&str, &grammar_query_engine::GrammarRuleDefinition>,
+    rule_name: &str,
+    wrapper_expansion_budget: u8,
+    known_expansion: Option<(&str, &RuleExpansionNode)>,
+) -> RuleExpansionNode {
+    let rule = rule_by_name.get(rule_name).copied();
+    let dependencies = grammar_query_engine::direct_dependencies(rules, rule_name);
+    let pure_wrapper_or_alternation =
+        rule.is_some_and(|rule| is_pure_wrapper_or_alternation_rhs(&rule.rhs, &dependencies));
+    let should_expand =
+        wrapper_expansion_budget > 0 && pure_wrapper_or_alternation && !dependencies.is_empty();
+
+    if !should_expand {
+        let normalized_leaf_rules = if is_shared_grammar_stop_rule(rule_name) {
+            Vec::new()
+        } else {
+            vec![rule_name.to_string()]
+        };
+        return RuleExpansionNode {
+            rule: rule_name.to_string(),
+            line: rule.map(|rule| rule.line),
+            pure_wrapper_or_alternation,
+            normalized_leaf_rules,
+            children: Vec::new(),
+        };
+    }
+
+    let mut children = Vec::new();
+    let mut leaves = BTreeSet::new();
+    for dependency in dependencies {
+        let child = if known_expansion.is_some_and(|(known_rule, _)| known_rule == dependency) {
+            known_expansion.expect("checked").1.clone()
+        } else {
+            expand_rule_leaf_set(
+                rules,
+                rule_by_name,
+                &dependency,
+                wrapper_expansion_budget - 1,
+                known_expansion,
+            )
+        };
+        leaves.extend(child.normalized_leaf_rules.iter().cloned());
+        children.push(child);
+    }
+
+    RuleExpansionNode {
+        rule: rule_name.to_string(),
+        line: rule.map(|rule| rule.line),
+        pure_wrapper_or_alternation,
+        normalized_leaf_rules: leaves.into_iter().collect(),
+        children,
+    }
+}
+
+fn is_pure_wrapper_or_alternation_rhs(rhs: &str, dependencies: &[String]) -> bool {
+    if dependencies.is_empty() || rhs.contains('"') || rhs.contains('\'') {
+        return false;
+    }
+
+    let dependency_names: BTreeSet<&str> = dependencies.iter().map(String::as_str).collect();
+    for token in pest_rhs_identifier_tokens(rhs) {
+        if is_pest_wrapper_builtin_identifier(&token) {
+            continue;
+        }
+        if !dependency_names.contains(token.as_str()) {
+            return false;
+        }
+    }
+    true
+}
+
+fn pest_rhs_identifier_tokens(rhs: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut current = String::new();
+    for ch in rhs.chars() {
+        if ch.is_ascii_alphanumeric() || ch == '_' {
+            current.push(ch);
+        } else if !current.is_empty() {
+            out.push(std::mem::take(&mut current));
+        }
+    }
+    if !current.is_empty() {
+        out.push(current);
+    }
+    out
+}
+
+fn is_pest_wrapper_builtin_identifier(token: &str) -> bool {
+    matches!(
+        token,
+        "SOI" | "EOI" | "ANY" | "ASCII_DIGIT" | "ASCII_ALPHA" | "ASCII_ALPHANUMERIC" | "WHITESPACE"
+    )
+}
+
+fn leaf_owning_concepts(
+    report: &ExistingGrammarMapReport,
+    leaf_rules: &BTreeSet<String>,
+) -> BTreeMap<String, Vec<String>> {
+    let mut owners: BTreeMap<String, Vec<String>> = leaf_rules
+        .iter()
+        .map(|rule| (rule.clone(), Vec::new()))
+        .collect();
+    for concept in &report.concepts {
+        for owned_rule in &concept.owned_rules {
+            if let Some(rule_owners) = owners.get_mut(&owned_rule.name) {
+                rule_owners.push(concept.concept.clone());
+            }
+        }
+    }
+    owners
+}
+
 const CONCEPT_GRIND_TOTAL_STEPS: u8 = 7;
 
 fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()> {
@@ -2083,6 +2369,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
     });
 
     let mut blocked_targets = BTreeSet::new();
+    let mut plumbing_cooldown = PlumbingCooldownState::default();
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
@@ -2112,7 +2399,15 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
-        let gap = select_concept_gap_excluding(&before, &options, &blocked_targets)?;
+        let cooldown_selection =
+            plumbing_cooldown_selection(&before, &blocked_targets, &plumbing_cooldown);
+        write_json(
+            iteration_dir.join("plumbing_cooldown_selection.json"),
+            &cooldown_selection,
+        )?;
+        let excluded_rules: BTreeSet<String> =
+            cooldown_selection.excluded_rules.iter().cloned().collect();
+        let gap = select_concept_gap_excluding(&before, &options, &excluded_rules)?;
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
         sink.emit(FlowEvent::WorkflowIterationStarted {
@@ -2213,6 +2508,31 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     gap.target_rule
                 ),
             });
+            if is_shared_plumbing_block_reason(reason) {
+                let derivation = derive_plumbing_cooldown(&before, &gap.target_rule)?;
+                for candidate in &derivation.cooled_target_rules {
+                    plumbing_cooldown
+                        .cooled_target_rules
+                        .insert(candidate.target_rule.clone());
+                }
+                plumbing_cooldown.derivations.push(derivation.clone());
+                write_json(
+                    iteration_dir.join("plumbing_cooldown_derivation.json"),
+                    &derivation,
+                )?;
+                write_json(
+                    session_dir.join("plumbing_cooldown_state.json"),
+                    &plumbing_cooldown,
+                )?;
+                sink.emit(FlowEvent::Note {
+                    level: NoteLevel::Info,
+                    text: format!(
+                        "cooled {} nested shared/plumbing candidate(s) after blocking {}",
+                        derivation.cooled_target_rules.len(),
+                        gap.target_rule
+                    ),
+                });
+            }
             blocked_targets.insert(gap.target_rule);
             continue;
         }
@@ -4370,6 +4690,174 @@ mod tests {
         let gap = select_concept_gap_excluding(&report, &options, &excluded)
             .expect("should skip blocked suggestion");
         assert_eq!(gap.target_rule, "destroy_target");
+    }
+
+    #[test]
+    fn plumbing_cooldown_expands_one_nested_wrapper_level() {
+        let rules = grammar_query_engine::parse_grammar_rules(
+            r#"
+blocked_shared = { target_wrapper | replacement_wrapper }
+target_wrapper = { target_leaf }
+replacement_wrapper = { replacement_leaf }
+target_leaf = { "target" }
+replacement_leaf = { "replacement" }
+equal_alias = { target_wrapper | replacement_wrapper }
+larger_wrapper = { blocked_shared | extra_leaf }
+child_wrapper = { target_wrapper }
+deep_wrapper = { nested_wrapper }
+nested_wrapper = { nested_leaf }
+nested_leaf = { "nested" }
+extra_leaf = { "extra" }
+unrelated_rule = { "unrelated" }
+"#,
+        )
+        .expect("grammar parses");
+        let report = ExistingGrammarMapReport {
+            rule_count: rules.len(),
+            concept_count: 1,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 2,
+            unmapped_rule_count: 5,
+            concepts: vec![ConceptRuleMap {
+                concept: "target_concept".to_string(),
+                maturity: "grammar_fixture_green".to_string(),
+                concept_file: PathBuf::from("grammar-concepts/target_concept.toml"),
+                declared_rules: vec!["target_leaf".to_string()],
+                found_rules: Vec::new(),
+                owned_rules: vec![
+                    RuleLocationSummary {
+                        name: "target_leaf".to_string(),
+                        line: 4,
+                    },
+                    RuleLocationSummary {
+                        name: "replacement_leaf".to_string(),
+                        line: 5,
+                    },
+                ],
+                missing_rules: Vec::new(),
+            }],
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "equal_alias".to_string(),
+                    line: 6,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "larger_wrapper".to_string(),
+                    line: 7,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "child_wrapper".to_string(),
+                    line: 8,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "deep_wrapper".to_string(),
+                    line: 9,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "unrelated_rule".to_string(),
+                    line: 12,
+                    suggested_concept: None,
+                },
+            ],
+        };
+
+        let derivation = derive_plumbing_cooldown_from_rules(&report, &rules, "blocked_shared");
+        assert_eq!(
+            derivation.blocked_target_normalized_leaf_rules,
+            vec!["replacement_leaf", "target_leaf"]
+        );
+        assert_eq!(
+            derivation
+                .cooled_target_rules
+                .iter()
+                .map(|candidate| { (candidate.target_rule.as_str(), candidate.relationship_type,) })
+                .collect::<Vec<_>>(),
+            vec![
+                ("equal_alias", PlumbingCooldownRelationship::Equal),
+                ("larger_wrapper", PlumbingCooldownRelationship::Wrapper),
+                ("child_wrapper", PlumbingCooldownRelationship::Child),
+            ]
+        );
+        assert!(derivation
+            .blocked_target_expansion_tree
+            .children
+            .iter()
+            .any(|child| child.rule == "target_wrapper" && !child.children.is_empty()));
+    }
+
+    #[test]
+    fn plumbing_cooldown_selection_prefers_non_cooled_candidates_then_falls_back() {
+        let report = ExistingGrammarMapReport {
+            rule_count: 3,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 3,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "blocked_shared".to_string(),
+                    line: 1,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "cooled_wrapper".to_string(),
+                    line: 2,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "unrelated_rule".to_string(),
+                    line: 3,
+                    suggested_concept: None,
+                },
+            ],
+        };
+        let mut cooldown = PlumbingCooldownState::default();
+        cooldown
+            .cooled_target_rules
+            .insert("cooled_wrapper".to_string());
+        let blocked_targets = BTreeSet::from(["blocked_shared".to_string()]);
+
+        let selection = plumbing_cooldown_selection(&report, &blocked_targets, &cooldown);
+        assert_eq!(
+            selection.fallback_status,
+            "cooldown_active_non_cooled_candidate_available"
+        );
+        assert_eq!(
+            selection.excluded_rules,
+            vec!["blocked_shared".to_string(), "cooled_wrapper".to_string()]
+        );
+
+        let fallback_report = ExistingGrammarMapReport {
+            rule_count: 2,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 2,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "blocked_shared".to_string(),
+                    line: 1,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "cooled_wrapper".to_string(),
+                    line: 2,
+                    suggested_concept: None,
+                },
+            ],
+        };
+        let selection = plumbing_cooldown_selection(&fallback_report, &blocked_targets, &cooldown);
+        assert_eq!(selection.fallback_status, "fallback_to_cooled_candidates");
+        assert_eq!(selection.excluded_rules, vec!["blocked_shared".to_string()]);
     }
 
     #[test]
