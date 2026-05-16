@@ -1,0 +1,25 @@
+[fixture]
+concept = "spell_cast_cost_increase_per_target_beyond_first"
+rule = "this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first"
+
+[[example]]
+text = "This spell costs {1} more to cast for each target beyond the first."
+
+[[example]]
+text = "This spell costs {2}{U} more to cast for each target beyond the first."
+
+[[counterexample]]
+text = "Red spells cost {1} more to cast."
+reason = "Global static colored-spell cost modification, not a self-referential spell cost modifier."
+
+[[counterexample]]
+text = "This spell costs {1} less to cast for each target beyond the first."
+reason = "Cost reduction polarity is outside this concept."
+
+[[counterexample]]
+text = "This ability costs {1} more to activate for each target beyond the first."
+reason = "Activated ability cost modification is outside this concept."
+
+[[counterexample]]
+text = "This spell costs {1} more to cast for each target beyond the first. trailing"
+reason = "Exact-consumption guard."

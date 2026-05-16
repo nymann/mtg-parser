@@ -1,0 +1,64 @@
+[[axis]]
+name = "subject"
+values = ["this_spell"]
+
+[[axis]]
+name = "cost_delta"
+values = ["mana_cost"]
+
+[[axis]]
+name = "polarity"
+values = ["more"]
+
+[[axis]]
+name = "affected_action"
+values = ["cast"]
+
+[[axis]]
+name = "scaling_basis"
+values = ["each_target_beyond_the_first"]
+
+[boundary]
+excludes = [
+    "Global static cost modifications for colored spells.",
+    "Cost reductions using less rather than more.",
+    "Activated ability cost modifications.",
+]
+includes = [
+    "Self-referential spell cost increases that use a mana cost delta.",
+    "Cost increases that apply while casting this spell.",
+    "Per-target scaling for each target beyond the first.",
+]
+
+[concept]
+name = "spell_cast_cost_increase_per_target_beyond_first"
+pest_rules = ["this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first"]
+rules_queries = ["lex: costs more to cast for each target beyond the first"]
+rules_terms = [
+    "cast",
+    "cost",
+    "spell",
+    "target",
+]
+
+[[counterexample]]
+reason = "Global static colored-spell cost modification, not a self-referential spell cost modifier."
+text = "Red spells cost {1} more to cast."
+
+[[counterexample]]
+reason = "Cost reduction polarity belongs to a different concept axis value."
+text = "This spell costs {1} less to cast for each target beyond the first."
+
+[[counterexample]]
+reason = "Activated ability cost modification, not this-spell casting cost modification."
+text = "This ability costs {1} more to activate for each target beyond the first."
+
+[[example]]
+text = "This spell costs {1} more to cast for each target beyond the first."
+
+[[example]]
+text = "This spell costs {2}{U} more to cast for each target beyond the first."
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
