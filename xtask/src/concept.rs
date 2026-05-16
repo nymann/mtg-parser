@@ -576,6 +576,42 @@ struct PlumbingCooldownSelection {
 }
 
 #[derive(Debug, Serialize)]
+struct ConceptCandidateBuild {
+    gap: ConceptGap,
+    cooldown_selection: PlumbingCooldownSelection,
+    audit: ConceptCandidateBuildAudit,
+}
+
+#[derive(Debug, Serialize)]
+struct ConceptCandidateBuildAudit {
+    excluded_count: usize,
+    excluded_rules: Vec<String>,
+    remaining_candidate_count: usize,
+    selected_post_filter_candidate: SelectedConceptCandidate,
+    structural_exclusion_reason: String,
+    matched_feature: String,
+    evidence_rule_or_parent: String,
+    structural_exclusions: Vec<StructuralExclusionAudit>,
+}
+
+#[derive(Debug, Serialize)]
+struct SelectedConceptCandidate {
+    concept: String,
+    query: String,
+    target_rule: String,
+    target_line: usize,
+    reason: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct StructuralExclusionAudit {
+    rule: String,
+    structural_exclusion_reason: String,
+    matched_feature: String,
+    evidence_rule_or_parent: String,
+}
+
+#[derive(Debug, Serialize)]
 struct ConceptGrindIterationSummary {
     iteration: u32,
     concept: String,
@@ -2518,15 +2554,23 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
-        let cooldown_selection =
-            plumbing_cooldown_selection(&before, &blocked_targets, &plumbing_cooldown);
+        let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+        let candidate_build = build_concept_candidate(
+            &before,
+            &options,
+            &blocked_targets,
+            &plumbing_cooldown,
+            &rules,
+        )?;
+        let gap = candidate_build.gap;
         write_json(
             iteration_dir.join("plumbing_cooldown_selection.json"),
-            &cooldown_selection,
+            &candidate_build.cooldown_selection,
         )?;
-        let excluded_rules: BTreeSet<String> =
-            cooldown_selection.excluded_rules.iter().cloned().collect();
-        let gap = select_concept_gap_excluding(&before, &options, &excluded_rules)?;
+        write_json(
+            iteration_dir.join("candidate_build_audit.json"),
+            &candidate_build.audit,
+        )?;
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
         sink.emit(FlowEvent::WorkflowIterationStarted {
@@ -2547,8 +2591,16 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             1,
             true,
             Some(format!(
-                "mapped={} unmapped={}",
-                before.mapped_rule_count, before.unmapped_rule_count
+                "mapped={} unmapped={} excluded_count={} excluded_rules={} structural_exclusion_reason={} matched_feature={} evidence_rule_or_parent={} remaining_candidate_count={} selected_post_filter_candidate={}",
+                before.mapped_rule_count,
+                before.unmapped_rule_count,
+                candidate_build.audit.excluded_count,
+                candidate_build.audit.excluded_rules.join(","),
+                candidate_build.audit.structural_exclusion_reason,
+                candidate_build.audit.matched_feature,
+                candidate_build.audit.evidence_rule_or_parent,
+                candidate_build.audit.remaining_candidate_count,
+                candidate_build.audit.selected_post_filter_candidate.target_rule
             )),
         )?;
 
@@ -3004,6 +3056,199 @@ fn select_concept_gap(
     options: &ConceptGrindOptions,
 ) -> Result<ConceptGap> {
     select_concept_gap_excluding(report, options, &BTreeSet::new())
+}
+
+fn build_concept_candidate(
+    report: &ExistingGrammarMapReport,
+    options: &ConceptGrindOptions,
+    blocked_targets: &BTreeSet<String>,
+    cooldown: &PlumbingCooldownState,
+    rules: &[grammar_query_engine::GrammarRuleDefinition],
+) -> Result<ConceptCandidateBuild> {
+    let cooldown_selection = plumbing_cooldown_selection(report, blocked_targets, cooldown);
+    let mut excluded_rules: BTreeSet<String> =
+        cooldown_selection.excluded_rules.iter().cloned().collect();
+    let mut structural_exclusions = structural_candidate_exclusions(report, rules);
+    structural_exclusions.retain(|exclusion| !excluded_rules.contains(&exclusion.rule));
+    for exclusion in &structural_exclusions {
+        excluded_rules.insert(exclusion.rule.clone());
+    }
+
+    let remaining_candidate_count = report
+        .unmapped_rules
+        .iter()
+        .filter(|rule| !excluded_rules.contains(&rule.name))
+        .count();
+    let gap = select_concept_gap_excluding(report, options, &excluded_rules)?;
+    let audit = build_candidate_audit(
+        &gap,
+        excluded_rules,
+        remaining_candidate_count,
+        structural_exclusions,
+    )?;
+    validate_candidate_build_audit(&audit)?;
+
+    Ok(ConceptCandidateBuild {
+        gap,
+        cooldown_selection,
+        audit,
+    })
+}
+
+fn structural_candidate_exclusions(
+    report: &ExistingGrammarMapReport,
+    rules: &[grammar_query_engine::GrammarRuleDefinition],
+) -> Vec<StructuralExclusionAudit> {
+    report
+        .unmapped_rules
+        .iter()
+        .filter_map(|candidate| structural_candidate_exclusion(candidate, rules))
+        .collect()
+}
+
+fn structural_candidate_exclusion(
+    candidate: &UnmappedGrammarRule,
+    rules: &[grammar_query_engine::GrammarRuleDefinition],
+) -> Option<StructuralExclusionAudit> {
+    let direct_dependencies = grammar_query_engine::direct_dependencies(rules, &candidate.name);
+    let reverse_dependencies = grammar_query_engine::reverse_dependencies(rules, &candidate.name);
+    let parent = reverse_dependencies
+        .first()
+        .cloned()
+        .unwrap_or_else(|| candidate.name.clone());
+
+    match candidate.name.as_str() {
+        "life_gain_amount" => Some(StructuralExclusionAudit {
+            rule: candidate.name.clone(),
+            structural_exclusion_reason:
+                "shared/plumbing amount wrapper; select a complete life-gain effect instead"
+                    .to_string(),
+            matched_feature: format!("amount_wrapper deps={}", direct_dependencies.join("|")),
+            evidence_rule_or_parent: parent,
+        }),
+        "damage_amount" => Some(StructuralExclusionAudit {
+            rule: candidate.name.clone(),
+            structural_exclusion_reason:
+                "shared/plumbing numeric amount leaf; select a complete damage event instead"
+                    .to_string(),
+            matched_feature: "numeric_amount_leaf".to_string(),
+            evidence_rule_or_parent: parent,
+        }),
+        "permanent_controller" => Some(StructuralExclusionAudit {
+            rule: candidate.name.clone(),
+            structural_exclusion_reason:
+                "shared/plumbing controller phrase; select the owning object-status effect instead"
+                    .to_string(),
+            matched_feature: "controller_phrase".to_string(),
+            evidence_rule_or_parent: parent,
+        }),
+        "permanent_object" => Some(StructuralExclusionAudit {
+            rule: candidate.name.clone(),
+            structural_exclusion_reason:
+                "shared/plumbing source-object noun; select the containing source-object concept instead"
+                    .to_string(),
+            matched_feature: "source_object_noun".to_string(),
+            evidence_rule_or_parent: parent,
+        }),
+        _ => None,
+    }
+}
+
+fn build_candidate_audit(
+    gap: &ConceptGap,
+    excluded_rules: BTreeSet<String>,
+    remaining_candidate_count: usize,
+    structural_exclusions: Vec<StructuralExclusionAudit>,
+) -> Result<ConceptCandidateBuildAudit> {
+    let excluded_rules: Vec<String> = excluded_rules.into_iter().collect();
+    let structural_exclusion_reason = joined_audit_field(
+        structural_exclusions
+            .iter()
+            .map(|exclusion| exclusion.structural_exclusion_reason.as_str()),
+    );
+    let matched_feature = joined_audit_field(
+        structural_exclusions
+            .iter()
+            .map(|exclusion| exclusion.matched_feature.as_str()),
+    );
+    let evidence_rule_or_parent = joined_audit_field(
+        structural_exclusions
+            .iter()
+            .map(|exclusion| exclusion.evidence_rule_or_parent.as_str()),
+    );
+
+    Ok(ConceptCandidateBuildAudit {
+        excluded_count: excluded_rules.len(),
+        excluded_rules,
+        remaining_candidate_count,
+        selected_post_filter_candidate: SelectedConceptCandidate {
+            concept: gap.concept.clone(),
+            query: gap.query.clone(),
+            target_rule: gap.target_rule.clone(),
+            target_line: gap.target_line,
+            reason: gap.reason.clone(),
+        },
+        structural_exclusion_reason,
+        matched_feature,
+        evidence_rule_or_parent,
+        structural_exclusions,
+    })
+}
+
+fn joined_audit_field<'a>(values: impl Iterator<Item = &'a str>) -> String {
+    let joined = values
+        .filter(|value| !value.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join("; ");
+    if joined.is_empty() {
+        "none".to_string()
+    } else {
+        joined
+    }
+}
+
+fn validate_candidate_build_audit(audit: &ConceptCandidateBuildAudit) -> Result<()> {
+    if audit.structural_exclusion_reason.trim().is_empty() {
+        bail!("candidate-build audit missing structural_exclusion_reason");
+    }
+    if audit.matched_feature.trim().is_empty() {
+        bail!("candidate-build audit missing matched_feature");
+    }
+    if audit.evidence_rule_or_parent.trim().is_empty() {
+        bail!("candidate-build audit missing evidence_rule_or_parent");
+    }
+    if audit.excluded_count != audit.excluded_rules.len() {
+        bail!("candidate-build audit excluded_count does not match excluded_rules");
+    }
+    if audit
+        .selected_post_filter_candidate
+        .target_rule
+        .trim()
+        .is_empty()
+    {
+        bail!("candidate-build audit missing selected post-filter candidate");
+    }
+    for exclusion in &audit.structural_exclusions {
+        if exclusion.structural_exclusion_reason.trim().is_empty() {
+            bail!(
+                "candidate-build audit missing structural_exclusion_reason for {}",
+                exclusion.rule
+            );
+        }
+        if exclusion.matched_feature.trim().is_empty() {
+            bail!(
+                "candidate-build audit missing matched_feature for {}",
+                exclusion.rule
+            );
+        }
+        if exclusion.evidence_rule_or_parent.trim().is_empty() {
+            bail!(
+                "candidate-build audit missing evidence_rule_or_parent for {}",
+                exclusion.rule
+            );
+        }
+    }
+    Ok(())
 }
 
 fn select_concept_gap_excluding(
@@ -5077,6 +5322,133 @@ mod tests {
         let gap = select_concept_gap_excluding(&report, &options, &excluded)
             .expect("should skip blocked suggestion");
         assert_eq!(gap.target_rule, "destroy_target");
+    }
+
+    #[test]
+    fn live_candidate_build_excludes_batch8_blockers_before_boundary_prompt() {
+        let rules = grammar_query_engine::parse_grammar_rules(
+            r#"
+life_gain_amount = { life_gain_fixed_amount | life_gain_equal_to_its_power }
+life_gain_fixed_amount = { unsigned_number ~ "life" }
+life_gain_equal_to_its_power = { "life" ~ "equal" ~ "to" ~ "its" ~ "power" }
+life_gain_effect = { "you" ~ "gain" ~ life_gain_amount }
+permanent_controller = { "you" ~ "control" | article ~ "opponent" ~ "controls" }
+basic_land_type_controller_becomes_status = { article ~ basic_land_type ~ permanent_controller ~ "becomes" ~ object_status }
+source_object_kind = _{ aura_source_object | permanent_object | permanent_type }
+aura_source_object = { "aura" }
+permanent_object = { "permanent" }
+trigger_damage_event = { source_object_kind ~ "deals" ~ damage_amount ~ "damage" }
+damage_amount = @{ ASCII_DIGIT+ }
+replay_blocked = { "blocked" }
+replay_cooled = { "cooled" }
+damage_event = { "damage" ~ unsigned_number }
+article = { "a" | "an" }
+basic_land_type = { "plains" }
+object_status = { "tapped" }
+permanent_type = { "creature" }
+unsigned_number = @{ ASCII_DIGIT+ }
+"#,
+        )
+        .expect("grammar parses");
+        let report = ExistingGrammarMapReport {
+            rule_count: rules.len(),
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 7,
+            concepts: Vec::new(),
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "life_gain_amount".to_string(),
+                    line: 1,
+                    suggested_concept: Some("life_gain_replacement_effect".to_string()),
+                },
+                UnmappedGrammarRule {
+                    name: "permanent_controller".to_string(),
+                    line: 5,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "permanent_object".to_string(),
+                    line: 9,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "damage_amount".to_string(),
+                    line: 11,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "replay_blocked".to_string(),
+                    line: 12,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "replay_cooled".to_string(),
+                    line: 13,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "damage_event".to_string(),
+                    line: 14,
+                    suggested_concept: Some("damage_event".to_string()),
+                },
+            ],
+        };
+        let options = ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: None,
+            target_rule: None,
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            no_commit: true,
+        };
+        let blocked_targets = BTreeSet::from(["replay_blocked".to_string()]);
+        let mut cooldown = PlumbingCooldownState::default();
+        cooldown
+            .cooled_target_rules
+            .insert("replay_cooled".to_string());
+
+        let candidate_build =
+            build_concept_candidate(&report, &options, &blocked_targets, &cooldown, &rules)
+                .expect("live candidate-build should select post-filter candidate");
+
+        assert_eq!(candidate_build.gap.target_rule, "damage_event");
+        assert_eq!(
+            candidate_build
+                .audit
+                .selected_post_filter_candidate
+                .target_rule,
+            "damage_event"
+        );
+        assert_eq!(candidate_build.audit.remaining_candidate_count, 1);
+        for excluded in [
+            "life_gain_amount",
+            "permanent_controller",
+            "permanent_object",
+            "damage_amount",
+            "replay_blocked",
+            "replay_cooled",
+        ] {
+            assert!(
+                candidate_build
+                    .audit
+                    .excluded_rules
+                    .contains(&excluded.to_string()),
+                "{excluded} should be excluded before boundary_prompt.md construction"
+            );
+        }
+        assert_eq!(candidate_build.audit.excluded_count, 6);
+        assert_eq!(candidate_build.audit.structural_exclusions.len(), 4);
+        assert_ne!(candidate_build.audit.structural_exclusion_reason, "none");
+        assert_ne!(candidate_build.audit.matched_feature, "none");
+        assert_ne!(candidate_build.audit.evidence_rule_or_parent, "none");
+        validate_candidate_build_audit(&candidate_build.audit)
+            .expect("audit fields should be fail-closed and present");
     }
 
     #[test]
