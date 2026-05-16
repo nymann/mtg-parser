@@ -169,6 +169,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_life_amount(out, *amount);
             out.push('.');
         }
+        Statement::TakeExtraTurnAfterThisOne => {
+            out.push_str("Take an extra turn after this one.");
+        }
         Statement::TapAllPermanentsAndPlayerLosesUnspentMana {
             actor,
             permanent_type,

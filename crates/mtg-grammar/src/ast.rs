@@ -122,6 +122,8 @@ pub enum Statement {
     ItsControllerGainsLife {
         amount: LifeAmount,
     },
+    /// "Take an extra turn after this one." — CR 500.7 extra turn effect.
+    TakeExtraTurnAfterThisOne,
     /// "Tap all <permanent_type>s <actor> controls and <actor> loses all
     /// unspent mana."
     TapAllPermanentsAndPlayerLosesUnspentMana {

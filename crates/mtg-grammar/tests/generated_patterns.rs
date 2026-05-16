@@ -331,5 +331,7 @@ mod terror;
 mod the_hive;
 #[path = "generated_patterns/time_vault.rs"]
 mod time_vault;
+#[path = "generated_patterns/time_walk.rs"]
+mod time_walk;
 #[path = "generated_patterns/timetwister.rs"]
 mod timetwister;

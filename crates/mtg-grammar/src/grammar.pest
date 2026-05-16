@@ -67,6 +67,7 @@ sentence_statement = _{
   | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
   | target_player_gains_life
   | its_controller_gains_life
+  | take_extra_turn_after_this_one
   | if_you_would_event_you_may_skip_that_instead
   | look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order
   | you_may_have_that_player_shuffle

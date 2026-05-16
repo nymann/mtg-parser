@@ -157,6 +157,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::target_player_gains_life => target_player_gains_life_from_pair(pair),
         Rule::its_controller_gains_life => its_controller_gains_life_from_pair(pair),
+        Rule::take_extra_turn_after_this_one => Ok(Statement::TakeExtraTurnAfterThisOne),
         Rule::if_you_would_event_you_may_skip_that_instead => {
             if_you_would_event_you_may_skip_that_instead_from_pair(pair)
         }
