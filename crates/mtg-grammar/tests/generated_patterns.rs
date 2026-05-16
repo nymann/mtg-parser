@@ -1,6 +1,8 @@
 // Manifest of generated parse-only pattern tests.
 #[path = "generated_patterns/abu_ja_far.rs"]
 mod abu_ja_far;
+#[path = "generated_patterns/aladdin.rs"]
+mod aladdin;
 #[path = "generated_patterns/animate_wall.rs"]
 mod animate_wall;
 #[path = "generated_patterns/ankh_of_mishra.rs"]

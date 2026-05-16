@@ -6,6 +6,8 @@
 mod abu_ja_far;
 #[path = "generated/air_elemental.rs"]
 mod air_elemental;
+#[path = "generated/aladdin.rs"]
+mod aladdin;
 #[path = "generated/ancestral_recall.rs"]
 mod ancestral_recall;
 #[path = "generated/animate_artifact.rs"]

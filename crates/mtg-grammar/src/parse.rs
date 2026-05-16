@@ -4642,6 +4642,21 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
                 count: discard_count_from_pair(count_pair)?,
             })
         }
+        Rule::gain_control_of_target_permanent_for_as_long_as_you_control_source => {
+            let mut inner = pair.into_inner();
+            let permanent_type_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("gain control missing permanent_type"))?;
+            let source_pair = inner
+                .next()
+                .ok_or(ParseError::Internal("gain control missing source_object"))?;
+            Ok(
+                ActivatedEffect::GainControlOfTargetPermanentForAsLongAsYouControlSource {
+                    permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                    source: source_object_from_pair(source_pair)?,
+                },
+            )
+        }
         Rule::target_creature_with_power_or_less_cant_be_blocked => {
             let power_pair = only_inner(pair, "target creature unblockable missing power")?;
             let power = power_pair

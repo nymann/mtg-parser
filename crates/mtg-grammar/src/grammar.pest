@@ -1217,6 +1217,7 @@ activated_effect = _{
   | create_token
   | look_at_target_players_hand
   | target_player_discards_cards
+  | gain_control_of_target_permanent_for_as_long_as_you_control_source
   | target_creature_with_power_or_less_cant_be_blocked
   | target_permanent_gains_keyword_until_eot
   | activated_source_becomes_pt_creature_until_end_of_combat
@@ -1288,6 +1289,11 @@ target_player_discards_cards = {
 }
 discard_one_card = { article ~ ^"card" }
 discard_counted_cards = { draw_count ~ ^"cards" }
+gain_control_of_target_permanent_for_as_long_as_you_control_source = {
+    ^"gain" ~ ^"control" ~ ^"of" ~ ^"target" ~ permanent_type
+  ~ ^"for" ~ ^"as" ~ ^"long" ~ ^"as" ~ ^"you" ~ ^"control"
+  ~ source_object ~ "."
+}
 choose_target_non_creature_type_creature_active_player_controlled_continuously = {
     ^"choose" ~ ^"target" ~ ^"non-" ~ creature_type ~ ^"creature"
   ~ ^"the" ~ ^"active" ~ ^"player" ~ ^"has" ~ ^"controlled"

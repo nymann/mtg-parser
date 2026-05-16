@@ -1429,6 +1429,12 @@ pub enum ActivatedEffect {
     TargetPlayerDiscardsCards {
         count: CardCount,
     },
+    /// "Gain control of target <permanent_type> for as long as you control
+    /// this <source>."
+    GainControlOfTargetPermanentForAsLongAsYouControlSource {
+        permanent_type: PermanentType,
+        source: SourceObject,
+    },
     /// "Target creature with power N or less can't be blocked this turn."
     TargetCreatureWithPowerOrLessCantBeBlockedThisTurn {
         power: u32,
