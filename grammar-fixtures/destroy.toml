@@ -50,6 +50,18 @@ text = "Destroy that creature if it attacked this turn."
 rule = "destroy_all_creatures_blocking_or_blocked_by_it"
 text = "Destroy all creatures blocking or blocked by it."
 
+[[example]]
+rule = "destroy_it"
+text = "Destroy it."
+
+[[example]]
+rule = "trigger_effect"
+text = "Destroy it."
+
+[[example]]
+rule = "triggered_ability"
+text = "When this creature dies, destroy it."
+
 [[counterexample]]
 text = "Counter target red spell."
 reason = "Countering a colored target spell is the counter_target_spell concept."
@@ -90,6 +102,36 @@ reason = "The attacked-this-turn boundary belongs to destroy, not counter."
 rule = "destroy_that_creature_if_it_attacked_this_turn"
 text = "Exile that creature if it attacked this turn."
 reason = "The attacked-this-turn boundary belongs to destroy, not exile."
+
+[[counterexample]]
+rule = "trigger_effect"
+text = "Exile it."
+reason = "Exile is a different zone-change action even with the same anaphoric it selector."
+
+[[counterexample]]
+rule = "trigger_effect"
+text = "Counter it."
+reason = "Counter is a different action even with the same anaphoric it selector."
+
+[[counterexample]]
+rule = "trigger_effect"
+text = "Sacrifice it."
+reason = "Sacrifice is a different action even with the same anaphoric it selector."
+
+[[counterexample]]
+rule = "destroy_it"
+text = "Exile it."
+reason = "The anaphoric it boundary belongs to destroy, not exile."
+
+[[counterexample]]
+rule = "destroy_it"
+text = "Counter it."
+reason = "The anaphoric it boundary belongs to destroy, not counter."
+
+[[counterexample]]
+rule = "destroy_it"
+text = "Sacrifice it."
+reason = "The anaphoric it boundary belongs to destroy, not sacrifice."
 
 [[counterexample]]
 text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."

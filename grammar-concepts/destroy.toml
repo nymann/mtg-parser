@@ -12,6 +12,7 @@ values = [
     "target_creature_type",
     "target_basic_lands_count",
     "that_creature",
+    "it",
     "destroy_all",
     "all_non_creature_type_creatures_player_controls_that_didnt_attack_this_turn",
     "all_creatures_blocking_or_blocked_by_it",
@@ -58,6 +59,7 @@ includes = [
     "Trigger effects that destroy all non-creature-type creatures a player controls that didn't attack this turn.",
     "Sentence and trigger-effect surfaces for destroying all creatures blocking or blocked by it.",
     "Trigger effects that destroy that creature if it attacked this turn.",
+    "Trigger effects that destroy an anaphoric it target.",
 ]
 
 [concept]
@@ -69,12 +71,14 @@ pest_rules = [
     "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn",
     "destroy_all_creatures_blocking_or_blocked_by_it",
     "destroy_that_creature_if_it_attacked_this_turn",
+    "destroy_it",
 ]
 rules_queries = [
     "lex: destroy target permanent",
     "lex: destroy all non-Goblin creatures that player controls that didn't attack this turn",
     "lex: destroy all creatures blocking or blocked by it",
     "lex: destroy that creature if it attacked this turn",
+    "lex: destroy it",
 ]
 rules_terms = [
     "attack",
@@ -106,6 +110,18 @@ text = "Exile that creature if it attacked this turn."
 reason = "Color-setting effect, not a destroy effect."
 text = "Target spell or permanent becomes red."
 
+[[counterexample]]
+reason = "Exile is a different zone-change action even with the same anaphoric it selector."
+text = "Exile it."
+
+[[counterexample]]
+reason = "Counter is a different action even with the same anaphoric it selector."
+text = "Counter it."
+
+[[counterexample]]
+reason = "Sacrifice is a different action even with the same anaphoric it selector."
+text = "Sacrifice it."
+
 [[example]]
 text = "Destroy target red permanent."
 
@@ -133,6 +149,12 @@ text = "Destroy that creature if it attacked this turn."
 [[example]]
 text = "When this creature dies, destroy all creatures blocking or blocked by it."
 
+[[example]]
+text = "Destroy it."
+
+[[example]]
+text = "When this creature dies, destroy it."
+
 [grammar_query]
 candidate_rules = [
     "destroy",
@@ -141,12 +163,13 @@ candidate_rules = [
     "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn",
     "destroy_all_creatures_blocking_or_blocked_by_it",
     "destroy_that_creature_if_it_attacked_this_turn",
+    "destroy_it",
     "target_colored_permanent",
     "counter_target_colored_spell_action",
     "exile",
     "target_spell_or_permanent_becomes_color",
 ]
-selected_rule = "destroy_that_creature_if_it_attacked_this_turn"
+selected_rule = "destroy_it"
 
 [maturity]
 blockers = []
