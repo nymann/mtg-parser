@@ -1,0 +1,47 @@
+[fixture]
+concept = "player_may_pay_mana"
+rule = "player_may_pay_mana"
+
+[[example]]
+text = "You may pay {1}."
+reason = "Direct optional mana payment permission with you player and mana-cost amount."
+
+[[example]]
+text = "That player may pay any amount of mana."
+reason = "Direct optional mana payment permission with that-player subject and any-amount-of-mana amount."
+
+[[example]]
+rule = "pay_mana_player"
+text = "You"
+reason = "Player axis variant for the direct optional mana payment concept."
+
+[[example]]
+rule = "pay_mana_player"
+text = "That player"
+reason = "Player axis variant for the direct optional mana payment concept."
+
+[[example]]
+rule = "pay_mana_amount"
+text = "{1}"
+reason = "Amount axis variant for a concrete mana cost."
+
+[[example]]
+rule = "pay_mana_amount"
+text = "any amount of mana"
+reason = "Amount axis variant for unconstrained mana payment."
+
+[[counterexample]]
+text = "Its owner loses 3 life."
+reason = "Direct life-loss instruction, owned by player_loses_life."
+
+[[counterexample]]
+text = "You may pay 2 life."
+reason = "Life payment, not mana payment."
+
+[[counterexample]]
+text = "Unless you pay {1}, sacrifice a creature."
+reason = "Unless-payment clause with a consequence, not a direct optional payment permission."
+
+[[counterexample]]
+text = "You may pay {1}. trailing"
+reason = "Exact-consumption guard."

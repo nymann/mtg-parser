@@ -1,0 +1,84 @@
+[[axis]]
+name = "player"
+values = [
+    "you",
+    "that_player",
+]
+
+[[axis]]
+name = "amount"
+values = [
+    "mana_cost",
+    "any_amount_of_mana",
+]
+
+[[axis]]
+name = "modality"
+values = ["may"]
+
+[[axis]]
+name = "resource"
+values = ["mana"]
+
+[boundary]
+excludes = [
+    "Direct life-loss instructions owned by player_loses_life.",
+    "Life payment costs owned by life-payment concepts, not mana payment.",
+    "Unless-payment clauses that introduce a failure consequence rather than a direct optional payment permission.",
+]
+includes = [
+    "Direct optional instructions where you may pay a mana cost.",
+    "Direct optional instructions where that player may pay any amount of mana.",
+]
+
+[concept]
+name = "player_may_pay_mana"
+pest_rules = [
+    "player_may_pay_mana",
+    "pay_mana_player",
+    "you_pay_mana_player",
+    "that_player_pay_mana_player",
+    "pay_mana_amount",
+    "any_amount_of_mana",
+]
+rules_queries = [
+    "lex: player may pay mana",
+    "lex: pay any amount of mana",
+]
+rules_terms = [
+    "mana",
+    "mana cost",
+    "pay",
+]
+
+[[counterexample]]
+reason = "Direct life-loss instruction, owned by player_loses_life."
+text = "Its owner loses 3 life."
+
+[[counterexample]]
+reason = "Life payment, not mana payment."
+text = "You may pay 2 life."
+
+[[counterexample]]
+reason = "Unless-payment clause with a consequence, not a direct optional payment permission."
+text = "Unless you pay {1}, sacrifice a creature."
+
+[[example]]
+text = "You may pay {1}."
+
+[[example]]
+text = "That player may pay any amount of mana."
+
+[grammar_query]
+candidate_rules = [
+    "player_may_pay_mana",
+    "pay_mana_player",
+    "pay_mana_amount",
+    "pay_mana_cost",
+    "unless_you_pay_mana_do_actions",
+]
+selected_rule = "player_may_pay_mana"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
