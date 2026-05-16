@@ -1,0 +1,72 @@
+[[axis]]
+name = "condition_actor"
+values = ["you"]
+
+[[axis]]
+name = "condition"
+values = ["inability_to_perform_prior_instruction"]
+
+[[axis]]
+name = "consequence_actor"
+values = ["you"]
+
+[[axis]]
+name = "consequence"
+values = ["lose_the_game"]
+
+[[axis]]
+name = "surface"
+values = ["standalone_sentence"]
+
+[boundary]
+excludes = [
+    "Ordinary lose-the-game instructions without a conditional failure condition.",
+    "State-based life-total loss exceptions owned by state_based_life_total_loss_exception.",
+    "Conditional failure consequences with a different consequence than losing the game.",
+    "Payment-failure clauses for that player owned by player_payment_failure.",
+]
+includes = ["Standalone sentences where your inability to perform a prior instruction causes you to lose the game."]
+
+[concept]
+name = "conditional_failure_game_loss"
+pest_rules = ["if_you_cant_you_lose_the_game"]
+rules_queries = [
+    "lex: if you can't you lose the game",
+    "lex: unable to perform instruction lose the game",
+]
+rules_terms = [
+    "lose the game",
+    "instruction",
+]
+
+[[counterexample]]
+reason = "Ordinary lose-the-game instruction without the conditional failure condition."
+text = "You lose the game."
+
+[[counterexample]]
+reason = "State-based life-total loss exception, not a conditional failure consequence."
+text = "You don't lose the game for having 0 or less life."
+
+[[counterexample]]
+reason = "Conditional failure sentence with a damage consequence instead of losing the game."
+text = "If you can't, Black Lotus deals 4 damage to you."
+
+[[counterexample]]
+reason = "Payment-failure clause for that player, not a you-can't standalone game-loss sentence."
+text = "if that player doesn't, they tap all lands they control and lose all unspent mana."
+
+[[example]]
+text = "If you can't, you lose the game."
+
+[grammar_query]
+candidate_rules = [
+    "if_you_cant_you_lose_the_game",
+    "you_lose_the_game",
+    "you_dont_lose_game_for_having_zero_or_less_life",
+    "player_payment_failure",
+]
+selected_rule = "if_you_cant_you_lose_the_game"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

@@ -1,0 +1,27 @@
+[fixture]
+concept = "conditional_failure_game_loss"
+rule = "if_you_cant_you_lose_the_game"
+
+[[example]]
+text = "If you can't, you lose the game."
+reason = "Standalone conditional failure sentence where your inability to perform the prior instruction makes you lose the game."
+
+[[counterexample]]
+text = "You lose the game."
+reason = "Ordinary lose-the-game instruction without the conditional failure condition."
+
+[[counterexample]]
+text = "You don't lose the game for having 0 or less life."
+reason = "State-based life-total loss exception, owned by state_based_life_total_loss_exception."
+
+[[counterexample]]
+text = "If you can't, Black Lotus deals 4 damage to you."
+reason = "Conditional failure sentence with a damage consequence instead of losing the game."
+
+[[counterexample]]
+text = "if that player doesn't, they tap all lands they control and lose all unspent mana."
+reason = "Payment-failure clause for that player, owned by player_payment_failure."
+
+[[counterexample]]
+text = "If you can't, you lose the game. trailing"
+reason = "Exact-consumption guard."
