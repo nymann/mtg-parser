@@ -582,11 +582,32 @@ struct ConceptGrindIterationSummary {
     query: String,
     target_rule: String,
     fixture_passed: bool,
+    maturity_state: String,
     mapped_rule_count_before: usize,
     mapped_rule_count_after: usize,
     unmapped_rule_count_before: usize,
     unmapped_rule_count_after: usize,
     committed: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ConceptQualityContractReport {
+    concept: String,
+    fixture_command: Vec<String>,
+    maturity_command: Vec<String>,
+    fixture_result: FixtureRunResult,
+    maturity_result: MaturityReport,
+    passed: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ConceptQualityContractFailure {
+    reason: &'static str,
+    concept: String,
+    fixture_command: Vec<String>,
+    maturity_command: Vec<String>,
+    fixture_result: FixtureRunResult,
+    maturity_result: MaturityReport,
 }
 
 #[derive(Debug, Serialize)]
@@ -624,7 +645,7 @@ struct ConceptGrindStepMetric {
     summary: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct MaturityReport {
     concept: String,
     state: String,
@@ -775,7 +796,7 @@ struct FixtureCase {
     reason: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct FixtureRunResult {
     concept: String,
     fixture_path: PathBuf,
@@ -786,14 +807,14 @@ struct FixtureRunResult {
     cases: Vec<FixtureCaseResult>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct GrammarDriftSummary {
     duplicate_rhs_shape_groups: usize,
     quantity_like_duplicate_rhs_shape_groups: usize,
     similar_rhs_shape_pairs: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct FixtureCaseResult {
     kind: String,
     rule: String,
@@ -2747,7 +2768,28 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         )?;
 
         metrics.step_started(sink, iteration, 6, "update map and maturity");
-        let after = run_map_existing(MapExistingOptions {
+        let _pre_map_contract = match run_quality_contract_with_single_repair(
+            &gap,
+            &before,
+            &options,
+            sink,
+            &iteration_dir,
+            "pre_map_update",
+        ) {
+            Ok(report) => report,
+            Err(error) => {
+                metrics.step_finished(
+                    sink,
+                    &session_dir,
+                    iteration,
+                    6,
+                    false,
+                    Some(format!("{error:#}")),
+                )?;
+                return Err(error);
+            }
+        };
+        let mut after = run_map_existing(MapExistingOptions {
             json: false,
             expand_deps: true,
         })?;
@@ -2775,19 +2817,57 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         )?;
 
         metrics.step_started(sink, iteration, 7, "commit and summarize");
+        let final_contract = match run_quality_contract_with_single_repair(
+            &gap,
+            &before,
+            &options,
+            sink,
+            &iteration_dir,
+            "pre_commit",
+        ) {
+            Ok(report) => report,
+            Err(error) => {
+                metrics.step_finished(
+                    sink,
+                    &session_dir,
+                    iteration,
+                    7,
+                    false,
+                    Some(format!("{error:#}")),
+                )?;
+                return Err(error);
+            }
+        };
+        let final_maturity = persist_quality_contract_maturity(&final_contract)?;
+        write_json(iteration_dir.join("maturity_final.json"), &final_maturity)?;
+        after = run_map_existing(MapExistingOptions {
+            json: false,
+            expand_deps: true,
+        })?;
+        write_json(iteration_dir.join("map_final.json"), &after)?;
+        if let Err(failure) = run_gap_closure_gate(&gap, &before, &after) {
+            metrics.step_finished(
+                sink,
+                &session_dir,
+                iteration,
+                7,
+                false,
+                Some(failure.label.clone()),
+            )?;
+            return Err(anyhow!("{} failed\n{}", failure.label, failure.output));
+        }
         let committed = if options.no_commit {
             false
         } else {
             commit_concept_grind_iteration(&gap, iteration)?
         };
-        let fixture =
-            run_fixture_file(&grammar_fixtures_dir().join(format!("{}.toml", gap.concept)))?;
         let summary = ConceptGrindIterationSummary {
             iteration,
             concept: gap.concept.clone(),
             query: gap.query.clone(),
             target_rule: gap.target_rule.clone(),
-            fixture_passed: fixture.passed,
+            fixture_passed: final_contract.fixture_result.passed,
+            maturity_state: final_maturity.state.clone(),
             mapped_rule_count_before: before.mapped_rule_count,
             mapped_rule_count_after: after.mapped_rule_count,
             unmapped_rule_count_before: before.unmapped_rule_count,
@@ -3329,6 +3409,203 @@ BLOCKERS: <none or list>
         label = failure.label,
         output = failure.output,
     ))
+}
+
+fn run_quality_contract_with_single_repair(
+    gap: &ConceptGap,
+    before: &ExistingGrammarMapReport,
+    options: &ConceptGrindOptions,
+    sink: &mut dyn FlowSink,
+    iteration_dir: &Path,
+    phase: &str,
+) -> Result<ConceptQualityContractReport> {
+    let mut report = run_quality_contract(gap)?;
+    write_json(
+        iteration_dir.join(format!("{phase}_quality_contract.json")),
+        &report,
+    )?;
+    if report.passed {
+        return Ok(report);
+    }
+
+    let mut failure = quality_contract_failure(&report);
+    log_quality_contract_failure(iteration_dir, phase, &failure, false)?;
+    sink.emit(FlowEvent::Note {
+        level: NoteLevel::Warn,
+        text: format!(
+            "quality contract failed before {phase}: {}; running one repair attempt",
+            failure.concept
+        ),
+    });
+
+    let gate_failure = quality_contract_gate_failure(&failure)?;
+    let repair_prompt = build_repair_prompt(gap, &gate_failure)?;
+    fs::write(
+        iteration_dir.join(format!("{phase}-quality-contract-repair-prompt.md")),
+        &repair_prompt,
+    )?;
+    let repair = refactor_hotspot::invoke_agent(
+        options.agent,
+        &repair_prompt,
+        &iteration_dir.join(format!("{phase}-quality-contract-repair-transcript.ndjson")),
+        sink,
+    )?;
+    fs::write(
+        iteration_dir.join(format!("{phase}-quality-contract-repair-response.md")),
+        &repair.assistant_text,
+    )?;
+    if !repair.success {
+        bail!(
+            "{} quality-contract repair agent exited with status {}; transcript: {}",
+            options.agent.label(),
+            repair.exit_code,
+            iteration_dir
+                .join(format!("{phase}-quality-contract-repair-transcript.ndjson"))
+                .display()
+        );
+    }
+
+    if let Err(failure) = run_concept_grind_gates(gap, before, iteration_dir) {
+        fs::write(
+            iteration_dir.join(format!("{phase}_quality_contract_repair_gate_failed.txt")),
+            format!("{}\n\n{}", failure.label, failure.output),
+        )?;
+        return Err(anyhow!(
+            "quality_contract_failed before {phase}: repair did not preserve existing gate `{}`\n{}",
+            failure.label,
+            failure.output
+        ));
+    }
+
+    report = run_quality_contract(gap)?;
+    write_json(
+        iteration_dir.join(format!("{phase}_quality_contract_after_repair.json")),
+        &report,
+    )?;
+    if report.passed {
+        return Ok(report);
+    }
+
+    failure = quality_contract_failure(&report);
+    log_quality_contract_failure(iteration_dir, phase, &failure, true)?;
+    Err(anyhow!(
+        "quality_contract_failed before {phase}: concept {} fixture_passed={} maturity_state={}",
+        failure.concept,
+        failure.fixture_result.passed,
+        failure.maturity_result.state
+    ))
+}
+
+fn run_quality_contract(gap: &ConceptGap) -> Result<ConceptQualityContractReport> {
+    let fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
+    let fixture_result = run_fixture_file_fresh(&fixture_path).map_err(|failure| {
+        anyhow!(
+            "{} failed while evaluating quality contract\n{}",
+            failure.label,
+            failure.output
+        )
+    })?;
+    let maturity_result = run_maturity(MaturityOptions {
+        concept: gap.concept.clone(),
+        json: false,
+        update: false,
+        fresh_fixture: true,
+    })?;
+    let passed = fixture_result.passed && maturity_result.state == "grammar_fixture_green";
+    Ok(ConceptQualityContractReport {
+        concept: gap.concept.clone(),
+        fixture_command: fixture_command_for_log(&fixture_path),
+        maturity_command: maturity_command_for_log(&gap.concept, false),
+        fixture_result,
+        maturity_result,
+        passed,
+    })
+}
+
+fn quality_contract_failure(
+    report: &ConceptQualityContractReport,
+) -> ConceptQualityContractFailure {
+    ConceptQualityContractFailure {
+        reason: "quality_contract_failed",
+        concept: report.concept.clone(),
+        fixture_command: report.fixture_command.clone(),
+        maturity_command: report.maturity_command.clone(),
+        fixture_result: report.fixture_result.clone(),
+        maturity_result: report.maturity_result.clone(),
+    }
+}
+
+fn persist_quality_contract_maturity(
+    report: &ConceptQualityContractReport,
+) -> Result<MaturityReport> {
+    if !report.passed {
+        bail!(
+            "refusing to persist failed quality contract for {}",
+            report.concept
+        );
+    }
+    let mut maturity = report.maturity_result.clone();
+    let concept_file = maturity.concept_file.clone().ok_or_else(|| {
+        anyhow!(
+            "quality contract passed without a concept file for {}",
+            report.concept
+        )
+    })?;
+    write_maturity_to_concept(&concept_file, &maturity.state, &maturity.blockers)?;
+    maturity.updated = true;
+    Ok(maturity)
+}
+
+fn quality_contract_gate_failure(
+    failure: &ConceptQualityContractFailure,
+) -> Result<ConceptGrindGateFailure> {
+    Ok(ConceptGrindGateFailure {
+        label: "quality contract".to_string(),
+        output: serde_json::to_string_pretty(failure)?,
+    })
+}
+
+fn log_quality_contract_failure(
+    iteration_dir: &Path,
+    phase: &str,
+    failure: &ConceptQualityContractFailure,
+    terminal: bool,
+) -> Result<()> {
+    let stem = if terminal {
+        format!("{phase}_quality_contract_failed")
+    } else {
+        format!("{phase}_quality_contract_failure")
+    };
+    write_json(iteration_dir.join(format!("{stem}.json")), failure)?;
+    fs::write(
+        iteration_dir.join(format!("{stem}.txt")),
+        serde_json::to_string_pretty(failure)?,
+    )?;
+    Ok(())
+}
+
+fn fixture_command_for_log(fixture_path: &Path) -> Vec<String> {
+    let mut command = vec!["cargo".to_string()];
+    command.extend(
+        concept_grammar_test_command_args(fixture_path)
+            .into_iter()
+            .map(|arg| arg.to_string_lossy().into_owned()),
+    );
+    command
+}
+
+fn maturity_command_for_log(concept: &str, update: bool) -> Vec<String> {
+    let mut command = vec![
+        "cargo".to_string(),
+        "xtask".to_string(),
+        "concept-maturity".to_string(),
+        concept.to_string(),
+        "--json".to_string(),
+    ];
+    if update {
+        command.push("--update".to_string());
+    }
+    command
 }
 
 fn run_concept_grind_gates(
@@ -5070,6 +5347,42 @@ unrelated_rule = { "unrelated" }
                 "--json",
                 "--fixture",
                 "grammar-fixtures/counter_target_spell.toml",
+            ]
+        );
+    }
+
+    #[test]
+    fn quality_contract_logs_exact_fixture_and_maturity_commands() {
+        assert_eq!(
+            fixture_command_for_log(Path::new("grammar-fixtures/counter_target_spell.toml")),
+            vec![
+                "cargo",
+                "xtask",
+                "concept-grammar-test",
+                "--json",
+                "--fixture",
+                "grammar-fixtures/counter_target_spell.toml",
+            ]
+        );
+        assert_eq!(
+            maturity_command_for_log("counter_target_spell", false),
+            vec![
+                "cargo",
+                "xtask",
+                "concept-maturity",
+                "counter_target_spell",
+                "--json",
+            ]
+        );
+        assert_eq!(
+            maturity_command_for_log("counter_target_spell", true),
+            vec![
+                "cargo",
+                "xtask",
+                "concept-maturity",
+                "counter_target_spell",
+                "--json",
+                "--update",
             ]
         );
     }
