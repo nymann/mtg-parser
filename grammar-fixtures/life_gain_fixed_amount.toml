@@ -1,0 +1,49 @@
+[fixture]
+concept = "life_gain_fixed_amount"
+rule = "life_gain_fixed_amount_statement"
+
+[[example]]
+rule = "life_gain_fixed_amount"
+text = "3 life"
+reason = "Amount fragment with unsigned-number amount."
+
+[[example]]
+rule = "life_gain_fixed_amount"
+text = "X life"
+reason = "Amount fragment with variable-name amount."
+
+[[example]]
+text = "Target player gains 3 life."
+reason = "Target-player recipient surface with unsigned-number fixed amount."
+
+[[example]]
+text = "Target player gains X life."
+reason = "Target-player recipient surface with variable fixed amount."
+
+[[example]]
+text = "Its controller gains 3 life."
+reason = "Its-controller recipient surface with unsigned-number fixed amount."
+
+[[example]]
+text = "Its controller gains X life."
+reason = "Its-controller recipient surface with variable fixed amount."
+
+[[counterexample]]
+text = "Target player gains life equal to its power."
+reason = "Power-referenced life gain is owned by life_gain_equal_to_power, not fixed-amount life gain."
+
+[[counterexample]]
+text = "Its controller gains life equal to its power."
+reason = "Power-referenced life gain is owned by life_gain_equal_to_power, not fixed-amount life gain."
+
+[[counterexample]]
+text = "You gain life equal to the damage dealt."
+reason = "Damage-referenced life gain is owned by life_gain_equal_to_damage."
+
+[[counterexample]]
+text = "You gain life equal to the damage prevented this way."
+reason = "Damage-prevention-referenced life gain is owned by life_gain_equal_to_damage."
+
+[[counterexample]]
+text = "3 life trailing"
+reason = "Exact-consumption guard."

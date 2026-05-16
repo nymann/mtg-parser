@@ -488,6 +488,13 @@ target_player_gains_life = {
 its_controller_gains_life = {
     ^"its" ~ ^"controller" ~ ^"gains" ~ life_gain_amount ~ "."
 }
+life_gain_fixed_amount_statement = {
+    life_gain_fixed_amount_recipient ~ ^"gains" ~ life_gain_fixed_amount ~ "."
+}
+life_gain_fixed_amount_recipient = _{
+    ^"target" ~ ^"player"
+  | ^"its" ~ ^"controller"
+}
 life_gain_amount = {
     life_gain_fixed_amount
   | life_gain_equal_to_its_power

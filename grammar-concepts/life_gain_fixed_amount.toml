@@ -1,0 +1,79 @@
+[[axis]]
+name = "amount"
+values = [
+    "unsigned_number",
+    "variable_name",
+]
+
+[[axis]]
+name = "recipient"
+values = [
+    "target_player",
+    "its_controller",
+]
+
+[boundary]
+excludes = [
+    "Power-referenced life gain, owned by life_gain_equal_to_power.",
+    "Damage-referenced life gain, owned by life_gain_equal_to_damage.",
+]
+includes = [
+    "Life-gain amount fragments with a fixed numeric or variable amount.",
+    "Target-player and its-controller recipient surfaces for fixed-amount life gain.",
+]
+
+[concept]
+name = "life_gain_fixed_amount"
+pest_rules = [
+    "life_gain_fixed_amount_statement",
+    "life_gain_fixed_amount",
+]
+rules_queries = [
+    "lex: target player gains 3 life",
+    "lex: target player gains X life",
+    "lex: its controller gains 3 life",
+    "lex: its controller gains X life",
+]
+rules_terms = ["life gain"]
+
+[[counterexample]]
+reason = "Power-referenced life gain, owned by life_gain_equal_to_power."
+text = "Target player gains life equal to its power."
+
+[[counterexample]]
+reason = "Power-referenced life gain, owned by life_gain_equal_to_power."
+text = "Its controller gains life equal to its power."
+
+[[counterexample]]
+reason = "Damage-referenced life gain, owned by life_gain_equal_to_damage."
+text = "You gain life equal to the damage dealt."
+
+[[counterexample]]
+reason = "Damage-prevention-referenced life gain, owned by life_gain_equal_to_damage."
+text = "You gain life equal to the damage prevented this way."
+
+[[example]]
+text = "Target player gains 3 life."
+
+[[example]]
+text = "Target player gains X life."
+
+[[example]]
+text = "Its controller gains 3 life."
+
+[[example]]
+text = "Its controller gains X life."
+
+[grammar_query]
+candidate_rules = [
+    "life_gain_fixed_amount_statement",
+    "life_gain_fixed_amount",
+    "target_player_gains_life",
+    "its_controller_gains_life",
+    "life_gain_equal_to_its_power",
+]
+selected_rule = "life_gain_fixed_amount_statement"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
