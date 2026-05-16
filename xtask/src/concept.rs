@@ -531,19 +531,6 @@ struct PlumbingCooldownState {
     derivations: Vec<PlumbingCooldownDerivation>,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-struct NonConceptExclusionState {
-    entries: Vec<NonConceptExclusionEntry>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct NonConceptExclusionEntry {
-    target_rule: String,
-    candidate_concept: String,
-    normalized_blocked_reason: String,
-    timestamp_unix_ms: u128,
-}
-
 #[derive(Debug, Clone, Serialize)]
 struct PlumbingCooldownDerivation {
     blocked_target_rule: String,
@@ -583,12 +570,8 @@ struct RuleExpansionNode {
 #[derive(Debug, Serialize)]
 struct PlumbingCooldownSelection {
     exact_blocked_target_rules: Vec<String>,
-    persisted_non_concept_target_rules: Vec<String>,
     cooled_target_rules: Vec<String>,
     excluded_rules: Vec<String>,
-    excluded_count: usize,
-    structural_exclusion_reason: BTreeMap<String, String>,
-    remaining_candidate_count: usize,
     fallback_status: String,
 }
 
@@ -2064,42 +2047,6 @@ fn write_text(path: PathBuf, text: &str) -> Result<()> {
     fs::write(&path, text).with_context(|| format!("write {}", path.display()))
 }
 
-fn non_concept_exclusions_path(run_dir: &Path) -> PathBuf {
-    run_dir.join("non_concept_exclusions.json")
-}
-
-fn read_non_concept_exclusions(run_dir: &Path) -> Result<Option<NonConceptExclusionState>> {
-    let path = non_concept_exclusions_path(run_dir);
-    match fs::read_to_string(&path) {
-        Ok(text) => serde_json::from_str(&text)
-            .with_context(|| format!("parse {}", path.display()))
-            .map(Some),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(e).with_context(|| format!("read {}", path.display())),
-    }
-}
-
-fn write_non_concept_exclusions(
-    run_dir: &Path,
-    exclusions: &NonConceptExclusionState,
-) -> Result<()> {
-    write_json(non_concept_exclusions_path(run_dir), exclusions)
-}
-
-fn append_non_concept_exclusion(
-    exclusions: &mut NonConceptExclusionState,
-    entry: NonConceptExclusionEntry,
-) {
-    if exclusions.entries.iter().any(|existing| {
-        existing.target_rule == entry.target_rule
-            && existing.candidate_concept == entry.candidate_concept
-            && existing.normalized_blocked_reason == entry.normalized_blocked_reason
-    }) {
-        return;
-    }
-    exclusions.entries.push(entry);
-}
-
 fn run_map_existing(options: MapExistingOptions) -> Result<ExistingGrammarMapReport> {
     let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
     let rule_by_name: BTreeMap<String, &grammar_query_engine::GrammarRuleDefinition> =
@@ -2289,232 +2236,30 @@ fn is_shared_plumbing_block_reason(reason: &str) -> bool {
     reason.starts_with("shared") || reason.starts_with("shared/plumbing")
 }
 
-fn is_persistent_non_concept_block_reason(reason: &str) -> bool {
-    let reason = reason.trim().to_ascii_lowercase();
-    [
-        "shared",
-        "plumbing",
-        "lexical",
-        "quantity",
-        "wrapper",
-        "adapter",
-        "object-kind",
-        "object kind",
-        "object_kind",
-    ]
-    .iter()
-    .any(|keyword| reason.contains(keyword))
-}
-
-fn normalize_blocked_reason(reason: &str) -> String {
-    reason
-        .trim()
-        .to_ascii_lowercase()
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
-#[cfg(test)]
 fn plumbing_cooldown_selection(
     report: &ExistingGrammarMapReport,
     blocked_targets: &BTreeSet<String>,
     cooldown: &PlumbingCooldownState,
-) -> Result<PlumbingCooldownSelection> {
-    plumbing_cooldown_selection_with_exclusions(
-        report,
-        blocked_targets,
-        cooldown,
-        &NonConceptExclusionState::default(),
-    )
-}
-
-fn plumbing_cooldown_selection_with_exclusions(
-    report: &ExistingGrammarMapReport,
-    blocked_targets: &BTreeSet<String>,
-    cooldown: &PlumbingCooldownState,
-    non_concept_exclusions: &NonConceptExclusionState,
-) -> Result<PlumbingCooldownSelection> {
-    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
-    Ok(plumbing_cooldown_selection_with_rules(
-        report,
-        blocked_targets,
-        cooldown,
-        non_concept_exclusions,
-        &rules,
-    ))
-}
-
-fn plumbing_cooldown_selection_with_rules(
-    report: &ExistingGrammarMapReport,
-    blocked_targets: &BTreeSet<String>,
-    cooldown: &PlumbingCooldownState,
-    non_concept_exclusions: &NonConceptExclusionState,
-    rules: &[grammar_query_engine::GrammarRuleDefinition],
 ) -> PlumbingCooldownSelection {
-    let persisted_targets = non_concept_exclusions
-        .entries
-        .iter()
-        .map(|entry| entry.target_rule.clone())
-        .collect::<BTreeSet<_>>();
-    let structural_reasons = structural_non_concept_exclusions_from_rules(report, rules);
-    let structural_targets = structural_reasons.keys().cloned().collect::<BTreeSet<_>>();
-    let exact_excluded = blocked_targets
-        .union(&persisted_targets)
-        .cloned()
-        .collect::<BTreeSet<_>>();
-    let non_deprioritized_candidate_exists = report.unmapped_rules.iter().any(|rule| {
-        !exact_excluded.contains(&rule.name)
-            && !cooldown.cooled_target_rules.contains(&rule.name)
-            && !structural_targets.contains(&rule.name)
+    let non_cooled_candidate_exists = report.unmapped_rules.iter().any(|rule| {
+        !blocked_targets.contains(&rule.name) && !cooldown.cooled_target_rules.contains(&rule.name)
     });
-    let mut excluded_rules = exact_excluded;
-    let structural_exclusion_reason;
-    let fallback_status = if non_deprioritized_candidate_exists {
+    let mut excluded_rules = blocked_targets.clone();
+    let fallback_status = if non_cooled_candidate_exists {
         excluded_rules.extend(cooldown.cooled_target_rules.iter().cloned());
-        excluded_rules.extend(structural_targets);
-        structural_exclusion_reason = structural_reasons;
-        "non_concept_exclusion_active_candidate_available"
+        "cooldown_active_non_cooled_candidate_available"
     } else if cooldown.cooled_target_rules.is_empty() {
-        structural_exclusion_reason = BTreeMap::new();
-        "no_deprioritized_candidates"
+        "no_cooled_candidates"
     } else {
-        structural_exclusion_reason = BTreeMap::new();
-        "fallback_to_deprioritized_candidates"
+        "fallback_to_cooled_candidates"
     };
-    let remaining_candidate_count = report
-        .unmapped_rules
-        .iter()
-        .filter(|rule| !excluded_rules.contains(&rule.name))
-        .count();
 
-    let excluded_rules = excluded_rules.into_iter().collect::<Vec<_>>();
     PlumbingCooldownSelection {
         exact_blocked_target_rules: blocked_targets.iter().cloned().collect(),
-        persisted_non_concept_target_rules: persisted_targets.into_iter().collect(),
         cooled_target_rules: cooldown.cooled_target_rules.iter().cloned().collect(),
-        excluded_count: excluded_rules.len(),
-        excluded_rules,
-        structural_exclusion_reason,
-        remaining_candidate_count,
+        excluded_rules: excluded_rules.into_iter().collect(),
         fallback_status: fallback_status.to_string(),
     }
-}
-
-fn structural_non_concept_exclusions_from_rules(
-    report: &ExistingGrammarMapReport,
-    rules: &[grammar_query_engine::GrammarRuleDefinition],
-) -> BTreeMap<String, String> {
-    let rule_by_name: BTreeMap<&str, &grammar_query_engine::GrammarRuleDefinition> = rules
-        .iter()
-        .map(|rule| (rule.name.as_str(), rule))
-        .collect();
-    let mapped_rules = mapped_rule_names(report);
-    let mut reasons = BTreeMap::new();
-
-    for candidate in &report.unmapped_rules {
-        let Some(rule) = rule_by_name.get(candidate.name.as_str()).copied() else {
-            continue;
-        };
-        let dependencies = grammar_query_engine::direct_dependencies(rules, &rule.name);
-        let reason = if is_silent_or_atomic_lexical_leaf(rule, &dependencies) {
-            Some("silent_or_atomic_lexical_leaf")
-        } else if is_numeric_or_amount_leaf(rule, &dependencies) {
-            Some("numeric_or_amount_leaf")
-        } else if is_one_token_object_kind_leaf(rule, &dependencies) {
-            Some("one_token_object_kind_leaf")
-        } else if is_wrapper_with_mapped_children(rule, &dependencies, &mapped_rules) {
-            Some("wrapper_children_already_mapped")
-        } else {
-            None
-        };
-        if let Some(reason) = reason {
-            reasons.insert(rule.name.clone(), reason.to_string());
-        }
-    }
-
-    reasons
-}
-
-fn mapped_rule_names(report: &ExistingGrammarMapReport) -> BTreeSet<String> {
-    report
-        .concepts
-        .iter()
-        .flat_map(|concept| concept.owned_rules.iter().map(|rule| rule.name.clone()))
-        .collect()
-}
-
-fn is_silent_or_atomic_lexical_leaf(
-    rule: &grammar_query_engine::GrammarRuleDefinition,
-    dependencies: &[String],
-) -> bool {
-    dependencies.is_empty()
-        && (rule.rhs.trim_start().starts_with("@{") || rule.rhs.trim_start().starts_with("_{"))
-        && (rule.rhs.contains('"') || rule.rhs.contains('\'') || rule.rhs.contains("ASCII_"))
-}
-
-fn is_numeric_or_amount_leaf(
-    rule: &grammar_query_engine::GrammarRuleDefinition,
-    dependencies: &[String],
-) -> bool {
-    let name = rule.name.as_str();
-    let numeric_name = name.contains("amount")
-        || name.contains("count")
-        || name.contains("number")
-        || name.contains("quantity")
-        || name.contains("mana_value");
-    let numeric_deps = dependencies.iter().all(|dependency| {
-        matches!(
-            dependency.as_str(),
-            "number_word" | "unsigned_number" | "variable_name" | "signed_number"
-        )
-    });
-    numeric_name && (dependencies.is_empty() || numeric_deps)
-}
-
-fn is_one_token_object_kind_leaf(
-    rule: &grammar_query_engine::GrammarRuleDefinition,
-    dependencies: &[String],
-) -> bool {
-    dependencies.is_empty()
-        && (rule.name.contains("object_kind")
-            || rule.name.ends_with("_kind")
-            || rule.name.ends_with("_type")
-            || rule.name.ends_with("_subtype")
-            || rule.name.ends_with("_zone"))
-        && one_literal_token_count(&rule.rhs) <= Some(1)
-}
-
-fn is_wrapper_with_mapped_children(
-    rule: &grammar_query_engine::GrammarRuleDefinition,
-    dependencies: &[String],
-    mapped_rules: &BTreeSet<String>,
-) -> bool {
-    !dependencies.is_empty()
-        && is_pure_wrapper_or_alternation_rhs(&rule.rhs, dependencies)
-        && dependencies.iter().all(|dependency| {
-            mapped_rules.contains(dependency) || is_shared_grammar_stop_rule(dependency)
-        })
-}
-
-fn one_literal_token_count(rhs: &str) -> Option<usize> {
-    let mut count = 0usize;
-    let mut chars = rhs.chars().peekable();
-    while let Some(ch) = chars.next() {
-        if ch != '"' && ch != '\'' {
-            continue;
-        }
-        count += 1;
-        while let Some(next) = chars.next() {
-            if next == ch {
-                break;
-            }
-            if next == '\\' {
-                let _ = chars.next();
-            }
-        }
-    }
-    Some(count)
 }
 
 fn derive_plumbing_cooldown(
@@ -2747,8 +2492,6 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
-    let mut non_concept_exclusions = read_non_concept_exclusions(&session_dir)?.unwrap_or_default();
-    write_non_concept_exclusions(&session_dir, &non_concept_exclusions)?;
     let mut metrics = ConceptGrindMetrics::new(session_dir.clone());
     metrics.write(&session_dir)?;
     sink.emit(FlowEvent::Note {
@@ -2775,14 +2518,8 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
-        non_concept_exclusions =
-            read_non_concept_exclusions(&session_dir)?.unwrap_or(non_concept_exclusions);
-        let cooldown_selection = plumbing_cooldown_selection_with_exclusions(
-            &before,
-            &blocked_targets,
-            &plumbing_cooldown,
-            &non_concept_exclusions,
-        )?;
+        let cooldown_selection =
+            plumbing_cooldown_selection(&before, &blocked_targets, &plumbing_cooldown);
         write_json(
             iteration_dir.join("plumbing_cooldown_selection.json"),
             &cooldown_selection,
@@ -2890,19 +2627,6 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     gap.target_rule
                 ),
             });
-            if is_persistent_non_concept_block_reason(reason) {
-                append_non_concept_exclusion(
-                    &mut non_concept_exclusions,
-                    NonConceptExclusionEntry {
-                        target_rule: gap.target_rule.clone(),
-                        candidate_concept: gap.concept.clone(),
-                        normalized_blocked_reason: normalize_blocked_reason(reason),
-                        timestamp_unix_ms: unix_timestamp_ms(),
-                    },
-                );
-                write_non_concept_exclusions(&session_dir, &non_concept_exclusions)?;
-                write_non_concept_exclusions(&iteration_dir, &non_concept_exclusions)?;
-            }
             if is_shared_plumbing_block_reason(reason) {
                 let derivation = derive_plumbing_cooldown(&before, &gap.target_rule)?;
                 for candidate in &derivation.cooled_target_rules {
@@ -5540,11 +5264,10 @@ unrelated_rule = { "unrelated" }
             .insert("cooled_wrapper".to_string());
         let blocked_targets = BTreeSet::from(["blocked_shared".to_string()]);
 
-        let selection = plumbing_cooldown_selection(&report, &blocked_targets, &cooldown)
-            .expect("selection succeeds");
+        let selection = plumbing_cooldown_selection(&report, &blocked_targets, &cooldown);
         assert_eq!(
             selection.fallback_status,
-            "non_concept_exclusion_active_candidate_available"
+            "cooldown_active_non_cooled_candidate_available"
         );
         assert_eq!(
             selection.excluded_rules,
@@ -5572,116 +5295,9 @@ unrelated_rule = { "unrelated" }
                 },
             ],
         };
-        let selection = plumbing_cooldown_selection(&fallback_report, &blocked_targets, &cooldown)
-            .expect("selection succeeds");
-        assert_eq!(
-            selection.fallback_status,
-            "fallback_to_deprioritized_candidates"
-        );
+        let selection = plumbing_cooldown_selection(&fallback_report, &blocked_targets, &cooldown);
+        assert_eq!(selection.fallback_status, "fallback_to_cooled_candidates");
         assert_eq!(selection.excluded_rules, vec!["blocked_shared".to_string()]);
-    }
-
-    #[test]
-    fn persisted_non_concept_exclusions_skip_exact_targets_and_structural_helpers() {
-        let rules = grammar_query_engine::parse_grammar_rules(
-            r#"
-blocked_shared = { "blocked" }
-lexical_leaf = @{ "leaf" }
-amount_leaf = { number_word | variable_name }
-mapped_child = { "mapped" }
-mapped_wrapper = { mapped_child }
-real_concept_rule = { "real" }
-number_word = @{ "one" }
-variable_name = @{ "X" }
-"#,
-        )
-        .expect("grammar parses");
-        let report = ExistingGrammarMapReport {
-            rule_count: rules.len(),
-            concept_count: 1,
-            dependency_expansion: true,
-            shared_rule_count: 0,
-            mapped_rule_count: 1,
-            unmapped_rule_count: 5,
-            concepts: vec![ConceptRuleMap {
-                concept: "mapped_concept".to_string(),
-                maturity: "grammar_fixture_green".to_string(),
-                concept_file: PathBuf::from("grammar-concepts/mapped_concept.toml"),
-                declared_rules: vec!["mapped_child".to_string()],
-                found_rules: Vec::new(),
-                owned_rules: vec![RuleLocationSummary {
-                    name: "mapped_child".to_string(),
-                    line: 4,
-                }],
-                missing_rules: Vec::new(),
-            }],
-            unmapped_rules: vec![
-                UnmappedGrammarRule {
-                    name: "blocked_shared".to_string(),
-                    line: 1,
-                    suggested_concept: Some("blocked_shared".to_string()),
-                },
-                UnmappedGrammarRule {
-                    name: "lexical_leaf".to_string(),
-                    line: 2,
-                    suggested_concept: None,
-                },
-                UnmappedGrammarRule {
-                    name: "amount_leaf".to_string(),
-                    line: 3,
-                    suggested_concept: None,
-                },
-                UnmappedGrammarRule {
-                    name: "mapped_wrapper".to_string(),
-                    line: 5,
-                    suggested_concept: None,
-                },
-                UnmappedGrammarRule {
-                    name: "real_concept_rule".to_string(),
-                    line: 6,
-                    suggested_concept: None,
-                },
-            ],
-        };
-        let exclusions = NonConceptExclusionState {
-            entries: vec![NonConceptExclusionEntry {
-                target_rule: "blocked_shared".to_string(),
-                candidate_concept: "blocked_shared".to_string(),
-                normalized_blocked_reason: "shared plumbing boundary".to_string(),
-                timestamp_unix_ms: 1,
-            }],
-        };
-        let structural = structural_non_concept_exclusions_from_rules(&report, &rules);
-        assert_eq!(
-            structural.get("lexical_leaf").map(String::as_str),
-            Some("silent_or_atomic_lexical_leaf")
-        );
-        assert_eq!(
-            structural.get("amount_leaf").map(String::as_str),
-            Some("numeric_or_amount_leaf")
-        );
-        assert_eq!(
-            structural.get("mapped_wrapper").map(String::as_str),
-            Some("wrapper_children_already_mapped")
-        );
-
-        let selection = plumbing_cooldown_selection_with_rules(
-            &report,
-            &BTreeSet::new(),
-            &PlumbingCooldownState::default(),
-            &exclusions,
-            &rules,
-        );
-        assert_eq!(selection.remaining_candidate_count, 1);
-        assert_eq!(
-            selection.excluded_rules,
-            vec![
-                "amount_leaf".to_string(),
-                "blocked_shared".to_string(),
-                "lexical_leaf".to_string(),
-                "mapped_wrapper".to_string(),
-            ]
-        );
     }
 
     #[test]
