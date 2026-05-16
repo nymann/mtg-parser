@@ -518,18 +518,31 @@ put_that_card_into_your_hand_action = {
     ^"put" ~ ^"that" ~ ^"card" ~ ^"into" ~ ^"your" ~ ^"hand"
 }
 shuffle_action = { ^"shuffle" }
-draw_cards_action = { ^"draw" ~ draw_count ~ ^"cards" }
+draw_cards_action = { draw_verb ~ draw_count ~ ^"cards" }
+draw_verb = _{ ^"draws" | ^"draw" }
 tap_source_action = { ^"tap" ~ source_object }
 sacrifice_permanent_of_opponents_choice_action = {
     ^"sacrifice" ~ article ~ permanent_type ~ ^"of" ~ article ~ ^"opponent's" ~ ^"choice"
 }
 
 each_player_performs_action = {
-    ^"each" ~ ^"player" ~ each_player_action ~ "."
+    ^"each" ~ ^"player" ~ each_player_action_sequence ~ "."
 }
-each_player_action = _{ each_player_antes_top_card_of_their_library_action }
+each_player_action_sequence = {
+    each_player_action
+  ~ (("," ~ each_player_action)* ~ ","? ~ ^"then" ~ each_player_action)?
+}
+each_player_action = _{
+    each_player_antes_top_card_of_their_library_action
+  | each_player_shuffles_their_hand_and_graveyard_into_their_library_action
+  | draw_cards_action
+}
 each_player_antes_top_card_of_their_library_action = {
     ^"antes" ~ ^"the" ~ ^"top" ~ ^"card" ~ ^"of" ~ ^"their" ~ ^"library"
+}
+each_player_shuffles_their_hand_and_graveyard_into_their_library_action = {
+    ^"shuffles" ~ ^"their" ~ ^"hand" ~ ^"and" ~ ^"graveyard"
+  ~ ^"into" ~ ^"their" ~ ^"library"
 }
 
 until_eot_you_may_pay_cost_at_timing = {

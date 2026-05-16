@@ -225,6 +225,14 @@ fn arb_imperative_action() -> impl Strategy<Value = ImperativeAction> {
     ]
 }
 
+fn arb_each_player_action() -> impl Strategy<Value = EachPlayerAction> {
+    prop_oneof![
+        Just(EachPlayerAction::AnteTopCardOfTheirLibrary),
+        Just(EachPlayerAction::ShuffleTheirHandAndGraveyardIntoTheirLibrary),
+        arb_card_count().prop_map(|count| EachPlayerAction::DrawCards { count }),
+    ]
+}
+
 fn arb_player_casts_colored_spell_pay_mana_trigger() -> impl Strategy<Value = Statement> {
     (arb_color(), arb_mana_cost()).prop_map(|(color, cost)| {
         Statement::TriggeredAbility(TriggeredAbility {
@@ -537,9 +545,8 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             }
         }),
         Just(Statement::AntePlayRestriction),
-        Just(Statement::EachPlayerPerformsAction {
-            action: EachPlayerAction::AnteTopCardOfTheirLibrary
-        }),
+        prop::collection::vec(arb_each_player_action(), 1..4)
+            .prop_map(|actions| Statement::EachPlayerPerformsAction { actions }),
         (prop::collection::vec(arb_spell_type(), 1..3), arb_color()).prop_map(
             |(spell_types, color)| Statement::CopyTargetSpellExceptCopyIsColor {
                 spell_types,

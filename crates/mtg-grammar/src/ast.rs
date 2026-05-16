@@ -180,9 +180,9 @@ pub enum Statement {
     ImperativeActionSequence {
         actions: Vec<ImperativeAction>,
     },
-    /// "Each player <action>."
+    /// "Each player <action>[, then <action>]."
     EachPlayerPerformsAction {
-        action: EachPlayerAction,
+        actions: Vec<EachPlayerAction>,
     },
     /// "Until end of turn, <timing>, you may <cost>."
     UntilEndOfTurnYouMayPayCostAtTiming {
@@ -757,6 +757,10 @@ pub enum ImperativeAction {
 pub enum EachPlayerAction {
     /// "antes the top card of their library"
     AnteTopCardOfTheirLibrary,
+    /// "shuffles their hand and graveyard into their library"
+    ShuffleTheirHandAndGraveyardIntoTheirLibrary,
+    /// "draws N cards"
+    DrawCards { count: CardCount },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

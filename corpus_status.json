@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 244,
+  "passing": 245,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -779,8 +779,7 @@
       "error": "parse: parse error:  --> 1:1\n  |\n1 | Take an extra turn after this one.\n  | ^---\n  |\n  = expected card_text"
     },
     "lea/Timetwister": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:13\n  |\n1 | Each player shuffles their hand and graveyard into their library, then draws seven cards.\n  |             ^---\n  |\n  = expected each_player_antes_top_card_of_their_library_action"
+      "status": "pass"
     },
     "lea/Tranquility": {
       "status": "pass"
@@ -886,7 +885,7 @@
     },
     "lea/Wheel of Fortune": {
       "status": "fail",
-      "error": "parse: parse error:  --> 1:13\n  |\n1 | Each player discards their hand, then draws seven cards.\n  |             ^---\n  |\n  = expected each_player_antes_top_card_of_their_library_action"
+      "error": "parse: parse error:  --> 1:13\n  |\n1 | Each player discards their hand, then draws seven cards.\n  |             ^---\n  |\n  = expected each_player_action_sequence"
     },
     "lea/White Knight": {
       "status": "pass"

@@ -519,9 +519,13 @@ fn imperative_action_from_pair(pair: Pair<Rule>) -> Result<ImperativeAction, Par
 }
 
 fn each_player_performs_action_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let action_pair = only_inner(pair, "each_player_performs_action missing action")?;
+    let action_sequence_pair =
+        only_inner(pair, "each_player_performs_action missing action sequence")?;
     Ok(Statement::EachPlayerPerformsAction {
-        action: each_player_action_from_pair(action_pair)?,
+        actions: action_sequence_pair
+            .into_inner()
+            .map(each_player_action_from_pair)
+            .collect::<Result<Vec<_>, _>>()?,
     })
 }
 
@@ -529,6 +533,17 @@ fn each_player_action_from_pair(pair: Pair<Rule>) -> Result<EachPlayerAction, Pa
     match pair.as_rule() {
         Rule::each_player_antes_top_card_of_their_library_action => {
             Ok(EachPlayerAction::AnteTopCardOfTheirLibrary)
+        }
+        Rule::each_player_shuffles_their_hand_and_graveyard_into_their_library_action => {
+            Ok(EachPlayerAction::ShuffleTheirHandAndGraveyardIntoTheirLibrary)
+        }
+        Rule::draw_cards_action => {
+            let count_pair = pair.into_inner().next().ok_or(ParseError::Internal(
+                "each-player draw action missing count",
+            ))?;
+            Ok(EachPlayerAction::DrawCards {
+                count: card_count_from_pair(count_pair)?,
+            })
         }
         _ => Err(ParseError::Internal("each player action")),
     }

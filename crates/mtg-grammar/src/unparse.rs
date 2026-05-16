@@ -262,9 +262,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::ImperativeActionSequence { actions } => {
             write_imperative_action_sequence(out, actions);
         }
-        Statement::EachPlayerPerformsAction { action } => {
+        Statement::EachPlayerPerformsAction { actions } => {
             out.push_str("Each player ");
-            write_each_player_action(out, *action);
+            write_each_player_action_sequence(out, actions);
             out.push('.');
         }
         Statement::UntilEndOfTurnYouMayPayCostAtTiming { timing, cost } => {
@@ -783,10 +783,31 @@ fn write_trigger_action_list(out: &mut String, actions: &[ImperativeAction]) {
     }
 }
 
+fn write_each_player_action_sequence(out: &mut String, actions: &[EachPlayerAction]) {
+    for (i, action) in actions.iter().enumerate() {
+        if i > 0 {
+            if i + 1 == actions.len() {
+                out.push_str(", then ");
+            } else {
+                out.push_str(", ");
+            }
+        }
+        write_each_player_action(out, *action);
+    }
+}
+
 fn write_each_player_action(out: &mut String, action: EachPlayerAction) {
     match action {
         EachPlayerAction::AnteTopCardOfTheirLibrary => {
             out.push_str("antes the top card of their library");
+        }
+        EachPlayerAction::ShuffleTheirHandAndGraveyardIntoTheirLibrary => {
+            out.push_str("shuffles their hand and graveyard into their library");
+        }
+        EachPlayerAction::DrawCards { count } => {
+            out.push_str("draws ");
+            write_card_count(out, count);
+            out.push_str(" cards");
         }
     }
 }

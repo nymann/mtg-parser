@@ -329,3 +329,5 @@ mod swords_to_plowshares;
 mod terror;
 #[path = "generated_patterns/the_hive.rs"]
 mod the_hive;
+#[path = "generated_patterns/timetwister.rs"]
+mod timetwister;
