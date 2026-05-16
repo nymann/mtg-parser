@@ -1,0 +1,45 @@
+[fixture]
+concept = "variable_mana_spending_restriction"
+rule = "spend_only_color_mana_on_variable"
+
+[[example]]
+text = "Spend only black mana on X."
+reason = "Direct spend-only restriction using the black color axis and X variable."
+
+[[example]]
+text = "Spend only red mana on X."
+reason = "Direct spend-only restriction using another color-word value for the restricted mana quality."
+
+[[example]]
+text = "Spend only green mana on Y."
+reason = "Direct spend-only restriction using a non-X variable-name value."
+
+[[example]]
+rule = "color_word"
+text = "black"
+reason = "Restricted mana color axis uses the shared color_word grammar."
+
+[[example]]
+rule = "variable_name"
+text = "Y"
+reason = "Variable axis uses the shared variable_name grammar."
+
+[[counterexample]]
+text = "You may spend black mana as though it were green mana."
+reason = "As-though mana-quality permission, not a spend-only restriction scoped to a variable."
+
+[[counterexample]]
+text = "Mana they produce is spent to play CARD."
+reason = "Produced-mana spending requirement, not a restriction on mana spent on a variable."
+
+[[counterexample]]
+text = "Spend only colorless mana on X."
+reason = "Colorless is a mana quality outside this concept's color_word boundary."
+
+[[counterexample]]
+text = "Spend only black mana to cast this spell."
+reason = "Restriction scope is casting this spell, not mana spent on a variable."
+
+[[counterexample]]
+text = "Spend only black mana on X. trailing"
+reason = "Exact-consumption guard."

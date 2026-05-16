@@ -1,0 +1,87 @@
+[[axis]]
+name = "restricted_mana_color"
+values = [
+    "white",
+    "blue",
+    "black",
+    "red",
+    "green",
+]
+
+[[axis]]
+name = "variable"
+values = [
+    "X",
+    "Y",
+]
+
+[[axis]]
+name = "polarity"
+values = ["only"]
+
+[[axis]]
+name = "scope"
+values = ["mana_spent_on_variable"]
+
+[boundary]
+excludes = [
+    "Mana-quality permission effects using as-though wording rather than a spending restriction.",
+    "Mana produced by a source being required to be spent for a specific purpose.",
+    "Colorless mana restrictions, because the current boundary is color_word mana.",
+    "Spend-only restrictions scoped to casting a spell rather than mana spent on a variable.",
+]
+includes = [
+    "Restrictions of the form Spend only color mana on variable.",
+    "Color-word restricted mana quality and variable-name target are concept data axes.",
+]
+
+[concept]
+name = "variable_mana_spending_restriction"
+pest_rules = ["spend_only_color_mana_on_variable"]
+rules_queries = [
+    "lex: spend only color mana on X",
+    "lex: spend only mana on variable",
+]
+rules_terms = [
+    "mana",
+    "spend",
+    "color",
+    "X",
+]
+
+[[counterexample]]
+reason = "As-though mana-quality permission, not a spend-only restriction scoped to a variable."
+text = "You may spend black mana as though it were green mana."
+
+[[counterexample]]
+reason = "Produced-mana spending requirement, not a restriction on mana spent on a variable."
+text = "Mana they produce is spent to play CARD."
+
+[[counterexample]]
+reason = "Colorless is not accepted by the color_word mana-quality axis for this concept."
+text = "Spend only colorless mana on X."
+
+[[counterexample]]
+reason = "Restriction scope is casting this spell, not mana spent on a variable."
+text = "Spend only black mana to cast this spell."
+
+[[example]]
+text = "Spend only black mana on X."
+
+[[example]]
+text = "Spend only red mana on X."
+
+[[example]]
+text = "Spend only green mana on Y."
+
+[grammar_query]
+candidate_rules = [
+    "spend_only_color_mana_on_variable",
+    "color_word",
+    "variable_name",
+]
+selected_rule = "spend_only_color_mana_on_variable"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
