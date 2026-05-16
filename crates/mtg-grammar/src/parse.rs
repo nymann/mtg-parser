@@ -112,6 +112,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first_from_pair(pair)
         }
         Rule::destroy => destroy_from_pair(pair),
+        Rule::exile => exile_from_pair(pair),
         Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
         Rule::damage_event_statement => damage_event_statement_from_pair(pair),
         Rule::next_damage_event_effect => Ok(Statement::DamageEffect(
@@ -153,6 +154,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             Ok(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay)
         }
         Rule::target_player_gains_life => target_player_gains_life_from_pair(pair),
+        Rule::its_controller_gains_life => its_controller_gains_life_from_pair(pair),
         Rule::if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw => {
             Ok(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw)
         }
@@ -317,7 +319,7 @@ fn modal_mode_from_pair(pair: Pair<Rule>) -> Result<ModalMode, ParseError> {
             }
         },
         Rule::target_player_gains_life => Ok(ModalMode::TargetPlayerGainsLife {
-            amount: target_player_gains_life_amount_from_pair(effect)?,
+            amount: life_gain_amount_from_pair(effect)?,
         }),
         Rule::damage_prevention_effect_this_turn => {
             let effect = damage_prevention_effect_from_this_turn_pair(effect)?;
@@ -931,6 +933,13 @@ fn destroy_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     Ok(Statement::destroy(destroy_target_from_pair(target_pair)?))
 }
 
+fn exile_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let target_pair = only_inner(pair, "exile missing target")?;
+    Ok(Statement::Exile {
+        target: destroy_target_from_pair(target_pair)?,
+    })
+}
+
 fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseError> {
     match pair.as_rule() {
         Rule::destroy_target => {
@@ -1215,22 +1224,32 @@ fn target_player_discards_cards_at_random_from_pair(
 
 fn target_player_gains_life_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     Ok(Statement::TargetPlayerGainsLife {
-        amount: target_player_gains_life_amount_from_pair(pair)?,
+        amount: life_gain_amount_from_pair(pair)?,
     })
 }
 
-fn target_player_gains_life_amount_from_pair(pair: Pair<Rule>) -> Result<LifeAmount, ParseError> {
-    let amount_pair = only_inner(pair, "target_player_gains_life missing amount")?;
+fn its_controller_gains_life_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    Ok(Statement::ItsControllerGainsLife {
+        amount: life_gain_amount_from_pair(pair)?,
+    })
+}
+
+fn life_gain_amount_from_pair(pair: Pair<Rule>) -> Result<LifeAmount, ParseError> {
+    let amount_pair = only_inner(pair, "life gain missing amount")?;
     match amount_pair.as_rule() {
+        Rule::life_gain_amount | Rule::life_gain_fixed_amount => {
+            life_gain_amount_from_pair(amount_pair)
+        }
         Rule::unsigned_number => amount_pair
             .as_str()
             .parse::<u32>()
             .map(LifeAmount::Number)
-            .map_err(|_| ParseError::Internal("target_player_gains_life amount")),
+            .map_err(|_| ParseError::Internal("life gain amount")),
         Rule::variable_name => Ok(LifeAmount::Variable(variable_from_str(
             amount_pair.as_str(),
         )?)),
-        _ => Err(ParseError::Internal("target_player_gains_life amount")),
+        Rule::life_gain_equal_to_its_power => Ok(LifeAmount::EqualToItsPower),
+        _ => Err(ParseError::Internal("life gain amount")),
     }
 }
 

@@ -334,3 +334,5 @@ mod stone_giant;
 mod stream_of_life;
 #[path = "generated/sunglasses_of_urza.rs"]
 mod sunglasses_of_urza;
+#[path = "generated/swords_to_plowshares.rs"]
+mod swords_to_plowshares;

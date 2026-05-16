@@ -76,6 +76,11 @@ pub enum Statement {
     Destroy {
         target: DestroyTarget,
     },
+    /// CR 701.11 exile keyword action, sharing the same target/all/list axis
+    /// currently used by destroy.
+    Exile {
+        target: DestroyTarget,
+    },
     /// "That <permanent_type>'s controller may attach this Aura to a/an
     /// <permanent_type> of their choice."
     ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
@@ -106,6 +111,10 @@ pub enum Statement {
     YouMayHaveThatPlayerShuffle,
     /// "Target player gains N life."
     TargetPlayerGainsLife {
+        amount: LifeAmount,
+    },
+    /// "Its controller gains <amount>."
+    ItsControllerGainsLife {
         amount: LifeAmount,
     },
     /// "Tap all <permanent_type>s <actor> controls and <actor> loses all
@@ -1109,6 +1118,8 @@ pub enum LifeAmount {
     Number(u32),
     /// "X" / "Y"
     Variable(Variable),
+    /// "life equal to its power"
+    EqualToItsPower,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

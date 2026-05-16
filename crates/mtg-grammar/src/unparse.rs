@@ -120,6 +120,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             );
         }
         Statement::Destroy { target } => write_destroy(out, target),
+        Statement::Exile { target } => write_exile(out, target),
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of,
             attach_to,
@@ -160,6 +161,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
         }
         Statement::TargetPlayerGainsLife { amount } => {
             write_target_player_gains_life(out, *amount);
+        }
+        Statement::ItsControllerGainsLife { amount } => {
+            out.push_str("Its controller gains ");
+            write_life_amount(out, *amount);
+            out.push('.');
         }
         Statement::TapAllPermanentsAndPlayerLosesUnspentMana {
             actor,
@@ -493,6 +499,7 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
         statement,
         Statement::PlayerPaymentFailure { .. }
             | Statement::YouGainLifeEqualToDamage { .. }
+            | Statement::ItsControllerGainsLife { .. }
             | Statement::NamedSourceDealsDamage { .. }
             | Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn
             | Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn
@@ -903,8 +910,6 @@ const UNTAP_SENTENCE: SentenceTemplate = SentenceTemplate::new("Untap ", "untap 
 const UNTAP_REFERENCED_PERMANENT_SENTENCE: SentenceTemplate =
     SentenceTemplate::new("Untap the ", "untap the ");
 const YOU_GAIN_LIFE_SENTENCE: SentenceTemplate = SentenceTemplate::new("You gain ", "you gain ");
-const TARGET_PLAYER_GAINS_LIFE_SENTENCE: SentenceTemplate =
-    SentenceTemplate::new("Target player gains ", "target player gains ");
 
 fn write_template_sentence(
     out: &mut String,
@@ -973,21 +978,21 @@ fn write_you_gain_life(out: &mut String, amount: u32, case: SentenceCase) {
 }
 
 fn write_target_player_gains_life(out: &mut String, amount: LifeAmount) {
-    write_template_sentence(
-        out,
-        TARGET_PLAYER_GAINS_LIFE_SENTENCE,
-        SentenceCase::Upper,
-        |out| {
-            write_life_amount(out, amount);
-            out.push_str(" life");
-        },
-    );
+    out.push_str("Target player gains ");
+    write_life_amount(out, amount);
+    out.push('.');
 }
 
 fn write_life_amount(out: &mut String, amount: LifeAmount) {
     match amount {
-        LifeAmount::Number(n) => write!(out, "{n}").expect("write to String never fails"),
-        LifeAmount::Variable(variable) => out.push_str(variable_name(variable)),
+        LifeAmount::Number(n) => {
+            write!(out, "{n} life").expect("write to String never fails");
+        }
+        LifeAmount::Variable(variable) => {
+            out.push_str(variable_name(variable));
+            out.push_str(" life");
+        }
+        LifeAmount::EqualToItsPower => out.push_str("life equal to its power"),
     }
 }
 
@@ -3010,6 +3015,12 @@ fn write_permanent_type_choice(out: &mut String, permanent_types: &[PermanentTyp
 
 fn write_destroy(out: &mut String, target: &DestroyTarget) {
     out.push_str("Destroy ");
+    write_destroy_target(out, target);
+    out.push('.');
+}
+
+fn write_exile(out: &mut String, target: &DestroyTarget) {
+    out.push_str("Exile ");
     write_destroy_target(out, target);
     out.push('.');
 }

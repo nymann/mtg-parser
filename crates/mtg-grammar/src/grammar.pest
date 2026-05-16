@@ -46,6 +46,7 @@ sentence_statement = _{
   | counter_target_spell
   | as_additional_cost_to_cast_this_spell
   | destroy
+  | exile
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
   | regenerate_target_creature
   | damage_event_statement
@@ -64,6 +65,7 @@ sentence_statement = _{
   | target_player_activates_mana_ability_of_each_permanent_they_control
   | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
   | target_player_gains_life
+  | its_controller_gains_life
   | if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw
   | look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order
   | you_may_have_that_player_shuffle
@@ -200,6 +202,7 @@ this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first = {
 }
 
 destroy = { ^"destroy" ~ destroy_target ~ "." }
+exile = { ^"exile" ~ destroy_target ~ "." }
 destroy_target = {
     destroy_all
   | target_colored_permanent
@@ -409,7 +412,18 @@ if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw = {
   ~ ^"instead" ~ ^"you" ~ ^"may" ~ ^"skip" ~ ^"that" ~ ^"draw" ~ "."
 }
 target_player_gains_life = {
-    ^"target" ~ ^"player" ~ ^"gains" ~ (unsigned_number | variable_name) ~ ^"life" ~ "."
+    ^"target" ~ ^"player" ~ ^"gains" ~ life_gain_amount ~ "."
+}
+its_controller_gains_life = {
+    ^"its" ~ ^"controller" ~ ^"gains" ~ life_gain_amount ~ "."
+}
+life_gain_amount = {
+    life_gain_fixed_amount
+  | life_gain_equal_to_its_power
+}
+life_gain_fixed_amount = { (unsigned_number | variable_name) ~ ^"life" }
+life_gain_equal_to_its_power = {
+    ^"life" ~ ^"equal" ~ ^"to" ~ ^"its" ~ ^"power"
 }
 
 look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order = {
