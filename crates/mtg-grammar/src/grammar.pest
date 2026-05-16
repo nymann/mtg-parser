@@ -878,7 +878,8 @@ static_you_may_play_any_number_of_permanents_on_each_of_your_turns = {
 static_you_may_have_source_enter_as_copy = {
     ^"you" ~ ^"may" ~ ^"have" ~ source_object ~ ^"enter"
   ~ ^"as" ~ article ~ ^"copy" ~ ^"of" ~ ^"any" ~ permanent_type
-  ~ ^"on" ~ ^"the" ~ ^"battlefield" ~ copy_exception? ~ "."
+  ~ ^"on" ~ ^"the" ~ ^"battlefield"
+  ~ (copy_exception_with_quoted_triggered_ability | copy_exception? ~ ".")
 }
 
 static_source_enters_tapped = {
@@ -898,8 +899,22 @@ static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_ins
 }
 
 copy_exception = {
+    copy_exception_permanent_type_in_addition
+  | copy_exception_doesnt_copy_color_and_has_this_ability
+}
+copy_exception_permanent_type_in_addition = {
     "," ~ ^"except" ~ ^"it's" ~ article ~ permanent_type
   ~ ^"in" ~ ^"addition" ~ ^"to" ~ ^"its" ~ ^"other" ~ ^"types"
+}
+copy_exception_doesnt_copy_color_and_has_this_ability = {
+    "," ~ ^"except" ~ ^"it" ~ ^"doesn't" ~ ^"copy" ~ ^"that"
+  ~ permanent_type ~ "'s" ~ ^"color" ~ ^"and" ~ ^"it" ~ ^"has"
+  ~ ^"this" ~ ^"ability"
+}
+copy_exception_with_quoted_triggered_ability = {
+    "," ~ ^"except" ~ ^"it" ~ ^"doesn't" ~ ^"copy" ~ ^"that"
+  ~ permanent_type ~ "'s" ~ ^"color" ~ ^"and" ~ ^"it" ~ ^"has"
+  ~ quoted_triggered_ability
 }
 
 static_effect_doesnt_remove_this_aura = {
@@ -1443,7 +1458,10 @@ trigger_condition = { trigger_event_clause ~ "," ~ trigger_intervening_if_clause
 trigger_event_clause = { trigger_event }
 trigger_intervening_if_clause = { ^"if" ~ intervening_if ~ "," }
 trigger_effect_sequence = { trigger_effect ~ (^"and"? ~ trigger_effect)* }
-trigger_effect_fragment_sequence = { you_may_pay_mana ~ if_you_do_gain_life_fragment }
+trigger_effect_fragment_sequence = {
+    you_may_pay_mana ~ if_you_do_gain_life_fragment
+  | you_may_have_source_become_copy_of_target_fragment
+}
 
 // "Whenever" is listed first because "When" is its prefix.
 trigger_word = _{ ^"whenever" | ^"when" | ^"at" }
@@ -1601,6 +1619,7 @@ trigger_effect = _{
   | unless_you_pay_mana_do_actions
   | you_may_put_this_card_onto_the_battlefield
   | player_may_pay_mana
+  | you_may_have_source_become_copy_of_target
   | you_may_draw_cards
   | damage_prevention_effect_sentence
   | tap_enchanted_object
@@ -1808,6 +1827,14 @@ any_amount_of_mana = { ^"any" ~ ^"amount" ~ ^"of" ~ ^"mana" }
 you_may_pay_mana = _{ player_may_pay_mana }
 you_may_draw_cards = {
     ^"you" ~ ^"may" ~ activated_draw_cards
+}
+you_may_have_source_become_copy_of_target = {
+    you_may_have_source_become_copy_of_target_fragment ~ "."
+}
+you_may_have_source_become_copy_of_target_fragment = {
+    ^"you" ~ ^"may" ~ ^"have" ~ source_object ~ ^"become"
+  ~ article ~ ^"copy" ~ ^"of" ~ ^"target" ~ permanent_type
+  ~ copy_exception
 }
 tap_enchanted_object = { ^"tap" ~ ^"enchanted" ~ enchanted_object ~ "." }
 you_may_put_this_card_onto_the_battlefield = {

@@ -9,25 +9,25 @@ use crate::ast::{
     BalanceSameWayAction, BasicLandType, BasicLandTypeReference, BlockingCapacityAmount,
     BlockingCapacityDuration, BlockingCapacitySubject, CardCount, CastRestriction, Color,
     ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
-    CopyException, CounterAmount, CounterTargetSpellCondition, CreatureQuality, CreatureStatus,
-    CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind,
-    DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
-    DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
-    DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
-    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
-    InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
-    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, ReturnDestination,
-    Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
-    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction,
-    Step, TapAllPermanentsActor, TapUntapAction, TargetPermanentEndOfTurnEffect,
-    TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
-    TriggerCastActor, TriggerCastSpell, TriggerCondition, TriggerCounterRecipient,
-    TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource, TriggerEffect,
-    TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    CopyException, CopyGrantedAbility, CounterAmount, CounterTargetSpellCondition, CreatureQuality,
+    CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern,
+    DamageKind, DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount,
+    DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent, DamageRecipient,
+    DamageRecipients, DamageRedirectionDestination, DestroyReferencedCreatureCondition,
+    DestroyTarget, DiesWording, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
+    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount,
+    LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
+    NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
+    OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
+    PermanentType, PhysicalAction, PreventionRecipient, PtModifier, ReferencedCreature,
+    RegenerateRecipient, ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement,
+    StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor, TapUntapAction,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
+    TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
+    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
+    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
+    VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -2261,6 +2261,10 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
             defending_player_divides_creatures_without_keyword_into_labeled_piles_from_pair(pair)
         }
         Rule::source_gains_static_ability => source_gains_static_ability_from_pair(pair),
+        Rule::you_may_have_source_become_copy_of_target
+        | Rule::you_may_have_source_become_copy_of_target_fragment => {
+            you_may_have_source_become_copy_of_target_from_pair(pair)
+        }
         Rule::remove_pt_counter_from_it => remove_pt_counter_from_it_from_pair(pair),
         Rule::put_pt_counter_on_it => put_pt_counter_on_it_from_pair(pair),
         _ => Err(ParseError::Internal("trigger effect")),
@@ -3223,6 +3227,33 @@ fn source_gains_static_ability_from_pair(pair: Pair<Rule>) -> Result<TriggerEffe
     })
 }
 
+fn you_may_have_source_become_copy_of_target_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEffect, ParseError> {
+    let effect_pair = match pair.as_rule() {
+        Rule::you_may_have_source_become_copy_of_target => {
+            only_inner(pair, "copy change missing fragment")?
+        }
+        Rule::you_may_have_source_become_copy_of_target_fragment => pair,
+        _ => return Err(ParseError::Internal("copy change")),
+    };
+    let mut inner = effect_pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("copy change missing source"))?;
+    let permanent_type_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("copy change missing target type"))?;
+    let exception_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("copy change missing exception"))?;
+    Ok(TriggerEffect::YouMayHaveSourceBecomeCopyOfTarget {
+        source: source_object_from_pair(source_pair)?,
+        permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+        exception: copy_exception_from_pair(exception_pair)?,
+    })
+}
+
 fn remove_pt_counter_from_it_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
     let counter_pair = pair
         .into_inner()
@@ -4140,17 +4171,51 @@ fn creatures_attack_this_turn_if_able_from_pair(
 }
 
 fn copy_exception_from_pair(pair: Pair<Rule>) -> Result<CopyException, ParseError> {
-    if pair.as_rule() != Rule::copy_exception {
-        return Err(ParseError::Internal("copy_exception"));
-    }
+    let exception_pair = match pair.as_rule() {
+        Rule::copy_exception => only_inner(pair, "copy_exception missing alternative")?,
+        Rule::copy_exception_with_quoted_triggered_ability
+        | Rule::copy_exception_permanent_type_in_addition
+        | Rule::copy_exception_doesnt_copy_color_and_has_this_ability => pair,
+        _ => return Err(ParseError::Internal("copy_exception")),
+    };
 
-    let permanent_type_pair = pair
-        .into_inner()
-        .next()
-        .expect("copy exception names added permanent type");
-    Ok(CopyException::PermanentTypeInAdditionToItsOtherTypes {
-        permanent_type: permanent_type_from_pair(permanent_type_pair)?,
-    })
+    match exception_pair.as_rule() {
+        Rule::copy_exception_permanent_type_in_addition => {
+            let permanent_type_pair = exception_pair
+                .into_inner()
+                .next()
+                .expect("copy exception names added permanent type");
+            Ok(CopyException::PermanentTypeInAdditionToItsOtherTypes {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            })
+        }
+        Rule::copy_exception_doesnt_copy_color_and_has_this_ability => {
+            let permanent_type_pair = exception_pair
+                .into_inner()
+                .next()
+                .expect("copy exception names copied permanent type");
+            Ok(CopyException::DoesntCopyColorAndHasAbility {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                ability: CopyGrantedAbility::ThisAbility,
+            })
+        }
+        Rule::copy_exception_with_quoted_triggered_ability => {
+            let mut inner = exception_pair.into_inner();
+            let permanent_type_pair = inner
+                .next()
+                .expect("copy exception names copied permanent type");
+            let ability_pair = inner
+                .next()
+                .expect("copy exception has quoted triggered ability");
+            Ok(CopyException::DoesntCopyColorAndHasAbility {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                ability: CopyGrantedAbility::TriggeredAbility(Box::new(
+                    triggered_ability_from_pair(ability_pair)?,
+                )),
+            })
+        }
+        _ => Err(ParseError::Internal("copy_exception alternative")),
+    }
 }
 
 fn activated_ability_from_pair(pair: Pair<Rule>) -> Result<ActivatedAbility, ParseError> {

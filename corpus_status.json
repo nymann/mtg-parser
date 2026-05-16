@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 251,
+  "passing": 252,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -819,8 +819,7 @@
       "status": "pass"
     },
     "lea/Vesuvan Doppelganger": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:78\n  |\n1 | You may have this creature enter as a copy of any creature on the battlefield, except it doesn't copy that creature's color and it has \"At the beginning of your upkeep, you may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability.\"\n  |                                                                              ^---\n  |\n  = expected copy_exception"
+      "status": "pass"
     },
     "lea/Veteran Bodyguard": {
       "status": "fail",

@@ -7,8 +7,8 @@ use crate::ast::{
     BalanceSameWayAction, BasicLandType, BasicLandTypeReference, BlockingCapacityAmount,
     BlockingCapacityDuration, BlockingCapacitySubject, CardCount, CastRestriction, Color,
     ColoredTargetEffect, CombatRole, Condition, ConditionalEffectOrder, ContinuousEffect,
-    CopyException, CounterAmount, CounterTargetSpellCondition, CreatureQuality, CreatureStatus,
-    CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
+    CopyException, CopyGrantedAbility, CounterAmount, CounterTargetSpellCondition, CreatureQuality,
+    CreatureStatus, CreatureType, DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap,
     DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
@@ -1845,9 +1845,17 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str(permanent_type_name(*permanent_type));
             out.push_str(" on the battlefield");
             if let Some(exception) = exception {
-                write_copy_exception(out, *exception);
+                write_copy_exception(out, exception);
             }
-            out.push('.');
+            if !matches!(
+                exception,
+                Some(CopyException::DoesntCopyColorAndHasAbility {
+                    ability: CopyGrantedAbility::TriggeredAbility(_),
+                    ..
+                })
+            ) {
+                out.push('.');
+            }
         }
         StaticAbility::SourceEntersTapped { source } => {
             write_source_object_capitalized(out, *source);
@@ -2443,6 +2451,18 @@ fn write_trigger_effect(
             write_static_ability(out, ability);
             out.push('"');
         }
+        TriggerEffect::YouMayHaveSourceBecomeCopyOfTarget {
+            source,
+            permanent_type,
+            exception,
+        } => {
+            out.push_str("you may have ");
+            write_source_object(out, *source);
+            out.push_str(" become a copy of target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            write_copy_exception(out, exception);
+            out.push('.');
+        }
         TriggerEffect::LosesAndGainsKeyword { loses, gains } => {
             out.push_str("it loses \"");
             write_keyword_lowercase(out, *loses);
@@ -2880,14 +2900,30 @@ fn write_quoted_label(out: &mut String, label: &str) {
     out.push('"');
 }
 
-fn write_copy_exception(out: &mut String, exception: CopyException) {
+fn write_copy_exception(out: &mut String, exception: &CopyException) {
     match exception {
         CopyException::PermanentTypeInAdditionToItsOtherTypes { permanent_type } => {
             out.push_str(", except it's ");
-            out.push_str(indefinite_article(permanent_type));
+            out.push_str(indefinite_article(*permanent_type));
             out.push(' ');
-            out.push_str(permanent_type_name(permanent_type));
+            out.push_str(permanent_type_name(*permanent_type));
             out.push_str(" in addition to its other types");
+        }
+        CopyException::DoesntCopyColorAndHasAbility {
+            permanent_type,
+            ability,
+        } => {
+            out.push_str(", except it doesn't copy that ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str("'s color and it has ");
+            match ability {
+                CopyGrantedAbility::ThisAbility => out.push_str("this ability"),
+                CopyGrantedAbility::TriggeredAbility(ability) => {
+                    out.push('"');
+                    write_triggered_ability(out, ability);
+                    out.push('"');
+                }
+            }
         }
     }
 }

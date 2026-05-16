@@ -1048,6 +1048,13 @@ pub enum TriggerEffect {
         source: SourceObject,
         ability: StaticAbility,
     },
+    /// "you may have this <source> become a copy of target
+    /// <permanent_type>, except ..."
+    YouMayHaveSourceBecomeCopyOfTarget {
+        source: SourceObject,
+        permanent_type: PermanentType,
+        exception: CopyException,
+    },
     /// `it loses "<keyword>" and gains "<keyword>"` — the source object
     /// rewrites its own printed rules text. Reanimator Auras use this
     /// to switch their `Enchant` target from a graveyard card to the
@@ -2021,10 +2028,24 @@ pub enum StaticUntapRestriction {
     PlayersSkipTheirUntapSteps,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CopyException {
     /// "except it's a/an <permanent_type> in addition to its other types"
     PermanentTypeInAdditionToItsOtherTypes { permanent_type: PermanentType },
+    /// "except it doesn't copy that <permanent_type>'s color and it has
+    /// <ability>"
+    DoesntCopyColorAndHasAbility {
+        permanent_type: PermanentType,
+        ability: CopyGrantedAbility,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CopyGrantedAbility {
+    /// "this ability"
+    ThisAbility,
+    /// A quoted triggered ability granted to the copy.
+    TriggeredAbility(Box<TriggeredAbility>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

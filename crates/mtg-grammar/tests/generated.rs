@@ -354,3 +354,5 @@ mod two_headed_giant_of_foriys;
 mod unsummon;
 #[path = "generated/verduran_enchantress.rs"]
 mod verduran_enchantress;
+#[path = "generated/vesuvan_doppelganger.rs"]
+mod vesuvan_doppelganger;
