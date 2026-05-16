@@ -970,12 +970,16 @@ static_source_doesnt_untap_during_your_untap_step = {
 }
 
 static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps = {
+    static_untap_restriction_during_untap_steps ~ "."
+}
+
+static_untap_restriction_during_untap_steps = {
     (^"creatures" ~ ^"with" ~ ^"power" ~ unsigned_number ~ ^"or" ~ ^"greater"
     ~ ^"don't" ~ ^"untap" ~ ^"during" ~ ^"their" ~ ^"controllers'"
-    ~ ^"untap" ~ ^"steps" ~ ".")
+    ~ ^"untap" ~ ^"steps")
   | (^"players" ~ ^"can't" ~ ^"untap" ~ ^"more" ~ ^"than" ~ number_word
-    ~ permanent_type ~ ^"during" ~ ^"their" ~ ^"untap" ~ ^"steps" ~ ".")
-  | (^"players" ~ ^"skip" ~ ^"their" ~ ^"untap" ~ ^"steps" ~ ".")
+    ~ permanent_type ~ ^"during" ~ ^"their" ~ ^"untap" ~ ^"steps")
+  | (^"players" ~ ^"skip" ~ ^"their" ~ ^"untap" ~ ^"steps")
 }
 
 static_source_cant_block_creatures_with_power_or_greater = {
@@ -1372,7 +1376,7 @@ source_is_object_status = { source_object ~ ^"is" ~ object_status }
 source_isnt_attacking = { proper_name ~ ^"isn't" ~ ^"attacking" }
 source_is_attacking   = { proper_name ~ ^"is" ~ ^"attacking" }
 
-continuous_effect       = _{ source_gets | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead | source_pt_equal_to_basic_lands_controlled | becomes_pt_from_mv }
+continuous_effect       = _{ source_gets | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead | source_pt_equal_to_basic_lands_controlled | becomes_pt_from_mv | static_untap_restriction_during_untap_steps }
 source_gets = {
     source_object ~ ^"gets" ~ pt_modifier
 }

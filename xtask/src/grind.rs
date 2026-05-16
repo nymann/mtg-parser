@@ -848,6 +848,7 @@ fn run_add_card_phase(opts: &Options, sink: &mut dyn FlowSink) -> Result<ExitCod
         // Reuse grind's repair budget for add-card's own supervisor —
         // they serve the same role.
         supervisor_attempts: opts.repair_attempts,
+        focused_repair_attempts: 0,
         dry_run: opts.dry_run,
         // Trust grind's top-level precondition; don't re-check.
         allow_dirty: true,

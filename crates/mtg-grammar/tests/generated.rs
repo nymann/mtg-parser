@@ -366,3 +366,5 @@ mod web;
 mod wheel_of_fortune;
 #[path = "generated/wild_growth.rs"]
 mod wild_growth;
+#[path = "generated/winter_orb.rs"]
+mod winter_orb;

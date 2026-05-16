@@ -2156,6 +2156,10 @@ pub enum ContinuousEffect {
         land_type: BasicLandType,
         controller: LandCountController,
     },
+    /// "Players can't untap more than N <permanent_type> during their
+    /// untap steps" and neighbouring static untap restrictions, used as
+    /// a conditional continuous effect.
+    UntapRestrictionDuringUntapSteps { restriction: StaticUntapRestriction },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

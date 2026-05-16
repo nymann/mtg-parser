@@ -74,7 +74,8 @@ Commands:
               [--ui console|tui]          --set is not given, walks the tracked sets
               [--agent codex|claude]      newest-first and auto-advances to the next
               [--supervisor-attempts N]    paper expansion once the current one is fully
-              [--no-supervisor]            covered. Defaults: --max-iterations 0 (unbounded);
+              [--focused-repair-attempts N] covered. Defaults: --max-iterations 0 (unbounded);
+              [--no-supervisor]            --focused-repair-attempts 0 (unbounded);
                                           --agent codex; one supervisor repair attempt on
                                           unknown infrastructure errors; --dry-run builds
                                           the prompt and stops; --allow-dirty skips the

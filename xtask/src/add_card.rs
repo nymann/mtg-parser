@@ -40,6 +40,8 @@ use crate::paths::{
 /// 0 means unbounded; positive values cap the loop.
 const DEFAULT_MAX_ITERATIONS: u32 = 0;
 const DEFAULT_SUPERVISOR_ATTEMPTS: u8 = 1;
+/// 0 means unbounded; positive values cap focused repair retries.
+const DEFAULT_FOCUSED_REPAIR_ATTEMPTS: u32 = 0;
 const TOTAL_STEPS: u8 = 15;
 
 pub fn run(args: &[String]) -> ExitCode {
@@ -196,6 +198,7 @@ pub struct Options {
     pub set: Option<String>,
     pub max_iterations: u32,
     pub supervisor_attempts: u8,
+    pub focused_repair_attempts: u32,
     pub dry_run: bool,
     pub allow_dirty: bool,
     pub agent: AgentProvider,
@@ -206,6 +209,7 @@ impl Options {
         let mut set = None::<String>;
         let mut max_iterations = DEFAULT_MAX_ITERATIONS;
         let mut supervisor_attempts = DEFAULT_SUPERVISOR_ATTEMPTS;
+        let mut focused_repair_attempts = DEFAULT_FOCUSED_REPAIR_ATTEMPTS;
         let mut dry_run = false;
         let mut allow_dirty = false;
         let mut agent = AgentProvider::Codex;
@@ -242,6 +246,19 @@ impl Options {
                         .with_context(|| format!("--supervisor-attempts value: {s:?}"))?;
                 }
                 "--no-supervisor" => supervisor_attempts = 0,
+                "--focused-repair-attempts" => {
+                    let v = iter
+                        .next()
+                        .ok_or_else(|| anyhow!("--focused-repair-attempts requires a value"))?;
+                    focused_repair_attempts = v
+                        .parse()
+                        .with_context(|| format!("--focused-repair-attempts value: {v:?}"))?;
+                }
+                s if s.starts_with("--focused-repair-attempts=") => {
+                    focused_repair_attempts = s["--focused-repair-attempts=".len()..]
+                        .parse()
+                        .with_context(|| format!("--focused-repair-attempts value: {s:?}"))?;
+                }
                 "--dry-run" => dry_run = true,
                 "--allow-dirty" => allow_dirty = true,
                 "--agent" => {
@@ -267,6 +284,7 @@ impl Options {
             set,
             max_iterations,
             supervisor_attempts,
+            focused_repair_attempts,
             dry_run,
             allow_dirty,
             agent,
@@ -443,54 +461,134 @@ fn run_one_iteration(
         summary: Some(focused_before.short_summary()),
     });
 
-    // Step 7 — build the orchestrator-owned repair recipe. This is the
-    // deterministic half of the LM conversation: the orchestrator
-    // gathers the failing commands, generated tests, and relevant code
-    // map, then gives the LM a bounded patch task.
-    sink.emit(FlowEvent::StepStarted {
-        index: 7,
-        total: TOTAL_STEPS,
-        label: "build repair recipe".into(),
-    });
-    let transcript_path = log_dir.join("transcript.ndjson");
-    let mut agent_ran = false;
     let mut agent_generalization_path = None::<String>;
-    let pattern_prompt = if focused_before.success() {
-        None
-    } else {
-        let prompt = build_pattern_prompt(
+    let mut focused_current = focused_before;
+    let mut focused_attempt = 0u32;
+    let mut last_prompted_focused_signature = None::<String>;
+    let mut repeated_focused_failures = 0u32;
+
+    if focused_current.success() {
+        sink.emit(FlowEvent::StepStarted {
+            index: 7,
+            total: TOTAL_STEPS,
+            label: "build repair recipe".into(),
+        });
+        sink.emit(FlowEvent::StepFinished {
+            index: 7,
+            ok: true,
+            summary: Some("skipped; focused tests already pass".into()),
+        });
+        sink.emit(FlowEvent::StepStarted {
+            index: 8,
+            total: TOTAL_STEPS,
+            label: format!("{} agent repair", opts.agent.label()),
+        });
+        sink.emit(FlowEvent::StepFinished {
+            index: 8,
+            ok: true,
+            summary: Some("skipped; focused tests already pass".into()),
+        });
+        sink.emit(FlowEvent::StepStarted {
+            index: 9,
+            total: TOTAL_STEPS,
+            label: "focused validation".into(),
+        });
+        focused_current = run_focused_generated_tests(&card)?;
+        std::fs::write(
+            log_dir.join("focused_after_agent.txt"),
+            focused_current.summary_text(),
+        )?;
+        sink.emit(FlowEvent::StepFinished {
+            index: 9,
+            ok: focused_current.success(),
+            summary: Some(focused_current.short_summary()),
+        });
+    }
+
+    while !focused_current.success() {
+        if opts.focused_repair_attempts != 0 && focused_attempt >= opts.focused_repair_attempts {
+            let reason = format!(
+                "focused generated tests still fail after {focused_attempt} agent repair attempts"
+            );
+            sink.emit(FlowEvent::IterationFinished {
+                index: iter_index,
+                outcome: IterationOutcomeSummary::SurfacedToHuman {
+                    reason: reason.clone(),
+                },
+            });
+            return Ok(IterationOutcome::SurfaceToHuman(reason));
+        }
+
+        focused_attempt += 1;
+        let attempt_dir = log_dir.join(format!("focused-repair-attempt-{focused_attempt}"));
+        std::fs::create_dir_all(&attempt_dir)
+            .with_context(|| format!("create {}", attempt_dir.display()))?;
+        let focused_signature = focused_current.failure_signature();
+        repeated_focused_failures =
+            if last_prompted_focused_signature.as_deref() == Some(focused_signature.as_str()) {
+                repeated_focused_failures.saturating_add(1)
+            } else {
+                1
+            };
+        last_prompted_focused_signature = Some(focused_signature);
+
+        sink.emit(FlowEvent::StepStarted {
+            index: 7,
+            total: TOTAL_STEPS,
+            label: format!("build repair recipe #{focused_attempt}"),
+        });
+        let pattern_prompt = build_pattern_prompt(
             &card,
             &error,
             &normalized,
             &test_path,
             &pattern_test_path,
             &patterns,
-            &focused_before,
+            &focused_current,
+            repeated_focused_failures,
             &rules_block,
         )?;
-        std::fs::write(log_dir.join("agent_recipe.md"), &prompt)?;
-        Some(prompt)
-    };
-    sink.emit(FlowEvent::StepFinished {
-        index: 7,
-        ok: true,
-        summary: Some(if pattern_prompt.is_some() {
-            "recipe written for focused failure".into()
-        } else {
-            "skipped; focused tests already pass".into()
-        }),
-    });
+        std::fs::write(attempt_dir.join("agent_recipe.md"), &pattern_prompt)?;
+        std::fs::write(log_dir.join("agent_recipe.md"), &pattern_prompt)?;
+        sink.emit(FlowEvent::StepFinished {
+            index: 7,
+            ok: true,
+            summary: Some(format!(
+                "recipe written for focused failure #{focused_attempt}"
+            )),
+        });
 
-    // Step 8 — delegate to the configured agent only when the
-    // orchestrator-owned focused tests say there is real work left.
-    sink.emit(FlowEvent::StepStarted {
-        index: 8,
-        total: TOTAL_STEPS,
-        label: format!("{} agent repair", opts.agent.label()),
-    });
-    if let Some(pattern_prompt) = pattern_prompt {
-        agent_ran = true;
-        let agent_outcome = invoke_agent(opts.agent, &pattern_prompt, &transcript_path, sink)?;
+        sink.emit(FlowEvent::StepStarted {
+            index: 8,
+            total: TOTAL_STEPS,
+            label: format!("{} agent repair #{focused_attempt}", opts.agent.label()),
+        });
+        let transcript_path = attempt_dir.join("transcript.ndjson");
+        let agent_outcome = match invoke_agent(opts.agent, &pattern_prompt, &transcript_path, sink)
+        {
+            Ok(outcome) => outcome,
+            Err(error) => {
+                let reason = format!(
+                    "{} focused repair attempt #{focused_attempt} failed to invoke: {error:#}",
+                    opts.agent.label()
+                );
+                std::fs::write(attempt_dir.join("agent_error.txt"), &reason)?;
+                sink.emit(FlowEvent::StepFinished {
+                    index: 8,
+                    ok: false,
+                    summary: Some(reason.clone()),
+                });
+                sink.emit(FlowEvent::Note {
+                    level: NoteLevel::Warn,
+                    text: format!("{reason}; continuing with another repair pass"),
+                });
+                continue;
+            }
+        };
+        std::fs::write(
+            attempt_dir.join("response.md"),
+            &agent_outcome.assistant_text,
+        )?;
         std::fs::write(log_dir.join("response.md"), &agent_outcome.assistant_text)?;
         if let Some(report) = extract_generalization_report(&agent_outcome.assistant_text) {
             agent_generalization_path = generalization_path_from_report(&report);
@@ -514,53 +612,40 @@ fn run_one_iteration(
                 opts.agent.label(),
                 agent_outcome.exit_code
             );
-            sink.emit(FlowEvent::IterationFinished {
-                index: iter_index,
-                outcome: IterationOutcomeSummary::SurfacedToHuman {
-                    reason: reason.clone(),
-                },
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Warn,
+                text: format!("{reason}; continuing with another repair pass"),
             });
-            return Ok(IterationOutcome::SurfaceToHuman(reason));
+            continue;
         }
-    } else {
-        sink.emit(FlowEvent::StepFinished {
-            index: 8,
-            ok: true,
-            summary: Some("skipped; focused tests already pass".into()),
-        });
-    }
 
-    // Step 9 — deterministic validation of the agent's patch, or a
-    // second confirmation when the agent was skipped.
-    sink.emit(FlowEvent::StepStarted {
-        index: 9,
-        total: TOTAL_STEPS,
-        label: "focused validation".into(),
-    });
-    let focused_after = run_focused_generated_tests(&card)?;
-    std::fs::write(
-        log_dir.join("focused_after_agent.txt"),
-        focused_after.summary_text(),
-    )?;
-    sink.emit(FlowEvent::StepFinished {
-        index: 9,
-        ok: focused_after.success(),
-        summary: Some(focused_after.short_summary()),
-    });
-    if !focused_after.success() {
-        let reason = if agent_ran {
-            "focused generated tests still fail after agent repair"
-        } else {
-            "focused generated tests failed without invoking the agent"
-        }
-        .to_string();
-        sink.emit(FlowEvent::IterationFinished {
-            index: iter_index,
-            outcome: IterationOutcomeSummary::SurfacedToHuman {
-                reason: reason.clone(),
-            },
+        sink.emit(FlowEvent::StepStarted {
+            index: 9,
+            total: TOTAL_STEPS,
+            label: format!("focused validation #{focused_attempt}"),
         });
-        return Ok(IterationOutcome::SurfaceToHuman(reason));
+        focused_current = run_focused_generated_tests(&card)?;
+        std::fs::write(
+            attempt_dir.join("focused_after_agent.txt"),
+            focused_current.summary_text(),
+        )?;
+        std::fs::write(
+            log_dir.join("focused_after_agent.txt"),
+            focused_current.summary_text(),
+        )?;
+        sink.emit(FlowEvent::StepFinished {
+            index: 9,
+            ok: focused_current.success(),
+            summary: Some(focused_current.short_summary()),
+        });
+        if !focused_current.success() {
+            sink.emit(FlowEvent::Note {
+                level: NoteLevel::Warn,
+                text: format!(
+                    "focused generated tests still fail after repair #{focused_attempt}; continuing with another repair pass"
+                ),
+            });
+        }
     }
 
     // Step 10 — grammar drift audit. This writes artifacts for calibration,
@@ -1199,6 +1284,14 @@ impl FocusedTestRun {
             self.round_trip.output
         )
     }
+
+    fn failure_signature(&self) -> String {
+        format!(
+            "{}\n{}",
+            focused_command_signature(&self.pattern),
+            focused_command_signature(&self.round_trip)
+        )
+    }
 }
 
 struct CommandRun {
@@ -1206,6 +1299,43 @@ struct CommandRun {
     success: bool,
     exit_code: i32,
     output: String,
+}
+
+fn focused_command_signature(run: &CommandRun) -> String {
+    if run.success {
+        return format!("{}:pass", run.command);
+    }
+    let mut lines = run.output.lines().map(str::trim).filter(|line| {
+        !line.is_empty()
+            && !line.starts_with("Compiling ")
+            && !line.starts_with("Finished ")
+            && !line.starts_with("Running ")
+            && !line.starts_with("Blocking waiting for file lock")
+    });
+    let key_lines = lines
+        .by_ref()
+        .filter(|line| {
+            line.contains("panicked at")
+                || line.contains("parse:")
+                || line.contains("Pest(")
+                || line.contains("assertion `left == right` failed")
+                || line.starts_with("left:")
+                || line.starts_with("right:")
+                || line.contains("error[")
+                || line.contains("could not compile")
+        })
+        .take(12)
+        .collect::<Vec<_>>();
+    if key_lines.is_empty() {
+        format!("{}:exit={}", run.command, run.exit_code)
+    } else {
+        format!(
+            "{}:exit={}\n{}",
+            run.command,
+            run.exit_code,
+            key_lines.join("\n")
+        )
+    }
 }
 
 fn status_word(success: bool) -> &'static str {
@@ -1595,6 +1725,7 @@ fn build_pattern_prompt(
     pattern_test_path: &Path,
     patterns: &[PatternCase],
     focused: &FocusedTestRun,
+    repeated_focused_failures: u32,
     rules_block: &str,
 ) -> Result<String> {
     let mut prompt = build_prompt(card, error, normalized, full_test_path, rules_block)?;
@@ -1630,8 +1761,12 @@ fn build_pattern_prompt(
          parser, unparser, or semantic-flow issue exposed here:\n\n```text\n",
     );
     prompt.push_str(&focused.summary_text());
+    prompt.push_str("```\n\n");
+    prompt.push_str(&render_focused_failure_diagnosis(
+        focused,
+        repeated_focused_failures,
+    ));
     if focused_failure_requires_semantic(focused) {
-        prompt.push_str("```\n\n");
         prompt.push_str(&render_semantic_context());
         prompt.push_str(
             "\n## Recipe\n\n\
@@ -1645,8 +1780,7 @@ fn build_pattern_prompt(
         return Ok(prompt);
     }
     prompt.push_str(
-        "```\n\n\
-         ## Recipe\n\n\
+        "## Recipe\n\n\
          1. Start from the code map above instead of re-reading the whole repository.\n\
          2. Inspect additional code only if the map is insufficient.\n\
          3. Generalize an existing grammar/AST/parser/unparser rule to cover this card's phenomenon if a near-neighbour rule exists. Add a new rule only when no existing rule can be widened along a single axis. Touch semantic files only if the focused failure points there.\n\
@@ -1663,6 +1797,99 @@ fn focused_failure_requires_semantic(focused: &FocusedTestRun) -> bool {
         || summary.contains("semantic")
         || summary.contains("lower.rs")
         || summary.contains("lowering")
+}
+
+fn render_focused_failure_diagnosis(
+    focused: &FocusedTestRun,
+    repeated_focused_failures: u32,
+) -> String {
+    let mut out = String::new();
+    out.push_str("## Orchestrator Diagnosis\n\n");
+    if repeated_focused_failures > 1 {
+        out.push_str(&format!(
+            "This focused failure has repeated {repeated_focused_failures} times with the same normalized failure signature. The previous repair did not change the failing surface; inspect the exact parse/unparse context instead of making another nearby grammar-only edit.\n\n"
+        ));
+    }
+
+    let summary = focused.summary_text();
+    if let Some((left, right)) = extract_assertion_left_right(&summary) {
+        out.push_str("Failure class: `unparse_text_mismatch`.\n\n");
+        out.push_str("The parser accepted the card, but `unparse(parse(text))` did not reproduce the normalized oracle text exactly. Treat this as a context-sensitive unparse or missing AST distinction problem; do not paper over it by special-casing only this card.\n\n");
+        out.push_str("Expected normalized oracle text:\n```text\n");
+        out.push_str(&right);
+        out.push_str("\n```\n\nActual unparse output:\n```text\n");
+        out.push_str(&left);
+        out.push_str("\n```\n\n");
+        if let Some(diff) = first_text_difference(&left, &right) {
+            out.push_str("First differing text region:\n```text\n");
+            out.push_str(&diff);
+            out.push_str("\n```\n\n");
+        }
+    } else if summary.contains("parse: Pest(") || summary.contains("parse pattern: Pest(") {
+        out.push_str("Failure class: `parse_failure`.\n\n");
+        out.push_str("The focused generated text still does not parse. Prioritize grammar coverage and parser wiring for the reported pest position before changing unparse behavior.\n\n");
+    } else if summary.contains("assertion `left == right` failed") {
+        out.push_str("Failure class: `round_trip_ast_mismatch`.\n\n");
+        out.push_str("The text parsed and unparsed, but reparsing did not preserve the AST. Treat this as likely grammar ambiguity or a missing AST distinction.\n\n");
+    } else if focused_failure_requires_semantic(focused) {
+        out.push_str("Failure class: `semantic_followup`.\n\n");
+        out.push_str("The focused failure mentions semantic lowering or mtg-semantic; semantic files are in scope for this repair.\n\n");
+    } else {
+        out.push_str("Failure class: `unknown_focused_failure`.\n\n");
+        out.push_str("Use the focused failure output above as the source of truth. Keep the repair scoped to making that generated card pass.\n\n");
+    }
+    out
+}
+
+fn extract_assertion_left_right(text: &str) -> Option<(String, String)> {
+    let left = extract_quoted_assertion_value(text, "left:")?;
+    let right = extract_quoted_assertion_value(text, "right:")?;
+    Some((left, right))
+}
+
+fn extract_quoted_assertion_value(text: &str, label: &str) -> Option<String> {
+    text.lines().find_map(|line| {
+        let trimmed = line.trim_start();
+        let rest = trimmed.strip_prefix(label)?.trim_start();
+        parse_rust_debug_string(rest).or_else(|| Some(rest.trim_matches('"').to_string()))
+    })
+}
+
+fn parse_rust_debug_string(value: &str) -> Option<String> {
+    serde_json::from_str::<String>(value).ok()
+}
+
+fn first_text_difference(left: &str, right: &str) -> Option<String> {
+    if left == right {
+        return None;
+    }
+
+    let left_chars: Vec<char> = left.chars().collect();
+    let right_chars: Vec<char> = right.chars().collect();
+    let prefix = left_chars
+        .iter()
+        .zip(right_chars.iter())
+        .take_while(|(a, b)| a == b)
+        .count();
+    let suffix = left_chars[prefix..]
+        .iter()
+        .rev()
+        .zip(right_chars[prefix..].iter().rev())
+        .take_while(|(a, b)| a == b)
+        .count();
+    let start = prefix.saturating_sub(24);
+    let left_end = (left_chars.len() - suffix)
+        .saturating_add(24)
+        .min(left_chars.len());
+    let right_end = (right_chars.len() - suffix)
+        .saturating_add(24)
+        .min(right_chars.len());
+    let left_snippet: String = left_chars[start..left_end].iter().collect();
+    let right_snippet: String = right_chars[start..right_end].iter().collect();
+
+    Some(format!(
+        "index {prefix}\nexpected: {right_snippet}\nactual:   {left_snippet}"
+    ))
 }
 
 fn render_context_block(
@@ -3070,6 +3297,7 @@ mod tests {
         assert!(!o.dry_run);
         assert!(!o.allow_dirty);
         assert_eq!(o.supervisor_attempts, DEFAULT_SUPERVISOR_ATTEMPTS);
+        assert_eq!(o.focused_repair_attempts, DEFAULT_FOCUSED_REPAIR_ATTEMPTS);
         assert_eq!(o.agent, AgentProvider::Codex);
     }
 
@@ -3109,6 +3337,61 @@ mod tests {
         let args = vec!["--no-supervisor".to_string()];
         let o = Options::parse(&args).unwrap();
         assert_eq!(o.supervisor_attempts, 0);
+    }
+
+    #[test]
+    fn options_parse_focused_repair_attempts() {
+        let args = vec!["--focused-repair-attempts=4".to_string()];
+        let o = Options::parse(&args).unwrap();
+        assert_eq!(o.focused_repair_attempts, 4);
+    }
+
+    #[test]
+    fn focused_failure_diagnosis_extracts_unparse_mismatch() {
+        let focused = FocusedTestRun {
+            pattern: CommandRun {
+                command: "cargo test patterns".into(),
+                success: true,
+                exit_code: 0,
+                output: "ok".into(),
+            },
+            round_trip: CommandRun {
+                command: "cargo test generated".into(),
+                success: false,
+                exit_code: 101,
+                output: "thread 'winter_orb::round_trip' panicked\nassertion `left == right` failed: unparse must preserve the normalized oracle text\n  left: \"As long as this artifact is untapped, Players can't untap more than one land during their untap steps.\"\n right: \"As long as this artifact is untapped, players can't untap more than one land during their untap steps.\"\n".into(),
+            },
+        };
+
+        let diagnosis = render_focused_failure_diagnosis(&focused, 2);
+        assert!(diagnosis.contains("unparse_text_mismatch"));
+        assert!(diagnosis.contains("repeated 2 times"));
+        assert!(diagnosis.contains("Expected normalized oracle text"));
+        assert!(diagnosis.contains("Actual unparse output"));
+        assert!(diagnosis.contains("index "));
+        assert!(diagnosis.contains("players can't untap"));
+        assert!(diagnosis.contains("Players can't untap"));
+    }
+
+    #[test]
+    fn focused_failure_signature_ignores_build_noise() {
+        let first = CommandRun {
+            command: "cargo test generated".into(),
+            success: false,
+            exit_code: 101,
+            output: "   Compiling mtg-grammar\nassertion `left == right` failed\n  left: \"A\"\n right: \"B\"\n".into(),
+        };
+        let second = CommandRun {
+            command: "cargo test generated".into(),
+            success: false,
+            exit_code: 101,
+            output: "    Finished `test` profile\nassertion `left == right` failed\n  left: \"A\"\n right: \"B\"\n".into(),
+        };
+
+        assert_eq!(
+            focused_command_signature(&first),
+            focused_command_signature(&second)
+        );
     }
 
     #[test]

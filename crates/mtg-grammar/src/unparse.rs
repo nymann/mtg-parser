@@ -1923,28 +1923,10 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_enchanted_object(out, *object);
             out.push_str(" doesn't untap during its controller's untap step.");
         }
-        StaticAbility::UntapRestrictionDuringUntapSteps { restriction } => match restriction {
-            StaticUntapRestriction::CreaturesWithPowerOrGreater { power } => {
-                write!(
-                        out,
-                        "Creatures with power {power} or greater don't untap during their controllers' untap steps."
-                    )
-                    .expect("writing to String cannot fail");
-            }
-            StaticUntapRestriction::PlayersCantUntapMoreThanPermanents {
-                amount,
-                permanent_type,
-            } => {
-                out.push_str("Players can't untap more than ");
-                out.push_str(u32_to_number_word(*amount));
-                out.push(' ');
-                out.push_str(permanent_type_name(*permanent_type));
-                out.push_str(" during their untap steps.");
-            }
-            StaticUntapRestriction::PlayersSkipTheirUntapSteps => {
-                out.push_str("Players skip their untap steps.");
-            }
-        },
+        StaticAbility::UntapRestrictionDuringUntapSteps { restriction } => {
+            write_static_untap_restriction(out, restriction, true);
+            out.push('.');
+        }
         StaticAbility::SourceCantBlockCreaturesWithPowerOrGreater { source, power } => {
             write_source_object_capitalized(out, *source);
             write!(out, " can't block creatures with power {power} or greater.")
@@ -3224,6 +3206,41 @@ fn write_continuous_effect(out: &mut String, eff: &ContinuousEffect) {
                 LandCountController::You => out.push_str("you control"),
                 LandCountController::DefendingPlayer => out.push_str("defending player controls"),
             }
+        }
+        ContinuousEffect::UntapRestrictionDuringUntapSteps { restriction } => {
+            write_static_untap_restriction(out, restriction, false);
+        }
+    }
+}
+
+fn write_static_untap_restriction(
+    out: &mut String,
+    restriction: &StaticUntapRestriction,
+    capitalize: bool,
+) {
+    match restriction {
+        StaticUntapRestriction::CreaturesWithPowerOrGreater { power } => {
+            out.push_str(if capitalize { "Creatures" } else { "creatures" });
+            write!(
+                out,
+                " with power {power} or greater don't untap during their controllers' untap steps"
+            )
+            .expect("writing to String cannot fail");
+        }
+        StaticUntapRestriction::PlayersCantUntapMoreThanPermanents {
+            amount,
+            permanent_type,
+        } => {
+            out.push_str(if capitalize { "Players" } else { "players" });
+            out.push_str(" can't untap more than ");
+            out.push_str(u32_to_number_word(*amount));
+            out.push(' ');
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" during their untap steps");
+        }
+        StaticUntapRestriction::PlayersSkipTheirUntapSteps => {
+            out.push_str(if capitalize { "Players" } else { "players" });
+            out.push_str(" skip their untap steps");
         }
     }
 }
