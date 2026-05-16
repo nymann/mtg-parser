@@ -1,0 +1,67 @@
+[[axis]]
+name = "reference"
+values = ["its_power"]
+
+[[axis]]
+name = "recipient"
+values = [
+    "target_player",
+    "its_controller",
+]
+
+[boundary]
+excludes = [
+    "Damage-referenced life gain, owned by life_gain_equal_to_damage.",
+    "Ordinary fixed life gain, not power-referenced life gain.",
+    "Power/toughness characteristic-setting effects, not life gain.",
+]
+includes = [
+    "Life-gain instructions whose amount is equal to its power.",
+    "Target-player and its-controller recipient surfaces for power-referenced life gain.",
+]
+
+[concept]
+name = "life_gain_equal_to_power"
+pest_rules = ["life_gain_equal_to_its_power"]
+rules_queries = [
+    "lex: gains life equal to its power",
+    "lex: its controller gains life equal to its power",
+]
+rules_terms = [
+    "life gain",
+    "power",
+]
+
+[[counterexample]]
+reason = "Damage-referenced life gain, owned by life_gain_equal_to_damage."
+text = "You gain life equal to the damage dealt."
+
+[[counterexample]]
+reason = "Damage-prevention-referenced life gain, owned by life_gain_equal_to_damage."
+text = "You gain life equal to the damage prevented this way."
+
+[[counterexample]]
+reason = "Ordinary fixed life gain, not power-referenced life gain."
+text = "Target player gains 3 life."
+
+[[counterexample]]
+reason = "Characteristic-setting power/toughness effect, not life gain."
+text = "Its power and toughness are each equal to the number of basic lands you control."
+
+[[example]]
+text = "Target player gains life equal to its power."
+
+[[example]]
+text = "Its controller gains life equal to its power."
+
+[grammar_query]
+candidate_rules = [
+    "life_gain_equal_to_its_power",
+    "target_player_gains_life",
+    "its_controller_gains_life",
+]
+selected_rule = "life_gain_equal_to_its_power"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

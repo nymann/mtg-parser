@@ -1,0 +1,37 @@
+[fixture]
+concept = "life_gain_equal_to_power"
+rule = "life_gain_equal_to_its_power"
+
+[[example]]
+text = "life equal to its power"
+reason = "Amount fragment for the power-referenced life-gain amount."
+
+[[example]]
+rule = "target_player_gains_life"
+text = "Target player gains life equal to its power."
+reason = "Target-player recipient surface with power-referenced life-gain amount."
+
+[[example]]
+rule = "its_controller_gains_life"
+text = "Its controller gains life equal to its power."
+reason = "Its-controller recipient surface with power-referenced life-gain amount."
+
+[[counterexample]]
+text = "life equal to the damage dealt"
+reason = "Damage-dealt reference belongs to life_gain_equal_to_damage, not the power reference amount."
+
+[[counterexample]]
+text = "life equal to the damage prevented this way"
+reason = "Damage-prevented-this-way reference belongs to life_gain_equal_to_damage, not the power reference amount."
+
+[[counterexample]]
+text = "3 life"
+reason = "Ordinary fixed life amount, not power-referenced life gain."
+
+[[counterexample]]
+text = "Its power and toughness are each equal to the number of basic lands you control."
+reason = "Characteristic-setting power/toughness effect, not a life-gain amount."
+
+[[counterexample]]
+text = "life equal to its power trailing"
+reason = "Exact-consumption guard."
