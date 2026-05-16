@@ -338,3 +338,5 @@ mod sunglasses_of_urza;
 mod swords_to_plowshares;
 #[path = "generated/terror.rs"]
 mod terror;
+#[path = "generated/the_hive.rs"]
+mod the_hive;

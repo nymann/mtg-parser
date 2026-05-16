@@ -327,3 +327,5 @@ mod sunglasses_of_urza;
 mod swords_to_plowshares;
 #[path = "generated_patterns/terror.rs"]
 mod terror;
+#[path = "generated_patterns/the_hive.rs"]
+mod the_hive;

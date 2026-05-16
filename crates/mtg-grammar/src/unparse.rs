@@ -19,10 +19,10 @@ use crate::ast::{
     PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
     SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType,
     Statement, StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm,
-    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
+    TokenDescription, TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition,
+    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
+    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -1371,6 +1371,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_card_count_object(out, *count);
             out.push('.');
         }
+        ActivatedEffect::CreateToken { token } => write_create_token(out, token),
         ActivatedEffect::TargetPlayerDiscardsCards { count } => {
             out.push_str("Target player discards ");
             write_discard_count(out, *count);
@@ -1500,6 +1501,40 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str(" leaves the battlefield.");
         }
         ActivatedEffect::PhysicalAction(action) => write_physical_action(out, *action),
+    }
+}
+
+fn write_create_token(out: &mut String, token: &TokenDescription) {
+    write!(out, "Create a {}/{}", token.power, token.toughness)
+        .expect("writing to String cannot fail");
+    if let Some(color) = token.color {
+        out.push(' ');
+        out.push_str(token_color_name(color));
+    }
+    if let Some(creature_type) = token.creature_type {
+        out.push(' ');
+        write_creature_type(out, creature_type);
+    }
+    for permanent_type in &token.permanent_types {
+        out.push(' ');
+        out.push_str(permanent_type_name(*permanent_type));
+    }
+    out.push_str(" token");
+    if let Some(keyword) = token.keyword {
+        out.push_str(" with ");
+        write_keyword_lowercase(out, keyword);
+    }
+    if let Some(name) = &token.name {
+        out.push_str(" named ");
+        out.push_str(name);
+    }
+    out.push('.');
+}
+
+fn token_color_name(color: TokenColor) -> &'static str {
+    match color {
+        TokenColor::Color(color) => color_name(color),
+        TokenColor::Colorless => "colorless",
     }
 }
 
@@ -3310,6 +3345,7 @@ fn creature_type_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Goblin => "Goblin",
         CreatureType::Golem => "Golem",
+        CreatureType::Insect => "Insect",
         CreatureType::Merfolk => "Merfolk",
         CreatureType::Wall => "Wall",
     }
@@ -3319,6 +3355,7 @@ fn creature_type_plural_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Goblin => "Goblins",
         CreatureType::Golem => "Golems",
+        CreatureType::Insect => "Insects",
         CreatureType::Merfolk => "Merfolk",
         CreatureType::Wall => "Walls",
     }

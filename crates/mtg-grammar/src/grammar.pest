@@ -672,8 +672,8 @@ color_word = @{
 
 // Creature subtypes that appear as Aura targets, enchanted objects, or
 // creature-type selectors.
-creature_type = @{ ^"goblin" | ^"golem" | ^"merfolk" | ^"wall" }
-creature_type_plural = @{ ^"goblins" | ^"golems" | ^"merfolk" | ^"walls" }
+creature_type = @{ ^"goblin" | ^"golem" | ^"insect" | ^"merfolk" | ^"wall" }
+creature_type_plural = @{ ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"walls" }
 
 // Static abilities. Five surface shapes today:
 //   - "As long as <cond>, <effect>." — conditional continuous effect.
@@ -1059,6 +1059,7 @@ activated_effect = _{
   | untap_source
   | untap_enchanted_object
   | activated_draw_cards
+  | create_token
   | look_at_target_players_hand
   | target_player_discards_cards
   | target_creature_with_power_or_less_cant_be_blocked
@@ -1101,6 +1102,15 @@ activated_draw_cards = {
 }
 activated_draw_one_card = { article ~ ^"card" }
 activated_draw_counted_cards = { draw_count ~ ^"cards" }
+create_token = {
+    ^"create" ~ article ~ unsigned_number ~ "/" ~ unsigned_number
+  ~ token_color? ~ creature_type? ~ permanent_type+ ~ ^"token"
+  ~ token_keyword_clause? ~ token_name_clause? ~ "."
+}
+token_color = { color_word | colorless_word }
+colorless_word = @{ ^"colorless" }
+token_keyword_clause = { ^"with" ~ keyword }
+token_name_clause = { ^"named" ~ proper_name }
 target_permanent_becomes_basic_land_type_until_source_leaves = {
     ^"target" ~ permanent_type ~ ^"becomes" ~ article ~ basic_land_type
   ~ ^"until" ~ source_object ~ ^"leaves" ~ ^"the" ~ ^"battlefield" ~ "."

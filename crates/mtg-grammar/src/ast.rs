@@ -1246,6 +1246,11 @@ pub enum ActivatedEffect {
     DrawCards {
         count: CardCount,
     },
+    /// "Create a N/N [color] [creature_type] <types> token [with <keyword>] [named <name>]."
+    /// CR 701.6 create keyword action.
+    CreateToken {
+        token: TokenDescription,
+    },
     /// "Target player discards N cards."
     TargetPlayerDiscardsCards {
         count: CardCount,
@@ -1316,6 +1321,23 @@ pub enum ActivatedEffect {
         source: SourceObject,
     },
     PhysicalAction(PhysicalAction),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TokenDescription {
+    pub power: u32,
+    pub toughness: u32,
+    pub color: Option<TokenColor>,
+    pub creature_type: Option<CreatureType>,
+    pub permanent_types: Vec<PermanentType>,
+    pub keyword: Option<Keyword>,
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TokenColor {
+    Color(Color),
+    Colorless,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1646,6 +1668,7 @@ pub enum SpellType {
 pub enum CreatureType {
     Goblin,
     Golem,
+    Insect,
     Merfolk,
     Wall,
 }

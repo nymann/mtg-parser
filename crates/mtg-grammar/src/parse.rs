@@ -21,10 +21,10 @@ use crate::ast::{
     PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
     SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType,
     Statement, StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor,
-    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm,
-    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
-    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
-    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
+    TokenDescription, TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition,
+    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
+    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -4137,6 +4137,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             };
             Ok(ActivatedEffect::DrawCards { count })
         }
+        Rule::create_token => create_token_from_pair(pair),
         Rule::target_player_discards_cards => {
             let count_pair = pair
                 .into_inner()
@@ -4324,6 +4325,85 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             physical_action_from_pair(pair)?,
         )),
         _ => Err(ParseError::Internal("activated_effect")),
+    }
+}
+
+fn create_token_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, ParseError> {
+    if pair.as_rule() != Rule::create_token {
+        return Err(ParseError::Internal("create_token"));
+    }
+
+    let mut power = None;
+    let mut toughness = None;
+    let mut color = None;
+    let mut creature_type = None;
+    let mut permanent_types = Vec::new();
+    let mut keyword = None;
+    let mut name = None;
+
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::unsigned_number => {
+                let value = child
+                    .as_str()
+                    .parse::<u32>()
+                    .map_err(|_| ParseError::Internal("token p/t"))?;
+                if power.is_none() {
+                    power = Some(value);
+                } else if toughness.is_none() {
+                    toughness = Some(value);
+                } else {
+                    return Err(ParseError::Internal("token extra p/t"));
+                }
+            }
+            Rule::token_color => {
+                color = Some(token_color_from_pair(child)?);
+            }
+            Rule::creature_type => {
+                creature_type = Some(creature_type_from_pair(child)?);
+            }
+            Rule::permanent_type => {
+                permanent_types.push(permanent_type_from_pair(child)?);
+            }
+            Rule::token_keyword_clause => {
+                let keyword_pair = only_inner(child, "token keyword missing keyword")?;
+                keyword = Some(keyword_from_inner_pair(keyword_pair)?);
+            }
+            Rule::token_name_clause => {
+                let name_pair = only_inner(child, "token name missing proper_name")?;
+                name = Some(name_pair.as_str().to_string());
+            }
+            _ => return Err(ParseError::Internal("create_token component")),
+        }
+    }
+
+    if permanent_types.is_empty() {
+        return Err(ParseError::Internal("create_token missing permanent types"));
+    }
+
+    Ok(ActivatedEffect::CreateToken {
+        token: TokenDescription {
+            power: power.ok_or(ParseError::Internal("create_token missing power"))?,
+            toughness: toughness.ok_or(ParseError::Internal("create_token missing toughness"))?,
+            color,
+            creature_type,
+            permanent_types,
+            keyword,
+            name,
+        },
+    })
+}
+
+fn token_color_from_pair(pair: Pair<Rule>) -> Result<TokenColor, ParseError> {
+    if pair.as_rule() != Rule::token_color {
+        return Err(ParseError::Internal("token_color"));
+    }
+
+    let child = only_inner(pair, "token_color missing child")?;
+    match child.as_rule() {
+        Rule::color_word => Ok(TokenColor::Color(color_from_pair(child)?)),
+        Rule::colorless_word => Ok(TokenColor::Colorless),
+        _ => Err(ParseError::Internal("token_color variant")),
     }
 }
 
@@ -4866,6 +4946,7 @@ fn creature_type_from_pair(pair: Pair<Rule>) -> Result<CreatureType, ParseError>
     match pair.as_str().to_ascii_lowercase().as_str() {
         "goblin" => Ok(CreatureType::Goblin),
         "golem" => Ok(CreatureType::Golem),
+        "insect" => Ok(CreatureType::Insect),
         "merfolk" => Ok(CreatureType::Merfolk),
         "wall" => Ok(CreatureType::Wall),
         _ => Err(ParseError::Internal("creature_type variant")),
@@ -4879,6 +4960,7 @@ fn creature_type_from_plural_pair(pair: Pair<Rule>) -> Result<CreatureType, Pars
     match pair.as_str().to_ascii_lowercase().as_str() {
         "goblins" => Ok(CreatureType::Goblin),
         "golems" => Ok(CreatureType::Golem),
+        "insects" => Ok(CreatureType::Insect),
         "merfolk" => Ok(CreatureType::Merfolk),
         "walls" => Ok(CreatureType::Wall),
         _ => Err(ParseError::Internal("creature_type_plural variant")),
