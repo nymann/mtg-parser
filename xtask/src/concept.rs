@@ -1965,11 +1965,38 @@ fn required_decision_field(response: &str, field: &str) -> Result<String> {
 
 fn optional_decision_field(response: &str, field: &str) -> Option<String> {
     let prefix = format!("{field}:");
-    response
-        .lines()
-        .find_map(|line| line.trim_start().strip_prefix(&prefix))
-        .map(str::trim)
-        .map(str::to_string)
+    let mut lines = response.lines().peekable();
+    while let Some(line) = lines.next() {
+        let Some(rest) = line.trim_start().strip_prefix(&prefix) else {
+            continue;
+        };
+        let mut value = rest.trim().to_string();
+        while let Some(next) = lines.peek() {
+            if decision_field_name(next).is_some() {
+                break;
+            }
+            let next = lines.next().expect("peeked");
+            if !value.is_empty() {
+                value.push('\n');
+            }
+            value.push_str(next.trim());
+        }
+        return Some(value.trim().to_string());
+    }
+    None
+}
+
+fn decision_field_name(line: &str) -> Option<&str> {
+    let (field, _) = line.trim_start().split_once(':')?;
+    match field.trim() {
+        "OWNER"
+        | "AXES"
+        | "EXAMPLES_TO_ACCEPT"
+        | "COUNTEREXAMPLES_TO_REJECT"
+        | "PEST_PATCH_INTENT"
+        | "WHY_NOT_CARD_PASS" => Some(field.trim()),
+        _ => None,
+    }
 }
 
 fn validate_concept_name(name: &str) -> Result<()> {
@@ -3405,6 +3432,35 @@ mod tests {
             BoundaryOwner::Existing(concept) if concept == "counter_target_spell"
         ));
         assert!(decision.pest_patch_intent.contains("widen"));
+    }
+
+    #[test]
+    fn parses_multiline_boundary_decision_fields() {
+        let decision = parse_boundary_decision(
+            "CONCEPT_BOUNDARY_DECISION:\n\
+             OWNER: existing:destroy\n\
+             AXES:\n\
+             action = preserve [\"destroy\"]\n\
+             target_selector = add [\"all_non_wall_creatures\"]\n\
+             EXAMPLES_TO_ACCEPT:\n\
+             - \"Destroy all non-Wall creatures.\"\n\
+             COUNTEREXAMPLES_TO_REJECT:\n\
+             - \"Counter target spell.\"\n\
+             PEST_PATCH_INTENT:\n\
+             Widen the existing `destroy` concept mapping.\n\
+             Prefer folding this into a generalized destroy target shape.\n\
+             WHY_NOT_CARD_PASS:\n\
+             grammar fixture maturity only\n",
+        )
+        .expect("decision parses");
+        assert!(matches!(
+            &decision.owner,
+            BoundaryOwner::Existing(concept) if concept == "destroy"
+        ));
+        assert!(decision.axes.contains("target_selector"));
+        assert!(decision
+            .pest_patch_intent
+            .contains("generalized destroy target shape"));
     }
 
     #[test]
