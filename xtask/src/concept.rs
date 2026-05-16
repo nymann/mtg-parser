@@ -81,12 +81,15 @@ const GRIND_USAGE: &str = "\
 cargo xtask concept-grind [--agent codex|claude] [--max-iterations N]
                           [--concept NAME] [--target-rule RULE] [--query TEXT]
                           [--repair-attempts N] [--dry-run]
-                          [--allow-dirty] [--no-commit] [--ui console|tui]
+                          [--allow-dirty] [--allow-blocked-target]
+                          [--no-commit] [--ui console|tui]
 
 Autonomous grammar-first loop. Each iteration maps existing grammar, selects the
 next concept gap, runs a read-only boundary agent, runs a PEST patch agent,
 gates grammar fixtures and grammar debt, repairs failures when allowed, updates
 maturity, and commits. It does not run add-card or try to make cards pass.
+By default, auto-gap selection skips targets previously blocked by the boundary
+agent; use --allow-blocked-target or explicit --concept --target-rule to retry.
 ";
 
 const GRIND_LOOP_USAGE: &str = "\
@@ -396,6 +399,7 @@ pub(crate) struct ConceptGrindOptions {
     repair_attempts: u8,
     dry_run: bool,
     allow_dirty: bool,
+    allow_blocked_target: bool,
     no_commit: bool,
 }
 
@@ -567,12 +571,33 @@ struct ConceptGrindIterationSummary {
     concept: String,
     query: String,
     target_rule: String,
+    boundary_blocked: bool,
+    blocked_reason: Option<String>,
+    blocked_target_count: usize,
+    skipped_blocked_targets: Vec<String>,
     fixture_passed: bool,
     mapped_rule_count_before: usize,
     mapped_rule_count_after: usize,
     unmapped_rule_count_before: usize,
     unmapped_rule_count_after: usize,
     committed: bool,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+struct BlockedTargetRegistry {
+    #[serde(default)]
+    targets: BTreeMap<String, BlockedTargetRecord>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct BlockedTargetRecord {
+    target_rule: String,
+    concept_candidate: String,
+    query: String,
+    reason: String,
+    timestamp_unix_ms: u128,
+    #[serde(default)]
+    block_count: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -1229,6 +1254,7 @@ pub(crate) fn parse_grind_options(args: &[String]) -> Result<ConceptGrindOptions
     let mut repair_attempts = 1u8;
     let mut dry_run = false;
     let mut allow_dirty = false;
+    let mut allow_blocked_target = false;
     let mut no_commit = false;
 
     let mut iter = args.iter();
@@ -1302,6 +1328,7 @@ pub(crate) fn parse_grind_options(args: &[String]) -> Result<ConceptGrindOptions
             }
             "--dry-run" => dry_run = true,
             "--allow-dirty" => allow_dirty = true,
+            "--allow-blocked-target" => allow_blocked_target = true,
             "--no-commit" => no_commit = true,
             "--ui" => {
                 let _ = iter.next();
@@ -1333,6 +1360,7 @@ pub(crate) fn parse_grind_options(args: &[String]) -> Result<ConceptGrindOptions
         repair_attempts,
         dry_run,
         allow_dirty,
+        allow_blocked_target,
         no_commit,
     })
 }
@@ -2117,6 +2145,69 @@ fn is_shared_plumbing_block_reason(reason: &str) -> bool {
     reason.starts_with("shared") || reason.starts_with("shared/plumbing")
 }
 
+fn blocked_target_registry_path() -> PathBuf {
+    grammar_concept_log_root().join("blocked-targets.json")
+}
+
+fn load_blocked_target_registry() -> Result<BlockedTargetRegistry> {
+    let path = blocked_target_registry_path();
+    if !path.exists() {
+        return Ok(BlockedTargetRegistry::default());
+    }
+    let text = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+    serde_json::from_str(&text).with_context(|| format!("parse {}", path.display()))
+}
+
+fn write_blocked_target_registry(registry: &BlockedTargetRegistry) -> Result<()> {
+    let path = blocked_target_registry_path();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
+    }
+    write_json(path, registry)
+}
+
+fn record_blocked_target(
+    registry: &mut BlockedTargetRegistry,
+    gap: &ConceptGap,
+    reason: &str,
+) -> BlockedTargetRecord {
+    let block_count = registry
+        .targets
+        .get(&gap.target_rule)
+        .map_or(1, |record| record.block_count.saturating_add(1));
+    let record = BlockedTargetRecord {
+        target_rule: gap.target_rule.clone(),
+        concept_candidate: gap.concept.clone(),
+        query: gap.query.clone(),
+        reason: reason.to_string(),
+        timestamp_unix_ms: unix_timestamp_ms(),
+        block_count,
+    };
+    registry
+        .targets
+        .insert(gap.target_rule.clone(), record.clone());
+    record
+}
+
+fn blocked_rules_to_skip(
+    report: &ExistingGrammarMapReport,
+    registry: &BlockedTargetRegistry,
+) -> BTreeSet<String> {
+    registry
+        .targets
+        .keys()
+        .filter(|rule| !is_explicitly_declared_by_concept(report, rule))
+        .cloned()
+        .collect()
+}
+
+fn is_explicitly_declared_by_concept(report: &ExistingGrammarMapReport, rule_name: &str) -> bool {
+    report
+        .concepts
+        .iter()
+        .any(|concept| concept.declared_rules.iter().any(|rule| rule == rule_name))
+}
+
 fn plumbing_cooldown_selection(
     report: &ExistingGrammarMapReport,
     blocked_targets: &BTreeSet<String>,
@@ -2368,11 +2459,16 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         baseline_grammar_rules: concept_grind_rule_count(),
     });
 
+    let mut blocked_target_registry = load_blocked_target_registry()?;
     let mut blocked_targets = BTreeSet::new();
     let mut plumbing_cooldown = PlumbingCooldownState::default();
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
+    write_json(
+        session_dir.join("blocked_target_registry_initial.json"),
+        &blocked_target_registry,
+    )?;
     let mut metrics = ConceptGrindMetrics::new(session_dir.clone());
     metrics.write(&session_dir)?;
     sink.emit(FlowEvent::Note {
@@ -2399,8 +2495,20 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
-        let cooldown_selection =
-            plumbing_cooldown_selection(&before, &blocked_targets, &plumbing_cooldown);
+        let persistent_blocked_targets = if options.allow_blocked_target {
+            BTreeSet::new()
+        } else {
+            blocked_rules_to_skip(&before, &blocked_target_registry)
+        };
+        let mut blocked_targets_for_selection = persistent_blocked_targets.clone();
+        if !options.allow_blocked_target {
+            blocked_targets_for_selection.extend(blocked_targets.iter().cloned());
+        }
+        let cooldown_selection = plumbing_cooldown_selection(
+            &before,
+            &blocked_targets_for_selection,
+            &plumbing_cooldown,
+        );
         write_json(
             iteration_dir.join("plumbing_cooldown_selection.json"),
             &cooldown_selection,
@@ -2490,6 +2598,13 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             &boundary_decision,
         )?;
         if let BoundaryOwner::Blocked(reason) = &boundary_decision.owner {
+            let blocked_record = record_blocked_target(&mut blocked_target_registry, &gap, reason);
+            write_blocked_target_registry(&blocked_target_registry)?;
+            write_json(
+                session_dir.join("blocked_target_registry.json"),
+                &blocked_target_registry,
+            )?;
+            write_json(iteration_dir.join("blocked_target.json"), &blocked_record)?;
             metrics.step_finished(
                 sink,
                 &session_dir,
@@ -2533,7 +2648,29 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     ),
                 });
             }
-            blocked_targets.insert(gap.target_rule);
+            blocked_targets.insert(gap.target_rule.clone());
+            let mut skipped_blocked_targets: Vec<String> =
+                blocked_rules_to_skip(&before, &blocked_target_registry)
+                    .into_iter()
+                    .collect();
+            skipped_blocked_targets.sort();
+            let summary = ConceptGrindIterationSummary {
+                iteration,
+                concept: gap.concept.clone(),
+                query: gap.query.clone(),
+                target_rule: gap.target_rule.clone(),
+                boundary_blocked: true,
+                blocked_reason: Some(reason.clone()),
+                blocked_target_count: blocked_target_registry.targets.len(),
+                skipped_blocked_targets,
+                fixture_passed: false,
+                mapped_rule_count_before: before.mapped_rule_count,
+                mapped_rule_count_after: before.mapped_rule_count,
+                unmapped_rule_count_before: before.unmapped_rule_count,
+                unmapped_rule_count_after: before.unmapped_rule_count,
+                committed: false,
+            };
+            write_json(iteration_dir.join("summary.json"), &summary)?;
             continue;
         }
         let gap = apply_boundary_decision(gap, &boundary_decision)?;
@@ -2689,6 +2826,10 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             concept: gap.concept.clone(),
             query: gap.query.clone(),
             target_rule: gap.target_rule.clone(),
+            boundary_blocked: false,
+            blocked_reason: None,
+            blocked_target_count: blocked_target_registry.targets.len(),
+            skipped_blocked_targets: cooldown_selection.exact_blocked_target_rules.clone(),
             fixture_passed: fixture.passed,
             mapped_rule_count_before: before.mapped_rule_count,
             mapped_rule_count_after: after.mapped_rule_count,
@@ -2839,9 +2980,6 @@ fn select_concept_gap_excluding(
             .clone()
             .unwrap_or_else(|| concept.replace('_', " "));
         let rule = if let Some(target_rule) = &options.target_rule {
-            if excluded_rules.contains(target_rule) {
-                bail!("--target-rule {target_rule:?} is excluded in this run");
-            }
             report
                 .unmapped_rules
                 .iter()
@@ -4646,6 +4784,7 @@ mod tests {
             repair_attempts: 0,
             dry_run: true,
             allow_dirty: false,
+            allow_blocked_target: false,
             no_commit: true,
         };
         let err = select_concept_gap(&report, &options).expect_err("should require target-rule");
@@ -4684,12 +4823,88 @@ mod tests {
             repair_attempts: 0,
             dry_run: true,
             allow_dirty: false,
+            allow_blocked_target: false,
             no_commit: true,
         };
         let excluded = BTreeSet::from(["counter_name".to_string()]);
         let gap = select_concept_gap_excluding(&report, &options, &excluded)
             .expect("should skip blocked suggestion");
         assert_eq!(gap.target_rule, "destroy_target");
+    }
+
+    #[test]
+    fn explicit_target_rule_overrides_blocked_exclusion() {
+        let report = ExistingGrammarMapReport {
+            rule_count: 1,
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 1,
+            concepts: Vec::new(),
+            unmapped_rules: vec![UnmappedGrammarRule {
+                name: "counter_name".to_string(),
+                line: 10,
+                suggested_concept: Some("counter_target_spell".to_string()),
+            }],
+        };
+        let options = ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: Some("counter_target_spell".to_string()),
+            target_rule: Some("counter_name".to_string()),
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            allow_blocked_target: false,
+            no_commit: true,
+        };
+        let excluded = BTreeSet::from(["counter_name".to_string()]);
+        let gap = select_concept_gap_excluding(&report, &options, &excluded)
+            .expect("explicit target should override blocked exclusion");
+        assert_eq!(gap.target_rule, "counter_name");
+    }
+
+    #[test]
+    fn declared_concept_rule_is_not_skipped_as_blocked() {
+        let report = ExistingGrammarMapReport {
+            rule_count: 1,
+            concept_count: 1,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: 1,
+            concepts: vec![ConceptRuleMap {
+                concept: "counter_target_spell".to_string(),
+                maturity: "grammar_fixture_green".to_string(),
+                concept_file: PathBuf::from("grammar-concepts/counter_target_spell.toml"),
+                declared_rules: vec!["counter_name".to_string()],
+                found_rules: Vec::new(),
+                owned_rules: Vec::new(),
+                missing_rules: Vec::new(),
+            }],
+            unmapped_rules: vec![UnmappedGrammarRule {
+                name: "counter_name".to_string(),
+                line: 10,
+                suggested_concept: Some("counter_target_spell".to_string()),
+            }],
+        };
+        let registry = BlockedTargetRegistry {
+            targets: BTreeMap::from([(
+                "counter_name".to_string(),
+                BlockedTargetRecord {
+                    target_rule: "counter_name".to_string(),
+                    concept_candidate: "counter_target_spell".to_string(),
+                    query: "counter name".to_string(),
+                    reason: "shared/plumbing".to_string(),
+                    timestamp_unix_ms: 1,
+                    block_count: 1,
+                },
+            )]),
+        };
+
+        assert!(blocked_rules_to_skip(&report, &registry).is_empty());
     }
 
     #[test]
