@@ -479,65 +479,6 @@ struct ConceptGap {
     reason: String,
 }
 
-#[derive(Debug, Default, Serialize)]
-struct ConceptGrindSessionState {
-    target_rule_blocks: BTreeMap<String, ConceptBoundaryBlockRecord>,
-    concept_blocks: BTreeMap<String, Vec<ConceptBoundaryBlockRecord>>,
-    cooled_concepts: BTreeMap<String, ConceptCooldown>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct ConceptBoundaryBlockRecord {
-    target_rule: String,
-    reason: String,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct ConceptCooldown {
-    concept: String,
-    blocked: Vec<ConceptBoundaryBlockRecord>,
-}
-
-impl ConceptGrindSessionState {
-    fn record_boundary_block(&mut self, concept: &str, target_rule: &str, reason: &str) -> bool {
-        let record = ConceptBoundaryBlockRecord {
-            target_rule: target_rule.to_string(),
-            reason: reason.to_string(),
-        };
-        self.target_rule_blocks
-            .insert(target_rule.to_string(), record.clone());
-        let concept_blocks = self.concept_blocks.entry(concept.to_string()).or_default();
-        concept_blocks.push(record);
-        let blocked = concept_blocks.clone();
-
-        if let Some(cooldown) = self.cooled_concepts.get_mut(concept) {
-            cooldown.blocked = blocked;
-            return false;
-        }
-
-        if concept_blocks.len() < 2 {
-            return false;
-        }
-
-        self.cooled_concepts.insert(
-            concept.to_string(),
-            ConceptCooldown {
-                concept: concept.to_string(),
-                blocked,
-            },
-        );
-        true
-    }
-
-    fn blocked_target_rules(&self) -> BTreeSet<String> {
-        self.target_rule_blocks.keys().cloned().collect()
-    }
-
-    fn cooled_concept_names(&self) -> BTreeSet<String> {
-        self.cooled_concepts.keys().cloned().collect()
-    }
-}
-
 #[derive(Debug)]
 struct ConceptGrindGateFailure {
     label: String,
@@ -2065,11 +2006,10 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         baseline_grammar_rules: concept_grind_rule_count(),
     });
 
+    let mut blocked_targets = BTreeSet::new();
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
-    let mut session_state = ConceptGrindSessionState::default();
-    write_json(session_dir.join("session_state.json"), &session_state)?;
     let mut metrics = ConceptGrindMetrics::new(session_dir.clone());
     metrics.write(&session_dir)?;
     sink.emit(FlowEvent::Note {
@@ -2096,10 +2036,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
-        let blocked_targets = session_state.blocked_target_rules();
-        let cooled_concepts = session_state.cooled_concept_names();
-        let gap =
-            select_concept_gap_excluding(&before, &options, &blocked_targets, &cooled_concepts)?;
+        let gap = select_concept_gap_excluding(&before, &options, &blocked_targets)?;
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
         sink.emit(FlowEvent::WorkflowIterationStarted {
@@ -2200,19 +2137,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     gap.target_rule
                 ),
             });
-            let cooled =
-                session_state.record_boundary_block(&gap.concept, &gap.target_rule, reason);
-            write_json(session_dir.join("session_state.json"), &session_state)?;
-            write_json(iteration_dir.join("session_state.json"), &session_state)?;
-            if cooled {
-                sink.emit(FlowEvent::Note {
-                    level: NoteLevel::Warn,
-                    text: format!(
-                        "cooling concept {} for this run after repeated boundary blocks",
-                        gap.concept
-                    ),
-                });
-            }
+            blocked_targets.insert(gap.target_rule);
             continue;
         }
         let gap = apply_boundary_decision(gap, &boundary_decision)?;
@@ -2504,14 +2429,13 @@ fn select_concept_gap(
     report: &ExistingGrammarMapReport,
     options: &ConceptGrindOptions,
 ) -> Result<ConceptGap> {
-    select_concept_gap_excluding(report, options, &BTreeSet::new(), &BTreeSet::new())
+    select_concept_gap_excluding(report, options, &BTreeSet::new())
 }
 
 fn select_concept_gap_excluding(
     report: &ExistingGrammarMapReport,
     options: &ConceptGrindOptions,
     excluded_rules: &BTreeSet<String>,
-    cooled_concepts: &BTreeSet<String>,
 ) -> Result<ConceptGap> {
     if let Some(concept) = &options.concept {
         let query = options
@@ -2562,30 +2486,10 @@ fn select_concept_gap_excluding(
         bail!("--target-rule requires --concept so ownership is explicit");
     }
 
-    select_auto_concept_gap(report, options, excluded_rules, cooled_concepts, false)
-        .or_else(|| select_auto_concept_gap(report, options, excluded_rules, cooled_concepts, true))
-        .ok_or_else(|| anyhow!("no unblocked unmapped grammar rules remain"))
-}
-
-fn select_auto_concept_gap(
-    report: &ExistingGrammarMapReport,
-    options: &ConceptGrindOptions,
-    excluded_rules: &BTreeSet<String>,
-    cooled_concepts: &BTreeSet<String>,
-    allow_cooled_concepts: bool,
-) -> Option<ConceptGap> {
     if let Some(rule) = report
         .unmapped_rules
         .iter()
         .filter(|rule| !excluded_rules.contains(&rule.name))
-        .filter(|rule| {
-            allow_cooled_concepts
-                || rule
-                    .suggested_concept
-                    .as_deref()
-                    .map(|concept| !cooled_concepts.contains(concept))
-                    .unwrap_or(true)
-        })
         .find(|rule| rule.suggested_concept.is_some())
     {
         let concept = rule.suggested_concept.clone().expect("checked");
@@ -2593,7 +2497,7 @@ fn select_auto_concept_gap(
             .query
             .clone()
             .unwrap_or_else(|| rule.name.replace('_', " "));
-        return Some(ConceptGap {
+        return Ok(ConceptGap {
             concept,
             query,
             target_rule: rule.name.clone(),
@@ -2603,31 +2507,24 @@ fn select_auto_concept_gap(
         });
     }
 
-    report
+    let rule = report
         .unmapped_rules
         .iter()
         .filter(|rule| !excluded_rules.contains(&rule.name))
-        .filter_map(|rule| {
-            let concept = rule
-                .suggested_concept
-                .clone()
-                .unwrap_or_else(|| slug(&rule.name).replace('-', "_"));
-            if !allow_cooled_concepts && cooled_concepts.contains(&concept) {
-                return None;
-            }
-            Some(ConceptGap {
-                concept,
-                query: options
-                    .query
-                    .clone()
-                    .unwrap_or_else(|| rule.name.replace('_', " ")),
-                target_rule: rule.name.clone(),
-                target_line: rule.line,
-                suggested_existing_owner: false,
-                reason: "first unmapped non-shared grammar rule".to_string(),
-            })
-        })
         .next()
+        .ok_or_else(|| anyhow!("no unblocked unmapped grammar rules remain"))?;
+    let concept = slug(&rule.name).replace('-', "_");
+    Ok(ConceptGap {
+        concept,
+        query: options
+            .query
+            .clone()
+            .unwrap_or_else(|| rule.name.replace('_', " ")),
+        target_rule: rule.name.clone(),
+        target_line: rule.line,
+        suggested_existing_owner: false,
+        reason: "first unmapped non-shared grammar rule".to_string(),
+    })
 }
 
 fn build_boundary_prompt(gap: &ConceptGap, report: &ExistingGrammarMapReport) -> Result<String> {
@@ -4394,140 +4291,9 @@ mod tests {
             no_commit: true,
         };
         let excluded = BTreeSet::from(["counter_name".to_string()]);
-        let gap = select_concept_gap_excluding(&report, &options, &excluded, &BTreeSet::new())
+        let gap = select_concept_gap_excluding(&report, &options, &excluded)
             .expect("should skip blocked suggestion");
         assert_eq!(gap.target_rule, "destroy_target");
-    }
-
-    #[test]
-    fn concept_cooldown_starts_after_two_blocked_targets() {
-        let mut state = ConceptGrindSessionState::default();
-        assert!(!state.record_boundary_block(
-            "counter_target_spell",
-            "counter_name",
-            "wrong boundary"
-        ));
-        assert!(state.record_boundary_block(
-            "counter_target_spell",
-            "counter_spell_color",
-            "still blocked"
-        ));
-
-        let cooled = state
-            .cooled_concepts
-            .get("counter_target_spell")
-            .expect("concept should be cooled");
-        assert_eq!(
-            cooled
-                .blocked
-                .iter()
-                .map(|block| block.target_rule.as_str())
-                .collect::<Vec<_>>(),
-            vec!["counter_name", "counter_spell_color"]
-        );
-        assert_eq!(
-            cooled
-                .blocked
-                .iter()
-                .map(|block| block.reason.as_str())
-                .collect::<Vec<_>>(),
-            vec!["wrong boundary", "still blocked"]
-        );
-    }
-
-    #[test]
-    fn auto_concept_grind_skips_cooled_concepts_when_non_cooled_remain() {
-        let report = ExistingGrammarMapReport {
-            rule_count: 3,
-            concept_count: 0,
-            dependency_expansion: true,
-            shared_rule_count: 0,
-            mapped_rule_count: 0,
-            unmapped_rule_count: 3,
-            concepts: Vec::new(),
-            unmapped_rules: vec![
-                UnmappedGrammarRule {
-                    name: "counter_name".to_string(),
-                    line: 10,
-                    suggested_concept: Some("counter_target_spell".to_string()),
-                },
-                UnmappedGrammarRule {
-                    name: "counter_spell_color".to_string(),
-                    line: 20,
-                    suggested_concept: Some("counter_target_spell".to_string()),
-                },
-                UnmappedGrammarRule {
-                    name: "destroy_target".to_string(),
-                    line: 30,
-                    suggested_concept: None,
-                },
-            ],
-        };
-        let options = ConceptGrindOptions {
-            agent: AgentProvider::Codex,
-            max_iterations: 1,
-            concept: None,
-            target_rule: None,
-            query: None,
-            repair_attempts: 0,
-            dry_run: true,
-            allow_dirty: false,
-            no_commit: true,
-        };
-        let blocked_targets = BTreeSet::from(["counter_name".to_string()]);
-        let cooled_concepts = BTreeSet::from(["counter_target_spell".to_string()]);
-
-        let gap =
-            select_concept_gap_excluding(&report, &options, &blocked_targets, &cooled_concepts)
-                .expect("should select non-cooled candidate");
-
-        assert_eq!(gap.concept, "destroy_target");
-        assert_eq!(gap.target_rule, "destroy_target");
-    }
-
-    #[test]
-    fn auto_concept_grind_falls_back_to_cooled_concept_when_only_choice() {
-        let report = ExistingGrammarMapReport {
-            rule_count: 2,
-            concept_count: 0,
-            dependency_expansion: true,
-            shared_rule_count: 0,
-            mapped_rule_count: 0,
-            unmapped_rule_count: 2,
-            concepts: Vec::new(),
-            unmapped_rules: vec![
-                UnmappedGrammarRule {
-                    name: "counter_name".to_string(),
-                    line: 10,
-                    suggested_concept: Some("counter_target_spell".to_string()),
-                },
-                UnmappedGrammarRule {
-                    name: "counter_spell_color".to_string(),
-                    line: 20,
-                    suggested_concept: Some("counter_target_spell".to_string()),
-                },
-            ],
-        };
-        let options = ConceptGrindOptions {
-            agent: AgentProvider::Codex,
-            max_iterations: 1,
-            concept: None,
-            target_rule: None,
-            query: None,
-            repair_attempts: 0,
-            dry_run: true,
-            allow_dirty: false,
-            no_commit: true,
-        };
-        let blocked_targets = BTreeSet::from(["counter_name".to_string()]);
-        let cooled_concepts = BTreeSet::from(["counter_target_spell".to_string()]);
-
-        let gap =
-            select_concept_gap_excluding(&report, &options, &blocked_targets, &cooled_concepts)
-                .expect("cooled fallback remains available");
-
-        assert_eq!(gap.concept, "counter_target_spell");
-        assert_eq!(gap.target_rule, "counter_spell_color");
     }
 
     #[test]
