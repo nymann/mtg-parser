@@ -14,8 +14,8 @@ use crate::ast::{
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
     EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
-    InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer, ManaCost,
-    ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
+    InterveningIf, Keyword, LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer,
+    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
     NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
     PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
@@ -1218,12 +1218,19 @@ fn target_player_gains_life_from_pair(pair: Pair<Rule>) -> Result<Statement, Par
     })
 }
 
-fn target_player_gains_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, ParseError> {
+fn target_player_gains_life_amount_from_pair(pair: Pair<Rule>) -> Result<LifeAmount, ParseError> {
     let amount_pair = only_inner(pair, "target_player_gains_life missing amount")?;
-    amount_pair
-        .as_str()
-        .parse::<u32>()
-        .map_err(|_| ParseError::Internal("target_player_gains_life amount"))
+    match amount_pair.as_rule() {
+        Rule::unsigned_number => amount_pair
+            .as_str()
+            .parse::<u32>()
+            .map(LifeAmount::Number)
+            .map_err(|_| ParseError::Internal("target_player_gains_life amount")),
+        Rule::variable_name => Ok(LifeAmount::Variable(variable_from_str(
+            amount_pair.as_str(),
+        )?)),
+        _ => Err(ParseError::Internal("target_player_gains_life amount")),
+    }
 }
 
 fn counter_target_spell_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {

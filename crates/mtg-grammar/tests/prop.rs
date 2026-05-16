@@ -12,11 +12,11 @@ use mtg_grammar::{
     DamageLifeGainCap, DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
-    ManaCost, ManaSymbol, ModalMode, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
-    PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
-    TapAllPermanentsActor, TargetPermanentSelector, TextChangeReplacementTerm, TriggerEffect,
-    TriggerEvent, TriggeredAbility, Variable,
+    LifeAmount, ManaCost, ManaSymbol, ModalMode, PayManaAmount, PayManaPlayer,
+    PaymentFailureEffect, PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
+    StaticAbility, TapAllPermanentsActor, TargetPermanentSelector, TextChangeReplacementTerm,
+    TriggerEffect, TriggerEvent, TriggeredAbility, Variable,
 };
 use proptest::prelude::*;
 
@@ -54,6 +54,13 @@ fn arb_card_count() -> impl Strategy<Value = CardCount> {
     prop_oneof![
         (1u32..=10).prop_map(CardCount::Number),
         arb_variable().prop_map(CardCount::Variable),
+    ]
+}
+
+fn arb_life_amount() -> impl Strategy<Value = LifeAmount> {
+    prop_oneof![
+        (1u32..=10).prop_map(LifeAmount::Number),
+        arb_variable().prop_map(LifeAmount::Variable),
     ]
 }
 
@@ -182,7 +189,7 @@ fn arb_modal_mode() -> impl Strategy<Value = ModalMode> {
     prop_oneof![
         arb_color().prop_map(|color| ModalMode::CounterTargetColoredSpell { color }),
         arb_color().prop_map(|color| ModalMode::DestroyTargetColoredPermanent { color }),
-        (1u32..=10).prop_map(|amount| ModalMode::TargetPlayerGainsLife { amount }),
+        arb_life_amount().prop_map(|amount| ModalMode::TargetPlayerGainsLife { amount }),
         (arb_damage_amount(), arb_prevention_recipient()).prop_map(|(amount, recipient)| {
             ModalMode::PreventDamageThisTurn {
                 effect: DamagePreventionEffect {
@@ -461,7 +468,7 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             Statement::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder { count }
         }),
         Just(Statement::YouMayHaveThatPlayerShuffle),
-        (1u32..=10).prop_map(|amount| Statement::TargetPlayerGainsLife { amount }),
+        arb_life_amount().prop_map(|amount| Statement::TargetPlayerGainsLife { amount }),
         Just(Statement::IfYouWouldDrawCardDuringYourDrawStepInsteadYouMaySkipThatDraw),
         Just(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay),
         prop_oneof![

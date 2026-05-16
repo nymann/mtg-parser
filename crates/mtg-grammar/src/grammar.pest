@@ -408,7 +408,7 @@ if_you_would_draw_card_during_your_draw_step_instead_you_may_skip_that_draw = {
   ~ ^"instead" ~ ^"you" ~ ^"may" ~ ^"skip" ~ ^"that" ~ ^"draw" ~ "."
 }
 target_player_gains_life = {
-    ^"target" ~ ^"player" ~ ^"gains" ~ unsigned_number ~ ^"life" ~ "."
+    ^"target" ~ ^"player" ~ ^"gains" ~ (unsigned_number | variable_name) ~ ^"life" ~ "."
 }
 
 look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order = {

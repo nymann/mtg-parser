@@ -106,7 +106,7 @@ pub enum Statement {
     YouMayHaveThatPlayerShuffle,
     /// "Target player gains N life."
     TargetPlayerGainsLife {
-        amount: u32,
+        amount: LifeAmount,
     },
     /// "Tap all <permanent_type>s <actor> controls and <actor> loses all
     /// unspent mana."
@@ -516,7 +516,7 @@ pub enum ModalMode {
     /// "Destroy target <color> permanent."
     DestroyTargetColoredPermanent { color: Color },
     /// "Target player gains N life."
-    TargetPlayerGainsLife { amount: u32 },
+    TargetPlayerGainsLife { amount: LifeAmount },
     /// "Prevent <amount> [combat] damage that would be dealt [to <recipient>] this turn."
     PreventDamageThisTurn {
         #[serde(flatten)]
@@ -1101,6 +1101,14 @@ pub enum LifeLossAmount {
     Number(u32),
     /// "half their life, rounded <direction>"
     HalfTheirLife { rounding: Rounding },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LifeAmount {
+    /// "N"
+    Number(u32),
+    /// "X" / "Y"
+    Variable(Variable),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

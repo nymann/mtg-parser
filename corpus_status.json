@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 238,
+  "passing": 239,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -736,8 +736,7 @@
       "status": "pass"
     },
     "lea/Stream of Life": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:21\n  |\n1 | Target player gains X life.\n  |                     ^---\n  |\n  = expected unsigned_number"
+      "status": "pass"
     },
     "lea/Sunglasses of Urza": {
       "status": "fail",

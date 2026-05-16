@@ -12,8 +12,8 @@ use crate::ast::{
     DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
     DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, EachPlayerAction,
     EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
-    LandCountController, LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier,
-    ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
+    LandCountController, LifeAmount, LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol,
+    MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
     NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer,
     PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
     PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign, SignedNumber,
@@ -972,15 +972,23 @@ fn write_you_gain_life(out: &mut String, amount: u32, case: SentenceCase) {
     });
 }
 
-fn write_target_player_gains_life(out: &mut String, amount: u32) {
+fn write_target_player_gains_life(out: &mut String, amount: LifeAmount) {
     write_template_sentence(
         out,
         TARGET_PLAYER_GAINS_LIFE_SENTENCE,
         SentenceCase::Upper,
         |out| {
-            write!(out, "{amount} life").expect("write to String never fails");
+            write_life_amount(out, amount);
+            out.push_str(" life");
         },
     );
+}
+
+fn write_life_amount(out: &mut String, amount: LifeAmount) {
+    match amount {
+        LifeAmount::Number(n) => write!(out, "{n}").expect("write to String never fails"),
+        LifeAmount::Variable(variable) => out.push_str(variable_name(variable)),
+    }
 }
 
 fn write_damage_prevention_effect(

@@ -319,3 +319,5 @@ mod spell_blast;
 mod stasis;
 #[path = "generated_patterns/stone_giant.rs"]
 mod stone_giant;
+#[path = "generated_patterns/stream_of_life.rs"]
+mod stream_of_life;
