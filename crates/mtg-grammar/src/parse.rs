@@ -1026,6 +1026,16 @@ fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseErro
                 creature_type_pair,
             )?))
         }
+        Rule::target_basic_lands_count => {
+            let mut inner = pair.into_inner();
+            let count_pair = next_inner(&mut inner, "target_basic_lands_count missing count")?;
+            let land_type_pair =
+                next_inner(&mut inner, "target_basic_lands_count missing land type")?;
+            Ok(DestroyTarget::TargetBasicLands {
+                count: card_count_from_pair(count_pair)?,
+                land_type: basic_land_type_from_plural_pair(land_type_pair)?,
+            })
+        }
         Rule::destroy_all => {
             let target_pair = only_inner(pair, "destroy_all missing target")?;
             destroy_target_from_pair(target_pair)
@@ -1170,7 +1180,16 @@ fn damage_event_assignments_from_pair(
 
 fn damage_event_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
     let inner = only_inner(pair, "damage event amount missing inner rule")?;
-    damage_amount_from_pair(inner)
+    match inner.as_rule() {
+        Rule::damage_event_equal_to_amount => {
+            let land_type_pair =
+                only_inner(inner, "damage event equal-to amount missing land type")?;
+            Ok(DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(
+                basic_land_type_from_plural_pair(land_type_pair)?,
+            ))
+        }
+        _ => damage_amount_from_pair(inner),
+    }
 }
 
 fn damage_event_recipients_from_pair(pair: Pair<Rule>) -> Result<DamageRecipients, ParseError> {
@@ -2829,14 +2848,16 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
         }
         (DamageAmount::DamageDealtToYouThisTurn, Some(_))
         | (DamageAmount::ThatPermanentsToughness(_), Some(_))
-        | (DamageAmount::NumberOfBasicLandsTheyControl(_), Some(_)) => {
+        | (DamageAmount::NumberOfBasicLandsTheyControl(_), Some(_))
+        | (DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(_), Some(_)) => {
             return Err(ParseError::Internal(
                 "equal-to damage cannot have variable definition",
             ));
         }
         (DamageAmount::DamageDealtToYouThisTurn, None)
         | (DamageAmount::ThatPermanentsToughness(_), None)
-        | (DamageAmount::NumberOfBasicLandsTheyControl(_), None) => Vec::new(),
+        | (DamageAmount::NumberOfBasicLandsTheyControl(_), None)
+        | (DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(_), None) => Vec::new(),
     };
 
     Ok(TriggerEffect::SourceDealsDamage(TriggeredDamage {
@@ -2933,6 +2954,9 @@ fn validate_trigger_damage_amount_recipient(
         (DamageAmount::NumberOfBasicLandsTheyControl(_), _) => Err(ParseError::Internal(
             "basic-land-count damage must be dealt to that player",
         )),
+        (DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(_), _) => Err(
+            ParseError::Internal("this-way graveyard damage amount is not a trigger damage amount"),
+        ),
         (
             DamageAmount::DamageDealtToYouThisTurn
             | DamageAmount::Number(_)

@@ -677,6 +677,14 @@ fn write_named_damage_event(out: &mut String, event: &NamedDamageEvent) {
         out.push('.');
         return;
     }
+    if let DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(_) = event.amount {
+        out.push_str("damage");
+        write_damage_event_recipients(out, &event.recipient);
+        out.push_str(" equal to the ");
+        write_damage_amount(out, event.amount);
+        out.push('.');
+        return;
+    }
     write_damage_amount(out, event.amount);
     out.push_str(" damage");
     write_damage_event_recipients(out, &event.recipient);
@@ -1180,6 +1188,11 @@ fn write_damage_amount(out: &mut String, amount: DamageAmount) {
             out.push_str("equal to the number of ");
             out.push_str(basic_land_type_plural_name(basic_land_type));
             out.push_str(" they control");
+        }
+        DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(basic_land_type) => {
+            out.push_str("number of ");
+            out.push_str(basic_land_type_plural_name(basic_land_type));
+            out.push_str(" put into a graveyard this way");
         }
     }
 }
@@ -2645,6 +2658,13 @@ fn write_triggered_damage(
             out.push_str(basic_land_type_plural_name(basic_land_type));
             out.push_str(" they control");
         }
+        DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(basic_land_type) => {
+            out.push_str("damage to ");
+            write_trigger_damage_recipient(out, damage.event.recipient);
+            out.push_str(" equal to the number of ");
+            out.push_str(basic_land_type_plural_name(basic_land_type));
+            out.push_str(" put into a graveyard this way");
+        }
     }
     if let Some(condition) = &damage.condition {
         match condition {
@@ -2663,7 +2683,8 @@ fn write_triggered_damage(
         DamageAmount::Number(_)
         | DamageAmount::DamageDealtToYouThisTurn
         | DamageAmount::ThatPermanentsToughness(_)
-        | DamageAmount::NumberOfBasicLandsTheyControl(_) => {
+        | DamageAmount::NumberOfBasicLandsTheyControl(_)
+        | DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(_) => {
             if terminal {
                 out.push('.');
             }
@@ -3274,6 +3295,14 @@ fn write_destroy_target(out: &mut String, target: &DestroyTarget) {
         DestroyTarget::TargetCreatureType(creature_type) => {
             out.push_str("target ");
             write_creature_type(out, *creature_type);
+        }
+        DestroyTarget::TargetBasicLands {
+            count,
+            land_type: basic_land_type,
+        } => {
+            write_card_count(out, *count);
+            out.push_str(" target ");
+            out.push_str(basic_land_type_plural_name(*basic_land_type));
         }
         DestroyTarget::AllPermanents(permanent_types) => {
             out.push_str("all ");

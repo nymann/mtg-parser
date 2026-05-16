@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 253,
+  "passing": 254,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -825,8 +825,7 @@
       "status": "pass"
     },
     "lea/Volcanic Eruption": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:9\n  |\n1 | Destroy X target Mountains. Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way.\n  |         ^---\n  |\n  = expected destroy_target or referenced_creature"
+      "status": "pass"
     },
     "lea/Wall of Air": {
       "status": "pass"

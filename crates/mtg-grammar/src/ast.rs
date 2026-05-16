@@ -370,6 +370,11 @@ pub enum DestroyTarget {
     TargetQualifiedCreature(Vec<CreatureQuality>),
     /// "target <creature_type>"
     TargetCreatureType(CreatureType),
+    /// "N target <basic_land_type>s"
+    TargetBasicLands {
+        count: CardCount,
+        land_type: BasicLandType,
+    },
     /// "all <permanent_type>s[, <permanent_type>s, and <permanent_type>s]"
     AllPermanents(Vec<PermanentType>),
     /// "all <basic_land_type>s"
@@ -636,6 +641,7 @@ pub enum DamageAmount {
     DamageDealtToYouThisTurn,
     ThatPermanentsToughness(PermanentType),
     NumberOfBasicLandsTheyControl(BasicLandType),
+    NumberOfBasicLandsPutIntoGraveyardThisWay(BasicLandType),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

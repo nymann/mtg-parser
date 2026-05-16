@@ -347,3 +347,5 @@ mod verduran_enchantress;
 mod vesuvan_doppelganger;
 #[path = "generated_patterns/veteran_bodyguard.rs"]
 mod veteran_bodyguard;
+#[path = "generated_patterns/volcanic_eruption.rs"]
+mod volcanic_eruption;

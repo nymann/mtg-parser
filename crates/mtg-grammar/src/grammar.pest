@@ -208,6 +208,7 @@ destroy = { ^"destroy" ~ destroy_target ~ "." }
 exile = { ^"exile" ~ destroy_target ~ "." }
 destroy_target = {
     destroy_all
+  | target_basic_lands_count
   | target_colored_permanent
   | target_status_creature
   | target_qualified_creature
@@ -216,6 +217,7 @@ destroy_target = {
 }
 destroy_all = { ^"all" ~ destroy_all_objects }
 destroy_all_objects = { basic_land_type_plural | permanent_type_plural_list }
+target_basic_lands_count = { card_count ~ ^"target" ~ basic_land_type_plural }
 permanent_type_plural_list = {
     permanent_type_plural ~ (("," ~ permanent_type_plural)* ~ ","? ~ ^"and" ~ permanent_type_plural)?
 }
@@ -249,7 +251,11 @@ damage_event_statement = {
     )
   ~ "."
 }
-damage_event_amount = { damage_amount_expression }
+damage_event_amount = { damage_event_equal_to_amount | damage_amount_expression }
+damage_event_equal_to_amount = {
+    ^"number" ~ ^"of" ~ basic_land_type_plural ~ ^"put" ~ ^"into"
+  ~ article ~ ^"graveyard" ~ ^"this" ~ ^"way"
+}
 damage_event_recipients = {
     damage_event_any_target
   | damage_event_divided_evenly_rounded_down_among_any_number_of_targets
@@ -402,7 +408,8 @@ if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn = {
 }
 
 draw_cards  = { ^"target" ~ ^"player" ~ ^"draws" ~ draw_count ~ ^"cards" ~ "." }
-draw_count  = _{ number_word | variable_name }
+draw_count  = _{ card_count }
+card_count  = _{ number_word | variable_name }
 number_word = @{
     ^"one" | ^"two" | ^"three" | ^"four" | ^"five"
   | ^"six" | ^"seven" | ^"eight" | ^"nine" | ^"ten"
