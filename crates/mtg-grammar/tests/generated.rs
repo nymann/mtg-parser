@@ -80,6 +80,8 @@ mod chaos_orb;
 mod chaoslace;
 #[path = "generated/circle_of_protection_blue.rs"]
 mod circle_of_protection_blue;
+#[path = "generated/city_in_a_bottle.rs"]
+mod city_in_a_bottle;
 #[path = "generated/clockwork_beast.rs"]
 mod clockwork_beast;
 #[path = "generated/clone.rs"]

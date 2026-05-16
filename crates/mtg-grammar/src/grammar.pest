@@ -136,6 +136,7 @@ sentence_statement = _{
   | static_life_total_floor_replacement
   | static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead
   | static_you_may_play_any_number_of_permanents_on_each_of_your_turns
+  | static_play_restriction
   | static_you_may_have_source_enter_as_copy
   | static_source_enters_tapped
   | static_source_attacks_each_combat_if_able
@@ -855,6 +856,7 @@ static_ability = _{
   | you_dont_lose_game_for_having_zero_or_less_life
   | if_you_would_gain_life_draw_that_many_cards_instead
   | static_life_total_floor_replacement
+  | static_play_restriction
   | static_you_may_have_source_enter_as_copy
   | static_source_enters_tapped
   | static_source_attacks_each_combat_if_able
@@ -985,6 +987,16 @@ static_you_control_enchanted = {
 static_you_may_play_any_number_of_permanents_on_each_of_your_turns = {
     ^"you" ~ ^"may" ~ ^"play" ~ ^"any" ~ ^"number" ~ ^"of"
   ~ permanent_type_plural ~ ^"on" ~ ^"each" ~ ^"of" ~ ^"your" ~ ^"turns" ~ "."
+}
+
+static_play_restriction = {
+    ^"players" ~ ^"can't"
+  ~ play_restriction_action ~ (^"or" ~ play_restriction_action)*
+  ~ original_printing_expansion_clause ~ "."
+}
+play_restriction_action = {
+    (^"cast" ~ ^"spells")
+  | (^"play" ~ ^"lands")
 }
 
 static_you_may_have_source_enter_as_copy = {
@@ -1657,6 +1669,7 @@ trigger_event = _{
   | basic_land_type_is_tapped_for_mana
   | basic_land_type_controller_becomes_status
   | one_or_more_creatures_you_control_attack
+  | one_or_more_permanents_with_original_printing_on_battlefield
   | permanent_enters
 }
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
@@ -1710,9 +1723,18 @@ you_play_permanent = { ^"you" ~ ^"play" ~ article ~ permanent_type }
 one_or_more_creatures_you_control_attack = {
     ^"one" ~ ^"or" ~ ^"more" ~ ^"creatures" ~ ^"you" ~ ^"control" ~ ^"attack"
 }
+one_or_more_permanents_with_original_printing_on_battlefield = {
+    ^"one" ~ ^"or" ~ ^"more" ~ ^"other"? ~ ^"nontoken"?
+  ~ ^"permanents" ~ original_printing_expansion_clause
+  ~ ^"are" ~ ^"on" ~ ^"the" ~ ^"battlefield"
+}
 source_blocks_or_becomes_blocked_by_non_creature_type_creature = {
     source_object ~ ^"blocks" ~ ^"or" ~ ^"becomes" ~ ^"blocked"
   ~ ^"by" ~ article ~ ^"non-" ~ creature_type ~ ^"creature"
+}
+original_printing_expansion_clause = {
+    ^"with" ~ article ~ ^"name" ~ ^"originally" ~ ^"printed" ~ ^"in"
+  ~ ^"the" ~ proper_name ~ ^"expansion"
 }
 end_of_combat           = { ^"end" ~ ^"of" ~ ^"combat" }
 beginning_of_the_next_end_step = {
@@ -1797,6 +1819,7 @@ trigger_effect = _{
   | defending_player_divides_creatures_without_keyword_into_labeled_piles
   | source_gains_static_ability
   | that_creatures_controller_sacrifices_it
+  | their_controllers_sacrifice_them
   | sacrifice_that_many_nontoken_permanents
   | player_loses_life
   | you_lose_the_game
@@ -1955,6 +1978,9 @@ destroy_that_creature_at_end_of_combat = {
 
 that_creatures_controller_sacrifices_it = {
     ^"that" ~ ^"creature's" ~ ^"controller" ~ ^"sacrifices" ~ ^"it" ~ "."
+}
+their_controllers_sacrifice_them = {
+    ^"their" ~ ^"controllers" ~ ^"sacrifice" ~ ^"them" ~ "."
 }
 
 sacrifice_permanent_other_than_source = {

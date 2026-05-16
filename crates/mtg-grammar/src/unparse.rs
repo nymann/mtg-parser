@@ -21,7 +21,8 @@ use crate::ast::{
     ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount,
     NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus,
     OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
-    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
+    PermanentController, PermanentType, PhysicalAction, PlayRestriction, PlayRestrictionAction,
+    PlayRestrictionAffected, PlayRestrictionFilter, PreventionRecipient, PtModifier,
     ReferencedCard, ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject,
     ReturnDestination, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
     SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
@@ -2177,6 +2178,9 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             out.push_str(permanent_type_plural_name(*permanent_type));
             out.push_str(" on each of your turns.");
         }
+        StaticAbility::PlayRestriction(restriction) => {
+            write_play_restriction(out, restriction);
+        }
         StaticAbility::YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield {
             source,
             permanent_type,
@@ -2382,13 +2386,43 @@ fn write_life_total_floor_player_possessive(out: &mut String, player: LifeTotalF
     }
 }
 
+fn write_play_restriction(out: &mut String, restriction: &PlayRestriction) {
+    match restriction.affected {
+        PlayRestrictionAffected::Players => out.push_str("Players can't "),
+    }
+    for (idx, action) in restriction.actions.iter().enumerate() {
+        if idx > 0 {
+            out.push_str(" or ");
+        }
+        write_play_restriction_action(out, *action);
+    }
+    out.push(' ');
+    write_play_restriction_filter(out, &restriction.filter);
+    out.push('.');
+}
+
+fn write_play_restriction_action(out: &mut String, action: PlayRestrictionAction) {
+    match action {
+        PlayRestrictionAction::CastSpells => out.push_str("cast spells"),
+        PlayRestrictionAction::PlayLands => out.push_str("play lands"),
+    }
+}
+
+fn write_play_restriction_filter(out: &mut String, filter: &PlayRestrictionFilter) {
+    match filter {
+        PlayRestrictionFilter::OriginalPrinting { expansion } => {
+            write_original_printing_expansion_clause(out, expansion);
+        }
+    }
+}
+
 fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
     write_trigger_condition(out, ta.condition());
     write_trigger_effect_sequence(out, &ta.effects);
 }
 
 fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
-    out.push_str(match condition.event {
+    out.push_str(match &condition.event {
         TriggerEvent::PermanentEnters { .. }
         | TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { .. }
         | TriggerEvent::PermanentDealtDamageBySourceThisTurnDies { .. }
@@ -2399,6 +2433,7 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::IsTappedForMana { .. }
         | TriggerEvent::BasicLandTypeControllerBecomesStatus { .. }
         | TriggerEvent::OneOrMoreCreaturesYouControlAttack
+        | TriggerEvent::OneOrMorePermanentsWithOriginalPrintingOnBattlefield { .. }
         | TriggerEvent::YouAreDealtDamage
         | TriggerEvent::SourceIsDealtDamage { .. }
         | TriggerEvent::SourceDealsDamageToAnOpponent { .. }
@@ -2529,6 +2564,22 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::OneOrMoreCreaturesYouControlAttack => {
             out.push_str("one or more creatures you control attack");
         }
+        TriggerEvent::OneOrMorePermanentsWithOriginalPrintingOnBattlefield {
+            other,
+            nontoken,
+            expansion,
+        } => {
+            out.push_str("one or more ");
+            if other {
+                out.push_str("other ");
+            }
+            if nontoken {
+                out.push_str("nontoken ");
+            }
+            out.push_str("permanents ");
+            write_original_printing_expansion_clause(out, &expansion);
+            out.push_str(" are on the battlefield");
+        }
         TriggerEvent::EnchantedPermanentDies { permanent_type } => {
             out.push_str("enchanted ");
             out.push_str(permanent_type_name(permanent_type));
@@ -2632,6 +2683,12 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
     }
 }
 
+fn write_original_printing_expansion_clause(out: &mut String, expansion: &str) {
+    out.push_str("with a name originally printed in the ");
+    out.push_str(expansion);
+    out.push_str(" expansion");
+}
+
 fn write_intervening_if(out: &mut String, iif: InterveningIf) {
     match iif {
         InterveningIf::ItsOnTheBattlefield => out.push_str("it's on the battlefield"),
@@ -2711,6 +2768,9 @@ fn write_trigger_effect(
         }
         TriggerEffect::ThatCreaturesControllerSacrificesIt => {
             out.push_str("that creature's controller sacrifices it.");
+        }
+        TriggerEffect::TheirControllersSacrificeThem => {
+            out.push_str("their controllers sacrifice them.");
         }
         TriggerEffect::SourceDealsDamage(damage) => {
             write_triggered_damage(out, damage, terminal, starts_sentence);

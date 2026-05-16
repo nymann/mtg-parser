@@ -956,7 +956,7 @@ pub enum OptionalCost {
 
 /// The condition part of a triggered ability:
 /// "<event>, [if <intervening-if>,]".
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TriggerCondition {
     pub event: TriggerEvent,
     pub intervening_if: Option<InterveningIf>,
@@ -977,7 +977,7 @@ pub struct TriggeredAbility {
 impl TriggeredAbility {
     pub fn condition(&self) -> TriggerCondition {
         TriggerCondition {
-            event: self.event,
+            event: self.event.clone(),
             intervening_if: self.intervening_if,
         }
     }
@@ -991,7 +991,7 @@ impl TriggeredAbility {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TriggerEvent {
     /// "this Aura enters"
     ThisAuraEnters,
@@ -1020,6 +1020,13 @@ pub enum TriggerEvent {
     YouPlayPermanent { permanent_type: PermanentType },
     /// "one or more creatures you control attack"
     OneOrMoreCreaturesYouControlAttack,
+    /// "one or more [other] [nontoken] permanents with a name originally
+    /// printed in the <expansion> expansion are on the battlefield"
+    OneOrMorePermanentsWithOriginalPrintingOnBattlefield {
+        other: bool,
+        nontoken: bool,
+        expansion: String,
+    },
     /// "enchanted <permanent_type> dies"
     EnchantedPermanentDies { permanent_type: PermanentType },
     /// "this <source> dies"
@@ -1148,6 +1155,8 @@ pub enum TriggerEffect {
     DestroyThatCreatureAtEndOfCombat,
     /// "that creature's controller sacrifices it"
     ThatCreaturesControllerSacrificesIt,
+    /// "their controllers sacrifice them"
+    TheirControllersSacrificeThem,
     /// Damage dealt by a trigger, with source, amount, recipient, and
     /// optional replacement/prevention-style condition captured as axes.
     SourceDealsDamage(TriggeredDamage),
@@ -1961,6 +1970,29 @@ pub enum LifeTotalFloorPlayer {
     You,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlayRestriction {
+    pub affected: PlayRestrictionAffected,
+    pub actions: Vec<PlayRestrictionAction>,
+    pub filter: PlayRestrictionFilter,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PlayRestrictionAffected {
+    Players,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PlayRestrictionAction {
+    CastSpells,
+    PlayLands,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PlayRestrictionFilter {
+    OriginalPrinting { expansion: String },
+}
+
 /// A static ability printed on a permanent. This covers conditional
 /// continuous effects, P/T modifiers on matching objects or enchanted
 /// objects, and permission effects that let an enchanted object attack
@@ -2114,6 +2146,8 @@ pub enum StaticAbility {
     /// turns." — permission effect that lifts the normal per-turn play
     /// limit for that permanent type.
     YouMayPlayAnyNumberOfPermanentsOnEachOfYourTurns { permanent_type: PermanentType },
+    /// "<affected> can't <action> [or <action>]* <filter>."
+    PlayRestriction(PlayRestriction),
     /// "You may have this <source> enter as a copy of any
     /// <permanent_type> on the battlefield[, except it's a/an
     /// <permanent_type> in addition to its other types]."

@@ -23,7 +23,8 @@ use crate::ast::{
     ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
     NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
     ObjectStatus, OptionalCost, OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PlayRestriction,
+    PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter, PreventionRecipient,
     PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
     RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
@@ -275,6 +276,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_life_total_floor_replacement
         | Rule::static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead
         | Rule::static_you_may_play_any_number_of_permanents_on_each_of_your_turns
+        | Rule::static_play_restriction
         | Rule::static_you_may_have_source_enter_as_copy
         | Rule::static_source_enters_tapped
         | Rule::static_source_attacks_each_combat_if_able
@@ -2436,6 +2438,9 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
         Rule::one_or_more_creatures_you_control_attack => {
             Ok(TriggerEvent::OneOrMoreCreaturesYouControlAttack)
         }
+        Rule::one_or_more_permanents_with_original_printing_on_battlefield => {
+            one_or_more_permanents_with_original_printing_on_battlefield_from_pair(event_pair)
+        }
         Rule::you_play_permanent => you_play_permanent_from_pair(event_pair),
         Rule::enchanted_permanent_dies => enchanted_permanent_dies_from_pair(event_pair),
         Rule::source_dies => source_dies_from_pair(event_pair),
@@ -2566,6 +2571,9 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         }
         Rule::that_creatures_controller_sacrifices_it => {
             Ok(TriggerEffect::ThatCreaturesControllerSacrificesIt)
+        }
+        Rule::their_controllers_sacrifice_them => {
+            Ok(TriggerEffect::TheirControllersSacrificeThem)
         }
         Rule::loses_and_gains_keyword => loses_and_gains_keyword_from_pair(pair),
         Rule::return_enchanted_card_and_attach => return_enchanted_card_and_attach_from_pair(pair),
@@ -2790,6 +2798,28 @@ fn you_play_permanent_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseE
     Ok(TriggerEvent::YouPlayPermanent {
         permanent_type: permanent_type_from_pair(permanent_type)?,
     })
+}
+
+fn one_or_more_permanents_with_original_printing_on_battlefield_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TriggerEvent, ParseError> {
+    let text = pair.as_str().to_ascii_lowercase();
+    let expansion_clause_pair = only_inner(
+        pair,
+        "original-printing battlefield trigger missing expansion clause",
+    )?;
+    Ok(
+        TriggerEvent::OneOrMorePermanentsWithOriginalPrintingOnBattlefield {
+            other: text.contains(" other "),
+            nontoken: text.contains(" nontoken "),
+            expansion: original_printing_expansion_from_pair(expansion_clause_pair)?,
+        },
+    )
+}
+
+fn original_printing_expansion_from_pair(pair: Pair<Rule>) -> Result<String, ParseError> {
+    let expansion_pair = only_inner(pair, "original-printing clause missing expansion name")?;
+    Ok(expansion_pair.as_str().to_string())
 }
 
 fn enchanted_permanent_dies_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
@@ -3968,6 +3998,42 @@ fn return_destination_from_pair(pair: Pair<Rule>) -> Result<ReturnDestination, P
     }
 }
 
+fn play_restriction_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseError> {
+    let mut actions = Vec::new();
+    let mut filter = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::play_restriction_action => {
+                actions.push(play_restriction_action_from_pair(child)?);
+            }
+            Rule::original_printing_expansion_clause => {
+                filter = Some(PlayRestrictionFilter::OriginalPrinting {
+                    expansion: original_printing_expansion_from_pair(child)?,
+                });
+            }
+            _ => return Err(ParseError::Internal("play restriction part")),
+        }
+    }
+    if actions.is_empty() {
+        return Err(ParseError::Internal("play restriction missing action"));
+    }
+    Ok(StaticAbility::PlayRestriction(PlayRestriction {
+        affected: PlayRestrictionAffected::Players,
+        actions,
+        filter: filter.ok_or(ParseError::Internal("play restriction missing filter"))?,
+    }))
+}
+
+fn play_restriction_action_from_pair(
+    pair: Pair<Rule>,
+) -> Result<PlayRestrictionAction, ParseError> {
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "cast spells" => Ok(PlayRestrictionAction::CastSpells),
+        "play lands" => Ok(PlayRestrictionAction::PlayLands),
+        _ => Err(ParseError::Internal("play restriction action")),
+    }
+}
+
 fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseError> {
     match pair.as_rule() {
         Rule::static_as_long_as => {
@@ -4331,6 +4397,7 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 },
             )
         }
+        Rule::static_play_restriction => play_restriction_from_pair(pair),
         Rule::static_you_may_have_source_enter_as_copy => {
             let mut inner = pair.into_inner();
             let source_pair = inner
