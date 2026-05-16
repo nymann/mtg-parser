@@ -17,14 +17,14 @@ use crate::ast::{
     ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
     NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
-    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction, Step,
-    TapAllPermanentsActor, TapUntapAction, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
-    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCondition,
-    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, ReturnDestination,
+    Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
+    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction,
+    Step, TapAllPermanentsActor, TapUntapAction, TargetPermanentEndOfTurnEffect,
+    TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
+    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 pub fn unparse(statement: &Statement) -> String {
@@ -242,13 +242,24 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 out.push_str(permanent_type_name(*card_type));
                 out.push(' ');
             }
-            out.push_str("card from your ");
-            out.push_str(zone_name(*from));
-            match to {
-                Zone::Battlefield => out.push_str(" to the "),
-                _ => out.push_str(" to your "),
+            if let Some(from) = from {
+                out.push_str("card from your ");
+                out.push_str(zone_name(*from));
+                out.push_str(" to ");
+            } else {
+                out.push_str("to ");
             }
-            out.push_str(zone_name(*to));
+            match to {
+                ReturnDestination::TheBattlefield => out.push_str("the battlefield"),
+                ReturnDestination::YourZone(zone) => {
+                    out.push_str("your ");
+                    out.push_str(zone_name(*zone));
+                }
+                ReturnDestination::ItsOwnersZone(zone) => {
+                    out.push_str("its owner's ");
+                    out.push_str(zone_name(*zone));
+                }
+            }
             out.push('.');
         }
         Statement::ExchangeThatCardWithTopCardOfYourLibrary => {

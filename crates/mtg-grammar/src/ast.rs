@@ -167,10 +167,11 @@ pub enum Statement {
         zone: Zone,
     },
     /// "Return target [<card_type>] card from your <zone> to your <zone/the battlefield>."
+    /// "Return target <permanent_type> to its owner's <zone>."
     ReturnTargetCardFromYourZoneToZone {
         card_type: Option<PermanentType>,
-        from: Zone,
-        to: Zone,
+        from: Option<Zone>,
+        to: ReturnDestination,
     },
     /// "Exchange that card with the top card of your library."
     ExchangeThatCardWithTopCardOfYourLibrary,
@@ -1673,6 +1674,13 @@ pub enum Zone {
     Hand,
     Ante,
     Battlefield,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ReturnDestination {
+    YourZone(Zone),
+    TheBattlefield,
+    ItsOwnersZone(Zone),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

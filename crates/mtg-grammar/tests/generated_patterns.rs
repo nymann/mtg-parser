@@ -339,3 +339,5 @@ mod timetwister;
 mod twiddle;
 #[path = "generated_patterns/two_headed_giant_of_foriys.rs"]
 mod two_headed_giant_of_foriys;
+#[path = "generated_patterns/unsummon.rs"]
+mod unsummon;

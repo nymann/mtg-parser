@@ -19,14 +19,14 @@ use crate::ast::{
     ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
     NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
-    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction, Step,
-    TapAllPermanentsActor, TapUntapAction, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
-    TextChangeReplacementTerm, TokenColor, TokenDescription, TriggerCondition,
-    TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
-    TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage, ValueExpression, Variable,
-    VariableDefinition, VariablePtModifier, Zone,
+    PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, ReturnDestination,
+    Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
+    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction,
+    Step, TapAllPermanentsActor, TapUntapAction, TargetPermanentEndOfTurnEffect,
+    TargetPermanentSelector, TextChangeReplacementTerm, TokenColor, TokenDescription,
+    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -426,21 +426,26 @@ fn return_target_card_from_your_zone_to_zone_from_pair(
     let card_kind_pair = inner
         .next()
         .ok_or(ParseError::Internal("return target card missing card kind"))?;
-    let from_pair = inner.next().ok_or(ParseError::Internal(
-        "return target card missing source zone",
-    ))?;
     let to_pair = inner.next().ok_or(ParseError::Internal(
         "return target card missing destination zone",
     ))?;
+    let (from_pair, to_pair) = if to_pair.as_rule() == Rule::return_destination_zone {
+        (None, to_pair)
+    } else {
+        let destination_pair = inner.next().ok_or(ParseError::Internal(
+            "return target card missing destination zone",
+        ))?;
+        (Some(to_pair), destination_pair)
+    };
     let card_type = card_kind_pair
         .into_inner()
-        .next()
+        .find(|child| child.as_rule() == Rule::permanent_type)
         .map(permanent_type_from_pair)
         .transpose()?;
     Ok(Statement::ReturnTargetCardFromYourZoneToZone {
         card_type,
-        from: zone_from_pair(from_pair)?,
-        to: zone_from_pair(to_pair)?,
+        from: from_pair.map(zone_from_pair).transpose()?,
+        to: return_destination_from_pair(to_pair)?,
     })
 }
 
@@ -3479,6 +3484,30 @@ fn zone_from_pair(pair: Pair<Rule>) -> Result<Zone, ParseError> {
         "ante" => Ok(Zone::Ante),
         "battlefield" => Ok(Zone::Battlefield),
         _ => Err(ParseError::Internal("zone variant")),
+    }
+}
+
+fn return_destination_from_pair(pair: Pair<Rule>) -> Result<ReturnDestination, ParseError> {
+    if pair.as_rule() != Rule::return_destination_zone {
+        return Err(ParseError::Internal("return_destination_zone"));
+    }
+    let text = pair.as_str().to_ascii_lowercase();
+    let zone_pair = only_inner(pair, "return destination missing zone")?;
+    let zone = zone_from_pair(zone_pair)?;
+    if text.starts_with("your ") {
+        Ok(ReturnDestination::YourZone(zone))
+    } else if text.starts_with("the ") {
+        if zone == Zone::Battlefield {
+            Ok(ReturnDestination::TheBattlefield)
+        } else {
+            Err(ParseError::Internal(
+                "return destination non-battlefield the-zone",
+            ))
+        }
+    } else if text.starts_with("its owner's ") {
+        Ok(ReturnDestination::ItsOwnersZone(zone))
+    } else {
+        Err(ParseError::Internal("return destination owner"))
     }
 }
 

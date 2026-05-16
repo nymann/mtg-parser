@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 249,
+  "passing": 250,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -810,8 +810,7 @@
       "status": "pass"
     },
     "lea/Unsummon": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:15\n  |\n1 | Return target creature to its owner's hand.\n  |               ^---\n  |\n  = expected return_target_card_kind"
+      "status": "pass"
     },
     "lea/Uthden Troll": {
       "status": "pass"

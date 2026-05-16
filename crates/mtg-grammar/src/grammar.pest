@@ -501,12 +501,12 @@ you_own_target_card_in_zone = {
 
 return_target_card_from_your_zone_to_zone = {
     ^"return" ~ ^"target" ~ return_target_card_kind
-  ~ ^"from" ~ ^"your" ~ owned_zone
+  ~ (^"from" ~ ^"your" ~ owned_zone)?
   ~ ^"to" ~ return_destination_zone ~ "."
 }
 
-return_target_card_kind = { permanent_type? ~ ^"card" }
-return_destination_zone = _{ (^"your" ~ owned_zone) | (^"the" ~ battlefield_zone) }
+return_target_card_kind = { (permanent_type ~ ^"card") | ^"card" | permanent_type }
+return_destination_zone = { (^"your" ~ owned_zone) | (^"the" ~ battlefield_zone) | (^"its" ~ ^"owner's" ~ owned_zone) }
 battlefield_zone = @{ ^"battlefield" }
 
 exchange_that_card_with_top_card_of_your_library = {
