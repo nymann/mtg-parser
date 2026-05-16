@@ -1,0 +1,38 @@
+[fixture]
+concept = "copy_spell"
+rule = "copy_target_spell_except_copy_is_color"
+
+[[example]]
+text = "Copy target instant spell, except that the copy is red."
+
+[[example]]
+text = "Copy target sorcery spell, except that the copy is blue."
+
+[[example]]
+text = "Copy target instant or sorcery spell, except that the copy is red."
+
+[[example]]
+text = "Copy target instant spell, except that the copy is white."
+
+[[example]]
+text = "Copy target sorcery spell, except that the copy is green."
+
+[[counterexample]]
+text = "You may choose new targets for the copy."
+reason = "Target-retargeting permission for an existing copy, not creation of a spell copy."
+
+[[counterexample]]
+text = "Target spell or permanent becomes red."
+reason = "Color-changing effect for a target spell or permanent, not a copy effect."
+
+[[counterexample]]
+text = "Copy target creature, except it doesn't copy that creature's color and it has this ability."
+reason = "Permanent-copy wording with a color-copy exception, not target spell copying."
+
+[[counterexample]]
+text = "Counter target red spell."
+reason = "Spell countering with a color qualifier, not spell copying."
+
+[[counterexample]]
+text = "Copy target instant spell, except that the copy is red. trailing"
+reason = "Exact-consumption guard."

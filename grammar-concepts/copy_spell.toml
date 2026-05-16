@@ -1,0 +1,96 @@
+[[axis]]
+name = "object"
+values = ["spell"]
+
+[[axis]]
+name = "target_required"
+values = ["true"]
+
+[[axis]]
+name = "spell_types"
+values = [
+    "instant",
+    "sorcery",
+    "instant_or_sorcery",
+]
+
+[[axis]]
+name = "copy_exception"
+values = ["color_override"]
+
+[[axis]]
+name = "color"
+values = [
+    "white",
+    "blue",
+    "black",
+    "red",
+    "green",
+]
+
+[boundary]
+excludes = [
+    "Instructions that choose new targets for an already-created copy.",
+    "Color-changing effects for spells or permanents that do not create a spell copy.",
+    "Copy effects for nonspell objects or permanent-copy exceptions.",
+    "Countering, destroying, exiling, or otherwise interacting with spells without copying them.",
+]
+includes = [
+    "Imperative copy effects that copy a target instant, sorcery, or instant or sorcery spell.",
+    "Color override exceptions of the form except that the copy is a color.",
+    "The existing spell_type_choice and color_word grammar axes for spell type and color data.",
+]
+
+[concept]
+name = "copy_spell"
+pest_rules = ["copy_target_spell_except_copy_is_color"]
+rules_queries = ["lex: copy target spell except copy is color"]
+rules_terms = [
+    "copy",
+    "spell",
+    "target",
+    "instant",
+    "sorcery",
+    "color",
+]
+
+[[counterexample]]
+reason = "Target-retargeting permission for an existing copy, not creation of a spell copy."
+text = "You may choose new targets for the copy."
+
+[[counterexample]]
+reason = "Color-changing effect for a target spell or permanent, not a copy effect."
+text = "Target spell or permanent becomes red."
+
+[[counterexample]]
+reason = "Permanent-copy wording with a color-copy exception, not target spell copying."
+text = "Copy target creature, except it doesn't copy that creature's color and it has this ability."
+
+[[counterexample]]
+reason = "Spell countering with a color qualifier, not spell copying."
+text = "Counter target red spell."
+
+[[example]]
+text = "Copy target instant spell, except that the copy is red."
+
+[[example]]
+text = "Copy target sorcery spell, except that the copy is blue."
+
+[[example]]
+text = "Copy target instant or sorcery spell, except that the copy is red."
+
+[grammar_query]
+candidate_rules = [
+    "copy_target_spell_except_copy_is_color",
+    "spell_type_choice",
+    "spell_type",
+    "color_word",
+    "you_may_choose_new_targets_for_the_copy",
+    "target_spell_or_permanent_becomes_color",
+    "counter_target_spell",
+]
+selected_rule = "copy_target_spell_except_copy_is_color"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
