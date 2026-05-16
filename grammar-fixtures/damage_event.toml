@@ -1,0 +1,31 @@
+[fixture]
+concept = "damage_event"
+rule = "damage_event_statement"
+
+[[example]]
+text = "Lightning Bolt deals 3 damage to any target."
+
+[[example]]
+text = "Fireball deals X damage divided evenly, rounded down, among any number of targets."
+
+[[example]]
+text = "Psionic Blast deals 4 damage to any target and 2 damage to you."
+
+[[example]]
+text = "Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way."
+
+[[counterexample]]
+text = "Whenever this creature deals damage to an opponent, that player discards a card at random."
+reason = "Triggered damage condition, not a named-source damage event instruction."
+
+[[counterexample]]
+text = "The next time a source of your choice would deal damage to target creature this turn, prevent that damage."
+reason = "Replacement/prevention wrapper around a future damage event."
+
+[[counterexample]]
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+reason = "Direct prevention effect, not an instruction for a named source to deal damage."
+
+[[counterexample]]
+text = "Lightning Bolt deals 3 damage to any target. trailing"
+reason = "Exact-consumption guard."

@@ -1,0 +1,96 @@
+[[axis]]
+name = "source"
+values = ["named_proper_name"]
+
+[[axis]]
+name = "amount"
+values = [
+    "fixed_number",
+    "variable",
+    "derived_equal_to",
+]
+
+[[axis]]
+name = "recipient"
+values = [
+    "any_target",
+    "recipient_list",
+    "divided_evenly_among_targets",
+    "per-recipient_assignments",
+]
+
+[[axis]]
+name = "phrase_order"
+values = [
+    "amount_before_recipient",
+    "recipient_before_equal_to_amount",
+    "assignment_list",
+]
+
+[boundary]
+excludes = [
+    "Triggered damage conditions that start with whenever or when.",
+    "Replacement effects for damage that would be dealt.",
+    "Prevention effects that prevent a damage event rather than instructing a named source to deal damage.",
+]
+includes = [
+    "Named-source damage instructions rooted at damage_event_statement.",
+    "Fixed, variable, and derived equal-to damage amounts.",
+    "Any-target, recipient-list, divided-evenly, and per-recipient assignment recipient shapes already encoded by damage_event_statement.",
+]
+
+[concept]
+name = "damage_event"
+pest_rules = ["damage_event_statement"]
+rules_queries = [
+    "lex: source deals damage to any target",
+    "lex: damage divided evenly rounded down among any number of targets",
+]
+rules_terms = [
+    "damage",
+    "source",
+    "target",
+    "replacement effect",
+    "prevention effect",
+    "triggered ability",
+]
+
+[[counterexample]]
+reason = "Triggered damage condition, not a named-source damage event instruction."
+text = "Whenever this creature deals damage to an opponent, that player discards a card at random."
+
+[[counterexample]]
+reason = "Replacement/prevention wrapper around a future damage event."
+text = "The next time a source of your choice would deal damage to target creature this turn, prevent that damage."
+
+[[counterexample]]
+reason = "Direct prevention effect, not an instruction for a named source to deal damage."
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+
+[[example]]
+text = "Lightning Bolt deals 3 damage to any target."
+
+[[example]]
+text = "Fireball deals X damage divided evenly, rounded down, among any number of targets."
+
+[[example]]
+text = "Psionic Blast deals 4 damage to any target and 2 damage to you."
+
+[[example]]
+text = "Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way."
+
+[grammar_query]
+candidate_rules = [
+    "damage_event_statement",
+    "damage_event_assignment_list",
+    "damage_event_amount",
+    "damage_event_recipients",
+    "trigger_damage_event",
+    "next_damage_event_effect",
+    "damage_prevention_effect",
+]
+selected_rule = "damage_event_statement"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
