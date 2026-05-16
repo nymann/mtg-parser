@@ -883,9 +883,11 @@ static_source_doesnt_untap_during_your_untap_step = {
 }
 
 static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps = {
-    ^"creatures" ~ ^"with" ~ ^"power" ~ unsigned_number ~ ^"or" ~ ^"greater"
-  ~ ^"don't" ~ ^"untap" ~ ^"during" ~ ^"their" ~ ^"controllers'"
-  ~ ^"untap" ~ ^"steps" ~ "."
+    (^"creatures" ~ ^"with" ~ ^"power" ~ unsigned_number ~ ^"or" ~ ^"greater"
+    ~ ^"don't" ~ ^"untap" ~ ^"during" ~ ^"their" ~ ^"controllers'"
+    ~ ^"untap" ~ ^"steps" ~ ".")
+  | (^"players" ~ ^"can't" ~ ^"untap" ~ ^"more" ~ ^"than" ~ number_word
+    ~ permanent_type ~ ^"during" ~ ^"their" ~ ^"untap" ~ ^"steps" ~ ".")
 }
 
 static_source_cant_block_creatures_with_power_or_greater = {

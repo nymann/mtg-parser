@@ -309,3 +309,5 @@ mod simulacrum;
 mod siren_s_call;
 #[path = "generated_patterns/sleight_of_mind.rs"]
 mod sleight_of_mind;
+#[path = "generated_patterns/smoke.rs"]
+mod smoke;

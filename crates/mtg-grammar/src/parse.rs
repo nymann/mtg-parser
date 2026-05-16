@@ -19,7 +19,7 @@ use crate::ast::{
     OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect, PermanentController,
     PermanentType, PhysicalAction, PreventionRecipient, PtModifier, RegenerateRecipient, Rounding,
     Sign, SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor,
+    SpellType, Statement, StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm,
     TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
     TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
@@ -3594,19 +3594,35 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             }
         }
         Rule::static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps => {
-            let power_pair = pair
-                .into_inner()
+            let mut inner = pair.into_inner();
+            let first_pair = inner
                 .next()
-                .expect("static untap restriction names power threshold");
-            let power = power_pair
-                .as_str()
-                .parse::<u32>()
-                .map_err(|_| ParseError::Internal("static untap restriction power"))?;
-            Ok(
-                StaticAbility::CreaturesWithPowerOrGreaterDontUntapDuringTheirControllersUntapSteps {
-                    power,
-                },
-            )
+                .expect("static untap restriction names a threshold");
+            match first_pair.as_rule() {
+                Rule::unsigned_number => {
+                    let power = first_pair
+                        .as_str()
+                        .parse::<u32>()
+                        .map_err(|_| ParseError::Internal("static untap restriction power"))?;
+                    Ok(StaticAbility::UntapRestrictionDuringUntapSteps {
+                        restriction: StaticUntapRestriction::CreaturesWithPowerOrGreater { power },
+                    })
+                }
+                Rule::number_word => {
+                    let amount = number_word_to_u32(first_pair.as_str())
+                        .ok_or(ParseError::Internal("static untap restriction amount"))?;
+                    let permanent_type_pair = inner
+                        .next()
+                        .expect("static untap restriction names a permanent type");
+                    Ok(StaticAbility::UntapRestrictionDuringUntapSteps {
+                        restriction: StaticUntapRestriction::PlayersCantUntapMoreThanPermanents {
+                            amount,
+                            permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                        },
+                    })
+                }
+                _ => Err(ParseError::Internal("static untap restriction threshold")),
+            }
         }
         Rule::static_source_cant_block_creatures_with_power_or_greater => {
             let mut inner = pair.into_inner();

@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 233,
+  "passing": 234,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -712,8 +712,7 @@
       "status": "pass"
     },
     "lea/Smoke": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 1:9\n  |\n1 | Players can't untap more than one creature during their untap steps.\n  |         ^---\n  |\n  = expected discard_cards_action or sacrifice_permanents_action"
+      "status": "pass"
     },
     "lea/Sol Ring": {
       "status": "pass"

@@ -1783,9 +1783,8 @@ pub enum StaticAbility {
     SourceDoesntUntapDuringYourUntapStep { source: SourceObject },
     /// "Enchanted <object> doesn't untap during its controller's untap step."
     EnchantedDoesntUntapDuringItsControllersUntapStep { object: EnchantedObject },
-    /// "Creatures with power N or greater don't untap during their
-    /// controllers' untap steps."
-    CreaturesWithPowerOrGreaterDontUntapDuringTheirControllersUntapSteps { power: u32 },
+    /// Untap restrictions that apply during untap steps.
+    UntapRestrictionDuringUntapSteps { restriction: StaticUntapRestriction },
     /// "This <permanent_type> can't block creatures with power N or greater."
     SourceCantBlockCreaturesWithPowerOrGreater { source: SourceObject, power: u32 },
     /// "<source name>'s power and toughness are each equal to the number
@@ -1839,6 +1838,19 @@ pub enum StaticAbility {
     /// "Each creature in a pile that can block the creature that pile is
     /// assigned to does so."
     CreaturesInAssignedPileBlockIfAble,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StaticUntapRestriction {
+    /// "Creatures with power N or greater don't untap during their
+    /// controllers' untap steps."
+    CreaturesWithPowerOrGreater { power: u32 },
+    /// "Players can't untap more than N <permanent_type> during their
+    /// untap steps."
+    PlayersCantUntapMoreThanPermanents {
+        amount: u32,
+        permanent_type: PermanentType,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
