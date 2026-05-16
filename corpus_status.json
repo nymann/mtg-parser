@@ -2,7 +2,7 @@
   "_v": 1,
   "generated_at": "2026-05-16",
   "total": 290,
-  "passing": 254,
+  "passing": 255,
   "cards": {
     "lea/Air Elemental": {
       "status": "pass"
@@ -871,8 +871,7 @@
       "status": "pass"
     },
     "lea/Web": {
-      "status": "fail",
-      "error": "parse: parse error:  --> 2:25\n  |\n2 | Enchanted creature gets +0/+2 and has reach.\n  |                         ^---\n  |\n  = expected signed_variable"
+      "status": "pass"
     },
     "lea/Wheel of Fortune": {
       "status": "fail",

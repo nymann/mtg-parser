@@ -360,3 +360,5 @@ mod vesuvan_doppelganger;
 mod veteran_bodyguard;
 #[path = "generated/volcanic_eruption.rs"]
 mod volcanic_eruption;
+#[path = "generated/web.rs"]
+mod web;

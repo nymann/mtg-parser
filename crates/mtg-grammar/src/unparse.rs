@@ -1717,6 +1717,19 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             write_pt_modifier(out, *modifier);
             out.push('.');
         }
+        StaticAbility::EnchantedGetsAndHasKeyword {
+            permanent_type,
+            modifier,
+            keyword,
+        } => {
+            out.push_str("Enchanted ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" gets ");
+            write_pt_modifier(out, *modifier);
+            out.push_str(" and has ");
+            write_keyword_lowercase(out, *keyword);
+            out.push('.');
+        }
         StaticAbility::ColoredPermanentsGet {
             color,
             permanent_type,

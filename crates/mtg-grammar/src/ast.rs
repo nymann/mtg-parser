@@ -1804,6 +1804,13 @@ pub enum StaticAbility {
         permanent_type: PermanentType,
         modifier: PtModifier,
     },
+    /// "Enchanted <type> gets <modifier> and has <keyword>." — P/T
+    /// modifier plus keyword-granting effect on the enchanted permanent.
+    EnchantedGetsAndHasKeyword {
+        permanent_type: PermanentType,
+        modifier: PtModifier,
+        keyword: Keyword,
+    },
     /// "<color> <permanent_type>s get <modifier>." — P/T modifier on
     /// every permanent matching the color and type filters.
     ColoredPermanentsGet {

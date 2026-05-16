@@ -818,7 +818,9 @@ static_status_creatures_you_control_get = {
 creature_status = @{ ^"attacking" | ^"tapped" | ^"untapped" }
 
 static_enchanted_gets = {
-    ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier ~ "."
+    ^"enchanted" ~ permanent_type ~ ^"gets" ~ pt_modifier
+  ~ (^"and" ~ ^"has" ~ keyword)?
+  ~ "."
 }
 
 static_enchanted_gets_with_definitions = {

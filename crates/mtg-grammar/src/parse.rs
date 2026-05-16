@@ -3741,10 +3741,20 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             let modifier_pair = inner
                 .next()
                 .expect("static_enchanted_gets has a pt_modifier");
-            Ok(StaticAbility::EnchantedGets {
-                permanent_type: permanent_type_from_pair(pt_pair)?,
-                modifier: pt_modifier_from_pair(modifier_pair)?,
-            })
+            let permanent_type = permanent_type_from_pair(pt_pair)?;
+            let modifier = pt_modifier_from_pair(modifier_pair)?;
+            if let Some(keyword_pair) = inner.next() {
+                Ok(StaticAbility::EnchantedGetsAndHasKeyword {
+                    permanent_type,
+                    modifier,
+                    keyword: keyword_from_inner_pair(keyword_pair)?,
+                })
+            } else {
+                Ok(StaticAbility::EnchantedGets {
+                    permanent_type,
+                    modifier,
+                })
+            }
         }
         Rule::static_enchanted_gets_with_definitions => {
             let mut inner = pair.into_inner();
