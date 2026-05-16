@@ -1,0 +1,25 @@
+[fixture]
+concept = "exile"
+rule = "exile"
+
+[[example]]
+text = "Exile target creature."
+
+[[example]]
+text = "Exile target permanent."
+
+[[counterexample]]
+text = "If it would die this turn, exile it instead."
+reason = "Replacement effects are outside the immediate imperative exile boundary."
+
+[[counterexample]]
+text = "cards in exile"
+reason = "Exile as a zone noun is outside this keyword action boundary."
+
+[[counterexample]]
+text = "the exiled card"
+reason = "Exiled as an adjective is outside this keyword action boundary."
+
+[[counterexample]]
+text = "Exile target creature. trailing"
+reason = "Exact-consumption guard."

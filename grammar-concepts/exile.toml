@@ -1,0 +1,67 @@
+[[axis]]
+name = "action"
+values = ["keyword_action_exile"]
+
+[[axis]]
+name = "effect_kind"
+values = ["immediate_zone_change"]
+
+[[axis]]
+name = "object_selector"
+values = ["destroy_target"]
+
+[[axis]]
+name = "sentence_form"
+values = ["imperative_statement"]
+
+[boundary]
+excludes = [
+    "Replacement effects that exile an object instead of another event.",
+    "References to the exile zone as a noun.",
+    "References to exiled objects using exiled as an adjective.",
+]
+includes = ["Imperative Exile effects using the existing destroy_target selector grammar."]
+
+[concept]
+name = "exile"
+pest_rules = ["exile"]
+rules_queries = [
+    "lex: exile target creature",
+    "lex: exile target permanent",
+]
+rules_terms = [
+    "exile",
+    "permanent",
+    "target",
+    "zone",
+]
+
+[[counterexample]]
+reason = "Replacement effects that exile instead of another event are outside the immediate imperative exile boundary."
+text = "If it would die this turn, exile it instead."
+
+[[counterexample]]
+reason = "Exile as a zone noun is outside the keyword action exile boundary."
+text = "cards in exile"
+
+[[counterexample]]
+reason = "Exiled as an adjective is outside the keyword action exile boundary."
+text = "the exiled card"
+
+[[example]]
+text = "Exile target creature."
+
+[[example]]
+text = "Exile target permanent."
+
+[grammar_query]
+candidate_rules = [
+    "exile",
+    "destroy_target",
+    "if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn",
+]
+selected_rule = "exile"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
