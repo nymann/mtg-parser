@@ -10,12 +10,13 @@ use crate::ast::{
     DamageAmount, DamageAssignment, DamageKind, DamageLifeGainCap, DamageLifeGainReference,
     DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
     DamagePreventionEvent, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
-    DestroyTarget, DiesWording, EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer,
-    ManaCost, ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
-    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
+    DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, EachPlayerAction,
+    EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword,
+    LandCountController, LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier,
+    ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
+    NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer,
+    PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction, PreventionRecipient,
+    PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType, Statement,
     StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm,
@@ -450,6 +451,15 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 "Destroy it at the beginning of the next end step if it didn't attack this turn.",
             );
         }
+        Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep { target, condition } => {
+            out.push_str("Destroy ");
+            write_referenced_creature(out, *target);
+            out.push_str(" at the beginning of the next end step");
+            if let Some(DestroyReferencedCreatureCondition::DidntAttackThisTurn) = condition {
+                out.push_str(" if it didn't attack this turn");
+            }
+            out.push('.');
+        }
         Statement::ModalChoice { modes } => write_modal_choice(out, modes),
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
         Statement::ActivatedAbility(aa) => write_activated_ability(out, aa),
@@ -485,6 +495,8 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
             | Statement::YouGainLifeEqualToDamage { .. }
             | Statement::NamedSourceDealsDamage { .. }
             | Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn
+            | Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn
+            | Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep { .. }
             | Statement::ForEachAttackingCreatureChooseLabelBlockingRestriction { .. }
     )
 }
@@ -1364,12 +1376,12 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             .expect("writing to String cannot fail");
         }
         ActivatedEffect::TargetPermanentGainsKeywordUntilEndOfTurn {
-            permanent_type,
+            target,
             keyword,
         } => {
             write_target_permanent_until_end_of_turn(
                 out,
-                TargetPermanentSelector::Permanent(*permanent_type),
+                *target,
                 &TargetPermanentEndOfTurnEffect::GainsKeyword(*keyword),
             );
         }
@@ -3071,6 +3083,18 @@ fn write_target_permanent_selector(out: &mut String, target: TargetPermanentSele
             out.push_str(combat_role_name(role));
             out.push_str(" creature");
         }
+        TargetPermanentSelector::ControlledCreatureWithToughnessLessThanSourcePower { source } => {
+            out.push_str("creature you control with toughness less than ");
+            write_source_object(out, source);
+            out.push_str("'s power");
+        }
+    }
+}
+
+fn write_referenced_creature(out: &mut String, target: ReferencedCreature) {
+    match target {
+        ReferencedCreature::It => out.push_str("it"),
+        ReferencedCreature::ThatCreature => out.push_str("that creature"),
     }
 }
 

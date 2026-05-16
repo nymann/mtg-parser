@@ -12,18 +12,19 @@ use crate::ast::{
     DamageAmount, DamageAssignment, DamageEvent, DamageEventPattern, DamageKind, DamageLifeGainCap,
     DamageLifeGainReference, DamagePreventionAmount, DamagePreventionDuration,
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
-    DamageRedirectionDestination, DestroyTarget, DiesWording, EachPlayerAction, EnchantObject,
-    EnchantedObject, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController,
-    LifeLossAmount, LifeLossPlayer, ManaCost, ManaSymbol, MixedPtModifier, ModalMode,
-    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
-    ObjectStatus, OptionalCost, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
-    PermanentController, PermanentType, PhysicalAction, PreventionRecipient, PtModifier,
-    RegenerateRecipient, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticUntapRestriction,
-    Step, TapAllPermanentsActor, TargetPermanentEndOfTurnEffect, TargetPermanentSelector,
-    TextChangeReplacementTerm, TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition,
-    TriggerDamageRecipient, TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility,
-    TriggeredDamage, ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
+    DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
+    EachPlayerAction, EnchantObject, EnchantedObject, IfYouDoEffect, ImperativeAction,
+    InterveningIf, Keyword, LandCountController, LifeLossAmount, LifeLossPlayer, ManaCost,
+    ManaSymbol, MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent,
+    NamedKeywordAbility, NamedSourcePowerToughnessCount, ObjectStatus, OptionalCost, PayManaAmount,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
+    PreventionRecipient, PtModifier, ReferencedCreature, RegenerateRecipient, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SourceObject, SpellAdditionalCost, SpellType,
+    Statement, StaticAbility, StaticUntapRestriction, Step, TapAllPermanentsActor,
+    TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm,
+    TriggerCondition, TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient,
+    TriggerDamageSource, TriggerEffect, TriggerEvent, TriggeredAbility, TriggeredDamage,
+    ValueExpression, Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 
 #[derive(Parser)]
@@ -221,8 +222,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::ignore_this_effect_for_each_creature_player_didnt_control_continuously => Ok(
             Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn,
         ),
-        Rule::destroy_it_at_beginning_of_next_end_step_if_it_didnt_attack_this_turn => {
-            Ok(Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn)
+        Rule::destroy_referenced_creature_at_beginning_of_next_end_step => {
+            destroy_referenced_creature_at_beginning_of_next_end_step_from_pair(pair)
         }
         Rule::keyword_ability => Ok(Statement::Keyword(keyword_from_pair(pair)?)),
         Rule::keyword_ability_list => keyword_list_from_pair(pair),
@@ -560,6 +561,16 @@ fn target_permanent_selector_from_pair(
         Rule::combat_role => Ok(TargetPermanentSelector::CombatRoleCreature {
             role: combat_role_from_pair(first)?,
         }),
+        Rule::controlled_creature_with_toughness_less_than_source_power => {
+            let source_pair = first.into_inner().next().ok_or(ParseError::Internal(
+                "controlled creature toughness selector missing source",
+            ))?;
+            Ok(
+                TargetPermanentSelector::ControlledCreatureWithToughnessLessThanSourcePower {
+                    source: source_object_from_pair(source_pair)?,
+                },
+            )
+        }
         _ => Err(ParseError::Internal("target_permanent_selector variant")),
     }
 }
@@ -616,8 +627,8 @@ fn target_permanent_gains_keyword_until_eot_from_pair(
     pair: Pair<Rule>,
 ) -> Result<ActivatedEffect, ParseError> {
     let mut inner = pair.into_inner();
-    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
-        "target permanent gains keyword missing permanent_type",
+    let target_pair = inner.next().ok_or(ParseError::Internal(
+        "target permanent gains keyword missing target selector",
     ))?;
     let effect_pair = inner.next().ok_or(ParseError::Internal(
         "target permanent gains keyword missing effect",
@@ -627,9 +638,58 @@ fn target_permanent_gains_keyword_until_eot_from_pair(
         "target permanent gains keyword missing keyword",
     )?;
     Ok(ActivatedEffect::TargetPermanentGainsKeywordUntilEndOfTurn {
-        permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+        target: target_permanent_selector_from_pair(target_pair)?,
         keyword: keyword_from_inner_pair(keyword_pair)?,
     })
+}
+
+fn destroy_referenced_creature_at_beginning_of_next_end_step_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let target_pair = inner.next().ok_or(ParseError::Internal(
+        "destroy referenced creature missing target",
+    ))?;
+    let target = referenced_creature_from_pair(target_pair)?;
+    let _time_pair = inner.next().ok_or(ParseError::Internal(
+        "destroy referenced creature missing timing",
+    ))?;
+    let condition = inner
+        .next()
+        .map(destroy_referenced_creature_condition_from_pair)
+        .transpose()?;
+
+    if target == ReferencedCreature::It
+        && condition == Some(DestroyReferencedCreatureCondition::DidntAttackThisTurn)
+    {
+        return Ok(Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn);
+    }
+
+    Ok(Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep { target, condition })
+}
+
+fn referenced_creature_from_pair(pair: Pair<Rule>) -> Result<ReferencedCreature, ParseError> {
+    if pair.as_rule() != Rule::referenced_creature {
+        return Err(ParseError::Internal("referenced_creature"));
+    }
+    match pair.as_str().to_ascii_lowercase().as_str() {
+        "it" => Ok(ReferencedCreature::It),
+        "that creature" => Ok(ReferencedCreature::ThatCreature),
+        _ => Err(ParseError::Internal("referenced_creature variant")),
+    }
+}
+
+fn destroy_referenced_creature_condition_from_pair(
+    pair: Pair<Rule>,
+) -> Result<DestroyReferencedCreatureCondition, ParseError> {
+    match pair.as_rule() {
+        Rule::destroy_referenced_creature_condition => {
+            Ok(DestroyReferencedCreatureCondition::DidntAttackThisTurn)
+        }
+        _ => Err(ParseError::Internal(
+            "destroy_referenced_creature_condition",
+        )),
+    }
 }
 
 fn target_spell_or_permanent_becomes_color_from_pair(

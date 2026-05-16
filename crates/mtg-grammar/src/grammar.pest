@@ -89,7 +89,7 @@ sentence_statement = _{
   | creatures_attack_this_turn_if_able
   | target_creature_defending_player_controls_can_block_any_number
   | it_blocks_each_attacking_creature_if_able
-  | destroy_it_at_beginning_of_next_end_step_if_it_didnt_attack_this_turn
+  | destroy_referenced_creature_at_beginning_of_next_end_step
   | ignore_this_effect_for_each_creature_player_didnt_control_continuously
   | this_turn_defending_players_make_random_blocking_piles
   | additional_blockers_may_be_put_into_additional_piles
@@ -955,11 +955,6 @@ it_blocks_each_attacking_creature_if_able = {
   ~ ^"this" ~ ^"turn" ~ ^"if" ~ ^"able" ~ "."
 }
 
-destroy_it_at_beginning_of_next_end_step_if_it_didnt_attack_this_turn = {
-    ^"destroy" ~ ^"it" ~ ^"at" ~ ^"the" ~ ^"beginning" ~ ^"of"
-  ~ ^"the" ~ ^"next" ~ ^"end" ~ ^"step" ~ ^"if" ~ ^"it"
-  ~ ^"didn't" ~ ^"attack" ~ ^"this" ~ ^"turn" ~ "."
-}
 ignore_this_effect_for_each_creature_player_didnt_control_continuously = {
     ^"ignore" ~ ^"this" ~ ^"effect" ~ ^"for" ~ ^"each" ~ ^"creature"
   ~ ^"the" ~ ^"player" ~ ^"didn't" ~ ^"control" ~ ^"continuously"
@@ -1104,7 +1099,7 @@ target_creature_with_power_or_less_cant_be_blocked = {
   ~ ^"this" ~ ^"turn" ~ "."
 }
 target_permanent_gains_keyword_until_eot = {
-    ^"target" ~ permanent_type ~ target_permanent_gains_keyword_eot_effect ~ "."
+    ^"target" ~ target_permanent_selector ~ target_permanent_gains_keyword_eot_effect ~ "."
 }
 activated_source_gets_until_eot = {
     source_object ~ ^"gets" ~ pt_modifier ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
@@ -1559,7 +1554,15 @@ text_change_replacement_term = {
 target_permanent_until_eot = {
     ^"target" ~ target_permanent_selector ~ target_permanent_eot_effect ~ "."
 }
-target_permanent_selector = { combat_role ~ ^"creature" | permanent_type }
+target_permanent_selector = {
+    controlled_creature_with_toughness_less_than_source_power
+  | combat_role ~ ^"creature"
+  | permanent_type
+}
+controlled_creature_with_toughness_less_than_source_power = {
+    ^"creature" ~ ^"you" ~ ^"control" ~ ^"with" ~ ^"toughness"
+  ~ ^"less" ~ ^"than" ~ source_object ~ "'s" ~ ^"power"
+}
 combat_role = @{ ^"attacking" | ^"blocking" }
 target_permanent_eot_effect = _{
     target_permanent_gains_keyword_and_gets_eot_effect
@@ -1651,6 +1654,15 @@ destroy_that_creature_if_it_attacked_this_turn = {
 }
 
 destroy_it = { ^"destroy" ~ ^"it" ~ "." }
+
+destroy_referenced_creature_at_beginning_of_next_end_step = {
+    ^"destroy" ~ referenced_creature ~ ^"at" ~ beginning_of_the_next_end_step
+  ~ destroy_referenced_creature_condition? ~ "."
+}
+referenced_creature = { ^"it" | ^"that" ~ ^"creature" }
+destroy_referenced_creature_condition = {
+    ^"if" ~ ^"it" ~ ^"didn't" ~ ^"attack" ~ ^"this" ~ ^"turn"
+}
 
 destroy_that_creature_at_end_of_combat = {
     ^"destroy" ~ ^"that" ~ ^"creature" ~ ^"at" ~ ^"end" ~ ^"of" ~ ^"combat" ~ "."

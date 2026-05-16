@@ -317,3 +317,5 @@ mod soul_net;
 mod spell_blast;
 #[path = "generated_patterns/stasis.rs"]
 mod stasis;
+#[path = "generated_patterns/stone_giant.rs"]
+mod stone_giant;

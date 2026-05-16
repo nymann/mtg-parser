@@ -293,6 +293,12 @@ pub enum Statement {
     ActivateOnlyAsSorcery,
     /// "Destroy it at the beginning of the next end step if it didn't attack this turn."
     DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn,
+    /// "Destroy <it/that creature> at the beginning of the next end step
+    /// [if it didn't attack this turn]."
+    DestroyReferencedCreatureAtBeginningOfNextEndStep {
+        target: ReferencedCreature,
+        condition: Option<DestroyReferencedCreatureCondition>,
+    },
     /// "Then, for each attacking creature you control, choose <label> or
     /// <label>. That creature can't be blocked this combat except by
     /// creatures with <keyword> and creatures in a pile with the chosen
@@ -477,6 +483,7 @@ pub(crate) enum TargetPermanentEndOfTurnEffect {
 pub enum TargetPermanentSelector {
     Permanent(PermanentType),
     CombatRoleCreature { role: CombatRole },
+    ControlledCreatureWithToughnessLessThanSourcePower { source: SourceObject },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1215,9 +1222,9 @@ pub enum ActivatedEffect {
     TargetCreatureWithPowerOrLessCantBeBlockedThisTurn {
         power: u32,
     },
-    /// "Target <type> gains <keyword> until end of turn."
+    /// "Target <selector> gains <keyword> until end of turn."
     TargetPermanentGainsKeywordUntilEndOfTurn {
-        permanent_type: PermanentType,
+        target: TargetPermanentSelector,
         keyword: Keyword,
     },
     /// "Enchanted <type> gets <modifier> until end of turn."
@@ -1908,6 +1915,17 @@ pub enum AttackRequirementSubject {
     ThatCreature,
     /// "creatures the active player controls"
     CreaturesActivePlayerControls,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ReferencedCreature {
+    It,
+    ThatCreature,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DestroyReferencedCreatureCondition {
+    DidntAttackThisTurn,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
