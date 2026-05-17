@@ -73,6 +73,12 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_named_damage_event(out, event);
         }
         Statement::DamageEffect(effect) => write_activated_damage_effect(out, effect),
+        Statement::PutCountersOnSource {
+            amount,
+            up_to,
+            counter,
+            source,
+        } => write_put_counters_on_source(out, *amount, *up_to, *counter, *source),
         Statement::NextCardDrawReplacement { replacement } => {
             write_next_card_draw_replacement(out, replacement);
         }
@@ -2092,25 +2098,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             up_to,
             counter,
             source,
-        } => {
-            out.push_str("Put ");
-            if *up_to {
-                out.push_str("up to ");
-            }
-            match *amount {
-                CounterAmount::Number(1) if !*up_to => out.push('a'),
-                _ => write_counter_amount(out, *amount),
-            }
-            out.push(' ');
-            write_pt_modifier(out, *counter);
-            if matches!(*amount, CounterAmount::Number(1)) && !*up_to {
-                out.push_str(" counter on ");
-            } else {
-                out.push_str(" counters on ");
-            }
-            write_source_object(out, *source);
-            out.push('.');
-        }
+        } => write_put_counters_on_source(out, *amount, *up_to, *counter, *source),
         ActivatedEffect::PutNamedCounterOnTargetNonBasicLand {
             counter_name,
             excluded_land_type,
@@ -3392,6 +3380,32 @@ fn write_counter_amount(out: &mut String, amount: CounterAmount) {
         CounterAmount::Number(n) => out.push_str(u32_to_number_word(n)),
         CounterAmount::Variable(variable) => out.push_str(variable_name(variable)),
     }
+}
+
+fn write_put_counters_on_source(
+    out: &mut String,
+    amount: CounterAmount,
+    up_to: bool,
+    counter: PtModifier,
+    source: SourceObject,
+) {
+    out.push_str("Put ");
+    if up_to {
+        out.push_str("up to ");
+    }
+    match amount {
+        CounterAmount::Number(1) if !up_to => out.push('a'),
+        _ => write_counter_amount(out, amount),
+    }
+    out.push(' ');
+    write_pt_modifier(out, counter);
+    if matches!(amount, CounterAmount::Number(1)) && !up_to {
+        out.push_str(" counter on ");
+    } else {
+        out.push_str(" counters on ");
+    }
+    write_source_object(out, source);
+    out.push('.');
 }
 
 fn write_named_counter_amount(out: &mut String, amount: NamedCounterAmount, counter_name: &str) {

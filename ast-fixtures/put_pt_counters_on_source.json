@@ -1,0 +1,80 @@
+{
+  "concept": "put_pt_counters_on_source",
+  "fixture_path": "grammar-fixtures/put_pt_counters_on_source.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "put_pt_counters_on_source",
+      "text": "Put a +1/+1 counter on this creature.",
+      "ast": {
+        "PutCountersOnSource": {
+          "amount": {
+            "Number": 1
+          },
+          "counter": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Plus"
+            }
+          },
+          "source": {
+            "This": "Creature"
+          },
+          "up_to": false
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "put_pt_counters_on_source",
+      "text": "Put two +1/+0 counters on it.",
+      "ast": {
+        "PutCountersOnSource": {
+          "amount": {
+            "Number": 2
+          },
+          "counter": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 0,
+              "sign": "Plus"
+            }
+          },
+          "source": "It",
+          "up_to": false
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "put_pt_counters_on_source",
+      "text": "Put up to X +1/+0 counters on CARDNAME.",
+      "ast": {
+        "PutCountersOnSource": {
+          "amount": {
+            "Variable": "X"
+          },
+          "counter": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 0,
+              "sign": "Plus"
+            }
+          },
+          "source": "ThisPermanent",
+          "up_to": true
+        }
+      }
+    }
+  ]
+}

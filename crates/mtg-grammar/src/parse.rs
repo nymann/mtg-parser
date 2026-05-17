@@ -345,6 +345,23 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::choose_target_non_creature_type_creature_active_player_controlled_continuously => {
             choose_target_non_creature_type_creature_active_player_controlled_continuously_statement_from_pair(pair)
         }
+        Rule::put_pt_counters_on_source => {
+            let ActivatedEffect::PutCountersOnSource {
+                amount,
+                up_to,
+                counter,
+                source,
+            } = activated_effect_from_pair(pair)?
+            else {
+                return Err(ParseError::Internal("put counters statement"));
+            };
+            Ok(Statement::PutCountersOnSource {
+                amount,
+                up_to,
+                counter,
+                source,
+            })
+        }
         Rule::put_named_counter_on_target_non_basic_land => {
             let (counter_name, excluded_land_type) =
                 put_named_counter_on_target_non_basic_land_parts(pair)?;

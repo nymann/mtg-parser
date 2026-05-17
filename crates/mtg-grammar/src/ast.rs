@@ -47,6 +47,13 @@ pub enum Statement {
     /// Damage prevention/replacement effects, with source, recipient,
     /// and event timing captured as axes.
     DamageEffect(ActivatedDamageEffect),
+    /// "Put [up to] N <pt_modifier> counter(s) on this <source>."
+    PutCountersOnSource {
+        amount: CounterAmount,
+        up_to: bool,
+        counter: PtModifier,
+        source: SourceObject,
+    },
     /// CR 614.11 replacement effect for the next card draw this turn.
     NextCardDrawReplacement {
         replacement: DrawReplacementEffect,
