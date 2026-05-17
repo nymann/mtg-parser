@@ -6485,6 +6485,24 @@ fn build_repair_prompt(gap: &ConceptGap, failure: &ConceptGrindGateFailure) -> R
 
 Repair the failed grammar-first gate. Do not run add-card. Do not edit generated tests. Do not try to make cards pass.
 
+Do not weaken, remove, skip, or narrow the failed gate. If `cargo test -p mtg-grammar`
+fails on `tests/prop.rs::round_trip`, treat it as canonical AST drift exposed by
+the current concept work or recent Phase 2 work. The expected repair is usually
+one of:
+- update `crates/mtg-grammar/tests/prop.rs` and, when duplicated there,
+  `crates/mtg-semantic/tests/prop.rs` so generators produce the canonical AST
+  shape instead of a legacy one-off variant;
+- preserve existing unit-test contracts by fixing grammar precedence, not by
+  changing documented unit expectations;
+- remove or rewrite ambiguous standalone concept fixture fragments when their
+  full sentence example already covers the axis;
+- add a crate-root export in `crates/mtg-grammar/src/lib.rs` only when a prop
+  generator needs an existing AST helper enum.
+
+Transient additions to `crates/mtg-grammar/tests/prop.proptest-regressions` are
+test-run artifacts; remove the newly added seed after repairing the underlying
+failure.
+
 Concept: {concept}
 Target rule: {target_rule}
 Failed gate: {label}
@@ -6494,7 +6512,9 @@ Gate output:
 {output}
 ```
 
-Keep the fix scoped to PEST grammar, grammar concept files, grammar fixtures, or xtask concept tooling if the gate exposes an orchestrator bug.
+Keep the fix scoped to PEST grammar, grammar concept files, grammar fixtures,
+property generators, crate-root AST exports, or xtask concept tooling if the
+gate exposes an orchestrator bug.
 
 Return:
 CONCEPT_REPAIR_RESULT:
@@ -7367,8 +7387,11 @@ fn ensure_clean_working_tree() -> Result<()> {
 const CONCEPT_GRIND_COMMIT_PATHS: &[&str] = &[
     "crates/mtg-grammar/src/ast.rs",
     "crates/mtg-grammar/src/grammar.pest",
+    "crates/mtg-grammar/src/lib.rs",
     "crates/mtg-grammar/src/parse.rs",
     "crates/mtg-grammar/src/unparse.rs",
+    "crates/mtg-grammar/tests/prop.rs",
+    "crates/mtg-semantic/tests/prop.rs",
     "grammar-concepts",
     "grammar-fixtures",
 ];
