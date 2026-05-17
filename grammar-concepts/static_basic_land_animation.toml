@@ -1,0 +1,88 @@
+[[axis]]
+name = "effect_kind"
+values = ["continuous_effect"]
+
+[[axis]]
+name = "ability_kind"
+values = ["static_ability"]
+
+[[axis]]
+name = "affected_object"
+values = ["all_lands_with_basic_land_type"]
+
+[[axis]]
+name = "source_basic_land_type"
+values = ["basic_land_type_plural"]
+
+[[axis]]
+name = "sets_power_toughness"
+values = ["unsigned_number/unsigned_number"]
+
+[[axis]]
+name = "sets_color"
+values = ["color_word?"]
+
+[[axis]]
+name = "adds_card_type"
+values = ["creature"]
+
+[[axis]]
+name = "retains_land_type"
+values = ["true"]
+
+[boundary]
+excludes = [
+    "Static basic land type-changing effects that do not animate lands.",
+    "Enchanted-object basic land type-setting effects, owned by static_enchanted_basic_land_type_setting.",
+    "Target-land temporary type-changing effects from activated or resolving effects.",
+]
+includes = [
+    "Static continuous effects that animate all lands with a basic land type into fixed-P/T creatures that are still lands.",
+    "Optional color setting for the animated lands.",
+]
+
+[concept]
+name = "static_basic_land_animation"
+pest_rules = ["static_basic_lands_are_pt_colored_creatures_still_lands"]
+rules_queries = [
+    "lex: All Forests are 1/1 creatures that are still lands",
+    "lex: lands are creatures that are still lands continuous effect",
+]
+rules_terms = [
+    "static ability",
+    "continuous effect",
+    "basic land type",
+    "power",
+    "toughness",
+    "card type",
+]
+
+[[counterexample]]
+reason = "Static basic land type-changing effect, not land animation."
+text = "All Islands are Mountains."
+
+[[counterexample]]
+reason = "Static basic land type-changing effect, not land animation."
+text = "All Swamps are Forests."
+
+[[counterexample]]
+reason = "Enchanted-object land type setting, not a global basic-land animation effect."
+text = "Enchanted land is a Mountain."
+
+[[counterexample]]
+reason = "Temporary target-land type-changing effect, not a static global animation effect."
+text = "Target land becomes a Mountain until CARDNAME leaves the battlefield."
+
+[[example]]
+text = "All Forests are 1/1 creatures that are still lands."
+
+[[example]]
+text = "All Mountains are 3/3 red creatures that are still lands."
+
+[grammar_query]
+candidate_rules = ["static_basic_lands_are_pt_colored_creatures_still_lands"]
+selected_rule = "static_basic_lands_are_pt_colored_creatures_still_lands"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

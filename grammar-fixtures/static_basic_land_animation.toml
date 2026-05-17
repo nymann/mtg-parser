@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_basic_land_animation"
+rule = "static_basic_lands_are_pt_colored_creatures_still_lands"
+
+[[example]]
+text = "All Forests are 1/1 creatures that are still lands."
+reason = "Static continuous effect animating all lands with a basic land type into fixed-P/T creatures that remain lands."
+
+[[example]]
+text = "All Mountains are 3/3 red creatures that are still lands."
+reason = "Static continuous effect animating all lands with a basic land type into fixed-P/T colored creatures that remain lands."
+
+[[counterexample]]
+text = "All Islands are Mountains."
+reason = "Static basic land type-changing effect, not land animation."
+
+[[counterexample]]
+text = "All Swamps are Forests."
+reason = "Static basic land type-changing effect, not land animation."
+
+[[counterexample]]
+text = "Enchanted land is a Mountain."
+reason = "Enchanted-object land type setting, not a global basic-land animation effect."
+
+[[counterexample]]
+text = "Target land becomes a Mountain until CARDNAME leaves the battlefield."
+reason = "Temporary target-land type-changing effect, not a static global animation effect."
+
+[[counterexample]]
+text = "All Forests are 1/1 creatures that are still lands. trailing"
+reason = "Exact-consumption guard."
