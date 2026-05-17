@@ -1,0 +1,22 @@
+{
+  "concept": "additional_blockers_may_be_put_into_additional_piles",
+  "fixture_path": "grammar-fixtures/additional_blockers_may_be_put_into_additional_piles.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "additional_blockers_may_be_put_into_additional_piles",
+      "text": "Creatures those players control that can block additional creatures may likewise be put into additional piles.",
+      "ast": {
+        "StaticAbility": "AdditionalBlockersMayBePutIntoAdditionalPiles"
+      }
+    },
+    {
+      "index": 2,
+      "rule": "additional_blockers_may_be_put_into_additional_piles",
+      "text": "creatures those players control that can block additional creatures may likewise be put into additional piles.",
+      "ast": {
+        "StaticAbility": "AdditionalBlockersMayBePutIntoAdditionalPiles"
+      }
+    }
+  ]
+}
