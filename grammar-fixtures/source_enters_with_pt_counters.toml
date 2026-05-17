@@ -1,0 +1,39 @@
+[fixture]
+concept = "source_enters_with_pt_counters"
+rule = "source_enters_with_pt_counters"
+
+[[example]]
+text = "This creature enters with seven +1/+0 counters on it."
+reason = "Source-object enter-with replacement effect using a number-word quantity of power/toughness counters."
+
+[[example]]
+text = "This creature enters with X +1/+1 counters on it."
+reason = "Source-object enter-with replacement effect using a variable quantity of power/toughness counters."
+
+[[example]]
+text = "CARDNAME enters with two -1/-1 counters on it."
+reason = "CARDNAME source-object enter-with replacement effect using negative power/toughness counters."
+
+[[counterexample]]
+text = "Put a +1/+1 counter on this creature."
+reason = "Activated put-counter effect, not an enter-with replacement effect."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Enter-state replacement without counters."
+
+[[counterexample]]
+text = "As this creature enters, choose a color."
+reason = "As-enters choice, not an enter-with counter replacement effect."
+
+[[counterexample]]
+text = "This creature enters with three time counters on it."
+reason = "Named-counter enter-with effect, not power/toughness counters."
+
+[[counterexample]]
+text = "This ability can't cause the total number of +1/+1 counters on this creature to be greater than seven."
+reason = "Counter-total cap, not an enter-with replacement effect."
+
+[[counterexample]]
+text = "This creature enters with seven +1/+0 counters on it. trailing"
+reason = "Exact-consumption guard."

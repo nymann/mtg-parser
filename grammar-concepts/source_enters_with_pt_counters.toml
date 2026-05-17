@@ -1,0 +1,98 @@
+[[axis]]
+name = "effect_kind"
+values = ["static_replacement_effect"]
+
+[[axis]]
+name = "affected_event"
+values = ["enters_battlefield"]
+
+[[axis]]
+name = "affected_object"
+values = ["source_object"]
+
+[[axis]]
+name = "counter_quantity"
+values = [
+    "number_word",
+    "variable_name",
+]
+
+[[axis]]
+name = "counter_kind"
+values = ["pt_counters"]
+
+[[axis]]
+name = "counter_location"
+values = ["on_it"]
+
+[boundary]
+excludes = [
+    "Activated put-counter effects, not enter-with replacement effects.",
+    "Bare enter events or enter-state replacements without counters.",
+    "As-enters choices, not enter-with counter replacement effects.",
+    "Named-counter enter-with effects, not power/toughness counter enter-with effects.",
+    "Counter-total caps, not replacement effects that create counters as the source enters.",
+]
+includes = [
+    "Static replacement effects where the source object enters the battlefield with a number-word or variable quantity of power/toughness counters on it.",
+    "Source-object wording using this creature or CARDNAME.",
+]
+
+[concept]
+name = "source_enters_with_pt_counters"
+pest_rules = ["source_enters_with_pt_counters"]
+rules_queries = [
+    "lex: this creature enters with seven +1/+0 counters on it",
+    "lex: CARDNAME enters with two -1/-1 counters on it",
+]
+rules_terms = [
+    "counter",
+    "enters",
+    "power",
+    "replacement effect",
+    "source",
+    "toughness",
+]
+
+[[counterexample]]
+reason = "Activated put-counter effect, not an enter-with replacement effect."
+text = "Put a +1/+1 counter on this creature."
+
+[[counterexample]]
+reason = "Enter-state replacement without counters."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "As-enters choice, not an enter-with counter replacement effect."
+text = "As this creature enters, choose a color."
+
+[[counterexample]]
+reason = "Named-counter enter-with effect, not power/toughness counters."
+text = "This creature enters with three time counters on it."
+
+[[counterexample]]
+reason = "Counter-total cap, not an enter-with replacement effect."
+text = "This ability can't cause the total number of +1/+1 counters on this creature to be greater than seven."
+
+[[example]]
+text = "This creature enters with seven +1/+0 counters on it."
+
+[[example]]
+text = "This creature enters with X +1/+1 counters on it."
+
+[[example]]
+text = "CARDNAME enters with two -1/-1 counters on it."
+
+[grammar_query]
+candidate_rules = [
+    "source_enters_with_pt_counters",
+    "permanent_enters",
+    "put_pt_counters_on_source",
+    "put_named_counters_on_source",
+    "this_ability_cant_cause_total_pt_counters_greater_than",
+]
+selected_rule = "source_enters_with_pt_counters"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
