@@ -1,0 +1,83 @@
+[[axis]]
+name = "ability_kind"
+values = ["delayed_triggered_ability"]
+
+[[axis]]
+name = "trigger"
+values = ["beginning_of_each_of_your_upkeeps_for_rest_of_game"]
+
+[[axis]]
+name = "action"
+values = ["remove_all_named_counters"]
+
+[[axis]]
+name = "affected_object"
+values = ["linked_permanent_type"]
+
+[[axis]]
+name = "link_condition"
+values = ["counter_put_onto_with_source_and_not_removed_from_with_source"]
+
+[[axis]]
+name = "counter_reference"
+values = ["same_named_counter_singular_and_plural"]
+
+[[axis]]
+name = "source_reference"
+values = ["source_object"]
+
+[boundary]
+excludes = [
+    "Immediate optional removal of a single named counter from the source object.",
+    "Mandatory removal of a single named counter from the source object as an activated cost.",
+    "Counter-placement instructions that put named counters onto an object.",
+    "Static effects conditioned on a permanent having a named counter.",
+]
+includes = ["Delayed triggered abilities that, for the rest of the game at the beginning of each of your upkeeps, remove all counters of a named kind from a linked permanent whose counter was put onto it with the source and has not yet been removed from it with that source."]
+
+[concept]
+name = "delayed_remove_all_named_counters_from_linked_land"
+pest_rules = ["delayed_remove_all_named_counters_from_linked_land"]
+rules_queries = [
+    "lex: at the beginning of each of your upkeeps for the rest of the game remove all counters from a land put onto with source not removed from with source",
+    "lex: delayed triggered ability for the rest of the game remove counters",
+]
+rules_terms = [
+    "delayed triggered ability",
+    "counter",
+    "remove",
+    "source",
+]
+
+[[counterexample]]
+reason = "Immediate optional single-counter removal from the source object, not a delayed rest-of-game linked-permanent cleanup trigger."
+text = "You may remove a mire counter from it."
+
+[[counterexample]]
+reason = "Activated-cost style mandatory single-counter removal from the source object, not a delayed trigger removing all named counters."
+text = "Remove a mire counter from it"
+
+[[counterexample]]
+reason = "Named-counter placement instruction, not delayed removal of all matching counters from a linked permanent."
+text = "Put a mire counter on it."
+
+[[counterexample]]
+reason = "Static continuous effect conditioned on a named counter, not a delayed triggered counter-removal effect."
+text = "That land is an Island for as long as it has a mire counter on it."
+
+[[example]]
+text = "At the beginning of each of your upkeeps for the rest of the game, remove all mire counters from a land that a mire counter was put onto with CARDNAME but that a mire counter has not been removed from with CARDNAME."
+
+[[example]]
+text = "At the beginning of each of your upkeeps for the rest of the game, remove all flood counters from an artifact that a flood counter was put onto with it but that a flood counter has not been removed from with it."
+
+[[example]]
+text = "At the beginning of each of your upkeeps for the rest of the game, remove all charge counters from a creature that a charge counter was put onto with this artifact but that a charge counter has not been removed from with this artifact."
+
+[grammar_query]
+candidate_rules = ["delayed_remove_all_named_counters_from_linked_land"]
+selected_rule = "delayed_remove_all_named_counters_from_linked_land"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

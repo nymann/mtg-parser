@@ -1,0 +1,35 @@
+[fixture]
+concept = "delayed_remove_all_named_counters_from_linked_land"
+rule = "delayed_remove_all_named_counters_from_linked_land"
+
+[[example]]
+text = "At the beginning of each of your upkeeps for the rest of the game, remove all mire counters from a land that a mire counter was put onto with CARDNAME but that a mire counter has not been removed from with CARDNAME."
+reason = "Canonical delayed trigger: for the rest of the game, each of your upkeeps removes all named counters from the linked land whose counter was put onto it with the source and not yet removed with that source."
+
+[[example]]
+text = "At the beginning of each of your upkeeps for the rest of the game, remove all flood counters from an artifact that a flood counter was put onto with it but that a flood counter has not been removed from with it."
+reason = "Existing affected-object axis accepts another permanent type and pronoun source reference."
+
+[[example]]
+text = "At the beginning of each of your upkeeps for the rest of the game, remove all charge counters from a creature that a charge counter was put onto with this artifact but that a charge counter has not been removed from with this artifact."
+reason = "Existing source-reference axis accepts this-permanent-type source references."
+
+[[counterexample]]
+text = "You may remove a mire counter from it."
+reason = "Immediate optional single-counter removal from the source object, not a delayed rest-of-game linked-permanent cleanup trigger."
+
+[[counterexample]]
+text = "Remove a mire counter from it"
+reason = "Activated-cost style mandatory single-counter removal from the source object, not a delayed trigger removing all named counters."
+
+[[counterexample]]
+text = "Put a mire counter on it."
+reason = "Named-counter placement instruction, not delayed removal of all matching counters from a linked permanent."
+
+[[counterexample]]
+text = "That land is an Island for as long as it has a mire counter on it."
+reason = "Static continuous effect conditioned on a named counter, not a delayed triggered counter-removal effect."
+
+[[counterexample]]
+text = "At the beginning of each of your upkeeps for the rest of the game, remove all mire counters from a land that a mire counter was put onto with CARDNAME but that a mire counter has not been removed from with CARDNAME. trailing"
+reason = "Exact-consumption guard."
