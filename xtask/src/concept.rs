@@ -3063,9 +3063,11 @@ fn build_phase2_repair_prompt(
     let ast_failures_section = render_ast_failures_section(&candidate.ast_failures);
     let ast_shape_section = render_ast_shape_section(&candidate.fixture_path);
     let rules_context_section = render_rules_context_section(&candidate.concept_file);
+    let strict_failures = count_consecutive_phase2_failures(&candidate.concept);
+    let strict_preamble = render_strict_mode_preamble(strict_failures, candidate);
     Ok(format!(
         "\
-You are working in the mtg-parser repository.
+{strict_preamble}You are working in the mtg-parser repository.
 
 Goal: advance Phase 2 parser/AST coverage for concept `{concept}` without reducing output quality.
 
@@ -3113,8 +3115,121 @@ Current concept-parse report:
         ast_failures_section = ast_failures_section,
         ast_shape_section = ast_shape_section,
         rules_context_section = rules_context_section,
+        strict_preamble = strict_preamble,
         parse_json = parse_json
     ))
+}
+
+/// Count consecutive Phase 2 batches in which the named concept failed AST
+/// validation, scanning the most recent phase-loop log directory. Used to
+/// trigger strict-mode prompting after repeated failures: at zero we trust
+/// the standard prompt; at >= STRICT_MODE_THRESHOLD we layer in an explicit
+/// mechanical-fix recipe because the agent's prior attempts haven't taken.
+const STRICT_MODE_THRESHOLD: usize = 2;
+
+fn count_consecutive_phase2_failures(concept: &str) -> usize {
+    let runs_dir = grammar_concept_log_root();
+    let Ok(entries) = std::fs::read_dir(&runs_dir) else {
+        return 0;
+    };
+    let mut loop_dirs: Vec<PathBuf> = entries
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| {
+            p.is_dir()
+                && p.file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|n| n.starts_with("phase-loop-"))
+        })
+        .collect();
+    loop_dirs.sort();
+    let Some(latest_loop) = loop_dirs.last() else {
+        return 0;
+    };
+
+    let Ok(batch_entries) = std::fs::read_dir(latest_loop) else {
+        return 0;
+    };
+    let mut batch_dirs: Vec<PathBuf> = batch_entries
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| {
+            p.is_dir()
+                && p.file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|n| n.starts_with("phase2-batch-"))
+        })
+        .collect();
+    batch_dirs.sort();
+
+    let mut streak = 0usize;
+    for batch in batch_dirs.iter().rev() {
+        let summary_path = batch.join("phase2_map_after.json");
+        let Ok(text) = std::fs::read_to_string(&summary_path) else {
+            // Missing map_after means this batch didn't reach phase2_map; treat as a break.
+            break;
+        };
+        let Ok(report) = serde_json::from_str::<Phase2MapReport>(&text) else {
+            break;
+        };
+        let entry = report.concepts.iter().find(|c| c.concept == concept);
+        match entry.map(|c| c.ast_status) {
+            Some(Phase2AstStatus::Fail) => streak += 1,
+            Some(Phase2AstStatus::Pass) => return 0,
+            _ => break,
+        }
+    }
+    streak
+}
+
+/// Render a strict-mode preamble that fires when the same concept has been
+/// rejected for STRICT_MODE_THRESHOLD or more consecutive Phase 2 batches.
+/// The standard prompt already names the contract, the failures, and the
+/// ast.rs shapes; when the agent keeps regenerating the same forbidden
+/// variant despite that context, the answer is not more information but a
+/// more directive instruction. The preamble names the mechanical refactor
+/// expected and forbids the failure mode the agent keeps choosing.
+fn render_strict_mode_preamble(strict_failures: usize, candidate: &Phase2ConceptStatus) -> String {
+    if strict_failures < STRICT_MODE_THRESHOLD {
+        return String::new();
+    }
+    let mut owner = None;
+    let mut forbid: Vec<String> = Vec::new();
+    if let Ok(doc) = read_fixture_document(&candidate.fixture_path) {
+        if let Some(contract) = doc.phase2.as_ref().and_then(|p| p.ast_shape.as_ref()) {
+            owner = contract.owner.clone();
+            forbid = contract.forbid.clone();
+        }
+    }
+    let owner_str = owner.as_deref().unwrap_or("<unknown owner>");
+    let forbid_list = if forbid.is_empty() {
+        "<none>".to_string()
+    } else {
+        forbid
+            .iter()
+            .map(|s| format!("`{s}`"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    format!(
+        "\
+STRICT MODE: concept `{concept}` has been rejected in {strict_failures} consecutive Phase 2 batches with the same failure shape. The context below already names the contract, the failing inputs, and the current ast.rs definitions. Stop generating new sibling Statement variants; apply this exact mechanical refactor:
+
+For each forbidden variant in {{{forbid_list}}}:
+  1. Move every field of the forbidden variant into the owner variant `{owner_str}` as an axis. If the owner variant already exists, widen its fields (use Option<T> or a new filter/axis enum when the forbidden variant carried a discriminator like color or permanent type). If the owner does not yet exist, define it on `Statement` with the union of axes across all forbidden variants.
+  2. Update parse.rs so every branch that previously emitted the forbidden variant now emits the owner variant with the appropriate axis value.
+  3. Delete the forbidden variant from the `Statement` enum and from parse.rs.
+  4. Run `cargo check -p mtg-grammar`; fix every downstream use of the forbidden variant by mapping it to the owner variant with the new axis value. Do not introduce new wrapper types to dodge the rename.
+  5. Run `cargo xtask concept-ast-test {concept} --update` and then `cargo xtask concept-ast-test {concept}`.
+
+Do not introduce additional sibling Statement variants. Do not edit fixtures or AST snapshots to match the legacy shape. Do not skip step 3.
+
+",
+        concept = candidate.concept,
+        strict_failures = strict_failures,
+        forbid_list = forbid_list,
+        owner_str = owner_str,
+    )
 }
 
 /// Render the Comprehensive Rules section for the concept's curated qmd
