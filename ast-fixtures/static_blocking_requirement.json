@@ -1,0 +1,34 @@
+{
+  "concept": "static_blocking_requirement",
+  "fixture_path": "grammar-fixtures/static_blocking_requirement.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_all_creatures_able_to_block_enchanted_do_so",
+      "text": "All creatures able to block enchanted creature do so.",
+      "ast": {
+        "StaticAbility": {
+          "AllCreaturesAbleToBlockEnchantedDoSo": {
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_all_creatures_able_to_block_enchanted_do_so",
+      "text": "All creatures able to block enchanted artifact creature do so.",
+      "ast": {
+        "StaticAbility": {
+          "AllCreaturesAbleToBlockEnchantedDoSo": {
+            "object": {
+              "Permanent": "Artifact"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
