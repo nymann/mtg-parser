@@ -1206,6 +1206,75 @@ struct NoPestConceptFastpathReport {
     quality_contract: Option<ConceptQualityContractReport>,
 }
 
+impl NoPestConceptFastpathReport {
+    fn not_eligible(gap: &ConceptGap, decision: &BoundaryDecision, reason: &str) -> Self {
+        Self {
+            fastpath_attempted: false,
+            fastpath_result: "not_eligible".to_string(),
+            fallback_reason: Some(reason.to_string()),
+            patch_agent_started: false,
+            concept: gap.concept.clone(),
+            original_target_rule: gap.target_rule.clone(),
+            target_rule: gap.target_rule.clone(),
+            example_rule: None,
+            resolution_reason: None,
+            mapped_pest_rules: Vec::new(),
+            pest_patch_intent: decision.pest_patch_intent.clone(),
+            eligible_shape: false,
+            target_rule_exists: true,
+            concept_path: grammar_concepts_dir().join(format!("{}.toml", gap.concept)),
+            fixture_path: grammar_fixtures_dir().join(format!("{}.toml", gap.concept)),
+            generated_concept: false,
+            generated_fixture: false,
+            grammar_pest_changed: false,
+            quality_contract: None,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct ExistingRuleNewConceptAgentReport {
+    experiment_id: &'static str,
+    eligible: bool,
+    attempted: bool,
+    result: String,
+    fallback_reason: Option<String>,
+    concept: String,
+    target_rule: String,
+    target_rule_exists: bool,
+    target_rule_owned: bool,
+    suggested_existing_owner: bool,
+    generated_test_edits: Vec<String>,
+}
+
+impl ExistingRuleNewConceptAgentReport {
+    fn new(gap: &ConceptGap, report: &ExistingGrammarMapReport) -> Self {
+        let target_rule_exists = report
+            .unmapped_rules
+            .iter()
+            .any(|rule| rule.name == gap.target_rule)
+            || report
+                .concepts
+                .iter()
+                .flat_map(|concept| &concept.owned_rules)
+                .any(|rule| rule.name == gap.target_rule);
+        let target_rule_owned = concept_target_rule_owned(report, &gap.target_rule);
+        Self {
+            experiment_id: "exp-existing-rule-new-concept-agent",
+            eligible: target_rule_exists && !target_rule_owned && !gap.suggested_existing_owner,
+            attempted: false,
+            result: "not_eligible".to_string(),
+            fallback_reason: None,
+            concept: gap.concept.clone(),
+            target_rule: gap.target_rule.clone(),
+            target_rule_exists,
+            target_rule_owned,
+            suggested_existing_owner: gap.suggested_existing_owner,
+            generated_test_edits: Vec::new(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize)]
 struct ConceptQualityContractReport {
     concept: String,
@@ -5613,31 +5682,83 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         }
 
         metrics.step_started(sink, iteration, 3, "boundary agent");
-        let boundary = refactor_hotspot::invoke_agent(
-            options.agent,
-            &boundary_prompt,
-            &iteration_dir.join("boundary_transcript.ndjson"),
-            sink,
-        )?;
-        fs::write(
-            iteration_dir.join("boundary_response.md"),
-            &boundary.assistant_text,
-        )
-        .with_context(|| {
-            format!(
-                "write {}",
-                iteration_dir.join("boundary_response.md").display()
+        let mut combined_agent_succeeded = false;
+        let mut combined_report = ExistingRuleNewConceptAgentReport::new(&gap, &before);
+        let (boundary_decision, boundary_response_text) = if combined_report.eligible
+            && !options.allow_dirty
+        {
+            let combined_prompt = build_existing_rule_new_concept_prompt(&gap, &before)?;
+            fs::write(
+                iteration_dir.join("existing_rule_new_concept_prompt.md"),
+                &combined_prompt,
             )
-        })?;
-        if !boundary.success {
-            bail!(
-                "{} boundary agent exited with status {}; transcript: {}",
-                options.agent.label(),
-                boundary.exit_code,
-                iteration_dir.join("boundary_transcript.ndjson").display()
-            );
-        }
-        let boundary_decision = parse_boundary_decision(&boundary.assistant_text)?;
+            .with_context(|| {
+                format!(
+                    "write {}",
+                    iteration_dir
+                        .join("existing_rule_new_concept_prompt.md")
+                        .display()
+                )
+            })?;
+            combined_report.attempted = true;
+            let combined = refactor_hotspot::invoke_agent(
+                options.agent,
+                &combined_prompt,
+                &iteration_dir.join("existing_rule_new_concept_transcript.ndjson"),
+                sink,
+            )?;
+            fs::write(
+                iteration_dir.join("existing_rule_new_concept_response.md"),
+                &combined.assistant_text,
+            )
+            .with_context(|| {
+                format!(
+                    "write {}",
+                    iteration_dir
+                        .join("existing_rule_new_concept_response.md")
+                        .display()
+                )
+            })?;
+            match evaluate_existing_rule_new_concept_agent(&gap, &before, &combined, &iteration_dir)
+            {
+                Ok(decision) => {
+                    combined_agent_succeeded = true;
+                    combined_report.result = "success".to_string();
+                    write_json(
+                        iteration_dir.join("existing_rule_new_concept_report.json"),
+                        &combined_report,
+                    )?;
+                    (decision, combined.assistant_text)
+                }
+                Err(error) => {
+                    combined_report.result = "fallback".to_string();
+                    combined_report.fallback_reason = Some(format!("{error:#}"));
+                    combined_report.generated_test_edits = generated_test_changed_paths()?;
+                    write_json(
+                        iteration_dir.join("existing_rule_new_concept_report.json"),
+                        &combined_report,
+                    )?;
+                    restore_existing_rule_new_concept_fallback_changes(&iteration_dir)?;
+                    sink.emit(FlowEvent::Note {
+                        level: NoteLevel::Warn,
+                        text: format!(
+                            "existing-rule new-concept agent fell back to boundary/patch: {error:#}"
+                        ),
+                    });
+                    run_boundary_agent(&gap, &boundary_prompt, &options, sink, &iteration_dir)?
+                }
+            }
+        } else {
+            if combined_report.eligible {
+                combined_report.fallback_reason =
+                    Some("--allow-dirty disables rollback-dependent experiment path".into());
+            }
+            write_json(
+                iteration_dir.join("existing_rule_new_concept_report.json"),
+                &combined_report,
+            )?;
+            run_boundary_agent(&gap, &boundary_prompt, &options, sink, &iteration_dir)?
+        };
         write_json(
             iteration_dir.join("boundary_decision.json"),
             &boundary_decision,
@@ -5711,10 +5832,22 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             iteration,
             3,
             true,
-            Some("parsed boundary decision".to_string()),
+            Some(if combined_agent_succeeded {
+                "existing-rule new-concept agent completed".to_string()
+            } else {
+                "parsed boundary decision".to_string()
+            }),
         )?;
 
-        let mut fastpath = attempt_no_pest_concept_fastpath(&gap, &boundary_decision, true)?;
+        let mut fastpath = if combined_agent_succeeded {
+            NoPestConceptFastpathReport::not_eligible(
+                &gap,
+                &boundary_decision,
+                "existing-rule new-concept agent already produced artifacts",
+            )
+        } else {
+            attempt_no_pest_concept_fastpath(&gap, &boundary_decision, true)?
+        };
         if fastpath.fastpath_attempted {
             let level = if fastpath.fastpath_result == "success" {
                 NoteLevel::Info
@@ -5735,7 +5868,8 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                 ),
             });
         }
-        let fastpath_skipped_patch = fastpath.fastpath_result == "success";
+        let fastpath_skipped_patch =
+            fastpath.fastpath_result == "success" || combined_agent_succeeded;
         fastpath.patch_agent_started = !fastpath_skipped_patch;
         write_json(iteration_dir.join("no_pest_fastpath.json"), &fastpath)?;
 
@@ -5747,11 +5881,15 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                 iteration,
                 4,
                 true,
-                Some("no-PEST fast-path skipped patch agent".to_string()),
+                Some(if combined_agent_succeeded {
+                    "existing-rule new-concept agent skipped patch agent".to_string()
+                } else {
+                    "no-PEST fast-path skipped patch agent".to_string()
+                }),
             )?;
         } else {
             let patch_prompt =
-                build_patch_prompt(&gap, &boundary_decision, &boundary.assistant_text)?;
+                build_patch_prompt(&gap, &boundary_decision, &boundary_response_text)?;
             fs::write(iteration_dir.join("patch_prompt.md"), &patch_prompt).with_context(|| {
                 format!("write {}", iteration_dir.join("patch_prompt.md").display())
             })?;
@@ -5942,7 +6080,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             )?;
             return Err(anyhow!("{} failed\n{}", failure.label, failure.output));
         }
-        if fastpath_skipped_patch {
+        if fastpath.fastpath_result == "success" {
             ensure_no_grammar_pest_worktree_diff()
                 .context("fast-path iteration produced a grammar.pest diff")?;
         }
@@ -5957,7 +6095,11 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             query: gap.query.clone(),
             target_rule: gap.target_rule.clone(),
             iteration_path: if fastpath_skipped_patch {
-                "fast_path".to_string()
+                if combined_agent_succeeded {
+                    "existing_rule_new_concept_agent".to_string()
+                } else {
+                    "fast_path".to_string()
+                }
             } else if fastpath.fastpath_attempted {
                 "fallback".to_string()
             } else {
@@ -6283,6 +6425,232 @@ WHY_NOT_CARD_PASS: grammar fixture maturity only
         grammar_json = serde_json::to_string_pretty(&grammar_report)?,
         rules_block = rules_block,
     ))
+}
+
+fn build_existing_rule_new_concept_prompt(
+    gap: &ConceptGap,
+    report: &ExistingGrammarMapReport,
+) -> Result<String> {
+    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
+    let grammar_report = build_grammar_query_report(&gap.query, vec![gap.target_rule.clone()], 16)?;
+    let target = rules
+        .iter()
+        .find(|rule| rule.name == gap.target_rule)
+        .ok_or_else(|| anyhow!("target rule {} not found", gap.target_rule))?;
+    let dependencies = grammar_query_engine::direct_dependencies(&rules, &gap.target_rule);
+    let reverse_dependencies = grammar_query_engine::reverse_dependencies(&rules, &gap.target_rule);
+    let rules_block = rules_context::render_rules_block(&gap.query);
+
+    Ok(format!(
+        r#"You are the EXISTING_RULE_NEW_CONCEPT agent for mtg-parser.
+
+This experiment applies only when the target PEST rule already exists and is not
+owned by a committed concept. Do not run add-card. Do not edit generated card
+tests. Do not try to make cards pass.
+
+Goal: create one grammar-first concept from the existing target rule in a single
+pass. You may create `grammar-concepts/{concept}.toml` and
+`grammar-fixtures/{concept}.toml`. You may make only minimal
+`crates/mtg-grammar/src/grammar.pest` widening if narrow concept fixture
+examples prove the existing rule is too narrow. Prefer widening an existing axis
+over adding a new one-off rule.
+
+Hard constraints:
+- Keep edits scoped to `crates/mtg-grammar/src/grammar.pest`, `grammar-concepts/`, and `grammar-fixtures/`.
+- The fixture must include accepted examples, true boundary rejects, and an exact-consumption reject.
+- If you edit grammar.pest, summarize why this is widening an existing rule axis.
+- The orchestrator will run the same concept-grind gates and will fall back to the old boundary/patch workflow if your output or gates fail.
+
+Concept candidate:
+- concept: {concept}
+- query: {query}
+- target PEST rule: {target_rule}:{target_line}
+- selection reason: {reason}
+- existing owner suggestion: {suggested_existing_owner}
+
+Current map:
+- grammar rules: {rule_count}
+- mapped rules: {mapped_rule_count}
+- unmapped non-shared rules: {unmapped_rule_count}
+
+Target PEST rule:
+```pest
+{target_name} = {target_rhs}
+```
+
+Direct dependencies: {dependencies}
+Reverse dependencies: {reverse_dependencies}
+
+Grammar-neighbor report:
+```json
+{grammar_json}
+```
+
+Comprehensive Rules context:
+{rules_block}
+
+Return both structured blocks:
+
+CONCEPT_BOUNDARY_DECISION:
+OWNER: new:{concept}
+AXES: <axis names and values covered by the concept>
+EXAMPLES_TO_ACCEPT: <grammar fixture examples>
+COUNTEREXAMPLES_TO_REJECT: <true boundary negatives only>
+PEST_PATCH_INTENT: <specific minimal widening, or none>
+WHY_NOT_CARD_PASS: grammar fixture maturity only
+
+CONCEPT_GRIND_RESULT:
+CONCEPT: {concept}
+PEST_RULES: <roots owned by this concept>
+FIXTURE_EXAMPLES: <count>
+GRAMMAR_CHANGE: <summary, including axis-widening justification if grammar.pest changed>
+BLOCKERS: <none or list>
+"#,
+        concept = gap.concept,
+        query = gap.query,
+        target_rule = gap.target_rule,
+        target_line = gap.target_line,
+        reason = gap.reason,
+        suggested_existing_owner = gap.suggested_existing_owner,
+        rule_count = report.rule_count,
+        mapped_rule_count = report.mapped_rule_count,
+        unmapped_rule_count = report.unmapped_rule_count,
+        target_name = target.name,
+        target_rhs = target.rhs,
+        dependencies = dependencies.join(", "),
+        reverse_dependencies = reverse_dependencies.join(", "),
+        grammar_json = serde_json::to_string_pretty(&grammar_report)?,
+        rules_block = rules_block,
+    ))
+}
+
+fn run_boundary_agent(
+    gap: &ConceptGap,
+    boundary_prompt: &str,
+    options: &ConceptGrindOptions,
+    sink: &mut dyn FlowSink,
+    iteration_dir: &Path,
+) -> Result<(BoundaryDecision, String)> {
+    let boundary = refactor_hotspot::invoke_agent(
+        options.agent,
+        boundary_prompt,
+        &iteration_dir.join("boundary_transcript.ndjson"),
+        sink,
+    )?;
+    fs::write(
+        iteration_dir.join("boundary_response.md"),
+        &boundary.assistant_text,
+    )
+    .with_context(|| {
+        format!(
+            "write {}",
+            iteration_dir.join("boundary_response.md").display()
+        )
+    })?;
+    if !boundary.success {
+        bail!(
+            "{} boundary agent exited with status {}; transcript: {}",
+            options.agent.label(),
+            boundary.exit_code,
+            iteration_dir.join("boundary_transcript.ndjson").display()
+        );
+    }
+    let boundary_decision = parse_boundary_decision(&boundary.assistant_text)
+        .with_context(|| format!("boundary agent failed for {}", gap.target_rule))?;
+    Ok((boundary_decision, boundary.assistant_text))
+}
+
+fn evaluate_existing_rule_new_concept_agent(
+    gap: &ConceptGap,
+    before: &ExistingGrammarMapReport,
+    outcome: &refactor_hotspot::AgentOutcome,
+    iteration_dir: &Path,
+) -> Result<BoundaryDecision> {
+    if !outcome.success {
+        bail!("combined agent exited with status {}", outcome.exit_code);
+    }
+    let decision = parse_boundary_decision(&outcome.assistant_text)?;
+    parse_concept_grind_result(&outcome.assistant_text, gap)?;
+    let resolved_gap = apply_boundary_decision(gap.clone(), &decision)?;
+    if !matches!(decision.owner, BoundaryOwner::New(_)) {
+        bail!("combined agent must return OWNER: new:<concept>");
+    }
+    let generated_test_edits = generated_test_changed_paths()?;
+    if !generated_test_edits.is_empty() {
+        bail!(
+            "combined agent edited generated tests: {}",
+            generated_test_edits.join(", ")
+        );
+    }
+    validate_existing_rule_new_concept_fixture(&resolved_gap)?;
+    validate_concept_grind_changed_paths()
+        .context("combined agent changed paths outside the concept-grind contract")?;
+    run_concept_grind_gates(&resolved_gap, before, iteration_dir)
+        .map_err(|failure| anyhow!("{} failed\n{}", failure.label, failure.output))?;
+    Ok(decision)
+}
+
+fn parse_concept_grind_result(response: &str, gap: &ConceptGap) -> Result<()> {
+    if !response.contains("CONCEPT_GRIND_RESULT") {
+        bail!("combined agent response missing CONCEPT_GRIND_RESULT block");
+    }
+    let concept = required_result_field(response, "CONCEPT")?;
+    validate_concept_name(&concept)?;
+    if concept != gap.concept {
+        bail!(
+            "CONCEPT_GRIND_RESULT concept {concept:?} did not match selected concept {:?}",
+            gap.concept
+        );
+    }
+    let pest_rules = required_result_field(response, "PEST_RULES")?;
+    if !pest_rules.contains(&gap.target_rule) {
+        bail!(
+            "CONCEPT_GRIND_RESULT PEST_RULES must include target rule {}",
+            gap.target_rule
+        );
+    }
+    required_result_field(response, "FIXTURE_EXAMPLES")?;
+    required_result_field(response, "GRAMMAR_CHANGE")?;
+    required_result_field(response, "BLOCKERS")?;
+    Ok(())
+}
+
+fn required_result_field(response: &str, field: &str) -> Result<String> {
+    let prefix = format!("{field}:");
+    response
+        .lines()
+        .find_map(|line| line.trim_start().strip_prefix(&prefix))
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| anyhow!("CONCEPT_GRIND_RESULT missing {field}: line"))
+}
+
+fn validate_existing_rule_new_concept_fixture(gap: &ConceptGap) -> Result<()> {
+    let fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
+    let fixture = read_fixture_document(&fixture_path)?;
+    if fixture.example.is_empty() {
+        bail!("combined agent fixture has no accepted examples");
+    }
+    if fixture.counterexample.is_empty() {
+        bail!("combined agent fixture has no boundary rejects");
+    }
+    if !fixture.counterexample.iter().any(|case| {
+        case.reason
+            .as_deref()
+            .is_some_and(|reason| reason.to_ascii_lowercase().contains("exact"))
+    }) {
+        bail!("combined agent fixture has no exact-consumption counterexample");
+    }
+    Ok(())
+}
+
+fn concept_target_rule_owned(report: &ExistingGrammarMapReport, target_rule: &str) -> bool {
+    report
+        .concepts
+        .iter()
+        .flat_map(|concept| &concept.owned_rules)
+        .any(|rule| rule.name == target_rule)
 }
 
 fn parse_boundary_decision(response: &str) -> Result<BoundaryDecision> {
@@ -7680,6 +8048,62 @@ fn validate_concept_grind_changed_paths() -> Result<()> {
         );
     }
     Ok(())
+}
+
+fn generated_test_changed_paths() -> Result<Vec<String>> {
+    Ok(git_changed_paths(&["status", "--porcelain"])?
+        .into_iter()
+        .filter(|path| {
+            path.starts_with("crates/mtg-grammar/tests/generated/")
+                || path.starts_with("crates/mtg-grammar/tests/generated_patterns/")
+        })
+        .collect())
+}
+
+fn restore_existing_rule_new_concept_fallback_changes(iteration_dir: &Path) -> Result<()> {
+    let paths = git_changed_paths(&["status", "--porcelain"])?;
+    write_json(
+        iteration_dir.join("existing_rule_new_concept_restored_paths.json"),
+        &paths,
+    )?;
+    restore_worktree_paths(&paths)
+}
+
+fn restore_worktree_paths(paths: &[String]) -> Result<()> {
+    for path in paths {
+        if git_path_is_tracked(path)? {
+            let output = Command::new("git")
+                .args(["restore", "--worktree", "--staged", "--", path])
+                .current_dir(repo_root())
+                .output()
+                .with_context(|| format!("git restore {path}"))?;
+            if !output.status.success() {
+                bail!(
+                    "git restore {path} failed\n{}",
+                    command_output_text(&output)
+                );
+            }
+        } else {
+            let full_path = repo_root().join(path);
+            if full_path.is_dir() {
+                fs::remove_dir_all(&full_path)
+                    .with_context(|| format!("remove {}", full_path.display()))?;
+            } else if full_path.exists() {
+                fs::remove_file(&full_path)
+                    .with_context(|| format!("remove {}", full_path.display()))?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn git_path_is_tracked(path: &str) -> Result<bool> {
+    let output = Command::new("git")
+        .args(["ls-files", "--error-unmatch", "--", path])
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("git ls-files --error-unmatch {path}"))?;
+    Ok(output.status.success())
 }
 
 fn ensure_no_grammar_pest_worktree_diff() -> Result<()> {
@@ -9551,6 +9975,94 @@ unrelated_rule = { "unrelated" }
                 "grammar-fixtures/counter_target_spell.toml",
             ]
         );
+    }
+
+    #[test]
+    fn existing_rule_new_concept_report_distinguishes_existing_owner_suggestions() {
+        let report = ExistingGrammarMapReport {
+            rule_count: 2,
+            concept_count: 1,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 1,
+            unmapped_rule_count: 2,
+            concepts: vec![ConceptRuleMap {
+                concept: "counter_target_spell".to_string(),
+                maturity: "grammar_fixture_green".to_string(),
+                concept_file: PathBuf::from("grammar-concepts/counter_target_spell.toml"),
+                declared_rules: vec!["counter_target_spell".to_string()],
+                found_rules: Vec::new(),
+                owned_rules: vec![RuleLocationSummary {
+                    name: "counter_target_spell".to_string(),
+                    line: 10,
+                }],
+                missing_rules: Vec::new(),
+            }],
+            unmapped_rules: vec![
+                UnmappedGrammarRule {
+                    name: "unowned_existing_rule".to_string(),
+                    line: 20,
+                    suggested_concept: None,
+                },
+                UnmappedGrammarRule {
+                    name: "counter_target_colored_spell".to_string(),
+                    line: 30,
+                    suggested_concept: Some("counter_target_spell".to_string()),
+                },
+            ],
+        };
+        let unowned_gap = ConceptGap {
+            concept: "unowned_existing_rule".to_string(),
+            query: "unowned existing rule".to_string(),
+            target_rule: "unowned_existing_rule".to_string(),
+            target_line: 20,
+            suggested_existing_owner: false,
+            reason: "test".to_string(),
+        };
+        let existing_owner_gap = ConceptGap {
+            concept: "counter_target_spell".to_string(),
+            query: "counter target colored spell".to_string(),
+            target_rule: "counter_target_colored_spell".to_string(),
+            target_line: 30,
+            suggested_existing_owner: true,
+            reason: "test".to_string(),
+        };
+
+        assert!(ExistingRuleNewConceptAgentReport::new(&unowned_gap, &report).eligible);
+        assert!(!ExistingRuleNewConceptAgentReport::new(&existing_owner_gap, &report).eligible);
+    }
+
+    #[test]
+    fn concept_grind_result_requires_target_rule() {
+        let gap = ConceptGap {
+            concept: "unowned_existing_rule".to_string(),
+            query: "unowned existing rule".to_string(),
+            target_rule: "unowned_existing_rule".to_string(),
+            target_line: 20,
+            suggested_existing_owner: false,
+            reason: "test".to_string(),
+        };
+        parse_concept_grind_result(
+            "CONCEPT_GRIND_RESULT:\n\
+             CONCEPT: unowned_existing_rule\n\
+             PEST_RULES: unowned_existing_rule\n\
+             FIXTURE_EXAMPLES: 3\n\
+             GRAMMAR_CHANGE: none\n\
+             BLOCKERS: none\n",
+            &gap,
+        )
+        .expect("valid result parses");
+        let err = parse_concept_grind_result(
+            "CONCEPT_GRIND_RESULT:\n\
+             CONCEPT: unowned_existing_rule\n\
+             PEST_RULES: other_rule\n\
+             FIXTURE_EXAMPLES: 3\n\
+             GRAMMAR_CHANGE: none\n\
+             BLOCKERS: none\n",
+            &gap,
+        )
+        .expect_err("missing target rule should fail");
+        assert!(err.to_string().contains("target rule"));
     }
 
     #[test]
