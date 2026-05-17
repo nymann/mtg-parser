@@ -1,0 +1,92 @@
+{
+  "concept": "each_player_performs_action",
+  "fixture_path": "grammar-fixtures/each_player_performs_action.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "each_player_performs_action",
+      "text": "Each player draws a card.",
+      "ast": {
+        "EachPlayerPerformsAction": {
+          "actions": [
+            {
+              "DrawCards": {
+                "count": {
+                  "Number": 1
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "each_player_performs_action",
+      "text": "each player draws X cards.",
+      "ast": {
+        "EachPlayerPerformsAction": {
+          "actions": [
+            {
+              "DrawCards": {
+                "count": {
+                  "Variable": "X"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "each_player_performs_action",
+      "text": "Each player antes the top card of their library.",
+      "ast": {
+        "EachPlayerPerformsAction": {
+          "actions": [
+            "AnteTopCardOfTheirLibrary"
+          ]
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "each_player_performs_action",
+      "text": "Each player discards their hand, then draws seven cards.",
+      "ast": {
+        "EachPlayerPerformsAction": {
+          "actions": [
+            "DiscardTheirHand",
+            {
+              "DrawCards": {
+                "count": {
+                  "Number": 7
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "each_player_performs_action",
+      "text": "Each player shuffles their hand and graveyard into their library, then draws seven cards.",
+      "ast": {
+        "EachPlayerPerformsAction": {
+          "actions": [
+            "ShuffleTheirHandAndGraveyardIntoTheirLibrary",
+            {
+              "DrawCards": {
+                "count": {
+                  "Number": 7
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
