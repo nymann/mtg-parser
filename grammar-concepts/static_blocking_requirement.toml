@@ -1,0 +1,69 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_blocking_requirement"]
+
+[[axis]]
+name = "affected_blockers"
+values = ["all_creatures"]
+
+[[axis]]
+name = "condition"
+values = ["able_to_block"]
+
+[[axis]]
+name = "block_target"
+values = ["enchanted_object"]
+
+[[axis]]
+name = "obligation"
+values = ["do_so"]
+
+[boundary]
+excludes = [
+    "Static cost increases for colored spells.",
+    "Static cost increases for activated abilities of colored permanents.",
+    "Enchanted-object blocking restrictions with an exception.",
+]
+includes = [
+    "All creatures able to block enchanted creature do so.",
+    "All creatures able to block enchanted artifact creature do so.",
+]
+
+[concept]
+name = "static_blocking_requirement"
+pest_rules = ["static_all_creatures_able_to_block_enchanted_do_so"]
+rules_queries = ["lex: requirements to block if able all creatures able to block do so"]
+rules_terms = [
+    "static",
+    "blocking requirement",
+    "requirement",
+    "block",
+    "if able",
+    "enchanted",
+]
+
+[[counterexample]]
+reason = "Static cost increase for colored spells, owned by static_cost_increase."
+text = "White spells cost {3} more to cast."
+
+[[counterexample]]
+reason = "Static cost increase for activated abilities, owned by static_cost_increase."
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[counterexample]]
+reason = "Blocking restriction with an exception, owned by static_enchanted_blocking_restriction."
+text = "Enchanted creature can't be blocked except by Walls."
+
+[[example]]
+text = "All creatures able to block enchanted creature do so."
+
+[[example]]
+text = "All creatures able to block enchanted artifact creature do so."
+
+[grammar_query]
+candidate_rules = ["static_all_creatures_able_to_block_enchanted_do_so"]
+selected_rule = "static_all_creatures_able_to_block_enchanted_do_so"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

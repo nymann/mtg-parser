@@ -1,0 +1,27 @@
+[fixture]
+concept = "static_blocking_requirement"
+rule = "static_all_creatures_able_to_block_enchanted_do_so"
+
+[[example]]
+text = "All creatures able to block enchanted creature do so."
+reason = "Blocking requirement for all creatures able to block the enchanted creature."
+
+[[example]]
+text = "All creatures able to block enchanted artifact creature do so."
+reason = "Same blocking requirement axis with a different enchanted object subtype."
+
+[[counterexample]]
+text = "White spells cost {3} more to cast."
+reason = "Static cost increase for colored spells, owned by static_cost_increase."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Static cost increase for activated abilities, owned by static_cost_increase."
+
+[[counterexample]]
+text = "Enchanted creature can't be blocked except by Walls."
+reason = "Blocking restriction with an exception, owned by static_enchanted_blocking_restriction."
+
+[[counterexample]]
+text = "All creatures able to block enchanted creature do so. trailing"
+reason = "Exact-consumption guard."
