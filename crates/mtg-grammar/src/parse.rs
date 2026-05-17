@@ -879,21 +879,9 @@ fn destroy_referenced_creature_at_beginning_of_next_end_step_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
     let target_pair = only_inner(pair, "destroy referenced creature missing target")?;
-    let DestroyTarget::ReferencedCreatureAtBeginningOfNextEndStep { target, condition } =
-        referenced_creature_at_beginning_of_next_end_step_target_from_pair(target_pair)?
-    else {
-        return Err(ParseError::Internal(
-            "destroy referenced creature target shape",
-        ));
-    };
-
-    if target == ReferencedCreature::It
-        && condition == Some(DestroyReferencedCreatureCondition::DidntAttackThisTurn)
-    {
-        return Ok(Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn);
-    }
-
-    Ok(Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep { target, condition })
+    Ok(Statement::destroy(
+        referenced_creature_at_beginning_of_next_end_step_target_from_pair(target_pair)?,
+    ))
 }
 
 fn referenced_creature_from_pair(pair: Pair<Rule>) -> Result<ReferencedCreature, ParseError> {
