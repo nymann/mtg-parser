@@ -1,0 +1,78 @@
+{
+  "concept": "target_permanent_pt_modification_until_eot",
+  "fixture_path": "grammar-fixtures/target_permanent_pt_modification_until_eot.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "target_permanent_gets_until_eot",
+      "text": "Target creature gets +1/+1 until end of turn.",
+      "ast": {
+        "TargetPermanentGetsUntilEndOfTurn": {
+          "modifier": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Plus"
+            }
+          },
+          "target": {
+            "Permanent": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "target_permanent_gets_until_eot",
+      "text": "Target creature gets +X/+0 until end of turn.",
+      "ast": {
+        "TargetPermanentGetsMixedUntilEndOfTurn": {
+          "modifier": {
+            "power": {
+              "Variable": {
+                "sign": "Plus",
+                "variable": "X"
+              }
+            },
+            "toughness": {
+              "Number": {
+                "magnitude": 0,
+                "sign": "Plus"
+              }
+            }
+          },
+          "target": {
+            "Permanent": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "target_permanent_gets_until_eot",
+      "text": "Target attacking creature gets -1/-1 until end of turn.",
+      "ast": {
+        "TargetPermanentGetsUntilEndOfTurn": {
+          "modifier": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Minus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Minus"
+            }
+          },
+          "target": {
+            "CombatRoleCreature": {
+              "role": "Attacking"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
