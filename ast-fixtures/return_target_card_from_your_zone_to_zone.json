@@ -1,0 +1,74 @@
+{
+  "concept": "return_target_card_from_your_zone_to_zone",
+  "fixture_path": "grammar-fixtures/return_target_card_from_your_zone_to_zone.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "return_target_card_from_your_zone_to_zone",
+      "text": "Return target card to your hand.",
+      "ast": {
+        "ReturnTargetCardFromYourZoneToZone": {
+          "card_type": null,
+          "from": null,
+          "to": {
+            "YourZone": "Hand"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "return_target_card_from_your_zone_to_zone",
+      "text": "Return target card from your graveyard to your hand.",
+      "ast": {
+        "ReturnTargetCardFromYourZoneToZone": {
+          "card_type": null,
+          "from": "Graveyard",
+          "to": {
+            "YourZone": "Hand"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "return_target_card_from_your_zone_to_zone",
+      "text": "Return target creature card from your graveyard to the battlefield.",
+      "ast": {
+        "ReturnTargetCardFromYourZoneToZone": {
+          "card_type": "Creature",
+          "from": "Graveyard",
+          "to": "TheBattlefield"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "return_target_card_from_your_zone_to_zone",
+      "text": "Return target artifact from your hand to its owner's hand.",
+      "ast": {
+        "ReturnTargetCardFromYourZoneToZone": {
+          "card_type": "Artifact",
+          "from": "Hand",
+          "to": {
+            "ItsOwnersZone": "Hand"
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "return_target_card_from_your_zone_to_zone",
+      "text": "Return target enchantment card from your graveyard to its owner's graveyard.",
+      "ast": {
+        "ReturnTargetCardFromYourZoneToZone": {
+          "card_type": "Enchantment",
+          "from": "Graveyard",
+          "to": {
+            "ItsOwnersZone": "Graveyard"
+          }
+        }
+      }
+    }
+  ]
+}
