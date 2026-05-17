@@ -1,0 +1,67 @@
+[[axis]]
+name = "affected_creatures"
+values = ["creatures_it_was_blocking"]
+
+[[axis]]
+name = "blocking_history"
+values = ["had_become_blocked_by_only_that_creature"]
+
+[[axis]]
+name = "duration"
+values = ["this_combat"]
+
+[[axis]]
+name = "status_change"
+values = ["become_unblocked"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "Direct target-creature effects that make a creature become unblocked.",
+    "Remove-from-combat effects for target creatures.",
+    "Static unblocked-creature damage-source phrases.",
+]
+includes = [
+    "Creatures it was blocking that had become blocked by only that creature this combat become unblocked.",
+    "creatures it was blocking that had become blocked by only that creature this combat become unblocked.",
+]
+
+[concept]
+name = "creatures_it_was_blocking_become_unblocked"
+pest_rules = ["creatures_it_was_blocking_become_unblocked"]
+rules_queries = ["lex: creatures it was blocking become unblocked"]
+rules_terms = [
+    "blocking creature",
+    "blocked creature",
+    "unblocked creature",
+    "this combat",
+]
+
+[[counterexample]]
+reason = "Direct target-creature status change, not the relational set of creatures it was blocking."
+text = "Target creature becomes unblocked."
+
+[[counterexample]]
+reason = "Remove-from-combat instruction, not a become-unblocked status change for creatures it was blocking."
+text = "Remove target creature defending player controls from combat."
+
+[[counterexample]]
+reason = "Damage-source phrase for unblocked creatures, not a combat status-change sentence."
+text = "Unblocked creatures deal damage."
+
+[[example]]
+text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."
+
+[[example]]
+text = "creatures it was blocking that had become blocked by only that creature this combat become unblocked."
+
+[grammar_query]
+candidate_rules = ["creatures_it_was_blocking_become_unblocked"]
+selected_rule = "creatures_it_was_blocking_become_unblocked"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

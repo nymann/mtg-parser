@@ -1,0 +1,27 @@
+[fixture]
+concept = "creatures_it_was_blocking_become_unblocked"
+rule = "creatures_it_was_blocking_become_unblocked"
+
+[[example]]
+text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."
+reason = "Standalone combat status-change sentence for creatures it was blocking."
+
+[[example]]
+text = "creatures it was blocking that had become blocked by only that creature this combat become unblocked."
+reason = "Same sentence with lowercase initial word; the grammar rule uses case-insensitive literals."
+
+[[counterexample]]
+text = "Target creature becomes unblocked."
+reason = "Direct target-creature status change, not the relational set of creatures it was blocking."
+
+[[counterexample]]
+text = "Remove target creature defending player controls from combat."
+reason = "Remove-from-combat instruction, not a become-unblocked status change for creatures it was blocking."
+
+[[counterexample]]
+text = "Unblocked creatures deal damage."
+reason = "Damage-source phrase for unblocked creatures, not a combat status-change sentence."
+
+[[counterexample]]
+text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked. trailing"
+reason = "Exact-consumption guard."
