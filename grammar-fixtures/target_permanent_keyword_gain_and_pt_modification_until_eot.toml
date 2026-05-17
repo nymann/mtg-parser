@@ -3,12 +3,14 @@ concept = "target_permanent_keyword_gain_and_pt_modification_until_eot"
 rule = "target_permanent_gains_keyword_and_gets_eot_effect"
 
 [[example]]
-text = "gains trample and gets +X/+0 until end of turn, where X is its power"
-reason = "Owned effect fragment with keyword grant, mixed P/T modifier, until-end-of-turn duration, and variable definition."
+rule = "target_permanent_until_eot"
+text = "Target blocking creature gains trample and gets +X/+0 until end of turn, where X is its power."
+reason = "Full target-permanent sentence with keyword grant, mixed P/T modifier, until-end-of-turn duration, combat-role selector, and variable definition."
 
 [[example]]
-text = "gains flying and gets +X/+0 until end of turn, where X is its power"
-reason = "Owned effect fragment with a different keyword and the same variable P/T modifier shape."
+rule = "target_permanent_until_eot"
+text = "Target creature gains flying and gets +X/+0 until end of turn, where X is its power."
+reason = "Full target-permanent sentence with a different keyword and the same variable P/T modifier shape."
 
 [[example]]
 rule = "target_permanent_until_eot"

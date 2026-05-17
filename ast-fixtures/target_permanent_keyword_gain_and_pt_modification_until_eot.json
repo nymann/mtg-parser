@@ -1,0 +1,142 @@
+{
+  "concept": "target_permanent_keyword_gain_and_pt_modification_until_eot",
+  "fixture_path": "grammar-fixtures/target_permanent_keyword_gain_and_pt_modification_until_eot.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "target_permanent_until_eot",
+      "text": "Target blocking creature gains trample and gets +X/+0 until end of turn, where X is its power.",
+      "ast": {
+        "TargetPermanentGainsKeywordAndGetsUntilEndOfTurn": {
+          "definitions": [
+            {
+              "value": "ItsPower",
+              "variable": "X"
+            }
+          ],
+          "keyword": "Trample",
+          "modifier": {
+            "power": {
+              "Variable": {
+                "sign": "Plus",
+                "variable": "X"
+              }
+            },
+            "toughness": {
+              "Number": {
+                "magnitude": 0,
+                "sign": "Plus"
+              }
+            }
+          },
+          "target": {
+            "CombatRoleCreature": {
+              "role": "Blocking"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "target_permanent_until_eot",
+      "text": "Target creature gains flying and gets +X/+0 until end of turn, where X is its power.",
+      "ast": {
+        "TargetPermanentGainsKeywordAndGetsUntilEndOfTurn": {
+          "definitions": [
+            {
+              "value": "ItsPower",
+              "variable": "X"
+            }
+          ],
+          "keyword": "Flying",
+          "modifier": {
+            "power": {
+              "Variable": {
+                "sign": "Plus",
+                "variable": "X"
+              }
+            },
+            "toughness": {
+              "Number": {
+                "magnitude": 0,
+                "sign": "Plus"
+              }
+            }
+          },
+          "target": {
+            "Permanent": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "target_permanent_until_eot",
+      "text": "Target creature gains trample and gets +X/+0 until end of turn, where X is its power.",
+      "ast": {
+        "TargetPermanentGainsKeywordAndGetsUntilEndOfTurn": {
+          "definitions": [
+            {
+              "value": "ItsPower",
+              "variable": "X"
+            }
+          ],
+          "keyword": "Trample",
+          "modifier": {
+            "power": {
+              "Variable": {
+                "sign": "Plus",
+                "variable": "X"
+              }
+            },
+            "toughness": {
+              "Number": {
+                "magnitude": 0,
+                "sign": "Plus"
+              }
+            }
+          },
+          "target": {
+            "Permanent": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "target_permanent_until_eot",
+      "text": "Target attacking creature gains flying and gets +X/+0 until end of turn, where X is its power.",
+      "ast": {
+        "TargetPermanentGainsKeywordAndGetsUntilEndOfTurn": {
+          "definitions": [
+            {
+              "value": "ItsPower",
+              "variable": "X"
+            }
+          ],
+          "keyword": "Flying",
+          "modifier": {
+            "power": {
+              "Variable": {
+                "sign": "Plus",
+                "variable": "X"
+              }
+            },
+            "toughness": {
+              "Number": {
+                "magnitude": 0,
+                "sign": "Plus"
+              }
+            }
+          },
+          "target": {
+            "CombatRoleCreature": {
+              "role": "Attacking"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
