@@ -1207,40 +1207,6 @@ struct NoPestConceptFastpathReport {
 }
 
 #[derive(Debug, Serialize)]
-struct UnifiedMetadataFastpathReport {
-    fastpath_attempted: bool,
-    fastpath_result: String,
-    fallback_reason: Option<String>,
-    concept: String,
-    original_target_rule: String,
-    target_rule: String,
-    target_rule_exists: bool,
-    boundary_owner: Option<String>,
-    pest_patch_intent: Option<String>,
-    concept_path: PathBuf,
-    fixture_path: PathBuf,
-    grammar_pest_changed: bool,
-    changed_paths: Vec<String>,
-    quality_contract: Option<ConceptQualityContractReport>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct ConceptGrindResultBlock {
-    concept: String,
-    pest_rules: String,
-    fixture_examples: String,
-    grammar_change: String,
-    blockers: String,
-}
-
-struct UnifiedMetadataFastpathSuccess {
-    gap: ConceptGap,
-    boundary_decision: BoundaryDecision,
-    boundary_response: String,
-    report: UnifiedMetadataFastpathReport,
-}
-
-#[derive(Debug, Serialize)]
 struct ConceptQualityContractReport {
     concept: String,
     fixture_command: Vec<String>,
@@ -5647,159 +5613,108 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
         }
 
         metrics.step_started(sink, iteration, 3, "boundary agent");
-        let unified =
-            attempt_unified_metadata_fastpath(options.agent, &gap, &before, &iteration_dir, sink)?;
-        let fastpath_skipped_boundary = unified.is_some();
-        let (gap, boundary_decision, boundary_response) = if let Some(unified) = unified {
+        let boundary = refactor_hotspot::invoke_agent(
+            options.agent,
+            &boundary_prompt,
+            &iteration_dir.join("boundary_transcript.ndjson"),
+            sink,
+        )?;
+        fs::write(
+            iteration_dir.join("boundary_response.md"),
+            &boundary.assistant_text,
+        )
+        .with_context(|| {
+            format!(
+                "write {}",
+                iteration_dir.join("boundary_response.md").display()
+            )
+        })?;
+        if !boundary.success {
+            bail!(
+                "{} boundary agent exited with status {}; transcript: {}",
+                options.agent.label(),
+                boundary.exit_code,
+                iteration_dir.join("boundary_transcript.ndjson").display()
+            );
+        }
+        let boundary_decision = parse_boundary_decision(&boundary.assistant_text)?;
+        write_json(
+            iteration_dir.join("boundary_decision.json"),
+            &boundary_decision,
+        )?;
+        if let BoundaryOwner::Blocked(reason) = &boundary_decision.owner {
+            metrics.step_finished(
+                sink,
+                &session_dir,
+                iteration,
+                3,
+                true,
+                Some(format!("blocked: {reason}")),
+            )?;
+            if options.concept.is_some() || options.target_rule.is_some() {
+                return Err(anyhow!("boundary decision blocked concept-grind: {reason}"));
+            }
             sink.emit(FlowEvent::Note {
-                level: NoteLevel::Info,
+                level: NoteLevel::Warn,
                 text: format!(
-                    "unified metadata fast-path succeeded for {}",
-                    unified.gap.concept
+                    "skipping blocked target {} for this run: {reason}",
+                    gap.target_rule
                 ),
             });
-            write_json(
-                iteration_dir.join("unified_metadata_fastpath.json"),
-                &unified.report,
-            )?;
-            (
-                unified.gap,
-                unified.boundary_decision,
-                unified.boundary_response,
-            )
-        } else {
-            let boundary = refactor_hotspot::invoke_agent(
-                options.agent,
-                &boundary_prompt,
-                &iteration_dir.join("boundary_transcript.ndjson"),
-                sink,
-            )?;
-            fs::write(
-                iteration_dir.join("boundary_response.md"),
-                &boundary.assistant_text,
-            )
-            .with_context(|| {
-                format!(
-                    "write {}",
-                    iteration_dir.join("boundary_response.md").display()
-                )
-            })?;
-            if !boundary.success {
-                bail!(
-                    "{} boundary agent exited with status {}; transcript: {}",
-                    options.agent.label(),
-                    boundary.exit_code,
-                    iteration_dir.join("boundary_transcript.ndjson").display()
-                );
-            }
-            let boundary_decision = parse_boundary_decision(&boundary.assistant_text)?;
-            write_json(
-                iteration_dir.join("boundary_decision.json"),
-                &boundary_decision,
-            )?;
-            if let BoundaryOwner::Blocked(reason) = &boundary_decision.owner {
-                metrics.step_finished(
-                    sink,
-                    &session_dir,
-                    iteration,
-                    3,
-                    true,
-                    Some(format!("blocked: {reason}")),
-                )?;
-                if options.concept.is_some() || options.target_rule.is_some() {
-                    return Err(anyhow!("boundary decision blocked concept-grind: {reason}"));
+            if is_structural_block_reason(reason) {
+                let derivation = derive_plumbing_cooldown(&before, &gap.target_rule)?;
+                for candidate in &derivation.cooled_target_rules {
+                    plumbing_cooldown
+                        .cooled_target_rules
+                        .insert(candidate.target_rule.clone());
                 }
+                plumbing_cooldown.derivations.push(derivation.clone());
+                write_json(
+                    iteration_dir.join("plumbing_cooldown_derivation.json"),
+                    &derivation,
+                )?;
+                write_json(
+                    session_dir.join("plumbing_cooldown_state.json"),
+                    &plumbing_cooldown,
+                )?;
                 sink.emit(FlowEvent::Note {
-                    level: NoteLevel::Warn,
+                    level: NoteLevel::Info,
                     text: format!(
-                        "skipping blocked target {} for this run: {reason}",
+                        "cooled {} nested shared/plumbing candidate(s) after blocking {}",
+                        derivation.cooled_target_rules.len(),
                         gap.target_rule
                     ),
                 });
-                if is_structural_block_reason(reason) {
-                    let derivation = derive_plumbing_cooldown(&before, &gap.target_rule)?;
-                    for candidate in &derivation.cooled_target_rules {
-                        plumbing_cooldown
-                            .cooled_target_rules
-                            .insert(candidate.target_rule.clone());
-                    }
-                    plumbing_cooldown.derivations.push(derivation.clone());
-                    write_json(
-                        iteration_dir.join("plumbing_cooldown_derivation.json"),
-                        &derivation,
-                    )?;
-                    write_json(
-                        session_dir.join("plumbing_cooldown_state.json"),
-                        &plumbing_cooldown,
-                    )?;
-                    sink.emit(FlowEvent::Note {
-                        level: NoteLevel::Info,
-                        text: format!(
-                            "cooled {} nested shared/plumbing candidate(s) after blocking {}",
-                            derivation.cooled_target_rules.len(),
-                            gap.target_rule
-                        ),
-                    });
-                }
-                let exclusion = PersistedBlockedExclusion {
-                    target_rule: gap.target_rule.clone(),
-                    normalized_blocked_reason: slug(reason).replace('-', "_"),
-                    structural_exclusion_reason: reason.clone(),
-                    matched_feature: classify_blocked_feature(&gap.target_rule, reason),
-                    evidence_rule_or_parent: gap.target_rule.clone(),
-                    source_run: session_dir.clone(),
-                    source_iteration: iteration,
-                };
-                write_json(iteration_dir.join("blocked_exclusion.json"), &exclusion)?;
-                persisted_exclusions.push(exclusion);
-                write_json(
-                    session_dir.join("persisted_blocked_exclusions.json"),
-                    &persisted_exclusions,
-                )?;
-                blocked_targets.insert(gap.target_rule);
-                continue;
             }
-            let gap = apply_boundary_decision(gap, &boundary_decision)?;
-            (gap, boundary_decision, boundary.assistant_text)
-        };
+            let exclusion = PersistedBlockedExclusion {
+                target_rule: gap.target_rule.clone(),
+                normalized_blocked_reason: slug(reason).replace('-', "_"),
+                structural_exclusion_reason: reason.clone(),
+                matched_feature: classify_blocked_feature(&gap.target_rule, reason),
+                evidence_rule_or_parent: gap.target_rule.clone(),
+                source_run: session_dir.clone(),
+                source_iteration: iteration,
+            };
+            write_json(iteration_dir.join("blocked_exclusion.json"), &exclusion)?;
+            persisted_exclusions.push(exclusion);
+            write_json(
+                session_dir.join("persisted_blocked_exclusions.json"),
+                &persisted_exclusions,
+            )?;
+            blocked_targets.insert(gap.target_rule);
+            continue;
+        }
+        let gap = apply_boundary_decision(gap, &boundary_decision)?;
         metrics.step_finished(
             sink,
             &session_dir,
             iteration,
             3,
             true,
-            Some(if fastpath_skipped_boundary {
-                "unified metadata fast-path completed".to_string()
-            } else {
-                "parsed boundary decision".to_string()
-            }),
+            Some("parsed boundary decision".to_string()),
         )?;
 
-        let mut fastpath = if fastpath_skipped_boundary {
-            NoPestConceptFastpathReport {
-                fastpath_attempted: false,
-                fastpath_result: "skipped_unified_metadata".to_string(),
-                fallback_reason: None,
-                patch_agent_started: false,
-                concept: gap.concept.clone(),
-                original_target_rule: gap.target_rule.clone(),
-                target_rule: gap.target_rule.clone(),
-                example_rule: None,
-                resolution_reason: None,
-                mapped_pest_rules: Vec::new(),
-                pest_patch_intent: boundary_decision.pest_patch_intent.clone(),
-                eligible_shape: false,
-                target_rule_exists: true,
-                concept_path: grammar_concepts_dir().join(format!("{}.toml", gap.concept)),
-                fixture_path: grammar_fixtures_dir().join(format!("{}.toml", gap.concept)),
-                generated_concept: false,
-                generated_fixture: false,
-                grammar_pest_changed: false,
-                quality_contract: None,
-            }
-        } else {
-            attempt_no_pest_concept_fastpath(&gap, &boundary_decision, true)?
-        };
+        let mut fastpath = attempt_no_pest_concept_fastpath(&gap, &boundary_decision, true)?;
         if fastpath.fastpath_attempted {
             let level = if fastpath.fastpath_result == "success" {
                 NoteLevel::Info
@@ -5820,8 +5735,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                 ),
             });
         }
-        let fastpath_skipped_patch =
-            fastpath_skipped_boundary || fastpath.fastpath_result == "success";
+        let fastpath_skipped_patch = fastpath.fastpath_result == "success";
         fastpath.patch_agent_started = !fastpath_skipped_patch;
         write_json(iteration_dir.join("no_pest_fastpath.json"), &fastpath)?;
 
@@ -5836,7 +5750,8 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                 Some("no-PEST fast-path skipped patch agent".to_string()),
             )?;
         } else {
-            let patch_prompt = build_patch_prompt(&gap, &boundary_decision, &boundary_response)?;
+            let patch_prompt =
+                build_patch_prompt(&gap, &boundary_decision, &boundary.assistant_text)?;
             fs::write(iteration_dir.join("patch_prompt.md"), &patch_prompt).with_context(|| {
                 format!("write {}", iteration_dir.join("patch_prompt.md").display())
             })?;
@@ -6041,9 +5956,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             concept: gap.concept.clone(),
             query: gap.query.clone(),
             target_rule: gap.target_rule.clone(),
-            iteration_path: if fastpath_skipped_boundary {
-                "unified_metadata_fast_path".to_string()
-            } else if fastpath_skipped_patch {
+            iteration_path: if fastpath_skipped_patch {
                 "fast_path".to_string()
             } else if fastpath.fastpath_attempted {
                 "fallback".to_string()
@@ -6494,12 +6407,7 @@ fn decision_field_name(line: &str) -> Option<&str> {
         | "EXAMPLES_TO_ACCEPT"
         | "COUNTEREXAMPLES_TO_REJECT"
         | "PEST_PATCH_INTENT"
-        | "WHY_NOT_CARD_PASS"
-        | "CONCEPT"
-        | "PEST_RULES"
-        | "FIXTURE_EXAMPLES"
-        | "GRAMMAR_CHANGE"
-        | "BLOCKERS" => Some(field.trim()),
+        | "WHY_NOT_CARD_PASS" => Some(field.trim()),
         _ => None,
     }
 }
@@ -6578,488 +6486,6 @@ BLOCKERS: <none or list>
         boundary_json = serde_json::to_string_pretty(boundary_decision)?,
         boundary_response = boundary_response,
     ))
-}
-
-fn build_unified_metadata_prompt(
-    gap: &ConceptGap,
-    report: &ExistingGrammarMapReport,
-) -> Result<String> {
-    let rules = grammar_query_engine::parse_grammar_file(grammar_pest_path())?;
-    let grammar_report = build_grammar_query_report(&gap.query, vec![gap.target_rule.clone()], 16)?;
-    let concept_path = grammar_concepts_dir().join(format!("{}.toml", gap.concept));
-    let fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
-    let concept_text = fs::read_to_string(&concept_path).unwrap_or_else(|_| {
-        format!(
-            "# No committed concept file exists yet for {}.\n",
-            gap.concept
-        )
-    });
-    let fixture_text = fs::read_to_string(&fixture_path).unwrap_or_else(|_| {
-        format!(
-            "# No committed fixture file exists yet for {}.\n",
-            gap.concept
-        )
-    });
-    let target = rules
-        .iter()
-        .find(|rule| rule.name == gap.target_rule)
-        .ok_or_else(|| anyhow!("target rule {} not found", gap.target_rule))?;
-    let dependencies = grammar_query_engine::direct_dependencies(&rules, &gap.target_rule);
-    let reverse_dependencies = grammar_query_engine::reverse_dependencies(&rules, &gap.target_rule);
-    let rules_block = rules_context::render_rules_block(&gap.query);
-
-    Ok(format!(
-        r#"You are the UNIFIED_METADATA_CONCEPT_GRIND agent for mtg-parser.
-
-This is the metadata-only fast path for concept-grind. Decide the boundary and patch only the concept metadata/fixtures in one pass.
-
-Hard constraints:
-- Do not run `cargo xtask add-card`.
-- Do not edit `crates/mtg-grammar/src/grammar.pest` or any parser/unparser/AST file.
-- Do not edit `crates/mtg-grammar/tests/generated/` or `crates/mtg-grammar/tests/generated_patterns/`.
-- Do not try to make cards pass.
-- Edit only these two files:
-  - `{concept_path}`
-  - `{fixture_path}`
-- If this concept needs any grammar.pest change, do not edit files; set `PEST_PATCH_INTENT` to the needed grammar change and report `BLOCKERS`.
-- Preserve fixture quality: accepted examples, true boundary rejects, and exact-consumption coverage must all be present.
-- The orchestrator owns validation, maturity, fallback, and commit.
-
-Concept candidate:
-- concept: {concept}
-- query: {query}
-- target PEST rule: {target_rule}:{target_line}
-- selection reason: {reason}
-- existing owner suggestion: {suggested_existing_owner}
-
-Current map:
-- grammar rules: {rule_count}
-- mapped rules: {mapped_rule_count}
-- unmapped non-shared rules: {unmapped_rule_count}
-
-Target PEST rule already exists:
-```pest
-{target_name} = {target_rhs}
-```
-
-Direct dependencies: {dependencies}
-Reverse dependencies: {reverse_dependencies}
-
-Committed concept file:
-```toml
-{concept_text}
-```
-
-Committed fixture file:
-```toml
-{fixture_text}
-```
-
-Grammar-neighbor report:
-```json
-{grammar_json}
-```
-
-Comprehensive Rules context:
-{rules_block}
-
-Return both blocks exactly:
-
-CONCEPT_BOUNDARY_DECISION:
-OWNER: existing:{concept} | new:<name> | blocked:<reason>
-AXES: <axis names and values to add or preserve>
-EXAMPLES_TO_ACCEPT: <grammar fixture examples>
-COUNTEREXAMPLES_TO_REJECT: <true boundary negatives only>
-PEST_PATCH_INTENT: none
-WHY_NOT_CARD_PASS: grammar fixture maturity only
-
-CONCEPT_GRIND_RESULT:
-CONCEPT: <final concept name>
-PEST_RULES: <roots owned by this concept>
-FIXTURE_EXAMPLES: <count>
-GRAMMAR_CHANGE: none
-BLOCKERS: none
-"#,
-        concept = gap.concept,
-        query = gap.query,
-        target_rule = gap.target_rule,
-        target_line = gap.target_line,
-        reason = gap.reason,
-        suggested_existing_owner = gap.suggested_existing_owner,
-        rule_count = report.rule_count,
-        mapped_rule_count = report.mapped_rule_count,
-        unmapped_rule_count = report.unmapped_rule_count,
-        target_name = target.name,
-        target_rhs = target.rhs,
-        dependencies = dependencies.join(", "),
-        reverse_dependencies = reverse_dependencies.join(", "),
-        concept_path = concept_path.display(),
-        fixture_path = fixture_path.display(),
-        concept_text = concept_text,
-        fixture_text = fixture_text,
-        grammar_json = serde_json::to_string_pretty(&grammar_report)?,
-        rules_block = rules_block,
-    ))
-}
-
-fn attempt_unified_metadata_fastpath(
-    agent: AgentProvider,
-    gap: &ConceptGap,
-    before: &ExistingGrammarMapReport,
-    iteration_dir: &Path,
-    sink: &mut dyn FlowSink,
-) -> Result<Option<UnifiedMetadataFastpathSuccess>> {
-    let concept_path = grammar_concepts_dir().join(format!("{}.toml", gap.concept));
-    let fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
-    let mut report = UnifiedMetadataFastpathReport {
-        fastpath_attempted: false,
-        fastpath_result: "not_eligible".to_string(),
-        fallback_reason: None,
-        concept: gap.concept.clone(),
-        original_target_rule: gap.target_rule.clone(),
-        target_rule: gap.target_rule.clone(),
-        target_rule_exists: target_rule_exists(&gap.target_rule)?,
-        boundary_owner: None,
-        pest_patch_intent: None,
-        concept_path,
-        fixture_path,
-        grammar_pest_changed: false,
-        changed_paths: Vec::new(),
-        quality_contract: None,
-    };
-
-    if !report.target_rule_exists {
-        report.fallback_reason = Some(format!("target rule {} does not exist", gap.target_rule));
-        write_json(
-            iteration_dir.join("unified_metadata_fastpath.json"),
-            &report,
-        )?;
-        return Ok(None);
-    }
-    if !git_changed_paths(&["status", "--porcelain"])?.is_empty() {
-        report.fallback_reason =
-            Some("working tree is dirty; unified metadata fast-path skipped".to_string());
-        write_json(
-            iteration_dir.join("unified_metadata_fastpath.json"),
-            &report,
-        )?;
-        return Ok(None);
-    }
-
-    report.fastpath_attempted = true;
-    report.fastpath_result = "attempted".to_string();
-    let prompt = build_unified_metadata_prompt(gap, before)?;
-    fs::write(iteration_dir.join("unified_metadata_prompt.md"), &prompt).with_context(|| {
-        format!(
-            "write {}",
-            iteration_dir.join("unified_metadata_prompt.md").display()
-        )
-    })?;
-    let snapshots = FastpathSnapshots::capture([
-        report.concept_path.as_path(),
-        report.fixture_path.as_path(),
-        grammar_pest_path().as_path(),
-    ])?;
-    let unified = refactor_hotspot::invoke_agent(
-        agent,
-        &prompt,
-        &iteration_dir.join("unified_metadata_transcript.ndjson"),
-        sink,
-    )?;
-    fs::write(
-        iteration_dir.join("unified_metadata_response.md"),
-        &unified.assistant_text,
-    )
-    .with_context(|| {
-        format!(
-            "write {}",
-            iteration_dir.join("unified_metadata_response.md").display()
-        )
-    })?;
-    if !unified.success {
-        snapshots.restore()?;
-        report.fastpath_result = "fallback".to_string();
-        report.fallback_reason = Some(format!(
-            "{} unified metadata agent exited with status {}",
-            agent.label(),
-            unified.exit_code
-        ));
-        write_json(
-            iteration_dir.join("unified_metadata_fastpath.json"),
-            &report,
-        )?;
-        return Ok(None);
-    }
-
-    let parsed = parse_unified_metadata_response(&unified.assistant_text)
-        .and_then(|(decision, result)| validate_unified_metadata_output(gap, decision, result));
-    let (boundary_decision, result_block) = match parsed {
-        Ok(parsed) => parsed,
-        Err(error) => {
-            snapshots.restore()?;
-            report.fastpath_result = "fallback".to_string();
-            report.fallback_reason = Some(format!("invalid unified metadata output: {error:#}"));
-            write_json(
-                iteration_dir.join("unified_metadata_fastpath.json"),
-                &report,
-            )?;
-            return Ok(None);
-        }
-    };
-    report.boundary_owner = Some(boundary_decision.owner_raw.clone());
-    report.pest_patch_intent = Some(boundary_decision.pest_patch_intent.clone());
-
-    let gap = match apply_boundary_decision(gap.clone(), &boundary_decision) {
-        Ok(gap) => gap,
-        Err(error) => {
-            snapshots.restore()?;
-            report.fastpath_result = "fallback".to_string();
-            report.fallback_reason = Some(format!(
-                "boundary decision not metadata-patchable: {error:#}"
-            ));
-            write_json(
-                iteration_dir.join("unified_metadata_fastpath.json"),
-                &report,
-            )?;
-            return Ok(None);
-        }
-    };
-    if result_block.concept != gap.concept {
-        snapshots.restore()?;
-        report.fastpath_result = "fallback".to_string();
-        report.fallback_reason = Some(format!(
-            "CONCEPT_GRIND_RESULT concept {} did not match boundary owner {}",
-            result_block.concept, gap.concept
-        ));
-        write_json(
-            iteration_dir.join("unified_metadata_fastpath.json"),
-            &report,
-        )?;
-        return Ok(None);
-    }
-    report.concept = gap.concept.clone();
-    report.target_rule = gap.target_rule.clone();
-    report.concept_path = grammar_concepts_dir().join(format!("{}.toml", gap.concept));
-    report.fixture_path = grammar_fixtures_dir().join(format!("{}.toml", gap.concept));
-
-    report.grammar_pest_changed = snapshots.path_changed(&grammar_pest_path());
-    report.changed_paths = git_changed_paths(&["status", "--porcelain"])?;
-    if report.grammar_pest_changed {
-        restore_metadata_fastpath_changes(&snapshots, &report.changed_paths)?;
-        report.fastpath_result = "fallback".to_string();
-        report.fallback_reason = Some("unified metadata agent changed grammar.pest".to_string());
-        write_json(
-            iteration_dir.join("unified_metadata_fastpath.json"),
-            &report,
-        )?;
-        return Ok(None);
-    }
-    let allowed = unified_metadata_allowed_paths(&gap);
-    let unexpected = report
-        .changed_paths
-        .iter()
-        .filter(|path| !allowed.contains(*path))
-        .cloned()
-        .collect::<Vec<_>>();
-    if !unexpected.is_empty() {
-        restore_metadata_fastpath_changes(&snapshots, &report.changed_paths)?;
-        report.fastpath_result = "fallback".to_string();
-        report.fallback_reason = Some(format!(
-            "unified metadata agent edited disallowed path(s): {}",
-            unexpected.join(", ")
-        ));
-        write_json(
-            iteration_dir.join("unified_metadata_fastpath.json"),
-            &report,
-        )?;
-        return Ok(None);
-    }
-
-    let quality_contract = match run_quality_contract(&gap) {
-        Ok(report) => report,
-        Err(error) => {
-            restore_metadata_fastpath_changes(&snapshots, &report.changed_paths)?;
-            report.fastpath_result = "fallback".to_string();
-            report.fallback_reason = Some(format!(
-                "unified metadata quality contract errored: {error:#}"
-            ));
-            write_json(
-                iteration_dir.join("unified_metadata_fastpath.json"),
-                &report,
-            )?;
-            return Ok(None);
-        }
-    };
-    let passed = quality_contract.passed
-        && quality_contract.maturity_result.state == "grammar_fixture_green";
-    report.quality_contract = Some(quality_contract);
-    if !passed {
-        restore_metadata_fastpath_changes(&snapshots, &report.changed_paths)?;
-        report.fastpath_result = "fallback".to_string();
-        report.fallback_reason = Some("unified metadata quality contract failed".to_string());
-        write_json(
-            iteration_dir.join("unified_metadata_fastpath.json"),
-            &report,
-        )?;
-        return Ok(None);
-    }
-
-    report.fastpath_result = "success".to_string();
-    report.fallback_reason = None;
-    write_json(
-        iteration_dir.join("unified_metadata_boundary_decision.json"),
-        &boundary_decision,
-    )?;
-    write_json(
-        iteration_dir.join("unified_metadata_result.json"),
-        &result_block,
-    )?;
-    write_json(
-        iteration_dir.join("unified_metadata_fastpath.json"),
-        &report,
-    )?;
-    Ok(Some(UnifiedMetadataFastpathSuccess {
-        gap,
-        boundary_decision,
-        boundary_response: unified.assistant_text,
-        report,
-    }))
-}
-
-fn target_rule_exists(target_rule: &str) -> Result<bool> {
-    Ok(
-        grammar_query_engine::parse_grammar_file(grammar_pest_path())?
-            .iter()
-            .any(|rule| rule.name == target_rule),
-    )
-}
-
-fn parse_unified_metadata_response(
-    response: &str,
-) -> Result<(BoundaryDecision, ConceptGrindResultBlock)> {
-    let decision = parse_boundary_decision(response)?;
-    let result = parse_concept_grind_result(response)?;
-    Ok((decision, result))
-}
-
-fn parse_concept_grind_result(response: &str) -> Result<ConceptGrindResultBlock> {
-    if !response.contains("CONCEPT_GRIND_RESULT") {
-        bail!("unified metadata response missing CONCEPT_GRIND_RESULT block");
-    }
-    Ok(ConceptGrindResultBlock {
-        concept: required_decision_field(response, "CONCEPT")?,
-        pest_rules: required_decision_field(response, "PEST_RULES")?,
-        fixture_examples: required_decision_field(response, "FIXTURE_EXAMPLES")?,
-        grammar_change: required_decision_field(response, "GRAMMAR_CHANGE")?,
-        blockers: required_decision_field(response, "BLOCKERS")?,
-    })
-}
-
-fn validate_unified_metadata_output(
-    gap: &ConceptGap,
-    decision: BoundaryDecision,
-    result: ConceptGrindResultBlock,
-) -> Result<(BoundaryDecision, ConceptGrindResultBlock)> {
-    if matches!(decision.owner, BoundaryOwner::Blocked(_)) {
-        bail!("metadata fast-path does not accept blocked boundary decisions");
-    }
-    match &decision.owner {
-        BoundaryOwner::Existing(concept) | BoundaryOwner::New(concept)
-            if concept == &gap.concept => {}
-        BoundaryOwner::Existing(concept) | BoundaryOwner::New(concept) => {
-            bail!(
-                "metadata fast-path cannot retarget owner from {} to {}",
-                gap.concept,
-                concept
-            );
-        }
-        BoundaryOwner::Blocked(_) => unreachable!("blocked owner handled above"),
-    }
-    if !decision
-        .pest_patch_intent
-        .trim()
-        .eq_ignore_ascii_case("none")
-    {
-        bail!(
-            "metadata fast-path requested PEST change: {}",
-            decision.pest_patch_intent
-        );
-    }
-    if result
-        .grammar_change
-        .to_ascii_lowercase()
-        .contains("grammar.pest")
-        || !result.grammar_change.trim().eq_ignore_ascii_case("none")
-    {
-        bail!(
-            "metadata fast-path result requested grammar change: {}",
-            result.grammar_change
-        );
-    }
-    if !result.blockers.trim().eq_ignore_ascii_case("none") {
-        bail!("metadata fast-path returned blockers: {}", result.blockers);
-    }
-    let examples = boundary_text_items(&decision.examples_to_accept);
-    let counterexamples = boundary_text_items(&decision.counterexamples_to_reject);
-    let axes = boundary_axes(&decision.axes);
-    if examples.is_empty() {
-        bail!("metadata fast-path boundary decision has no examples");
-    }
-    if counterexamples.is_empty() {
-        bail!("metadata fast-path boundary decision has no counterexamples");
-    }
-    if axes.is_empty() {
-        bail!("metadata fast-path boundary decision has no axes");
-    }
-    if result.pest_rules.trim().is_empty() {
-        bail!("metadata fast-path result has no PEST_RULES");
-    }
-    if result.fixture_examples.trim().is_empty() {
-        bail!("metadata fast-path result has no FIXTURE_EXAMPLES");
-    }
-    if !target_rule_exists(&gap.target_rule)? {
-        bail!("target rule {} no longer exists", gap.target_rule);
-    }
-    Ok((decision, result))
-}
-
-fn unified_metadata_allowed_paths(gap: &ConceptGap) -> BTreeSet<String> {
-    [
-        format!("grammar-concepts/{}.toml", gap.concept),
-        format!("grammar-fixtures/{}.toml", gap.concept),
-    ]
-    .into_iter()
-    .collect()
-}
-
-fn restore_metadata_fastpath_changes(
-    snapshots: &FastpathSnapshots,
-    changed_paths: &[String],
-) -> Result<()> {
-    snapshots.restore()?;
-    for path in changed_paths {
-        let full_path = repo_root().join(path);
-        let tracked = Command::new("git")
-            .args(["ls-files", "--error-unmatch", path])
-            .current_dir(repo_root())
-            .output()
-            .with_context(|| format!("git ls-files --error-unmatch {path}"))?;
-        if tracked.status.success() {
-            let contents = Command::new("git")
-                .args(["show", &format!("HEAD:{path}")])
-                .current_dir(repo_root())
-                .output()
-                .with_context(|| format!("git show HEAD:{path}"))?;
-            if contents.status.success() {
-                fs::write(&full_path, contents.stdout)
-                    .with_context(|| format!("restore {}", full_path.display()))?;
-            }
-        } else if full_path.is_file() {
-            fs::remove_file(&full_path)
-                .with_context(|| format!("remove {}", full_path.display()))?;
-        }
-    }
-    Ok(())
 }
 
 fn build_repair_prompt(gap: &ConceptGap, failure: &ConceptGrindGateFailure) -> Result<String> {
@@ -9628,62 +9054,6 @@ pub enum Other {
         let err = parse_boundary_decision("OWNER: existing:counter_target_spell")
             .expect_err("missing block marker");
         assert!(err.to_string().contains("CONCEPT_BOUNDARY_DECISION"));
-    }
-
-    #[test]
-    fn parses_unified_metadata_response_blocks() {
-        let response = "CONCEPT_BOUNDARY_DECISION:\n\
-             OWNER: new:static_colored_permanents_pt_modification\n\
-             AXES: affected_object = colored permanents\n\
-             EXAMPLES_TO_ACCEPT: White creatures get +1/+1.\n\
-             COUNTEREXAMPLES_TO_REJECT: White spells cost {3} more to cast.\n\
-             PEST_PATCH_INTENT: none\n\
-             WHY_NOT_CARD_PASS: grammar fixture maturity only\n\
-             CONCEPT_GRIND_RESULT:\n\
-             CONCEPT: static_colored_permanents_pt_modification\n\
-             PEST_RULES: static_colored_permanents_get\n\
-             FIXTURE_EXAMPLES: 1\n\
-             GRAMMAR_CHANGE: none\n\
-             BLOCKERS: none\n";
-        let (decision, result) =
-            parse_unified_metadata_response(response).expect("unified response parses");
-        assert!(matches!(
-            decision.owner,
-            BoundaryOwner::New(ref concept)
-                if concept == "static_colored_permanents_pt_modification"
-        ));
-        assert_eq!(result.concept, "static_colored_permanents_pt_modification");
-        assert_eq!(result.grammar_change, "none");
-    }
-
-    #[test]
-    fn unified_metadata_validation_rejects_grammar_change_request() {
-        let response = "CONCEPT_BOUNDARY_DECISION:\n\
-             OWNER: new:static_colored_permanents_pt_modification\n\
-             AXES: affected_object = colored permanents\n\
-             EXAMPLES_TO_ACCEPT: White creatures get +1/+1.\n\
-             COUNTEREXAMPLES_TO_REJECT: White spells cost {3} more to cast.\n\
-             PEST_PATCH_INTENT: widen grammar.pest\n\
-             WHY_NOT_CARD_PASS: grammar fixture maturity only\n\
-             CONCEPT_GRIND_RESULT:\n\
-             CONCEPT: static_colored_permanents_pt_modification\n\
-             PEST_RULES: static_colored_permanents_get\n\
-             FIXTURE_EXAMPLES: 1\n\
-             GRAMMAR_CHANGE: grammar.pest needs widening\n\
-             BLOCKERS: none\n";
-        let (decision, result) =
-            parse_unified_metadata_response(response).expect("unified response parses");
-        let gap = ConceptGap {
-            concept: "static_colored_permanents_pt_modification".to_string(),
-            query: "static colored permanents pt modification".to_string(),
-            target_rule: "static_colored_permanents_get".to_string(),
-            target_line: 1,
-            suggested_existing_owner: false,
-            reason: "test".to_string(),
-        };
-        let err = validate_unified_metadata_output(&gap, decision, result)
-            .expect_err("grammar change request rejected");
-        assert!(err.to_string().contains("PEST change"));
     }
 
     #[test]
