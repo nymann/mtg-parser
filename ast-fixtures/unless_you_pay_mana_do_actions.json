@@ -1,0 +1,101 @@
+{
+  "concept": "unless_you_pay_mana_do_actions",
+  "fixture_path": "grammar-fixtures/unless_you_pay_mana_do_actions.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "unless_you_pay_mana_do_actions",
+      "text": "unless you pay {1}, draw a card.",
+      "ast": {
+        "TriggerEffect": {
+          "UnlessYouPayManaDoActions": {
+            "actions": [
+              {
+                "DrawCards": {
+                  "count": {
+                    "Number": 1
+                  }
+                }
+              }
+            ],
+            "cost": {
+              "symbols": [
+                {
+                  "Generic": 1
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "unless_you_pay_mana_do_actions",
+      "text": "unless you pay {G}, tap CARDNAME.",
+      "ast": {
+        "TriggerEffect": {
+          "UnlessYouPayManaDoActions": {
+            "actions": [
+              {
+                "TapSource": {
+                  "source": "ThisPermanent"
+                }
+              }
+            ],
+            "cost": {
+              "symbols": [
+                "Green"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "unless_you_pay_mana_do_actions",
+      "text": "unless you pay {2}{U}, discard your hand and shuffle.",
+      "ast": {
+        "TriggerEffect": {
+          "UnlessYouPayManaDoActions": {
+            "actions": [
+              "DiscardYourHand",
+              "Shuffle"
+            ],
+            "cost": {
+              "symbols": [
+                {
+                  "Generic": 2
+                },
+                "Blue"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "unless_you_pay_mana_do_actions",
+      "text": "unless you pay {X}, search your library for a card and put that card into your hand.",
+      "ast": {
+        "TriggerEffect": {
+          "UnlessYouPayManaDoActions": {
+            "actions": [
+              "SearchYourLibraryForACard",
+              "PutThatCardIntoYourHand"
+            ],
+            "cost": {
+              "symbols": [
+                {
+                  "Variable": "X"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}
