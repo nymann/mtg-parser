@@ -1,0 +1,22 @@
+{
+  "concept": "remove_target_creature_defending_player_controls_from_combat",
+  "fixture_path": "grammar-fixtures/remove_target_creature_defending_player_controls_from_combat.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "remove_target_creature_defending_player_controls_from_combat",
+      "text": "Remove target creature defending player controls from combat.",
+      "ast": {
+        "StaticAbility": "RemoveTargetCreatureDefendingPlayerControlsFromCombat"
+      }
+    },
+    {
+      "index": 2,
+      "rule": "sentence_statement",
+      "text": "Remove target creature defending player controls from combat.",
+      "ast": {
+        "StaticAbility": "RemoveTargetCreatureDefendingPlayerControlsFromCombat"
+      }
+    }
+  ]
+}
