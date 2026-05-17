@@ -1371,6 +1371,8 @@ pub enum SourceObject {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AsEntersChoice {
+    /// "a color"
+    Color,
     /// "an opponent"
     Opponent,
     /// "a basic land type"

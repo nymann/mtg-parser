@@ -1,0 +1,54 @@
+{
+  "concept": "as_enters_choice",
+  "fixture_path": "grammar-fixtures/as_enters_choice.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "as_source_enters_choose",
+      "text": "As this creature enters, choose a color.",
+      "ast": {
+        "AsSourceEntersChoose": {
+          "choice": "Color",
+          "source": {
+            "This": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "as_source_enters_choose",
+      "text": "As this permanent enters, choose a color.",
+      "ast": {
+        "AsSourceEntersChoose": {
+          "choice": "Color",
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "as_source_enters_choose",
+      "text": "As this creature enters, choose an opponent.",
+      "ast": {
+        "AsSourceEntersChoose": {
+          "choice": "Opponent",
+          "source": {
+            "This": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "as_source_enters_choose",
+      "text": "As this permanent enters, choose a basic land type.",
+      "ast": {
+        "AsSourceEntersChoose": {
+          "choice": "BasicLandType",
+          "source": "ThisPermanent"
+        }
+      }
+    }
+  ]
+}

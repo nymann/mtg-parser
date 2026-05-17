@@ -3392,6 +3392,7 @@ fn write_blocking_capacity_subject_capitalized(out: &mut String, subject: Blocki
 
 fn write_as_enters_choice(out: &mut String, choice: AsEntersChoice) {
     match choice {
+        AsEntersChoice::Color => out.push_str("a color"),
         AsEntersChoice::Opponent => out.push_str("an opponent"),
         AsEntersChoice::BasicLandType => out.push_str("a basic land type"),
     }

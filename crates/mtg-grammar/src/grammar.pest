@@ -769,9 +769,10 @@ players_do_actions_the_same_way = {
 as_source_enters_choose = {
     ^"as" ~ source_object ~ ^"enters" ~ "," ~ ^"choose" ~ as_enters_choice ~ "."
 }
-as_enters_choice = _{ opponent_choice | basic_land_type_choice | article ~ ^"color" }
+as_enters_choice = _{ opponent_choice | basic_land_type_choice | color_choice }
 opponent_choice = { article ~ ^"opponent" }
 basic_land_type_choice = { article ~ ^"basic" ~ ^"land" ~ ^"type" }
+color_choice = { article ~ ^"color" }
 
 balance_same_way_action = _{ discard_cards_action | sacrifice_permanents_action }
 discard_cards_action = { ^"discard" ~ ^"cards" }

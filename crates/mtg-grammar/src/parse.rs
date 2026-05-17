@@ -873,6 +873,7 @@ fn as_source_enters_choose_from_pair(pair: Pair<Rule>) -> Result<Statement, Pars
 
 fn as_enters_choice_from_pair(pair: Pair<Rule>) -> Result<AsEntersChoice, ParseError> {
     match pair.as_rule() {
+        Rule::color_choice => Ok(AsEntersChoice::Color),
         Rule::opponent_choice => Ok(AsEntersChoice::Opponent),
         Rule::basic_land_type_choice => Ok(AsEntersChoice::BasicLandType),
         _ => Err(ParseError::Internal("as_enters_choice")),
