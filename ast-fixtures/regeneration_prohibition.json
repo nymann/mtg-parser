@@ -1,0 +1,46 @@
+{
+  "concept": "regeneration_prohibition",
+  "fixture_path": "grammar-fixtures/regeneration_prohibition.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "it_cant_be_regenerated",
+      "text": "It can't be regenerated.",
+      "ast": {
+        "ItCantBeRegenerated": {
+          "subject": "It"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "it_cant_be_regenerated",
+      "text": "They can't be regenerated.",
+      "ast": {
+        "ItCantBeRegenerated": {
+          "subject": "They"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "sentence_statement",
+      "text": "It can't be regenerated.",
+      "ast": {
+        "ItCantBeRegenerated": {
+          "subject": "It"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "sentence_statement",
+      "text": "They can't be regenerated.",
+      "ast": {
+        "ItCantBeRegenerated": {
+          "subject": "They"
+        }
+      }
+    }
+  ]
+}
