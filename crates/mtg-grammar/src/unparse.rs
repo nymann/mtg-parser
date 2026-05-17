@@ -146,6 +146,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" the flip, ");
             write_activated_effect_lowercase(out, effect);
         }
+        Statement::FlipCoin => out.push_str("Flip a coin."),
         Statement::CreateToken { token } => write_create_token(out, token),
         Statement::ItCantBeRegenerated { subject } => {
             match subject {

@@ -1,0 +1,12 @@
+{
+  "concept": "flip_coin",
+  "fixture_path": "grammar-fixtures/flip_coin.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "flip_coin",
+      "text": "Flip a coin.",
+      "ast": "FlipCoin"
+    }
+  ]
+}

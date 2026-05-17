@@ -107,6 +107,8 @@ pub enum Statement {
         result: CoinFlipResult,
         effect: ActivatedEffect,
     },
+    /// "Flip a coin." — CR 705 coin-flip action.
+    FlipCoin,
     /// "Create a N/N [color] [creature_type] <types> token [with <keyword>] [named <name>]."
     /// CR 701.7 create keyword action.
     CreateToken {

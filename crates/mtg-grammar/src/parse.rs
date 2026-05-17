@@ -229,6 +229,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             if_you_cant_source_deals_damage_to_you_from_pair(pair)
         }
         Rule::if_you_flip_result_effect => if_you_flip_result_effect_from_pair(pair),
+        Rule::flip_coin => Ok(Statement::FlipCoin),
         Rule::create_token => match create_token_from_pair(pair)? {
             ActivatedEffect::CreateToken { token } => Ok(Statement::CreateToken { token }),
             _ => Err(ParseError::Internal("create_token statement")),
