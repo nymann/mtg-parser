@@ -3526,6 +3526,7 @@ fn write_activated_damage_event_effect(out: &mut String, effect: ActivatedDamage
 
 fn write_source_object(out: &mut String, source: SourceObject) {
     match source {
+        SourceObject::It => out.push_str("it"),
         SourceObject::This(pt) => {
             out.push_str("this ");
             out.push_str(permanent_type_name(pt));
@@ -3549,6 +3550,7 @@ fn write_regenerate_recipient(out: &mut String, recipient: RegenerateRecipient) 
 
 fn write_source_object_possessive_without_apostrophe(out: &mut String, source: SourceObject) {
     match source {
+        SourceObject::It => out.push_str("its"),
         SourceObject::This(pt) => {
             out.push_str("this ");
             out.push_str(permanent_type_name(pt));
@@ -3562,6 +3564,7 @@ fn write_source_object_possessive_without_apostrophe(out: &mut String, source: S
 
 fn write_source_object_capitalized(out: &mut String, source: SourceObject) {
     match source {
+        SourceObject::It => out.push_str("It"),
         SourceObject::This(pt) => {
             out.push_str("This ");
             out.push_str(permanent_type_name(pt));

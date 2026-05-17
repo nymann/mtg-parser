@@ -1509,6 +1509,8 @@ pub enum LifeAmount {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SourceObject {
+    /// "it"
+    It,
     /// "this <permanent_type>"
     This(PermanentType),
     /// "this permanent"

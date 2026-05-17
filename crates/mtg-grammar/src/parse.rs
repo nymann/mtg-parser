@@ -293,6 +293,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::you_may_have_source_become_copy_of_target => Ok(Statement::TriggerEffect(
             you_may_have_source_become_copy_of_target_from_pair(pair)?,
         )),
+        Rule::you_may_remove_named_counter_from_source => Ok(Statement::TriggerEffect(
+            you_may_remove_named_counter_from_source_from_pair(pair)?,
+        )),
         Rule::you_may_put_this_card_onto_the_battlefield => Ok(Statement::TriggerEffect(
             TriggerEffect::YouMayPutThisCardOntoTheBattlefield,
         )),
@@ -4316,6 +4319,9 @@ fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError>
     }
     if pair.as_str() == "CARDNAME" {
         return Ok(SourceObject::ThisPermanent);
+    }
+    if pair.as_str().eq_ignore_ascii_case("it") {
+        return Ok(SourceObject::It);
     }
     if pair.as_str().eq_ignore_ascii_case("that source") {
         return Ok(SourceObject::ThatSource);
