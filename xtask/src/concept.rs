@@ -3062,6 +3062,7 @@ fn build_phase2_repair_prompt(
     let parse_json = serde_json::to_string_pretty(&parse).context("serialize parse report")?;
     let ast_failures_section = render_ast_failures_section(&candidate.ast_failures);
     let ast_shape_section = render_ast_shape_section(&candidate.fixture_path);
+    let rules_context_section = render_rules_context_section(&candidate.concept_file);
     Ok(format!(
         "\
 You are working in the mtg-parser repository.
@@ -3080,7 +3081,7 @@ Concept artifacts:
 
 Current status: {status:?}
 First error: {first_error}
-{ast_failures_section}{ast_shape_section}
+{ast_failures_section}{ast_shape_section}{rules_context_section}
 Use the existing concept fixture as the behavioral contract. Make the smallest parser/AST/grammar integration change that makes accepted fixture examples parse through `mtg_grammar::parse` with the concept-owned AST shape. If the fixture has `[phase2.ast_shape]`, treat it as a hard contract: the `owner` variant is the desired concept shape, and `forbid` variants are legacy/card-centric shapes that must be merged away. Prefer generalizing existing rules and parser helpers over adding one rule per example. Do not edit generated tests or run `cargo xtask add-card`.
 
 Allowed implementation areas:
@@ -3111,8 +3112,37 @@ Current concept-parse report:
         first_error = candidate.first_error.as_deref().unwrap_or("none"),
         ast_failures_section = ast_failures_section,
         ast_shape_section = ast_shape_section,
+        rules_context_section = rules_context_section,
         parse_json = parse_json
     ))
+}
+
+/// Render the Comprehensive Rules section for the concept's curated qmd
+/// queries. AGENTS.md mandates "Query Magic rules with qmd" when grammar work
+/// depends on rules vocabulary or semantics. Concept TOMLs already carry
+/// `rules_queries` for exactly this purpose, but Phase 2 retry prompts didn't
+/// surface the rules text — leaving the agent to either run qmd itself (it
+/// usually doesn't) or guess at the concept's canonical decomposition. The
+/// Comp Rules naturally separate keyword actions from target filters from
+/// timing modifiers, so inlining the rules pushes the agent toward
+/// axis-as-data decompositions instead of card-centric sibling variants.
+fn render_rules_context_section(concept_path: &Path) -> String {
+    let Ok(text) = std::fs::read_to_string(concept_path) else {
+        return String::new();
+    };
+    let doc: ConceptDocument = match toml::from_str(&text) {
+        Ok(doc) => doc,
+        Err(_) => return String::new(),
+    };
+    let queries = doc.concept.rules_queries;
+    if queries.is_empty() {
+        return String::new();
+    }
+    let block = rules_context::render_rules_block(&queries.join("\n"));
+    if block.trim().is_empty() {
+        return String::new();
+    }
+    format!("\n{block}\n")
 }
 
 /// Render a section showing the `[phase2.ast_shape]` contract from the
