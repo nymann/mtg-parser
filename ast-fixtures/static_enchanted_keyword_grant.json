@@ -1,0 +1,79 @@
+{
+  "concept": "static_enchanted_keyword_grant",
+  "fixture_path": "grammar-fixtures/static_enchanted_keyword_grant.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_enchanted_has_keyword",
+      "text": "Enchanted creature has flying.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedHasKeyword": {
+            "keyword": "Flying",
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_enchanted_has_keyword",
+      "text": "Enchanted artifact has indestructible.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedHasKeyword": {
+            "keyword": "Indestructible",
+            "object": {
+              "Permanent": "Artifact"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "static_enchanted_has_keyword",
+      "text": "Enchanted land has shroud.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedHasKeyword": {
+            "keyword": "Shroud",
+            "object": {
+              "Permanent": "Land"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "static_enchanted_has_keyword",
+      "text": "Enchanted creature has shroud and can't be enchanted by other Auras.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedHasKeywordAndCantBeEnchantedByOtherAuras": {
+            "keyword": "Shroud",
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "static_enchanted_has_keyword",
+      "text": "Enchanted permanent has hexproof and can't be enchanted by other Auras.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedHasKeywordAndCantBeEnchantedByOtherAuras": {
+            "keyword": "Hexproof",
+            "object": "AnyPermanent"
+          }
+        }
+      }
+    }
+  ]
+}
