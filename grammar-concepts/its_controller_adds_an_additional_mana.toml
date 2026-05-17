@@ -1,0 +1,77 @@
+[[axis]]
+name = "actor"
+values = ["its_controller"]
+
+[[axis]]
+name = "mana_action"
+values = ["add_mana"]
+
+[[axis]]
+name = "quantity"
+values = ["additional_single_mana_symbol"]
+
+[[axis]]
+name = "mana_specification"
+values = ["fixed_mana_symbol"]
+
+[[axis]]
+name = "ability_context"
+values = ["trigger_effect_sentence"]
+
+[boundary]
+excludes = [
+    "Any-type mana production by that player belongs to the produced-mana type concept, not this fixed additional mana-symbol effect.",
+    "Additional card draw by that player is a draw effect, not mana production.",
+    "Mana ability activation instructions are activation instructions, not mana-production effects.",
+]
+includes = ["Triggered-effect sentences instructing a referenced object's controller to add an additional single fixed mana symbol."]
+
+[concept]
+name = "its_controller_adds_an_additional_mana"
+pest_rules = ["its_controller_adds_an_additional_mana"]
+rules_queries = [
+    "lex: its controller adds an additional mana",
+    "lex: adds an additional mana triggered mana ability",
+]
+rules_terms = [
+    "add mana",
+    "additional mana",
+    "controller",
+    "mana ability",
+    "106",
+    "605",
+]
+
+[[counterexample]]
+reason = "Any-type mana production by that player, not fixed additional mana-symbol production by its controller."
+text = "that player adds one mana of any type that land produced."
+
+[[counterexample]]
+reason = "Additional card draw by that player, not a mana-production effect."
+text = "that player draws an additional card."
+
+[[counterexample]]
+reason = "Mana ability activation instruction, not the mana added by a triggered mana ability."
+text = "target player activates a mana ability of each land they control."
+
+[[example]]
+text = "its controller adds an additional {G}."
+
+[[example]]
+text = "Its controller adds an additional {G}."
+
+[[example]]
+text = "its controller adds an additional {C}."
+
+[grammar_query]
+candidate_rules = [
+    "its_controller_adds_an_additional_mana",
+    "that_player_adds_mana_of_any_type_that_permanent_produced",
+    "that_player_draws_an_additional_card",
+    "target_player_activates_mana_ability_of_each_permanent_they_control",
+]
+selected_rule = "its_controller_adds_an_additional_mana"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

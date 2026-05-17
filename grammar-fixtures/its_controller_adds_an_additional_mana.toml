@@ -1,0 +1,31 @@
+[fixture]
+concept = "its_controller_adds_an_additional_mana"
+rule = "its_controller_adds_an_additional_mana"
+
+[[example]]
+text = "its controller adds an additional {G}."
+reason = "Triggered mana effect with its-controller actor and an additional fixed green mana symbol."
+
+[[example]]
+text = "Its controller adds an additional {G}."
+reason = "Oracle-style sentence capitalization for the same additional fixed mana-symbol effect."
+
+[[example]]
+text = "its controller adds an additional {C}."
+reason = "Colorless mana-symbol coverage for the same fixed additional mana axis."
+
+[[counterexample]]
+text = "that player adds one mana of any type that land produced."
+reason = "Any-type mana production by that player, not fixed additional mana-symbol production by its controller."
+
+[[counterexample]]
+text = "that player draws an additional card."
+reason = "Additional card draw by that player, not a mana-production effect."
+
+[[counterexample]]
+text = "target player activates a mana ability of each land they control."
+reason = "Mana ability activation instruction, not the mana added by a triggered mana ability."
+
+[[counterexample]]
+text = "its controller adds an additional {G}. trailing"
+reason = "Exact-consumption guard."
