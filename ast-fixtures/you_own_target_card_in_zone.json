@@ -1,0 +1,26 @@
+{
+  "concept": "you_own_target_card_in_zone",
+  "fixture_path": "grammar-fixtures/you_own_target_card_in_zone.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_own_target_card_in_zone",
+      "text": "You own target card in the graveyard.",
+      "ast": {
+        "YouOwnTargetCardInZone": {
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "you_own_target_card_in_zone",
+      "text": "You own target card in the ante.",
+      "ast": {
+        "YouOwnTargetCardInZone": {
+          "zone": "Ante"
+        }
+      }
+    }
+  ]
+}
