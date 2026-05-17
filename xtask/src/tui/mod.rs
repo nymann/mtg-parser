@@ -141,6 +141,21 @@ pub fn run_concept_grind_hot_reload(
     })
 }
 
+/// Run concept-phase2-grind with the TUI as its output surface.
+pub fn run_concept_phase2_grind(
+    opts: concept::Phase2GrindOptions,
+) -> Result<std::process::ExitCode> {
+    run_workflow(move |sink| concept::run_phase2_with_sink(opts, sink))
+}
+
+pub fn run_concept_phase2_grind_hot_reload(
+    opts: concept::Phase2GrindOptions,
+) -> Result<std::process::ExitCode> {
+    run_workflow_hot_reload("concept-phase2-grind", move |sink| {
+        concept::run_phase2_with_sink(opts, sink)
+    })
+}
+
 pub fn run_viewer(event_log: PathBuf) -> Result<std::process::ExitCode> {
     let mut terminal = setup_terminal().context("set up terminal")?;
     terminal.clear()?;

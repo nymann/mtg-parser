@@ -244,12 +244,24 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         f,
         cols[4],
         vec![
-            label_span("grammar"),
+            label_span(if s.workflow == "concept-phase2-grind" {
+                "parse green"
+            } else {
+                "grammar"
+            }),
             Span::raw(format!(
                 "{}→{}",
                 s.baseline_grammar_rules, s.current_grammar_rules
             )),
-            delta_span(s.grammar_delta(), /*lower_is_better=*/ true, " rules"),
+            delta_span(
+                s.grammar_delta(),
+                /*lower_is_better=*/ s.workflow != "concept-phase2-grind",
+                if s.workflow == "concept-phase2-grind" {
+                    " concepts"
+                } else {
+                    " rules"
+                },
+            ),
         ],
         Alignment::Center,
     );
@@ -257,7 +269,11 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         f,
         cols[5],
         vec![
-            label_span("corpus"),
+            label_span(if s.workflow == "concept-phase2-grind" {
+                "ast green"
+            } else {
+                "corpus"
+            }),
             Span::raw(format!(
                 "{}/{}→{}/{}",
                 s.baseline_corpus_passing,
@@ -265,7 +281,15 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
                 s.current_corpus_passing,
                 s.current_corpus_total
             )),
-            delta_span(s.corpus_delta(), /*lower_is_better=*/ false, " passes"),
+            delta_span(
+                s.corpus_delta(),
+                /*lower_is_better=*/ false,
+                if s.workflow == "concept-phase2-grind" {
+                    " concepts"
+                } else {
+                    " passes"
+                },
+            ),
         ],
         Alignment::Center,
     );

@@ -70,6 +70,12 @@ Commands:
                               AST JSON. Does not require unparse or lowering.
   concept-ast-test CONCEPT    Phase 2 AST snapshot gate for accepted grammar
                               fixture examples. Use --update to write snapshots.
+  concept-phase2-map          Inventory grammar-green concepts against Phase 2
+                              parse and AST snapshot gates.
+  concept-phase2-grind        Autonomous Phase 2 parser/AST loop over
+                              grammar-green concepts. Use --ui tui for a live view.
+  concept-roadmap             Inventory rulebook-derived concept candidates
+                              and annotate concept/corpus coverage.
   concept-grammar-query --query TEXT
                               Query grammar.pest for candidate rules, dependencies,
                               reverse dependencies, and duplicate RHS shape drift.
@@ -180,6 +186,34 @@ fn main() -> ExitCode {
         Some("concept-grammar-test") => concept::grammar_test(&args[1..]),
         Some("concept-parse") => concept::parse_concept(&args[1..]),
         Some("concept-ast-test") => concept::ast_test(&args[1..]),
+        Some("concept-phase2-map") => concept::phase2_map(&args[1..]),
+        Some("concept-phase2-grind") => match parse_ui(&args[1..]) {
+            Ok(Ui::Console) => concept::phase2_grind(&args[1..]),
+            Ok(Ui::Tui) => {
+                match concept::parse_phase2_grind_options(&without_ui_hot_reload(&args[1..])) {
+                    Ok(opts) => match if ui_hot_reload(&args[1..]) {
+                        tui::run_concept_phase2_grind_hot_reload(opts)
+                    } else {
+                        tui::run_concept_phase2_grind(opts)
+                    } {
+                        Ok(code) => code,
+                        Err(e) => {
+                            eprintln!("tui error: {e:#}");
+                            ExitCode::FAILURE
+                        }
+                    },
+                    Err(e) => {
+                        eprintln!("{e}");
+                        ExitCode::from(2)
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("{e}");
+                ExitCode::from(2)
+            }
+        },
+        Some("concept-roadmap") => concept::roadmap(&args[1..]),
         Some("concept-grammar-query") => concept::grammar_query(&args[1..]),
         Some("concept-maturity") => concept::maturity(&args[1..]),
         Some("concept-map-existing") => concept::map_existing(&args[1..]),

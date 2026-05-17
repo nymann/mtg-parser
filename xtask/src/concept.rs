@@ -74,6 +74,40 @@ Compares Phase 2 AST snapshots for accepted grammar fixture examples. With
 Without --update, fails if the snapshot is missing or differs.
 ";
 
+const PHASE2_MAP_USAGE: &str = "\
+cargo xtask concept-phase2-map [--json] [--all]
+
+Inventories Phase 2 readiness for grammar concepts. By default the denominator
+is concepts whose [maturity].pest_grammar is grammar_fixture_green. With --all,
+also includes non-green concepts in the per-concept listing while keeping the
+grammar-green denominator separate.
+";
+
+const PHASE2_GRIND_USAGE: &str = "\
+cargo xtask concept-phase2-grind [--agent codex|claude] [--max-iterations N]
+                                 [--concept NAME] [--dry-run]
+                                 [--allow-dirty] [--no-commit]
+                                 [--ui console|tui]
+
+Autonomous Phase 2 loop. Each iteration builds a concept-phase2-map report,
+picks a grammar-green concept that is not AST-snapshot green, then either
+records a missing AST snapshot for parse-green concepts or asks an agent to mend
+the parser/AST surface for parse/snapshot failures. It gates each accepted
+change with concept-parse, concept-ast-test, and cargo check -p xtask.
+";
+
+const ROADMAP_USAGE: &str = "\
+cargo xtask concept-roadmap [--json] [--kind all|actions|abilities|effects]
+
+Inventories rulebook-derived concept candidates from resources/rules:
+- 701 keyword actions
+- 702 keyword abilities
+- major 600-family effect sections
+
+This is the product roadmap denominator. It complements concept-map-existing,
+which only measures cleanup coverage of the current legacy grammar.pest file.
+";
+
 const GRAMMAR_QUERY_USAGE: &str = "\
 cargo xtask concept-grammar-query --query TEXT [--rule NAME] [--limit N] [--json]
 
@@ -252,6 +286,71 @@ pub fn ast_test(args: &[String]) -> ExitCode {
     }
 }
 
+pub fn phase2_map(args: &[String]) -> ExitCode {
+    match parse_phase2_map_options(args).and_then(run_phase2_map) {
+        Ok(report) => {
+            if report.json {
+                match serde_json::to_string_pretty(&report) {
+                    Ok(json) => println!("{json}"),
+                    Err(e) => {
+                        eprintln!("error: {e:#}");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                print_phase2_map_report(&report);
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("concept-phase2-map: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn phase2_grind(args: &[String]) -> ExitCode {
+    match parse_phase2_grind_options(args) {
+        Ok(options) => {
+            let mut sink = ConsoleSink::new();
+            match run_phase2_grind(options, &mut sink) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => {
+                    eprintln!("concept-phase2-grind: {e:#}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("{e}");
+            ExitCode::from(2)
+        }
+    }
+}
+
+pub fn roadmap(args: &[String]) -> ExitCode {
+    match parse_roadmap_options(args).and_then(run_roadmap) {
+        Ok(report) => {
+            if report.json {
+                match serde_json::to_string_pretty(&report) {
+                    Ok(json) => println!("{json}"),
+                    Err(e) => {
+                        eprintln!("error: {e:#}");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                print_roadmap_report(&report);
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("concept-roadmap: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
 pub fn grammar_query(args: &[String]) -> ExitCode {
     match parse_grammar_query_options(args).and_then(run_grammar_query) {
         Ok(report) => {
@@ -386,6 +485,14 @@ pub(crate) fn run_with_sink(
     Ok(ExitCode::SUCCESS)
 }
 
+pub(crate) fn run_phase2_with_sink(
+    options: Phase2GrindOptions,
+    sink: &mut dyn FlowSink,
+) -> Result<ExitCode> {
+    run_phase2_grind(options, sink)?;
+    Ok(ExitCode::SUCCESS)
+}
+
 #[derive(Debug, Clone)]
 struct DiscoverOptions {
     query: String,
@@ -442,6 +549,36 @@ struct Phase2Options {
     fixture: Option<PathBuf>,
     update: bool,
     json: bool,
+}
+
+#[derive(Debug)]
+struct Phase2MapOptions {
+    json: bool,
+    include_all: bool,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct Phase2GrindOptions {
+    agent: AgentProvider,
+    max_iterations: u32,
+    concept: Option<String>,
+    dry_run: bool,
+    allow_dirty: bool,
+    no_commit: bool,
+}
+
+#[derive(Debug)]
+struct RoadmapOptions {
+    json: bool,
+    kind: RoadmapKindFilter,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RoadmapKindFilter {
+    All,
+    Actions,
+    Abilities,
+    Effects,
 }
 
 #[derive(Debug, Serialize)]
@@ -509,6 +646,115 @@ struct AstSnapshotCase {
     rule: String,
     text: String,
     ast: serde_json::Value,
+}
+
+#[derive(Debug, Serialize)]
+struct Phase2MapReport {
+    total_concepts: usize,
+    grammar_green_concepts: usize,
+    concepts_reported: usize,
+    parse_green_concepts: usize,
+    ast_green_concepts: usize,
+    parse_failed_concepts: usize,
+    missing_snapshot_concepts: usize,
+    ast_failed_concepts: usize,
+    missing_fixture_concepts: usize,
+    total_accepted_examples: usize,
+    parsed_examples: usize,
+    ast_snapshot_examples: usize,
+    concepts: Vec<Phase2ConceptStatus>,
+    #[serde(skip)]
+    json: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct Phase2ConceptStatus {
+    concept: String,
+    maturity: String,
+    concept_file: PathBuf,
+    fixture_path: PathBuf,
+    snapshot_path: PathBuf,
+    grammar_green: bool,
+    accepted_examples: usize,
+    parse_passed: bool,
+    parse_failures: usize,
+    ast_status: Phase2AstStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    first_error: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum Phase2AstStatus {
+    Pass,
+    MissingSnapshot,
+    Fail,
+    ParseFailed,
+    MissingFixture,
+    NotGrammarGreen,
+}
+
+#[derive(Debug, Serialize)]
+struct RoadmapReport {
+    total_candidates: usize,
+    action_candidates: usize,
+    ability_candidates: usize,
+    effect_candidates: usize,
+    exact_concept_matches: usize,
+    mentioned_by_concept: usize,
+    missing_candidates: usize,
+    grammar_green_candidates: usize,
+    parse_green_candidates: usize,
+    ast_green_candidates: usize,
+    candidates_with_corpus_failures: usize,
+    total_corpus_failure_hits: usize,
+    candidates: Vec<RoadmapCandidateStatus>,
+    #[serde(skip)]
+    json: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct RoadmapCandidateStatus {
+    kind: RoadmapCandidateKind,
+    rule_ref: String,
+    name: String,
+    slug: String,
+    rules_path: PathBuf,
+    coverage: RoadmapCoverage,
+    exact_concept: Option<String>,
+    mentioned_concepts: Vec<String>,
+    phase2_status: Option<Phase2AstStatus>,
+    corpus_failure_hits: usize,
+    corpus_failure_examples: Vec<CorpusFailureExample>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum RoadmapCandidateKind {
+    KeywordAction,
+    KeywordAbility,
+    EffectFamily,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum RoadmapCoverage {
+    ExactConcept,
+    MentionedByConcept,
+    Missing,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct CorpusFailureExample {
+    card: String,
+    text: String,
+}
+
+#[derive(Debug)]
+struct ConceptSearchEntry {
+    name: String,
+    maturity: String,
+    text: String,
 }
 
 #[derive(Debug)]
@@ -1473,6 +1719,120 @@ fn parse_phase2_options(args: &[String], usage: &str) -> Result<Phase2Options> {
     })
 }
 
+fn parse_phase2_map_options(args: &[String]) -> Result<Phase2MapOptions> {
+    let mut json = false;
+    let mut include_all = false;
+    for arg in args {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{PHASE2_MAP_USAGE}"),
+            "--json" => json = true,
+            "--all" => include_all = true,
+            other => bail!("unknown argument: {other}\n\n{PHASE2_MAP_USAGE}"),
+        }
+    }
+    Ok(Phase2MapOptions { json, include_all })
+}
+
+pub(crate) fn parse_phase2_grind_options(args: &[String]) -> Result<Phase2GrindOptions> {
+    let mut agent = AgentProvider::Codex;
+    let mut max_iterations = 1u32;
+    let mut concept = None::<String>;
+    let mut dry_run = false;
+    let mut allow_dirty = false;
+    let mut no_commit = false;
+
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{PHASE2_GRIND_USAGE}"),
+            "--agent" => {
+                let value = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--agent requires a value"))?;
+                agent = parse_agent_provider(value)?;
+            }
+            s if s.starts_with("--agent=") => {
+                agent = parse_agent_provider(&s["--agent=".len()..])?;
+            }
+            "--max-iterations" => {
+                let value = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--max-iterations requires a value"))?;
+                max_iterations = value
+                    .parse()
+                    .with_context(|| format!("--max-iterations value: {value:?}"))?;
+            }
+            s if s.starts_with("--max-iterations=") => {
+                max_iterations = s["--max-iterations=".len()..]
+                    .parse()
+                    .with_context(|| format!("--max-iterations value: {s:?}"))?;
+            }
+            "--concept" => {
+                concept = Some(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--concept requires a value"))?
+                        .to_string(),
+                );
+            }
+            s if s.starts_with("--concept=") => {
+                concept = Some(s["--concept=".len()..].to_string());
+            }
+            "--dry-run" => dry_run = true,
+            "--allow-dirty" => allow_dirty = true,
+            "--no-commit" => no_commit = true,
+            "--ui" => {
+                let _ = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--ui requires a value"))?;
+            }
+            s if s.starts_with("--ui=") => {}
+            other => bail!("unknown argument: {other}\n\n{PHASE2_GRIND_USAGE}"),
+        }
+    }
+
+    Ok(Phase2GrindOptions {
+        agent,
+        max_iterations,
+        concept,
+        dry_run,
+        allow_dirty,
+        no_commit,
+    })
+}
+
+fn parse_roadmap_options(args: &[String]) -> Result<RoadmapOptions> {
+    let mut json = false;
+    let mut kind = RoadmapKindFilter::All;
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{ROADMAP_USAGE}"),
+            "--json" => json = true,
+            "--kind" => {
+                let value = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--kind requires a value"))?;
+                kind = parse_roadmap_kind_filter(value)?;
+            }
+            s if s.starts_with("--kind=") => {
+                kind = parse_roadmap_kind_filter(&s["--kind=".len()..])?;
+            }
+            other => bail!("unknown argument: {other}\n\n{ROADMAP_USAGE}"),
+        }
+    }
+    Ok(RoadmapOptions { json, kind })
+}
+
+fn parse_roadmap_kind_filter(value: &str) -> Result<RoadmapKindFilter> {
+    match value {
+        "all" => Ok(RoadmapKindFilter::All),
+        "actions" | "keyword-actions" | "701" => Ok(RoadmapKindFilter::Actions),
+        "abilities" | "keyword-abilities" | "702" => Ok(RoadmapKindFilter::Abilities),
+        "effects" | "effect-families" | "600" => Ok(RoadmapKindFilter::Effects),
+        other => bail!("--kind must be all, actions, abilities, or effects; got {other:?}"),
+    }
+}
+
 fn phase2_fixture_path(options: &Phase2Options) -> PathBuf {
     match &options.fixture {
         Some(path) => path.clone(),
@@ -1666,6 +2026,903 @@ fn run_ast_test(options: Phase2Options) -> Result<AstTestReport> {
         cases,
         json: options.json,
     })
+}
+
+fn run_phase2_map(options: Phase2MapOptions) -> Result<Phase2MapReport> {
+    let concept_files = read_concept_files()?;
+    let total_concepts = concept_files.len();
+    let mut concepts = Vec::new();
+
+    for (concept_file, doc, maturity) in concept_files {
+        let grammar_green = maturity == "grammar_fixture_green";
+        if !grammar_green && !options.include_all {
+            continue;
+        }
+
+        let concept = doc.concept.name.clone();
+        let fixture_path = grammar_fixtures_dir().join(format!("{concept}.toml"));
+        let snapshot_path = ast_fixture_path(&concept);
+        if !fixture_path.exists() {
+            concepts.push(Phase2ConceptStatus {
+                concept,
+                maturity,
+                concept_file,
+                fixture_path,
+                snapshot_path,
+                grammar_green,
+                accepted_examples: 0,
+                parse_passed: false,
+                parse_failures: 0,
+                ast_status: Phase2AstStatus::MissingFixture,
+                first_error: Some("missing grammar fixture".to_string()),
+            });
+            continue;
+        }
+
+        if !grammar_green {
+            let accepted_examples = read_fixture_document(&fixture_path)
+                .map(|fixture| fixture.example.len())
+                .unwrap_or(0);
+            concepts.push(Phase2ConceptStatus {
+                concept,
+                maturity,
+                concept_file,
+                fixture_path,
+                snapshot_path,
+                grammar_green,
+                accepted_examples,
+                parse_passed: false,
+                parse_failures: 0,
+                ast_status: Phase2AstStatus::NotGrammarGreen,
+                first_error: None,
+            });
+            continue;
+        }
+
+        let parse_report = run_concept_parse(Phase2Options {
+            concept: Some(concept.clone()),
+            fixture: None,
+            update: false,
+            json: false,
+        })?;
+        let first_parse_error = parse_report
+            .cases
+            .iter()
+            .find_map(|case| case.error.as_ref().cloned());
+        if !parse_report.passed {
+            concepts.push(Phase2ConceptStatus {
+                concept,
+                maturity,
+                concept_file,
+                fixture_path,
+                snapshot_path,
+                grammar_green,
+                accepted_examples: parse_report.total,
+                parse_passed: false,
+                parse_failures: parse_report.failures,
+                ast_status: Phase2AstStatus::ParseFailed,
+                first_error: first_parse_error,
+            });
+            continue;
+        }
+
+        if !snapshot_path.exists() {
+            concepts.push(Phase2ConceptStatus {
+                concept,
+                maturity,
+                concept_file,
+                fixture_path,
+                snapshot_path,
+                grammar_green,
+                accepted_examples: parse_report.total,
+                parse_passed: true,
+                parse_failures: 0,
+                ast_status: Phase2AstStatus::MissingSnapshot,
+                first_error: Some("missing AST snapshot".to_string()),
+            });
+            continue;
+        }
+
+        let ast_report = run_ast_test(Phase2Options {
+            concept: Some(concept.clone()),
+            fixture: None,
+            update: false,
+            json: false,
+        })?;
+        let ast_status = if ast_report.passed {
+            Phase2AstStatus::Pass
+        } else {
+            Phase2AstStatus::Fail
+        };
+        let first_ast_error = ast_report
+            .cases
+            .iter()
+            .find_map(|case| case.error.as_ref().cloned());
+        concepts.push(Phase2ConceptStatus {
+            concept,
+            maturity,
+            concept_file,
+            fixture_path,
+            snapshot_path,
+            grammar_green,
+            accepted_examples: parse_report.total,
+            parse_passed: true,
+            parse_failures: 0,
+            ast_status,
+            first_error: first_ast_error,
+        });
+    }
+
+    let grammar_green_concepts = concepts
+        .iter()
+        .filter(|status| status.grammar_green)
+        .count();
+    let parse_green_concepts = concepts
+        .iter()
+        .filter(|status| status.grammar_green && status.parse_passed)
+        .count();
+    let ast_green_concepts = concepts
+        .iter()
+        .filter(|status| status.ast_status == Phase2AstStatus::Pass)
+        .count();
+    let parse_failed_concepts = concepts
+        .iter()
+        .filter(|status| status.ast_status == Phase2AstStatus::ParseFailed)
+        .count();
+    let missing_snapshot_concepts = concepts
+        .iter()
+        .filter(|status| status.ast_status == Phase2AstStatus::MissingSnapshot)
+        .count();
+    let ast_failed_concepts = concepts
+        .iter()
+        .filter(|status| status.ast_status == Phase2AstStatus::Fail)
+        .count();
+    let missing_fixture_concepts = concepts
+        .iter()
+        .filter(|status| status.ast_status == Phase2AstStatus::MissingFixture)
+        .count();
+    let total_accepted_examples = concepts
+        .iter()
+        .filter(|status| status.grammar_green)
+        .map(|status| status.accepted_examples)
+        .sum();
+    let parsed_examples = concepts
+        .iter()
+        .filter(|status| status.grammar_green && status.parse_passed)
+        .map(|status| status.accepted_examples)
+        .sum();
+    let ast_snapshot_examples = concepts
+        .iter()
+        .filter(|status| status.ast_status == Phase2AstStatus::Pass)
+        .map(|status| status.accepted_examples)
+        .sum();
+
+    Ok(Phase2MapReport {
+        total_concepts,
+        grammar_green_concepts,
+        concepts_reported: concepts.len(),
+        parse_green_concepts,
+        ast_green_concepts,
+        parse_failed_concepts,
+        missing_snapshot_concepts,
+        ast_failed_concepts,
+        missing_fixture_concepts,
+        total_accepted_examples,
+        parsed_examples,
+        ast_snapshot_examples,
+        concepts,
+        json: options.json,
+    })
+}
+
+fn run_phase2_grind(options: Phase2GrindOptions, sink: &mut dyn FlowSink) -> Result<()> {
+    if !options.dry_run && !options.allow_dirty {
+        ensure_clean_working_tree().context(
+            "concept-phase2-grind requires a clean working tree; use --allow-dirty to override",
+        )?;
+    }
+
+    let session_dir = grammar_concept_log_root().join(format!(
+        "{}-phase2-grind",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .context("system time before Unix epoch")?
+            .as_secs()
+    ));
+    fs::create_dir_all(&session_dir)
+        .with_context(|| format!("create {}", session_dir.display()))?;
+
+    let baseline = run_phase2_map(Phase2MapOptions {
+        json: false,
+        include_all: false,
+    })?;
+    sink.emit(FlowEvent::SessionStarted {
+        workflow: "concept-phase2-grind".to_string(),
+        set: "phase2".to_string(),
+        max_iterations: options.max_iterations,
+        baseline_corpus_passing: baseline.ast_green_concepts,
+        baseline_corpus_total: baseline.grammar_green_concepts,
+        baseline_grammar_rules: baseline.parse_green_concepts,
+    });
+
+    for iteration in 1..=options.max_iterations {
+        let iteration_start = Instant::now();
+        let iteration_dir = session_dir.join(format!("iteration-{iteration:03}"));
+        fs::create_dir_all(&iteration_dir)
+            .with_context(|| format!("create {}", iteration_dir.display()))?;
+        let report = run_phase2_map(Phase2MapOptions {
+            json: false,
+            include_all: false,
+        })?;
+        write_json(iteration_dir.join("phase2_map_before.json"), &report)?;
+
+        let Some(candidate) = select_phase2_grind_candidate(&report, options.concept.as_deref())
+        else {
+            sink.emit(FlowEvent::SessionFinished {
+                reason: SessionEndReason::AllPass,
+            });
+            return Ok(());
+        };
+        let concept = candidate.concept.clone();
+        sink.emit(FlowEvent::WorkflowIterationStarted {
+            index: iteration,
+            max_iterations: options.max_iterations,
+            title: concept.clone(),
+            detail: format!(
+                "status={:?} parse_green={}/{} ast_green={}/{}",
+                candidate.ast_status,
+                report.parse_green_concepts,
+                report.grammar_green_concepts,
+                report.ast_green_concepts,
+                report.grammar_green_concepts
+            ),
+        });
+
+        if options.dry_run {
+            println!(
+                "phase2 dry-run: next concept {} has status {:?}",
+                concept, candidate.ast_status
+            );
+            sink.emit(FlowEvent::SessionFinished {
+                reason: SessionEndReason::DryRunStop,
+            });
+            return Ok(());
+        }
+
+        match candidate.ast_status {
+            Phase2AstStatus::MissingSnapshot => {
+                sink.emit(FlowEvent::StepStarted {
+                    index: 1,
+                    total: 4,
+                    label: "write AST snapshot".to_string(),
+                });
+                run_ast_test(Phase2Options {
+                    concept: Some(concept.clone()),
+                    fixture: None,
+                    update: true,
+                    json: false,
+                })?;
+                sink.emit(FlowEvent::StepFinished {
+                    index: 1,
+                    ok: true,
+                    summary: Some("snapshot updated from parse-green examples".to_string()),
+                });
+            }
+            Phase2AstStatus::ParseFailed | Phase2AstStatus::Fail => {
+                sink.emit(FlowEvent::StepStarted {
+                    index: 1,
+                    total: 4,
+                    label: "repair agent".to_string(),
+                });
+                let prompt = build_phase2_repair_prompt(&candidate, &report)?;
+                fs::write(iteration_dir.join("repair_prompt.md"), &prompt).with_context(|| {
+                    format!("write {}", iteration_dir.join("repair_prompt.md").display())
+                })?;
+                let outcome = refactor_hotspot::invoke_agent(
+                    options.agent,
+                    &prompt,
+                    &iteration_dir.join("repair_transcript.ndjson"),
+                    sink,
+                )?;
+                fs::write(
+                    iteration_dir.join("repair_response.md"),
+                    &outcome.assistant_text,
+                )
+                .with_context(|| {
+                    format!(
+                        "write {}",
+                        iteration_dir.join("repair_response.md").display()
+                    )
+                })?;
+                if !outcome.success {
+                    bail!(
+                        "{} repair agent exited with status {}; transcript: {}",
+                        options.agent.label(),
+                        outcome.exit_code,
+                        iteration_dir.join("repair_transcript.ndjson").display()
+                    );
+                }
+                sink.emit(FlowEvent::StepFinished {
+                    index: 1,
+                    ok: true,
+                    summary: Some("repair agent completed".to_string()),
+                });
+            }
+            Phase2AstStatus::Pass => {
+                sink.emit(FlowEvent::SessionFinished {
+                    reason: SessionEndReason::AllPass,
+                });
+                return Ok(());
+            }
+            Phase2AstStatus::MissingFixture | Phase2AstStatus::NotGrammarGreen => {
+                bail!(
+                    "selected concept {} is not actionable for Phase 2: {:?}",
+                    concept,
+                    candidate.ast_status
+                );
+            }
+        }
+
+        sink.emit(FlowEvent::StepStarted {
+            index: 2,
+            total: 4,
+            label: "phase2 gates".to_string(),
+        });
+        run_phase2_concept_gates(&concept, &iteration_dir)?;
+        sink.emit(FlowEvent::StepFinished {
+            index: 2,
+            ok: true,
+            summary: Some("concept-parse, concept-ast-test, and cargo check passed".to_string()),
+        });
+
+        let after = run_phase2_map(Phase2MapOptions {
+            json: false,
+            include_all: false,
+        })?;
+        write_json(iteration_dir.join("phase2_map_after.json"), &after)?;
+
+        sink.emit(FlowEvent::StepStarted {
+            index: 3,
+            total: 4,
+            label: "commit".to_string(),
+        });
+        let committed = if options.no_commit {
+            false
+        } else {
+            commit_phase2_grind_iteration(&concept, iteration)?
+        };
+        sink.emit(FlowEvent::StepFinished {
+            index: 3,
+            ok: true,
+            summary: Some(if committed {
+                "committed Phase 2 advancement".to_string()
+            } else {
+                "no commit created".to_string()
+            }),
+        });
+
+        sink.emit(FlowEvent::StepStarted {
+            index: 4,
+            total: 4,
+            label: "metrics".to_string(),
+        });
+        sink.emit(FlowEvent::StepFinished {
+            index: 4,
+            ok: true,
+            summary: Some(format!(
+                "parse {}/{} -> {}/{}, ast {}/{} -> {}/{}",
+                report.parse_green_concepts,
+                report.grammar_green_concepts,
+                after.parse_green_concepts,
+                after.grammar_green_concepts,
+                report.ast_green_concepts,
+                report.grammar_green_concepts,
+                after.ast_green_concepts,
+                after.grammar_green_concepts
+            )),
+        });
+        if committed {
+            sink.emit(FlowEvent::IterationFinished {
+                index: iteration,
+                outcome: IterationOutcomeSummary::Committed {
+                    new_passes: after
+                        .ast_green_concepts
+                        .saturating_sub(report.ast_green_concepts),
+                    corpus_passing: after.ast_green_concepts,
+                    corpus_total: after.grammar_green_concepts,
+                    grammar_rules: after.parse_green_concepts,
+                    duration_secs: iteration_start.elapsed().as_secs(),
+                },
+            });
+        }
+    }
+
+    sink.emit(FlowEvent::SessionFinished {
+        reason: SessionEndReason::MaxIterationsReached(options.max_iterations),
+    });
+    Ok(())
+}
+
+fn select_phase2_grind_candidate<'a>(
+    report: &'a Phase2MapReport,
+    requested_concept: Option<&str>,
+) -> Option<&'a Phase2ConceptStatus> {
+    if let Some(requested) = requested_concept {
+        return report
+            .concepts
+            .iter()
+            .find(|status| status.concept == requested);
+    }
+    report
+        .concepts
+        .iter()
+        .find(|status| status.ast_status == Phase2AstStatus::MissingSnapshot)
+        .or_else(|| {
+            report
+                .concepts
+                .iter()
+                .find(|status| status.ast_status == Phase2AstStatus::ParseFailed)
+        })
+        .or_else(|| {
+            report
+                .concepts
+                .iter()
+                .find(|status| status.ast_status == Phase2AstStatus::Fail)
+        })
+}
+
+fn build_phase2_repair_prompt(
+    candidate: &Phase2ConceptStatus,
+    report: &Phase2MapReport,
+) -> Result<String> {
+    let parse = run_concept_parse(Phase2Options {
+        concept: Some(candidate.concept.clone()),
+        fixture: None,
+        update: false,
+        json: false,
+    })?;
+    let parse_json = serde_json::to_string_pretty(&parse).context("serialize parse report")?;
+    Ok(format!(
+        "\
+You are working in the mtg-parser repository.
+
+Goal: advance Phase 2 parser/AST coverage for concept `{concept}` without reducing output quality.
+
+Current Phase 2 metrics:
+- grammar-green concepts: {grammar_green}
+- parse-green concepts: {parse_green}
+- AST-snapshot-green concepts: {ast_green}
+
+Concept artifacts:
+- concept file: {concept_file}
+- grammar fixture: {fixture_file}
+- AST snapshot: {snapshot_file}
+
+Current status: {status:?}
+First error: {first_error}
+
+Use the existing concept fixture as the behavioral contract. Make the smallest parser/AST/grammar integration change that makes accepted fixture examples parse through `mtg_grammar::parse` with an appropriate AST shape. Prefer generalizing existing rules and parser helpers over adding one rule per example. Do not edit generated tests or run `cargo xtask add-card`.
+
+Allowed implementation areas:
+- crates/mtg-grammar/src/grammar.pest
+- crates/mtg-grammar/src/ast.rs
+- crates/mtg-grammar/src/parse.rs
+- grammar-fixtures/{concept}.toml only if an accepted example is malformed as a full oracle/card-text phrase
+
+After editing, run:
+- cargo xtask concept-parse {concept}
+- cargo xtask concept-ast-test {concept} --update
+- cargo xtask concept-ast-test {concept}
+- cargo check -p xtask
+
+Current concept-parse report:
+```json
+{parse_json}
+```
+",
+        concept = candidate.concept,
+        grammar_green = report.grammar_green_concepts,
+        parse_green = report.parse_green_concepts,
+        ast_green = report.ast_green_concepts,
+        concept_file = candidate.concept_file.display(),
+        fixture_file = candidate.fixture_path.display(),
+        snapshot_file = candidate.snapshot_path.display(),
+        status = candidate.ast_status,
+        first_error = candidate.first_error.as_deref().unwrap_or("none"),
+        parse_json = parse_json
+    ))
+}
+
+fn run_roadmap(options: RoadmapOptions) -> Result<RoadmapReport> {
+    let concept_entries = read_concept_search_entries()?;
+    let phase2 = run_phase2_map(Phase2MapOptions {
+        json: false,
+        include_all: false,
+    })
+    .ok();
+    let phase2_by_concept: BTreeMap<String, Phase2AstStatus> = phase2
+        .as_ref()
+        .map(|report| {
+            report
+                .concepts
+                .iter()
+                .map(|status| (status.concept.clone(), status.ast_status))
+                .collect()
+        })
+        .unwrap_or_default();
+    let corpus_failures = read_corpus_failure_examples()?;
+    let mut candidates = read_rulebook_candidates(options.kind)?;
+
+    for candidate in &mut candidates {
+        annotate_roadmap_candidate(
+            candidate,
+            &concept_entries,
+            &phase2_by_concept,
+            &corpus_failures,
+        );
+    }
+    candidates.sort_by(|left, right| {
+        right
+            .corpus_failure_hits
+            .cmp(&left.corpus_failure_hits)
+            .then_with(|| roadmap_kind_rank(left.kind).cmp(&roadmap_kind_rank(right.kind)))
+            .then_with(|| left.rule_ref.cmp(&right.rule_ref))
+    });
+
+    let action_candidates = candidates
+        .iter()
+        .filter(|candidate| candidate.kind == RoadmapCandidateKind::KeywordAction)
+        .count();
+    let ability_candidates = candidates
+        .iter()
+        .filter(|candidate| candidate.kind == RoadmapCandidateKind::KeywordAbility)
+        .count();
+    let effect_candidates = candidates
+        .iter()
+        .filter(|candidate| candidate.kind == RoadmapCandidateKind::EffectFamily)
+        .count();
+    let exact_concept_matches = candidates
+        .iter()
+        .filter(|candidate| candidate.coverage == RoadmapCoverage::ExactConcept)
+        .count();
+    let mentioned_by_concept = candidates
+        .iter()
+        .filter(|candidate| candidate.coverage == RoadmapCoverage::MentionedByConcept)
+        .count();
+    let missing_candidates = candidates
+        .iter()
+        .filter(|candidate| candidate.coverage == RoadmapCoverage::Missing)
+        .count();
+    let grammar_green_candidates = candidates
+        .iter()
+        .filter(|candidate| {
+            candidate
+                .exact_concept
+                .as_ref()
+                .and_then(|name| concept_entries.iter().find(|entry| &entry.name == name))
+                .is_some_and(|entry| entry.maturity == "grammar_fixture_green")
+        })
+        .count();
+    let parse_green_candidates = candidates
+        .iter()
+        .filter(|candidate| {
+            matches!(
+                candidate.phase2_status,
+                Some(Phase2AstStatus::MissingSnapshot)
+                    | Some(Phase2AstStatus::Fail)
+                    | Some(Phase2AstStatus::Pass)
+            )
+        })
+        .count();
+    let ast_green_candidates = candidates
+        .iter()
+        .filter(|candidate| candidate.phase2_status == Some(Phase2AstStatus::Pass))
+        .count();
+    let candidates_with_corpus_failures = candidates
+        .iter()
+        .filter(|candidate| candidate.corpus_failure_hits > 0)
+        .count();
+    let total_corpus_failure_hits = candidates
+        .iter()
+        .map(|candidate| candidate.corpus_failure_hits)
+        .sum();
+
+    Ok(RoadmapReport {
+        total_candidates: candidates.len(),
+        action_candidates,
+        ability_candidates,
+        effect_candidates,
+        exact_concept_matches,
+        mentioned_by_concept,
+        missing_candidates,
+        grammar_green_candidates,
+        parse_green_candidates,
+        ast_green_candidates,
+        candidates_with_corpus_failures,
+        total_corpus_failure_hits,
+        candidates,
+        json: options.json,
+    })
+}
+
+fn read_rulebook_candidates(kind: RoadmapKindFilter) -> Result<Vec<RoadmapCandidateStatus>> {
+    let mut candidates = Vec::new();
+    if matches!(kind, RoadmapKindFilter::All | RoadmapKindFilter::Actions) {
+        candidates.extend(read_numbered_rulebook_dir(
+            "resources/rules/700-additional-rules/701-keyword-actions",
+            RoadmapCandidateKind::KeywordAction,
+        )?);
+    }
+    if matches!(kind, RoadmapKindFilter::All | RoadmapKindFilter::Abilities) {
+        candidates.extend(read_numbered_rulebook_dir(
+            "resources/rules/700-additional-rules/702-keyword-abilities",
+            RoadmapCandidateKind::KeywordAbility,
+        )?);
+    }
+    if matches!(kind, RoadmapKindFilter::All | RoadmapKindFilter::Effects) {
+        candidates.extend(read_effect_family_candidates()?);
+    }
+    Ok(candidates)
+}
+
+fn read_numbered_rulebook_dir(
+    rel_dir: &str,
+    kind: RoadmapCandidateKind,
+) -> Result<Vec<RoadmapCandidateStatus>> {
+    let dir = repo_root().join(rel_dir);
+    let mut candidates = Vec::new();
+    if !dir.is_dir() {
+        return Ok(candidates);
+    }
+    for entry in fs::read_dir(&dir).with_context(|| format!("read {}", dir.display()))? {
+        let entry = entry.with_context(|| format!("read entry in {}", dir.display()))?;
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) != Some("md") {
+            continue;
+        }
+        let Some(stem) = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .map(str::to_string)
+        else {
+            continue;
+        };
+        let Some((rule_ref, name)) = stem.split_once('-') else {
+            continue;
+        };
+        if name.chars().all(|ch| ch.is_ascii_digit() || ch == '.') {
+            continue;
+        }
+        candidates.push(empty_roadmap_candidate(kind, rule_ref, name, path));
+    }
+    Ok(candidates)
+}
+
+fn read_effect_family_candidates() -> Result<Vec<RoadmapCandidateStatus>> {
+    let effect_files = [
+        "600-spells-abilities-and-effects/603-handling-triggered-abilities.md",
+        "600-spells-abilities-and-effects/604-handling-static-abilities.md",
+        "600-spells-abilities-and-effects/605-mana-abilities.md",
+        "600-spells-abilities-and-effects/608-resolving-spells-and-abilities.md",
+        "600-spells-abilities-and-effects/609-effects.md",
+        "600-spells-abilities-and-effects/610-one-shot-effects.md",
+        "600-spells-abilities-and-effects/611-continuous-effects.md",
+        "600-spells-abilities-and-effects/614-replacement-effects.md",
+        "600-spells-abilities-and-effects/615-prevention-effects.md",
+    ];
+    let mut candidates = Vec::new();
+    for rel in effect_files {
+        let path = repo_root().join("resources/rules").join(rel);
+        let Some(stem) = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .map(str::to_string)
+        else {
+            continue;
+        };
+        let Some((rule_ref, name)) = stem.split_once('-') else {
+            continue;
+        };
+        candidates.push(empty_roadmap_candidate(
+            RoadmapCandidateKind::EffectFamily,
+            rule_ref,
+            name,
+            path,
+        ));
+    }
+    Ok(candidates)
+}
+
+fn empty_roadmap_candidate(
+    kind: RoadmapCandidateKind,
+    rule_ref: &str,
+    name: &str,
+    path: PathBuf,
+) -> RoadmapCandidateStatus {
+    RoadmapCandidateStatus {
+        kind,
+        rule_ref: rule_ref.to_string(),
+        name: name.replace('-', " "),
+        slug: slug(name).replace('-', "_"),
+        rules_path: repo_relative_path(&path),
+        coverage: RoadmapCoverage::Missing,
+        exact_concept: None,
+        mentioned_concepts: Vec::new(),
+        phase2_status: None,
+        corpus_failure_hits: 0,
+        corpus_failure_examples: Vec::new(),
+    }
+}
+
+fn annotate_roadmap_candidate(
+    candidate: &mut RoadmapCandidateStatus,
+    concepts: &[ConceptSearchEntry],
+    phase2_by_concept: &BTreeMap<String, Phase2AstStatus>,
+    corpus_failures: &[CorpusFailureExample],
+) {
+    let needle_slug = candidate.slug.as_str();
+    let needle_hyphen = needle_slug.replace('_', "-");
+    let needle_words = needle_slug.replace('_', " ");
+
+    candidate.exact_concept = concepts
+        .iter()
+        .find(|entry| entry.name == needle_slug)
+        .map(|entry| entry.name.clone());
+    candidate.mentioned_concepts = concepts
+        .iter()
+        .filter(|entry| {
+            entry.name == needle_slug
+                || entry.name.contains(needle_slug)
+                || contains_ascii_phrase(&entry.text, needle_slug)
+                || contains_ascii_phrase(&entry.text, &needle_hyphen)
+                || contains_ascii_phrase(&entry.text, &needle_words)
+        })
+        .map(|entry| entry.name.clone())
+        .collect();
+    candidate.mentioned_concepts.sort();
+    candidate.mentioned_concepts.dedup();
+    candidate.coverage = if candidate.exact_concept.is_some() {
+        RoadmapCoverage::ExactConcept
+    } else if !candidate.mentioned_concepts.is_empty() {
+        RoadmapCoverage::MentionedByConcept
+    } else {
+        RoadmapCoverage::Missing
+    };
+    candidate.phase2_status = candidate
+        .exact_concept
+        .as_ref()
+        .and_then(|concept| phase2_by_concept.get(concept).copied());
+
+    let corpus_needles = corpus_needles_for_candidate(candidate);
+    candidate.corpus_failure_examples = corpus_failures
+        .iter()
+        .filter(|failure| {
+            let text = failure.text.to_ascii_lowercase();
+            corpus_needles
+                .iter()
+                .any(|needle| contains_ascii_phrase(&text, needle))
+        })
+        .take(5)
+        .cloned()
+        .collect();
+    candidate.corpus_failure_hits = corpus_failures
+        .iter()
+        .filter(|failure| {
+            let text = failure.text.to_ascii_lowercase();
+            corpus_needles
+                .iter()
+                .any(|needle| contains_ascii_phrase(&text, needle))
+        })
+        .count();
+}
+
+fn corpus_needles_for_candidate(candidate: &RoadmapCandidateStatus) -> Vec<String> {
+    let name = candidate.name.to_ascii_lowercase();
+    let mut needles = vec![name.clone(), name.replace(' ', "")];
+    if candidate.kind == RoadmapCandidateKind::EffectFamily {
+        match candidate.rule_ref.as_str() {
+            "603" => needles.extend([
+                "when".to_string(),
+                "whenever".to_string(),
+                "at the beginning".to_string(),
+            ]),
+            "611" => needles.extend(["until end of turn".to_string(), "as long as".to_string()]),
+            "614" => needles.push("instead".to_string()),
+            "615" => needles.push("prevent".to_string()),
+            _ => {}
+        }
+    }
+    if candidate.kind == RoadmapCandidateKind::KeywordAbility && name.contains("landwalk") {
+        needles.push("walk".to_string());
+    }
+    needles.retain(|needle| needle.len() >= 4);
+    needles.sort();
+    needles.dedup();
+    needles
+}
+
+fn contains_ascii_phrase(haystack: &str, needle: &str) -> bool {
+    if needle.is_empty() {
+        return false;
+    }
+    let mut start = 0;
+    while let Some(offset) = haystack[start..].find(needle) {
+        let absolute = start + offset;
+        let before = haystack[..absolute].chars().next_back();
+        let after = haystack[absolute + needle.len()..].chars().next();
+        if !is_ascii_word_char(before) && !is_ascii_word_char(after) {
+            return true;
+        }
+        start = absolute + needle.len();
+    }
+    false
+}
+
+fn is_ascii_word_char(ch: Option<char>) -> bool {
+    ch.is_some_and(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+}
+
+fn read_concept_search_entries() -> Result<Vec<ConceptSearchEntry>> {
+    let mut entries = Vec::new();
+    for (path, doc, maturity) in read_concept_files()? {
+        let text = fs::read_to_string(&path)
+            .with_context(|| format!("read {}", path.display()))?
+            .to_ascii_lowercase();
+        entries.push(ConceptSearchEntry {
+            name: doc.concept.name,
+            maturity,
+            text,
+        });
+    }
+    Ok(entries)
+}
+
+fn read_corpus_failure_examples() -> Result<Vec<CorpusFailureExample>> {
+    let path = repo_root().join("corpus_status.json");
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let value: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?,
+    )
+    .with_context(|| format!("parse {}", path.display()))?;
+    let Some(cards) = value.get("cards").and_then(|cards| cards.as_object()) else {
+        return Ok(Vec::new());
+    };
+    let mut failures = Vec::new();
+    for (card, status) in cards {
+        if status.get("status").and_then(|s| s.as_str()) == Some("pass") {
+            continue;
+        }
+        let Some(error) = status.get("error").and_then(|error| error.as_str()) else {
+            continue;
+        };
+        if error.contains("empty oracle text") {
+            continue;
+        }
+        if let Some(text) = parse_oracle_line_from_error(error) {
+            failures.push(CorpusFailureExample {
+                card: card.clone(),
+                text,
+            });
+        }
+    }
+    Ok(failures)
+}
+
+fn parse_oracle_line_from_error(error: &str) -> Option<String> {
+    let marker = "\n1 | ";
+    let after = error.split(marker).nth(1)?;
+    let line = after.lines().next()?.trim();
+    (!line.is_empty()).then(|| line.to_string())
+}
+
+fn roadmap_kind_rank(kind: RoadmapCandidateKind) -> u8 {
+    match kind {
+        RoadmapCandidateKind::EffectFamily => 0,
+        RoadmapCandidateKind::KeywordAction => 1,
+        RoadmapCandidateKind::KeywordAbility => 2,
+    }
 }
 
 fn read_fixture_document(path: &Path) -> Result<FixtureDocument> {
@@ -5116,6 +6373,133 @@ const CONCEPT_GRIND_COMMIT_PATHS: &[&str] = &[
     "grammar-fixtures",
 ];
 
+const PHASE2_GRIND_COMMIT_PATHS: &[&str] = &[
+    "ast-fixtures",
+    "crates/mtg-grammar/src/ast.rs",
+    "crates/mtg-grammar/src/grammar.pest",
+    "crates/mtg-grammar/src/parse.rs",
+    "grammar-fixtures",
+];
+
+fn run_phase2_concept_gates(concept: &str, iteration_dir: &Path) -> Result<()> {
+    run_phase2_gate_command(
+        "concept-parse",
+        "cargo",
+        &["xtask", "concept-parse", concept],
+        iteration_dir,
+    )?;
+    run_phase2_gate_command(
+        "concept-ast-test-update",
+        "cargo",
+        &["xtask", "concept-ast-test", concept, "--update"],
+        iteration_dir,
+    )?;
+    run_phase2_gate_command(
+        "concept-ast-test",
+        "cargo",
+        &["xtask", "concept-ast-test", concept],
+        iteration_dir,
+    )?;
+    run_phase2_gate_command(
+        "cargo-check-xtask",
+        "cargo",
+        &["check", "-p", "xtask"],
+        iteration_dir,
+    )?;
+    Ok(())
+}
+
+fn run_phase2_gate_command(
+    label: &str,
+    program: &str,
+    args: &[&str],
+    iteration_dir: &Path,
+) -> Result<()> {
+    let output = Command::new(program)
+        .args(args)
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("{program} {}", args.join(" ")))?;
+    let text = command_output_text(&output);
+    fs::write(iteration_dir.join(format!("{label}.txt")), &text)
+        .with_context(|| format!("write {label} output"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        bail!("{label} failed\n{text}")
+    }
+}
+
+fn commit_phase2_grind_iteration(concept: &str, iteration: u32) -> Result<bool> {
+    validate_phase2_grind_changed_paths()?;
+    let add = Command::new("git")
+        .arg("add")
+        .args(PHASE2_GRIND_COMMIT_PATHS)
+        .current_dir(repo_root())
+        .output()
+        .context("git add phase2-grind paths")?;
+    if !add.status.success() {
+        bail!("git add failed\n{}", command_output_text(&add));
+    }
+    validate_phase2_grind_cached_paths()?;
+    let diff = Command::new("git")
+        .args(["diff", "--cached", "--quiet"])
+        .current_dir(repo_root())
+        .status()
+        .context("git diff --cached --quiet")?;
+    if diff.success() {
+        return Ok(false);
+    }
+    let message = format!(
+        "Advance Phase 2 concept {concept}\n\nconcept-phase2-grind iteration: {iteration}\n"
+    );
+    let commit = Command::new("git")
+        .args(["commit", "--no-verify", "-m", &message])
+        .current_dir(repo_root())
+        .output()
+        .context("git commit")?;
+    if !commit.status.success() {
+        bail!("git commit failed\n{}", command_output_text(&commit));
+    }
+    Ok(true)
+}
+
+fn validate_phase2_grind_changed_paths() -> Result<()> {
+    let paths = git_changed_paths(&["status", "--porcelain"])?;
+    let unexpected: Vec<String> = paths
+        .into_iter()
+        .filter(|path| !is_phase2_grind_commit_path(path))
+        .collect();
+    if !unexpected.is_empty() {
+        bail!(
+            "concept-phase2-grind refuses to commit unexpected changed path(s): {}",
+            unexpected.join(", ")
+        );
+    }
+    Ok(())
+}
+
+fn validate_phase2_grind_cached_paths() -> Result<()> {
+    let paths = git_changed_paths(&["diff", "--cached", "--name-only"])?;
+    let unexpected: Vec<String> = paths
+        .into_iter()
+        .filter(|path| !is_phase2_grind_commit_path(path))
+        .collect();
+    if !unexpected.is_empty() {
+        bail!(
+            "concept-phase2-grind staged unexpected path(s): {}",
+            unexpected.join(", ")
+        );
+    }
+    Ok(())
+}
+
+fn is_phase2_grind_commit_path(path: &str) -> bool {
+    PHASE2_GRIND_COMMIT_PATHS
+        .iter()
+        .any(|allowed| path == *allowed || path.starts_with(&format!("{allowed}/")))
+}
+
 fn commit_concept_grind_iteration(gap: &ConceptGap, iteration: u32) -> Result<bool> {
     validate_concept_grind_changed_paths()?;
     let add = Command::new("git")
@@ -5948,6 +7332,108 @@ fn print_ast_report(report: &AstTestReport) {
             if let Some(error) = &case.error {
                 println!("    error: {error}");
             }
+        }
+    }
+}
+
+fn print_phase2_map_report(report: &Phase2MapReport) {
+    println!("phase2 denominator: grammar_fixture_green concepts");
+    println!("concept files      : {}", report.total_concepts);
+    println!("grammar green      : {}", report.grammar_green_concepts);
+    println!(
+        "parse green        : {} / {} concept(s), {} / {} accepted example(s)",
+        report.parse_green_concepts,
+        report.grammar_green_concepts,
+        report.parsed_examples,
+        report.total_accepted_examples
+    );
+    println!(
+        "ast snapshots green: {} / {} concept(s), {} accepted example(s)",
+        report.ast_green_concepts, report.grammar_green_concepts, report.ast_snapshot_examples
+    );
+    println!("parse failed       : {}", report.parse_failed_concepts);
+    println!("missing snapshots  : {}", report.missing_snapshot_concepts);
+    println!("ast failed         : {}", report.ast_failed_concepts);
+    println!("missing fixtures   : {}", report.missing_fixture_concepts);
+
+    for status in &report.concepts {
+        let state = match status.ast_status {
+            Phase2AstStatus::Pass => "ast_pass",
+            Phase2AstStatus::MissingSnapshot => "missing_snapshot",
+            Phase2AstStatus::Fail => "ast_fail",
+            Phase2AstStatus::ParseFailed => "parse_fail",
+            Phase2AstStatus::MissingFixture => "missing_fixture",
+            Phase2AstStatus::NotGrammarGreen => "not_grammar_green",
+        };
+        println!(
+            "  {} [{}]: {} ({} accepted, {} parse failure(s))",
+            status.concept, status.maturity, state, status.accepted_examples, status.parse_failures
+        );
+        if let Some(error) = &status.first_error {
+            println!("    first error: {error}");
+        }
+    }
+}
+
+fn print_roadmap_report(report: &RoadmapReport) {
+    println!("roadmap denominator: rulebook-derived concept candidates");
+    println!("total candidates   : {}", report.total_candidates);
+    println!("  701 actions      : {}", report.action_candidates);
+    println!("  702 abilities    : {}", report.ability_candidates);
+    println!("  600 effects      : {}", report.effect_candidates);
+    println!("exact concepts     : {}", report.exact_concept_matches);
+    println!("mentioned concepts : {}", report.mentioned_by_concept);
+    println!("missing candidates : {}", report.missing_candidates);
+    println!("grammar green      : {}", report.grammar_green_candidates);
+    println!("parse green        : {}", report.parse_green_candidates);
+    println!("ast green          : {}", report.ast_green_candidates);
+    println!(
+        "corpus pressure    : {} candidate(s), {} failure hit(s)",
+        report.candidates_with_corpus_failures, report.total_corpus_failure_hits
+    );
+    println!();
+    println!("top candidates by current corpus failure pressure:");
+    for candidate in report
+        .candidates
+        .iter()
+        .filter(|candidate| candidate.corpus_failure_hits > 0)
+        .take(30)
+    {
+        let kind = match candidate.kind {
+            RoadmapCandidateKind::KeywordAction => "701 action",
+            RoadmapCandidateKind::KeywordAbility => "702 ability",
+            RoadmapCandidateKind::EffectFamily => "600 effect",
+        };
+        let coverage = match candidate.coverage {
+            RoadmapCoverage::ExactConcept => "exact",
+            RoadmapCoverage::MentionedByConcept => "mentioned",
+            RoadmapCoverage::Missing => "missing",
+        };
+        println!(
+            "  {} {} {} [{}]: {} corpus failure hit(s)",
+            kind, candidate.rule_ref, candidate.name, coverage, candidate.corpus_failure_hits
+        );
+        if let Some(concept) = candidate.exact_concept.as_ref() {
+            println!(
+                "    concept: {}{}",
+                concept,
+                candidate
+                    .phase2_status
+                    .map(|status| format!(" phase2={status:?}"))
+                    .unwrap_or_default()
+            );
+        } else if !candidate.mentioned_concepts.is_empty() {
+            let mentioned = candidate
+                .mentioned_concepts
+                .iter()
+                .take(3)
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .join(", ");
+            println!("    mentioned in: {mentioned}");
+        }
+        for example in candidate.corpus_failure_examples.iter().take(2) {
+            println!("    {}: {:?}", example.card, example.text);
         }
     }
 }
