@@ -1,0 +1,52 @@
+{
+  "concept": "put_named_counters_on_source",
+  "fixture_path": "grammar-fixtures/put_named_counters_on_source.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "put_named_counters_on_source",
+      "text": "Put a spore counter on it.",
+      "ast": {
+        "TriggerEffect": {
+          "PutNamedCountersOnSource": {
+            "amount": "One",
+            "counter_name": "spore",
+            "source": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "put_named_counters_on_source",
+      "text": "Put that many spore counters on it.",
+      "ast": {
+        "TriggerEffect": {
+          "PutNamedCountersOnSource": {
+            "amount": "ThatMany",
+            "counter_name": "spore",
+            "source": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "put_named_counters_on_source",
+      "text": "Put a corpse counter on it for each creature that died this turn.",
+      "ast": {
+        "TriggerEffect": {
+          "PutNamedCountersOnSource": {
+            "amount": {
+              "OneForEachPermanentThatDiedThisTurn": {
+                "permanent_type": "Creature"
+              }
+            },
+            "counter_name": "corpse",
+            "source": "It"
+          }
+        }
+      }
+    }
+  ]
+}

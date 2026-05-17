@@ -345,6 +345,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::choose_target_non_creature_type_creature_active_player_controlled_continuously => {
             choose_target_non_creature_type_creature_active_player_controlled_continuously_statement_from_pair(pair)
         }
+        Rule::put_named_counters_on_source
+        | Rule::one_named_counter_on_source
+        | Rule::that_many_named_counters
+        | Rule::one_named_counter_for_each_permanent_died_this_turn => Ok(Statement::TriggerEffect(
+            put_named_counters_on_source_from_pair(pair)?,
+        )),
         Rule::put_pt_counters_on_source => {
             let ActivatedEffect::PutCountersOnSource {
                 amount,
