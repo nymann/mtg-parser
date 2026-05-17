@@ -1,0 +1,59 @@
+{
+  "concept": "variable_mana_spending_restriction",
+  "fixture_path": "grammar-fixtures/variable_mana_spending_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "spend_only_color_mana_on_variable",
+      "text": "Spend only black mana on X.",
+      "ast": {
+        "SpendOnlyColorManaOnVariable": {
+          "color": "Black",
+          "variable": "X"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "spend_only_color_mana_on_variable",
+      "text": "Spend only red mana on X.",
+      "ast": {
+        "SpendOnlyColorManaOnVariable": {
+          "color": "Red",
+          "variable": "X"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "spend_only_color_mana_on_variable",
+      "text": "Spend only green mana on Y.",
+      "ast": {
+        "SpendOnlyColorManaOnVariable": {
+          "color": "Green",
+          "variable": "Y"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "color_word",
+      "text": "black",
+      "ast": {
+        "TriggerCastSpell": {
+          "Colored": {
+            "color": "Black"
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "variable_name",
+      "text": "Y",
+      "ast": {
+        "VariableName": "Y"
+      }
+    }
+  ]
+}
