@@ -1,0 +1,12 @@
+{
+  "concept": "conditional_failure_game_loss",
+  "fixture_path": "grammar-fixtures/conditional_failure_game_loss.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "if_you_cant_you_lose_the_game",
+      "text": "If you can't, you lose the game.",
+      "ast": "IfYouCantYouLoseTheGame"
+    }
+  ]
+}
