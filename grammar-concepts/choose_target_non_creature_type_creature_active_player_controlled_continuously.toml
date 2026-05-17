@@ -1,0 +1,73 @@
+[[axis]]
+name = "action"
+values = ["choose"]
+
+[[axis]]
+name = "targeting"
+values = ["target"]
+
+[[axis]]
+name = "object"
+values = ["non_creature_type_creature"]
+
+[[axis]]
+name = "creature_type"
+values = ["creature_type"]
+
+[[axis]]
+name = "controller"
+values = ["active_player"]
+
+[[axis]]
+name = "control_duration"
+values = ["controlled_continuously_since_beginning_of_turn"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "Choice instructions for creatures without the non-creature-type restriction.",
+    "Choice instructions for non-creature-type creatures controlled by a player other than the active player.",
+    "Choice instructions for active-player creatures without the continuous-control-since-beginning-of-turn condition.",
+]
+includes = ["Choose target non-[creature type] creature the active player has controlled continuously since the beginning of the turn."]
+
+[concept]
+name = "choose_target_non_creature_type_creature_active_player_controlled_continuously"
+pest_rules = ["choose_target_non_creature_type_creature_active_player_controlled_continuously"]
+rules_queries = ["lex: choose target non creature type creature active player controlled continuously"]
+rules_terms = [
+    "choose",
+    "target",
+    "creature type",
+    "active player",
+    "control continuously",
+]
+
+[[counterexample]]
+reason = "Creature choice without the non-creature-type restriction."
+text = "Choose target Wall creature the active player has controlled continuously since the beginning of the turn."
+
+[[counterexample]]
+reason = "Controller axis is you, not the active player."
+text = "Choose target non-Wall creature you have controlled continuously since the beginning of the turn."
+
+[[counterexample]]
+reason = "Active-player creature choice without the continuous-control timing condition."
+text = "Choose target non-Wall creature the active player controls."
+
+[[example]]
+text = "Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn."
+
+[[example]]
+text = "Choose target non-Goblin creature the active player has controlled continuously since the beginning of the turn."
+
+[grammar_query]
+candidate_rules = ["choose_target_non_creature_type_creature_active_player_controlled_continuously"]
+selected_rule = "choose_target_non_creature_type_creature_active_player_controlled_continuously"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

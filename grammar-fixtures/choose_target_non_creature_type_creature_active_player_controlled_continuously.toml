@@ -1,0 +1,27 @@
+[fixture]
+concept = "choose_target_non_creature_type_creature_active_player_controlled_continuously"
+rule = "choose_target_non_creature_type_creature_active_player_controlled_continuously"
+
+[[example]]
+text = "Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn."
+reason = "Canonical target choice for a non-creature-type creature controlled continuously by the active player."
+
+[[example]]
+text = "Choose target non-Goblin creature the active player has controlled continuously since the beginning of the turn."
+reason = "Same sentence form with a different creature_type value."
+
+[[counterexample]]
+text = "Choose target Wall creature the active player has controlled continuously since the beginning of the turn."
+reason = "Creature choice without the non-creature-type restriction."
+
+[[counterexample]]
+text = "Choose target non-Wall creature you have controlled continuously since the beginning of the turn."
+reason = "Controller axis is you, not the active player."
+
+[[counterexample]]
+text = "Choose target non-Wall creature the active player controls."
+reason = "Active-player creature choice without the continuous-control timing condition."
+
+[[counterexample]]
+text = "Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn. trailing"
+reason = "Exact-consumption guard."
