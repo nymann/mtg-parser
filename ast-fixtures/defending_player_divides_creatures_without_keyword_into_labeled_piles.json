@@ -1,0 +1,54 @@
+{
+  "concept": "defending_player_divides_creatures_without_keyword_into_labeled_piles",
+  "fixture_path": "grammar-fixtures/defending_player_divides_creatures_without_keyword_into_labeled_piles.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "defending_player_divides_creatures_without_keyword_into_labeled_piles",
+      "text": "Each defending player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile.",
+      "ast": {
+        "TriggerEffect": {
+          "DefendingPlayerDividesCreaturesWithoutKeywordIntoLabeledPiles": {
+            "keyword": "Flying",
+            "labels": [
+              "left",
+              "right"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "defending_player_divides_creatures_without_keyword_into_labeled_piles",
+      "text": "Each defending player divides all creatures without first strike they control into a \"left\" pile and a \"right\" pile.",
+      "ast": {
+        "TriggerEffect": {
+          "DefendingPlayerDividesCreaturesWithoutKeywordIntoLabeledPiles": {
+            "keyword": "FirstStrike",
+            "labels": [
+              "left",
+              "right"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "defending_player_divides_creatures_without_keyword_into_labeled_piles",
+      "text": "Each defending player divides all creatures without shadow they control into a \"right\" pile and a \"left\" pile.",
+      "ast": {
+        "TriggerEffect": {
+          "DefendingPlayerDividesCreaturesWithoutKeywordIntoLabeledPiles": {
+            "keyword": "Shadow",
+            "labels": [
+              "right",
+              "left"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -564,6 +564,13 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_effect_doesnt_remove_this_aura => {
             Ok(Statement::StaticAbility(static_ability_from_pair(pair)?))
         }
+        Rule::defending_player_divides_creatures_without_keyword_into_labeled_piles => {
+            Ok(Statement::TriggerEffect(
+                defending_player_divides_creatures_without_keyword_into_labeled_piles_from_pair(
+                    pair,
+                )?,
+            ))
+        }
         Rule::activated_ability => Ok(Statement::ActivatedAbility(activated_ability_from_pair(
             pair,
         )?)),

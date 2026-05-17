@@ -148,6 +148,7 @@ sentence_statement = _{
   | this_turn_defending_players_make_random_blocking_piles
   | additional_blockers_may_be_put_into_additional_piles
   | assign_each_pile_to_attacking_creature_at_random
+  | defending_player_divides_creatures_without_keyword_into_labeled_piles
   | creatures_in_assigned_pile_block_if_able
   | then_for_each_attacking_creature_choose_label_blocking_restriction
   | as_source_enters_choose
