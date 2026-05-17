@@ -1,0 +1,74 @@
+[[axis]]
+name = "action"
+values = ["take_extra_turn"]
+
+[[axis]]
+name = "affected_player"
+values = ["implicit_controller"]
+
+[[axis]]
+name = "quantity"
+values = ["single"]
+
+[[axis]]
+name = "turn_placement"
+values = ["after_this_one"]
+
+[[axis]]
+name = "context"
+values = [
+    "standalone_sentence",
+    "activated_effect",
+]
+
+[boundary]
+excludes = [
+    "Extra-turn effects with an explicit affected player are outside this implicit-controller instruction.",
+    "Multiple extra turns are outside the single extra-turn quantity.",
+    "Extra phases or steps are not extra-turn effects.",
+    "Delayed cast permissions after the current turn are not instructions to take an extra turn.",
+]
+includes = [
+    "Imperative instructions for the controller to take one extra turn after the current turn.",
+    "The same imperative instruction when used as an activated effect.",
+]
+
+[concept]
+name = "take_extra_turn_after_this_one"
+pest_rules = ["take_extra_turn_after_this_one"]
+rules_queries = ["lex: take extra turn after this one"]
+rules_terms = [
+    "extra turn",
+    "turn",
+    "after this one",
+]
+
+[[counterexample]]
+reason = "Explicit affected player is outside the implicit-controller instruction."
+text = "The chosen player takes an extra turn after this one."
+
+[[counterexample]]
+reason = "Multiple extra turns are outside the single extra-turn quantity."
+text = "Take two extra turns after this one."
+
+[[counterexample]]
+reason = "Extra phases are not extra-turn effects."
+text = "Take an extra combat phase after this one."
+
+[[counterexample]]
+reason = "Delayed cast permission after the current turn is not an instruction to take an extra turn."
+text = "You may cast this card after the current turn has ended."
+
+[[example]]
+text = "Take an extra turn after this one."
+
+[[example]]
+text = "take an extra turn after this one."
+
+[grammar_query]
+candidate_rules = ["take_extra_turn_after_this_one"]
+selected_rule = "take_extra_turn_after_this_one"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

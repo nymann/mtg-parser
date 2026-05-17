@@ -1,0 +1,31 @@
+[fixture]
+concept = "take_extra_turn_after_this_one"
+rule = "take_extra_turn_after_this_one"
+
+[[example]]
+text = "Take an extra turn after this one."
+reason = "Canonical imperative single extra-turn instruction scheduled after the current turn."
+
+[[example]]
+text = "take an extra turn after this one."
+reason = "Case-insensitive keyword coverage for the same instruction."
+
+[[counterexample]]
+text = "The chosen player takes an extra turn after this one."
+reason = "Explicit affected player is outside the implicit-controller instruction."
+
+[[counterexample]]
+text = "Take two extra turns after this one."
+reason = "Multiple extra turns are outside the single extra-turn quantity."
+
+[[counterexample]]
+text = "Take an extra combat phase after this one."
+reason = "Extra phases are not extra-turn effects."
+
+[[counterexample]]
+text = "You may cast this card after the current turn has ended."
+reason = "Delayed cast permission after the current turn is not an instruction to take an extra turn."
+
+[[counterexample]]
+text = "Take an extra turn after this one. trailing"
+reason = "Exact-consumption guard."
