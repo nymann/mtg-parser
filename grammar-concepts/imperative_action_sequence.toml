@@ -1,0 +1,107 @@
+[[axis]]
+name = "sequence_shape"
+values = [
+    "look_at_hand_with_optional_choose_from_it",
+    "single_source_tap",
+    "comma_then_action_sequence",
+]
+
+[[axis]]
+name = "action_member"
+values = [
+    "look_at_target_hand",
+    "choose_card_from_it",
+    "discard_your_hand_or_cards",
+    "ante_top_card_of_your_library",
+    "search_your_library_for_a_card",
+    "put_that_card_into_your_hand",
+    "shuffle",
+    "draw_cards",
+    "tap_source",
+    "sacrifice_permanent_of_opponents_choice",
+]
+
+[[axis]]
+name = "separator"
+values = [
+    "period",
+    "and_choose_from_it",
+    "comma_then",
+]
+
+[boundary]
+excludes = [
+    "Single imperative actions other than the source-tap effect are lower-level actions, not action sequences.",
+    "And-joined action sequences other than look-at-hand and choose-from-it are outside this rule's explicit sequence forms.",
+    "Each-player action sequences are owned by each_player_action_sequence.",
+    "Targeted tap effects are owned by tap_target_permanent_choice or future target-tap concepts.",
+]
+includes = [
+    "Complete imperative action sentences that inspect a target hand, optionally followed by choosing a card from it.",
+    "Complete imperative action sentences that tap the source object.",
+    "Complete imperative action sentences with one or more comma-separated actions followed by then and a final action.",
+]
+
+[concept]
+name = "imperative_action_sequence"
+pest_rules = ["imperative_action_sequence"]
+rules_queries = [
+    "lex: imperative action sequence",
+    "lex: then draw a card",
+    "lex: look at target player's hand and choose a card from it",
+]
+rules_terms = [
+    "action",
+    "choose",
+    "draw",
+    "look",
+    "search",
+    "shuffle",
+    "tap",
+]
+
+[[counterexample]]
+reason = "Single non-tap imperative actions are lower-level actions, not this sequence wrapper."
+text = "Draw a card."
+
+[[counterexample]]
+reason = "The and-joined sequence form is restricted to choosing a card from the hand just inspected."
+text = "Discard your hand and draw a card."
+
+[[counterexample]]
+reason = "Each-player action sequences have a separate subject and are owned by each_player_action_sequence."
+text = "Each player draws a card, then discards a card."
+
+[[counterexample]]
+reason = "Targeted tap effects are not source-tap imperative action sequences."
+text = "Tap target creature."
+
+[[example]]
+text = "Look at target player's hand."
+
+[[example]]
+text = "Look at target opponent's hand and choose a card from it."
+
+[[example]]
+text = "tap CARDNAME."
+
+[[example]]
+text = "Discard your hand, then draw a card."
+
+[[example]]
+text = "Search your library for a card, put that card into your hand, then shuffle."
+
+[grammar_query]
+candidate_rules = [
+    "imperative_action_sequence",
+    "imperative_action",
+    "look_at_target_hand_action",
+    "choose_card_from_it_action",
+    "tap_source_action",
+    "each_player_action_sequence",
+]
+selected_rule = "imperative_action_sequence"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

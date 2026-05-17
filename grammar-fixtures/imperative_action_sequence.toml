@@ -1,0 +1,43 @@
+[fixture]
+concept = "imperative_action_sequence"
+rule = "imperative_action_sequence"
+
+[[example]]
+text = "Look at target player's hand."
+reason = "Hand-inspection sequence shape without the optional choose-from-it action."
+
+[[example]]
+text = "Look at target opponent's hand and choose a card from it."
+reason = "Hand-inspection sequence shape with the specialized and-joined choose-from-it follow-up."
+
+[[example]]
+text = "tap CARDNAME."
+reason = "Single source-tap effect is the rule's dedicated single-action sequence shape."
+
+[[example]]
+text = "Discard your hand, then draw a card."
+reason = "Two-action comma-then sequence."
+
+[[example]]
+text = "Search your library for a card, put that card into your hand, then shuffle."
+reason = "Three-action comma-separated sequence with a final then action."
+
+[[counterexample]]
+text = "Draw a card."
+reason = "Single non-tap imperative actions are lower-level actions, not this sequence wrapper."
+
+[[counterexample]]
+text = "Discard your hand and draw a card."
+reason = "The and-joined sequence form is restricted to choosing a card from the hand just inspected."
+
+[[counterexample]]
+text = "Each player draws a card, then discards a card."
+reason = "Each-player action sequences have a separate subject and are owned by each_player_action_sequence."
+
+[[counterexample]]
+text = "Tap target creature."
+reason = "Targeted tap effects are not source-tap imperative action sequences."
+
+[[counterexample]]
+text = "Discard your hand, then draw a card. trailing"
+reason = "Exact-consumption guard."
