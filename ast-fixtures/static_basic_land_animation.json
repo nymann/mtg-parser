@@ -1,0 +1,36 @@
+{
+  "concept": "static_basic_land_animation",
+  "fixture_path": "grammar-fixtures/static_basic_land_animation.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_basic_lands_are_pt_colored_creatures_still_lands",
+      "text": "All Forests are 1/1 creatures that are still lands.",
+      "ast": {
+        "StaticAbility": {
+          "BasicLandsAreColoredCreaturesStillLands": {
+            "color": null,
+            "land_type": "Forest",
+            "power": 1,
+            "toughness": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_basic_lands_are_pt_colored_creatures_still_lands",
+      "text": "All Mountains are 3/3 red creatures that are still lands.",
+      "ast": {
+        "StaticAbility": {
+          "BasicLandsAreColoredCreaturesStillLands": {
+            "color": "Red",
+            "land_type": "Mountain",
+            "power": 3,
+            "toughness": 3
+          }
+        }
+      }
+    }
+  ]
+}
