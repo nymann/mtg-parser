@@ -1,0 +1,18 @@
+{
+  "concept": "ante_play_restriction",
+  "fixture_path": "grammar-fixtures/ante_play_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "ante_play_restriction",
+      "text": "Remove this card from your deck before playing if you're not playing for ante.",
+      "ast": "AntePlayRestriction"
+    },
+    {
+      "index": 2,
+      "rule": "ante_play_restriction",
+      "text": "remove this card from your deck before playing if you're not playing for ante.",
+      "ast": "AntePlayRestriction"
+    }
+  ]
+}
