@@ -1,0 +1,42 @@
+{
+  "concept": "play_referenced_card_instruction",
+  "fixture_path": "grammar-fixtures/play_referenced_card_instruction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "referenced_card_play_instruction",
+      "text": "The player plays that card if able.",
+      "ast": {
+        "PlayReferencedCard": {
+          "card": "ThatCard",
+          "if_able": true,
+          "player": "ThePlayer"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "referenced_card_play_instruction",
+      "text": "That player plays that card if able.",
+      "ast": {
+        "PlayReferencedCard": {
+          "card": "ThatCard",
+          "if_able": true,
+          "player": "ThatPlayer"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "referenced_card_play_instruction",
+      "text": "The player plays that card.",
+      "ast": {
+        "PlayReferencedCard": {
+          "card": "ThatCard",
+          "if_able": false,
+          "player": "ThePlayer"
+        }
+      }
+    }
+  ]
+}
