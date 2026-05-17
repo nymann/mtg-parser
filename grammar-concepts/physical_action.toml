@@ -1,0 +1,69 @@
+[[axis]]
+name = "condition"
+values = ["source_on_battlefield"]
+
+[[axis]]
+name = "action"
+values = ["flip_onto_battlefield_from_height"]
+
+[[axis]]
+name = "height_amount"
+values = ["number_word"]
+
+[[axis]]
+name = "height_unit"
+values = ["physical_height_unit"]
+
+[boundary]
+excludes = [
+    "Conditional follow-up effects introduced by 'if you do' or 'if the player does', owned by if_you_do_effect.",
+    "Reflexive 'when you do' triggered templates.",
+    "Non-dexterity conditional effects that do not instruct a physical flip action.",
+]
+includes = [
+    "Physical dexterity text conditioned on the source being on the battlefield.",
+    "Instructions to flip the source onto the battlefield from a minimum physical height.",
+    "Height amounts expressed as number_word and units expressed as physical_height_unit.",
+]
+
+[concept]
+name = "physical_action"
+pest_rules = ["if_source_on_battlefield_flip_onto_battlefield_from_height"]
+rules_queries = [
+    "lex: flip onto the battlefield from a height",
+    "lex: physical dexterity action",
+]
+rules_terms = [
+    "battlefield",
+    "physical action",
+]
+
+[[counterexample]]
+reason = "If-you-do mana follow-up, not a physical dexterity action."
+text = "If you do, add {G}."
+
+[[counterexample]]
+reason = "If-the-player-does untap follow-up, not a physical dexterity action."
+text = "If the player does, untap it."
+
+[[counterexample]]
+reason = "Reflexive trigger template, not a source-on-battlefield physical action."
+text = "When you do, you gain 3 life."
+
+[[example]]
+text = "If this permanent is on the battlefield, flip it onto the battlefield from a height of at least one foot."
+
+[[example]]
+text = "If it is on the battlefield, flip it onto the battlefield from a height of at least two feet."
+
+[grammar_query]
+candidate_rules = [
+    "physical_action",
+    "if_source_on_battlefield_flip_onto_battlefield_from_height",
+    "if_you_do_effect",
+]
+selected_rule = "if_source_on_battlefield_flip_onto_battlefield_from_height"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

@@ -262,8 +262,7 @@ this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first = {
 destroy = { ^"destroy" ~ destroy_effect_target ~ "." }
 exile = { ^"exile" ~ destroy_target ~ "." }
 destroy_effect_target = {
-    referenced_creature_at_beginning_of_next_end_step
-  | that_creature_at_end_of_combat_target
+    that_creature_at_end_of_combat_target
   | that_creature_if_it_attacked_this_turn_target
   | all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn
   | referenced_creature

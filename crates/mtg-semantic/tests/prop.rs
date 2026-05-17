@@ -9,7 +9,9 @@
 // into a feature-gated `mtg_grammar::testing` module and update the
 // xtask runner to enable that feature for tier 2.
 
-use mtg_grammar::ast::{TriggerCastActor, TriggerCastSpell};
+use mtg_grammar::ast::{
+    DestroyReferencedCreatureCondition, ReferencedCreature, TriggerCastActor, TriggerCastSpell,
+};
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedDamageEffect, ActivatedDamageRecipient,
     ActivatedEffect, AddManaAmount, BasicLandType, CardCount, Color, CombatRole,
@@ -534,7 +536,10 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         Just(Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn),
         Just(Statement::ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared),
         Just(Statement::ActivateOnlyAsSorcery),
-        Just(Statement::DestroyItAtBeginningOfNextEndStepIfItDidntAttackThisTurn),
+        Just(Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep {
+            target: ReferencedCreature::It,
+            condition: Some(DestroyReferencedCreatureCondition::DidntAttackThisTurn),
+        }),
         (1u32..=10, 1u32..=10).prop_map(|(power, toughness)| {
             Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power, toughness }
         }),

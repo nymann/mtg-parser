@@ -1,0 +1,27 @@
+[fixture]
+concept = "physical_action"
+rule = "if_source_on_battlefield_flip_onto_battlefield_from_height"
+
+[[example]]
+text = "If this permanent is on the battlefield, flip it onto the battlefield from a height of at least one foot."
+reason = "Source-on-battlefield condition with flip action, one as number_word, and foot as physical_height_unit."
+
+[[example]]
+text = "If it is on the battlefield, flip it onto the battlefield from a height of at least two feet."
+reason = "Source-object variant with plural physical_height_unit."
+
+[[counterexample]]
+text = "If you do, add {G}."
+reason = "If-you-do mana follow-up, not a physical dexterity action."
+
+[[counterexample]]
+text = "If the player does, untap it."
+reason = "If-the-player-does untap follow-up, not a physical dexterity action."
+
+[[counterexample]]
+text = "When you do, you gain 3 life."
+reason = "Reflexive trigger template, not a source-on-battlefield physical action."
+
+[[counterexample]]
+text = "If this permanent is on the battlefield, flip it onto the battlefield from a height of at least one foot. trailing"
+reason = "Exact-consumption guard."

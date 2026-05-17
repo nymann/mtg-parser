@@ -591,7 +591,12 @@ pub enum PaymentFailureEffect {
 
 impl Statement {
     pub(crate) fn destroy(target: DestroyTarget) -> Self {
-        Statement::Destroy { target }
+        match target {
+            DestroyTarget::ReferencedCreatureAtBeginningOfNextEndStep { target, condition } => {
+                Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep { target, condition }
+            }
+            target => Statement::Destroy { target },
+        }
     }
 
     pub(crate) fn target_permanent_until_end_of_turn(
