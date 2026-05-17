@@ -1,0 +1,14 @@
+{
+  "concept": "life_gain_replacement_effect",
+  "fixture_path": "grammar-fixtures/life_gain_replacement_effect.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "if_you_would_gain_life_draw_that_many_cards_instead",
+      "text": "If you would gain life, draw that many cards instead.",
+      "ast": {
+        "StaticAbility": "IfYouWouldGainLifeDrawThatManyCardsInstead"
+      }
+    }
+  ]
+}
