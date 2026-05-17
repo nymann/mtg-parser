@@ -1488,8 +1488,12 @@ pub enum TriggerEffect {
         permanent_type: PermanentType,
         source: SourceObject,
     },
-    /// "sacrifice that many nontoken permanents"
-    SacrificeThatManyNontokenPermanents,
+    /// "sacrifice [that many] [nontoken] permanents/<permanent_type>s"
+    SacrificePermanents {
+        quantity: SacrificePermanentsQuantity,
+        nontoken: bool,
+        object: SacrificePermanentsObject,
+    },
     /// "you lose the game"
     YouLoseTheGame,
     /// "you gain N life"
@@ -1675,6 +1679,18 @@ pub enum ActivationPermission {
     OnlySourcesOwner { source: SourceObject },
     /// "Activate only during your upkeep."
     ActivateOnlyDuringYourUpkeep,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SacrificePermanentsQuantity {
+    ThatMany,
+    ImplicitPlural,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SacrificePermanentsObject {
+    Permanents,
+    PermanentType(PermanentType),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,0 +1,64 @@
+{
+  "concept": "sacrifice_permanents",
+  "fixture_path": "grammar-fixtures/sacrifice_permanents.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "sacrifice_that_many_nontoken_permanents",
+      "text": "sacrifice that many nontoken permanents.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificePermanents": {
+            "nontoken": true,
+            "object": "Permanents",
+            "quantity": "ThatMany"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "sacrifice_that_many_nontoken_permanents",
+      "text": "sacrifice that many permanents.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificePermanents": {
+            "nontoken": false,
+            "object": "Permanents",
+            "quantity": "ThatMany"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "sacrifice_permanents_action",
+      "text": "sacrifice permanents",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificePermanents": {
+            "nontoken": false,
+            "object": "Permanents",
+            "quantity": "ImplicitPlural"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "sacrifice_permanents_action",
+      "text": "sacrifice creatures",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificePermanents": {
+            "nontoken": false,
+            "object": {
+              "PermanentType": "Creature"
+            },
+            "quantity": "ImplicitPlural"
+          }
+        }
+      }
+    }
+  ]
+}

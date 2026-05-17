@@ -27,12 +27,12 @@ use crate::ast::{
     PermanentController, PermanentEntersObject, PermanentType, PhysicalAction, PlayRestriction,
     PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter, PlayerDiscardActor,
     PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
-    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
-    StaticDamageRedirectionDestination, StaticDamageSource, StaticUntapRestriction,
-    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
-    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    RegenerationRestrictionSubject, ReturnDestination, Rounding, SacrificePermanentsObject,
+    SacrificePermanentsQuantity, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
+    StaticDamagePreventionEffect, StaticDamageRedirectionDestination, StaticDamageSource,
+    StaticUntapRestriction, StatusCreatureController, StatusCreatureGetDuration, Step,
+    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -168,6 +168,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 source: source_object_from_pair(source_pair)?,
             }))
         }
+        Rule::sacrifice_permanents_action => Ok(Statement::TriggerEffect(
+            sacrifice_permanents_action_from_pair(pair)?,
+        )),
         Rule::unless_you_pay_mana_do_actions => Ok(Statement::TriggerEffect(
             unless_you_pay_mana_do_actions_from_pair(pair)?,
         )),
@@ -341,6 +344,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::sacrifice_source_unless_you_pay => Ok(Statement::TriggerEffect(
             sacrifice_source_unless_you_pay_from_pair(pair)?,
+        )),
+        Rule::sacrifice_that_many_nontoken_permanents => Ok(Statement::TriggerEffect(
+            sacrifice_that_many_permanents_from_pair(pair)?,
         )),
         Rule::you_may_remove_named_counter_from_source => Ok(Statement::TriggerEffect(
             you_may_remove_named_counter_from_source_from_pair(pair)?,
@@ -3267,7 +3273,7 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
             sacrifice_permanent_other_than_source_from_pair(pair)
         }
         Rule::sacrifice_that_many_nontoken_permanents => {
-            Ok(TriggerEffect::SacrificeThatManyNontokenPermanents)
+            sacrifice_that_many_permanents_from_pair(pair)
         }
         Rule::player_loses_life => player_loses_life_from_pair(pair),
         Rule::you_lose_the_game => Ok(TriggerEffect::YouLoseTheGame),
@@ -3827,6 +3833,34 @@ fn sacrifice_source_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, 
     let source_pair = only_inner(pair, "sacrifice source effect missing source")?;
     Ok(TriggerEffect::SacrificeSource {
         source: source_object_from_pair(source_pair)?,
+    })
+}
+
+fn sacrifice_that_many_permanents_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    if pair.as_rule() != Rule::sacrifice_that_many_nontoken_permanents {
+        return Err(ParseError::Internal("sacrifice that-many permanents"));
+    }
+    Ok(TriggerEffect::SacrificePermanents {
+        quantity: SacrificePermanentsQuantity::ThatMany,
+        nontoken: pair.as_str().to_ascii_lowercase().contains(" nontoken "),
+        object: SacrificePermanentsObject::Permanents,
+    })
+}
+
+fn sacrifice_permanents_action_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    if pair.as_rule() != Rule::sacrifice_permanents_action {
+        return Err(ParseError::Internal("sacrifice permanents action"));
+    }
+    let object = match pair.into_inner().next() {
+        Some(permanent_type_pair) => SacrificePermanentsObject::PermanentType(
+            permanent_type_from_plural_pair(permanent_type_pair)?,
+        ),
+        None => SacrificePermanentsObject::Permanents,
+    };
+    Ok(TriggerEffect::SacrificePermanents {
+        quantity: SacrificePermanentsQuantity::ImplicitPlural,
+        nontoken: false,
+        object,
     })
 }
 

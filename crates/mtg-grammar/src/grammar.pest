@@ -103,6 +103,7 @@ sentence_statement = _{
   | player_may_pay_mana
   | you_may_draw_cards
   | remove_pt_counter_from_it
+  | sacrifice_that_many_nontoken_permanents
   | sacrifice_permanent_other_than_source
   | sacrifice_source_effect
   | sacrifice_source_unless_you_pay
@@ -218,6 +219,7 @@ phrase_statement = _{
   | label_phrase
   | ante_top_card_of_your_library_action
   | tap_source_action
+  | sacrifice_permanents_action
   | sacrifice_source
   | draw_cards_action
   | draw_that_many_cards_replacement_result

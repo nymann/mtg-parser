@@ -25,11 +25,12 @@ use crate::ast::{
     PhysicalAction, PlayRestriction, PlayRestrictionAction, PlayRestrictionAffected,
     PlayRestrictionFilter, PlayerDiscardActor, PreventionRecipient, PtModifier, ReferencedCard,
     ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination,
-    Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
-    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
-    StaticDamagePreventionEffect, StaticDamageRedirectionDestination, StaticDamageSource,
-    StaticUntapRestriction, StatusCreatureController, StatusCreatureGetDuration, Step,
-    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    Rounding, SacrificePermanentsObject, SacrificePermanentsQuantity, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
+    StaticDamageRedirectionDestination, StaticDamageSource, StaticUntapRestriction,
+    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
+    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -1344,6 +1345,15 @@ fn write_same_way_action(out: &mut String, action: BalanceSameWayAction) {
         BalanceSameWayAction::DiscardCards => out.push_str("discard cards"),
         BalanceSameWayAction::SacrificePermanents { permanent_type } => {
             out.push_str("sacrifice ");
+            out.push_str(permanent_type_plural_name(permanent_type));
+        }
+    }
+}
+
+fn write_sacrifice_permanents_object(out: &mut String, object: SacrificePermanentsObject) {
+    match object {
+        SacrificePermanentsObject::Permanents => out.push_str("permanents"),
+        SacrificePermanentsObject::PermanentType(permanent_type) => {
             out.push_str(permanent_type_plural_name(permanent_type));
         }
     }
@@ -3299,8 +3309,20 @@ fn write_trigger_effect(
             write_source_object(out, *source);
             out.push('.');
         }
-        TriggerEffect::SacrificeThatManyNontokenPermanents => {
-            out.push_str("sacrifice that many nontoken permanents.");
+        TriggerEffect::SacrificePermanents {
+            quantity,
+            nontoken,
+            object,
+        } => {
+            out.push_str("sacrifice ");
+            if matches!(quantity, SacrificePermanentsQuantity::ThatMany) {
+                out.push_str("that many ");
+            }
+            if *nontoken {
+                out.push_str("nontoken ");
+            }
+            write_sacrifice_permanents_object(out, *object);
+            out.push('.');
         }
         TriggerEffect::YouLoseTheGame => {
             out.push_str("you lose the game.");
