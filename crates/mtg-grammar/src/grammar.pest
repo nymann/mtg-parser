@@ -1624,7 +1624,7 @@ then_destroy_source = {
 
 physical_height_unit = @{ ^"feet" | ^"foot" }
 
-condition      = _{ you_control_basic_land | source_is_object_status | source_isnt_attacking | source_is_attacking | enchanted_isnt }
+condition      = _{ you_control_basic_land | you_control_no_basic_lands | source_is_object_status | source_isnt_attacking | source_is_attacking | enchanted_isnt }
 you_control_basic_land = { ^"you" ~ ^"control" ~ article ~ basic_land_type }
 enchanted_isnt = {
     ^"enchanted" ~ permanent_type ~ ^"isn't" ~ article ~ permanent_type

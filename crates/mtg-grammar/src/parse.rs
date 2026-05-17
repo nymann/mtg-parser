@@ -202,6 +202,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::amount_of_mana_that_player_paid_this_way
         | Rule::its_power => Ok(Statement::ValueExpression(value_expression_from_pair(pair)?)),
         Rule::you_control_basic_land
+        | Rule::you_control_no_basic_lands
         | Rule::enchanted_isnt
         | Rule::source_is_object_status
         | Rule::source_isnt_attacking
@@ -6098,6 +6099,13 @@ fn condition_from_pair(pair: Pair<Rule>) -> Result<Condition, ParseError> {
                 land_type: basic_land_type_from_pair(land_type_pair)?,
             })
         }
+        Rule::you_control_no_basic_lands => {
+            let land_type_pair =
+                only_inner(pair, "you_control_no_basic_lands missing basic_land_type_plural")?;
+            Ok(Condition::YouControlNoBasicLands {
+                land_type: basic_land_type_from_plural_pair(land_type_pair)?,
+            })
+        }
         Rule::enchanted_isnt => {
             let mut types = pair.into_inner();
             let pt = types
@@ -6145,6 +6153,7 @@ fn is_condition_rule(rule: Rule) -> bool {
     matches!(
         rule,
         Rule::you_control_basic_land
+            | Rule::you_control_no_basic_lands
             | Rule::enchanted_isnt
             | Rule::source_is_object_status
             | Rule::source_isnt_attacking

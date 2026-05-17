@@ -37,6 +37,18 @@
           }
         }
       }
+    },
+    {
+      "index": 4,
+      "rule": "you_control_no_basic_lands",
+      "text": "you control no Islands",
+      "ast": {
+        "Condition": {
+          "YouControlNoBasicLands": {
+            "land_type": "Island"
+          }
+        }
+      }
     }
   ]
 }

@@ -2547,6 +2547,8 @@ pub enum ConditionalEffectOrder {
 pub enum Condition {
     /// "you control a/an <basic_land_type>"
     YouControlBasicLand { land_type: BasicLandType },
+    /// "you control no <basic_land_type>s"
+    YouControlNoBasicLands { land_type: BasicLandType },
     /// "enchanted <permanent_type> isn't a/an <negated_type>"
     EnchantedIsNot {
         permanent_type: PermanentType,

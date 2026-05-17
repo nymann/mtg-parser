@@ -3815,6 +3815,10 @@ fn write_condition(out: &mut String, cond: &Condition) {
             out.push(' ');
             out.push_str(basic_land_type_name(*land_type));
         }
+        Condition::YouControlNoBasicLands { land_type } => {
+            out.push_str("you control no ");
+            out.push_str(basic_land_type_plural_name(*land_type));
+        }
         Condition::EnchantedIsNot {
             permanent_type,
             negated_type,
