@@ -1,0 +1,14 @@
+{
+  "concept": "you_may_have_it_block_attacking_creature",
+  "fixture_path": "grammar-fixtures/you_may_have_it_block_attacking_creature.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_may_have_it_block_attacking_creature",
+      "text": "You may have it block an attacking creature of your choice.",
+      "ast": {
+        "StaticAbility": "YouMayHaveItBlockAttackingCreatureOfYourChoice"
+      }
+    }
+  ]
+}
