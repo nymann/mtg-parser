@@ -1,0 +1,76 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_pt_modification"]
+
+[[axis]]
+name = "add_affected_object"
+values = ["enchanted_permanent"]
+
+[[axis]]
+name = "add_filter"
+values = ["permanent_type"]
+
+[[axis]]
+name = "add_delta"
+values = ["pt_modifier"]
+
+[[axis]]
+name = "add_granted_ability"
+values = ["optional_keyword"]
+
+[boundary]
+excludes = [
+    "Static cost increases for colored spells.",
+    "Static cost increases for activated abilities of colored permanents.",
+    "Variable enchanted-object P/T modifications with where-clause definitions.",
+]
+includes = [
+    "Fixed numeric enchanted-object static P/T modifications.",
+    "Creature, artifact, land, and enchantment enchanted-object surfaces.",
+    "Optional keyword ability grants after the fixed P/T modifier.",
+]
+
+[concept]
+name = "static_enchanted_power_toughness_modification"
+pest_rules = ["static_enchanted_gets"]
+rules_queries = [
+    "lex: enchanted creature gets +1/+1",
+    "lex: enchanted creature gets +0/+2 and has reach",
+]
+rules_terms = [
+    "static",
+    "continuous",
+    "power",
+    "toughness",
+    "modifier",
+    "enchanted",
+]
+
+[[counterexample]]
+reason = "Static cost increase for colored spells, not a P/T modification."
+text = "White spells cost {3} more to cast."
+
+[[counterexample]]
+reason = "Static cost increase for activated abilities, not a P/T modification."
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[counterexample]]
+reason = "Variable enchanted-object P/T modification with where-clause definitions, not fixed numeric P/T."
+text = "Enchanted creature gets +X/+Y, where X is half the number of Forests you control, rounded down, and Y is half the number of Forests you control, rounded up."
+
+[[example]]
+text = "Enchanted creature gets +1/+1."
+
+[[example]]
+text = "Enchanted artifact gets +0/+2."
+
+[[example]]
+text = "Enchanted creature gets +0/+2 and has reach."
+
+[grammar_query]
+candidate_rules = ["static_enchanted_gets"]
+selected_rule = "static_enchanted_gets"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

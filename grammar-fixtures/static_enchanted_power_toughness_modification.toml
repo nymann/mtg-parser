@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_enchanted_power_toughness_modification"
+rule = "static_enchanted_gets"
+
+[[example]]
+text = "Enchanted creature gets +1/+1."
+reason = "Fixed numeric enchanted-creature P/T modifier."
+
+[[example]]
+text = "Enchanted artifact gets +0/+2."
+reason = "Fixed numeric enchanted-artifact P/T modifier."
+
+[[example]]
+text = "Enchanted creature gets +0/+2 and has reach."
+reason = "Fixed numeric enchanted-creature P/T modifier with optional keyword grant."
+
+[[counterexample]]
+text = "White spells cost {3} more to cast."
+reason = "Static cost increase for colored spells, not an enchanted-object P/T modification."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Static cost increase for activated abilities, not an enchanted-object P/T modification."
+
+[[counterexample]]
+text = "Enchanted creature gets +X/+Y, where X is half the number of Forests you control, rounded down, and Y is half the number of Forests you control, rounded up."
+reason = "Variable enchanted-object P/T modification with where-clause definitions, not fixed numeric P/T."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1. trailing"
+reason = "Exact-consumption guard."
