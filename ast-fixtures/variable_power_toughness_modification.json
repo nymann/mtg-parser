@@ -1,0 +1,185 @@
+{
+  "concept": "variable_power_toughness_modification",
+  "fixture_path": "grammar-fixtures/variable_power_toughness_modification.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_enchanted_gets_with_definitions",
+      "text": "Enchanted creature gets +X/+Y, where X is half the number of Forests you control, rounded down, and Y is half the number of Forests you control, rounded up.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedGetsWithDefinitions": {
+            "definitions": [
+              {
+                "value": {
+                  "HalfNumberOfBasicLandsYouControl": {
+                    "basic_land_type": "Forest",
+                    "rounding": "Down"
+                  }
+                },
+                "variable": "X"
+              },
+              {
+                "value": {
+                  "HalfNumberOfBasicLandsYouControl": {
+                    "basic_land_type": "Forest",
+                    "rounding": "Up"
+                  }
+                },
+                "variable": "Y"
+              }
+            ],
+            "modifier": {
+              "power": {
+                "sign": "Plus",
+                "variable": "X"
+              },
+              "toughness": {
+                "sign": "Plus",
+                "variable": "Y"
+              }
+            },
+            "permanent_type": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_enchanted_gets_with_definitions",
+      "text": "Enchanted artifact gets +X/-Y, where X is the number of cards in their hand minus 4, and Y is the amount of mana that player paid this way.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedGetsWithDefinitions": {
+            "definitions": [
+              {
+                "value": {
+                  "NumberOfCardsInTheirHandMinus": {
+                    "amount": 4
+                  }
+                },
+                "variable": "X"
+              },
+              {
+                "value": "AmountOfManaThatPlayerPaidThisWay",
+                "variable": "Y"
+              }
+            ],
+            "modifier": {
+              "power": {
+                "sign": "Plus",
+                "variable": "X"
+              },
+              "toughness": {
+                "sign": "Minus",
+                "variable": "Y"
+              }
+            },
+            "permanent_type": "Artifact"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "static_enchanted_gets_with_definitions",
+      "text": "Enchanted land gets -X/+Y, where X is the number of tapped lands they controlled at the beginning of this turn, and Y is its power.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedGetsWithDefinitions": {
+            "definitions": [
+              {
+                "value": {
+                  "NumberOfStatusPermanentsTheyControlledAtBeginningOfThisTurn": {
+                    "permanent_type": "Land",
+                    "status": "Tapped"
+                  }
+                },
+                "variable": "X"
+              },
+              {
+                "value": "ItsPower",
+                "variable": "Y"
+              }
+            ],
+            "modifier": {
+              "power": {
+                "sign": "Minus",
+                "variable": "X"
+              },
+              "toughness": {
+                "sign": "Plus",
+                "variable": "Y"
+              }
+            },
+            "permanent_type": "Land"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "static_enchanted_gets_with_definitions",
+      "text": "Enchanted enchantment gets -Y/-X, where Y is its power, and X is the amount of mana that player paid this way.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedGetsWithDefinitions": {
+            "definitions": [
+              {
+                "value": "ItsPower",
+                "variable": "Y"
+              },
+              {
+                "value": "AmountOfManaThatPlayerPaidThisWay",
+                "variable": "X"
+              }
+            ],
+            "modifier": {
+              "power": {
+                "sign": "Minus",
+                "variable": "Y"
+              },
+              "toughness": {
+                "sign": "Minus",
+                "variable": "X"
+              }
+            },
+            "permanent_type": "Enchantment"
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "variable_pt_modifier",
+      "text": "Enchanted creature gets +Y/-X, where Y is its power, and X is the amount of mana that player paid this way.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedGetsWithDefinitions": {
+            "definitions": [
+              {
+                "value": "ItsPower",
+                "variable": "Y"
+              },
+              {
+                "value": "AmountOfManaThatPlayerPaidThisWay",
+                "variable": "X"
+              }
+            ],
+            "modifier": {
+              "power": {
+                "sign": "Plus",
+                "variable": "Y"
+              },
+              "toughness": {
+                "sign": "Minus",
+                "variable": "X"
+              }
+            },
+            "permanent_type": "Creature"
+          }
+        }
+      }
+    }
+  ]
+}

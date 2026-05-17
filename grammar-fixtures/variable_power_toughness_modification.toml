@@ -20,8 +20,8 @@ reason = "Enchantment enchanted-object surface using the Y variable in the power
 
 [[example]]
 rule = "variable_pt_modifier"
-text = "+Y/-X"
-reason = "Fragment coverage for signed variable power and toughness components."
+text = "Enchanted creature gets +Y/-X, where Y is its power, and X is the amount of mana that player paid this way."
+reason = "Full parser coverage for signed variable power and toughness components in Y/X order."
 
 [[counterexample]]
 text = "Spend only black mana on X."
