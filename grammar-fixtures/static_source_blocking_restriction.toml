@@ -10,6 +10,16 @@ reason = "Static source-object blocking restriction prohibiting blockers of a cr
 text = "This creature can't be blocked by Dragons."
 reason = "Same source-object blocking restriction axis with a different prohibited blocker creature type."
 
+[[example]]
+rule = "static_source_doesnt_untap_during_your_untap_step"
+text = "This creature doesn't untap during your untap step."
+reason = "Static source-object untap restriction during your untap step."
+
+[[example]]
+rule = "static_source_doesnt_untap_during_your_untap_step"
+text = "Enchanted creature doesn't untap during its controller's untap step."
+reason = "Same untap restriction root for the enchanted-object controller-step wording."
+
 [[counterexample]]
 text = "This creature enters tapped."
 reason = "Enters-battlefield replacement effect, owned by static_enters_tapped."
@@ -27,5 +37,20 @@ text = "This creature can't block creatures with power 2 or greater."
 reason = "Restriction on this source as a blocker, not a restriction on blockers of this source."
 
 [[counterexample]]
+rule = "static_source_doesnt_untap_during_your_untap_step"
+text = "Creatures with power 3 or greater don't untap during their controllers' untap steps."
+reason = "Global power-based untap restriction, not a source or enchanted-object untap restriction."
+
+[[counterexample]]
+rule = "static_source_doesnt_untap_during_your_untap_step"
+text = "Players skip their untap steps."
+reason = "Player step-skip restriction, not a source or enchanted-object untap restriction."
+
+[[counterexample]]
 text = "This creature can't be blocked by Walls. trailing"
-reason = "Exact-consumption guard."
+reason = "Exact-consumption guard for the blocking restriction root."
+
+[[counterexample]]
+rule = "static_source_doesnt_untap_during_your_untap_step"
+text = "This creature doesn't untap during your untap step. trailing"
+reason = "Exact-consumption guard for the untap restriction root."

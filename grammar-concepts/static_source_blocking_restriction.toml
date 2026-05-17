@@ -4,19 +4,36 @@ values = ["static_continuous_effect"]
 
 [[axis]]
 name = "affected_object"
-values = ["source_object"]
+values = [
+    "source_object",
+    "enchanted_object",
+]
 
 [[axis]]
 name = "restriction_kind"
-values = ["blocking_restriction"]
+values = [
+    "blocking_restriction",
+    "untap_restriction",
+]
 
 [[axis]]
 name = "restriction_subject"
-values = ["source_object_as_attacker"]
+values = [
+    "source_object_as_attacker",
+    "source_object_untap",
+    "enchanted_object_untap",
+]
 
 [[axis]]
 name = "prohibited_blocker"
 values = ["creature_type"]
+
+[[axis]]
+name = "restriction_timing"
+values = [
+    "your_untap_step",
+    "controller_untap_step",
+]
 
 [boundary]
 excludes = [
@@ -24,18 +41,26 @@ excludes = [
     "Enchanted-object blocking restrictions with an exception.",
     "Target-object temporary blocking restrictions.",
     "Source-object blocking prohibitions where the source is the blocker.",
+    "Global or player untap-step restrictions not scoped to the source or enchanted object.",
 ]
 includes = [
     "This creature can't be blocked by Walls.",
     "This creature can't be blocked by Dragons.",
+    "This creature doesn't untap during your untap step.",
+    "Enchanted creature doesn't untap during its controller's untap step.",
 ]
 
 [concept]
 name = "static_source_blocking_restriction"
-pest_rules = ["static_source_cant_be_blocked_by_creature_type"]
+pest_rules = [
+    "static_source_cant_be_blocked_by_creature_type",
+    "static_source_doesnt_untap_during_your_untap_step",
+]
 rules_queries = [
     "lex: this creature can't be blocked by creature type",
     "lex: can't be blocked by Walls",
+    "lex: this creature doesn't untap during your untap step",
+    "lex: enchanted creature doesn't untap during its controller's untap step",
 ]
 rules_terms = [
     "static",
@@ -43,6 +68,8 @@ rules_terms = [
     "blocking restriction",
     "blocked",
     "creature type",
+    "untap",
+    "untap step",
 ]
 
 [[counterexample]]
@@ -61,15 +88,34 @@ text = "Target creature with power 2 or less can't be blocked this turn."
 reason = "Restriction on this source as a blocker, not a restriction on blockers of this source."
 text = "This creature can't block creatures with power 2 or greater."
 
+[[counterexample]]
+reason = "Global power-based untap restriction, owned by static_untap_restriction_during_untap_steps."
+text = "Creatures with power 3 or greater don't untap during their controllers' untap steps."
+
+[[counterexample]]
+reason = "Player step-skip restriction, not a source or enchanted-object untap restriction."
+text = "Players skip their untap steps."
+
 [[example]]
 text = "This creature can't be blocked by Walls."
 
 [[example]]
 text = "This creature can't be blocked by Dragons."
 
+[[example]]
+text = "This creature doesn't untap during your untap step."
+
+[[example]]
+text = "Enchanted creature doesn't untap during its controller's untap step."
+
 [grammar_query]
-candidate_rules = ["static_source_cant_be_blocked_by_creature_type"]
-selected_rule = "static_source_cant_be_blocked_by_creature_type"
+candidate_rules = [
+    "static_source_doesnt_untap_during_your_untap_step",
+    "static_source_cant_be_blocked_by_creature_type",
+    "static_untap_restriction_during_untap_steps",
+    "static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps",
+]
+selected_rule = "static_source_doesnt_untap_during_your_untap_step"
 
 [maturity]
 blockers = []
