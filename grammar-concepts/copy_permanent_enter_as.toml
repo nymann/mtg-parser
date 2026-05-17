@@ -60,6 +60,10 @@ pest_rules = [
     "static_you_may_have_source_enter_as_copy",
     "copy_exception_with_quoted_triggered_ability",
 ]
+rules_files = [
+    "mtg-rules/700-additional-rules/707-copying-objects.md",
+    "mtg-rules/glossary/copy.md",
+]
 rules_queries = [
     "lex: enter as a copy of any creature on the battlefield except doesn't copy color",
     "lex: copy effect exception doesn't copy color has triggered ability",

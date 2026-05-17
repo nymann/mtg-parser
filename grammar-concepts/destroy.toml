@@ -87,6 +87,7 @@ pest_rules = [
     "destroy_referenced_creature_at_beginning_of_next_end_step",
     "destroy_that_creature_at_end_of_combat",
 ]
+rules_files = ["mtg-rules/700-additional-rules/701-keyword-actions/701-8-destroy.md"]
 rules_queries = [
     "lex: destroy target permanent",
     "lex: destroy all non-Goblin creatures that player controls that didn't attack this turn",

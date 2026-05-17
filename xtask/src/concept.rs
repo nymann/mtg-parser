@@ -1392,6 +1392,15 @@ struct ConceptHeader {
     rules_terms: Vec<String>,
     #[serde(default)]
     rules_queries: Vec<String>,
+    /// Canonical Comprehensive Rules files for this concept. Listed by qmd
+    /// collection-relative path (e.g.
+    /// `mtg-rules/700-additional-rules/701-keyword-actions/701-6-counter.md`).
+    /// When set, Phase 2 repair prompts fetch these directly via `qmd get`
+    /// instead of relying on `rules_queries`. Use this for concepts whose
+    /// canonical CR section is known and stable — keyword actions, keyword
+    /// abilities, and similar — to bypass BM25 ranking noise.
+    #[serde(default)]
+    rules_files: Vec<String>,
     #[serde(default)]
     pest_rules: Vec<String>,
 }
@@ -3249,6 +3258,24 @@ fn render_rules_context_section(concept_path: &Path) -> String {
         Ok(doc) => doc,
         Err(_) => return String::new(),
     };
+
+    // Prefer rules_files (direct qmd get) over rules_queries (BM25 search):
+    // direct fetch bypasses the BM25 ranking noise that hides 701.6 Counter
+    // behind Support/Ward/Awaken for queries like "counter target spell".
+    if !doc.concept.rules_files.is_empty() {
+        let mut buf = String::from("\n## Comprehensive Rules\n");
+        let mut found_any = false;
+        for file in &doc.concept.rules_files {
+            if let Some(content) = qmd_get_file(file) {
+                buf.push_str(&format!("\n### `{file}`\n\n{}\n", content.trim()));
+                found_any = true;
+            }
+        }
+        if found_any {
+            return format!("{buf}\n");
+        }
+    }
+
     let queries = doc.concept.rules_queries;
     if queries.is_empty() {
         return String::new();
@@ -3258,6 +3285,36 @@ fn render_rules_context_section(concept_path: &Path) -> String {
         return String::new();
     }
     format!("\n{block}\n")
+}
+
+/// Fetch the content of a qmd document by collection-relative path (e.g.
+/// `mtg-rules/700-additional-rules/701-keyword-actions/701-6-counter.md`).
+/// Strips the redundant "Folder Context: ..." preamble and `---` separator
+/// that qmd prepends to every result so the inlined content stays tight.
+/// Returns None on any qmd failure so the prompt builder can fall back to
+/// `rules_queries`.
+fn qmd_get_file(uri_or_path: &str) -> Option<String> {
+    let output = std::process::Command::new("qmd")
+        .args(["get", uri_or_path])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let raw = String::from_utf8(output.stdout).ok()?;
+    let stripped = raw
+        .lines()
+        .skip_while(|line| {
+            let t = line.trim_start();
+            t.starts_with("Folder Context:") || t == "---" || t.is_empty()
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    if stripped.trim().is_empty() {
+        None
+    } else {
+        Some(stripped)
+    }
 }
 
 /// Render a section showing the `[phase2.ast_shape]` contract from the
