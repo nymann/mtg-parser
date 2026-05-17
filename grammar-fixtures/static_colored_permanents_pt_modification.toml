@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_colored_permanents_pt_modification"
+rule = "static_colored_permanents_get"
+
+[[example]]
+text = "White creatures get +1/+1."
+reason = "Accepted boundary example for a color-word creature group with a positive P/T modifier."
+
+[[example]]
+text = "Black creatures get -1/-1."
+reason = "Accepted boundary example for a color-word creature group with a negative P/T modifier."
+
+[[example]]
+text = "Green creatures get +0/+2."
+reason = "Accepted boundary example for a color-word creature group with a zero power and positive toughness modifier."
+
+[[counterexample]]
+text = "White spells cost {3} more to cast."
+reason = "Static cost increase for colored spells, not a colored-permanent P/T modification."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Static cost increase for activated abilities, not a colored-permanent P/T modification."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1."
+reason = "Enchanted-object P/T modification, not a colored permanent type group."
+
+[[counterexample]]
+text = "White creatures get +1/+1. trailing"
+reason = "Exact-consumption guard."

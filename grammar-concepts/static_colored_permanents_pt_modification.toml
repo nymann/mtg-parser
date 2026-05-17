@@ -1,0 +1,65 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_pt_modification"]
+
+[[axis]]
+name = "affected_object"
+values = [
+    "colored_permanents",
+    "filter=color_word",
+    "filter=permanent_type_plural",
+    "modifier=pt_modifier",
+]
+
+[boundary]
+excludes = [
+    "Static cost increases for colored spells.",
+    "Static cost increases for activated abilities of colored permanents.",
+    "Enchanted-object P/T modifications.",
+]
+includes = [
+    "Static continuous P/T modifications for colored permanent type groups.",
+    "Color-word filters over permanent-type plural subjects.",
+    "Fixed signed power/toughness modifiers.",
+]
+
+[concept]
+name = "static_colored_permanents_pt_modification"
+pest_rules = ["static_colored_permanents_get"]
+rules_queries = ["lex: colored creatures get +1/+1"]
+rules_terms = [
+    "static",
+    "continuous",
+    "power",
+    "toughness",
+    "modifier",
+]
+
+[[counterexample]]
+reason = "Static cost increase for colored spells, not a P/T modification."
+text = "White spells cost {3} more to cast."
+
+[[counterexample]]
+reason = "Static cost increase for activated abilities, not a P/T modification."
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[counterexample]]
+reason = "Enchanted-object P/T modification, not a colored permanent type group."
+text = "Enchanted creature gets +1/+1."
+
+[[example]]
+text = "White creatures get +1/+1."
+
+[[example]]
+text = "Black creatures get -1/-1."
+
+[[example]]
+text = "Green creatures get +0/+2."
+
+[grammar_query]
+candidate_rules = ["static_colored_permanents_get"]
+selected_rule = "static_colored_permanents_get"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
