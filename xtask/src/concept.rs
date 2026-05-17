@@ -1241,6 +1241,8 @@ struct DiscoveryMaturityArtifact {
 struct FixtureDocument {
     fixture: FixtureHeader,
     #[serde(default)]
+    phase2: Option<FixturePhase2>,
+    #[serde(default)]
     example: Vec<FixtureCase>,
     #[serde(default)]
     counterexample: Vec<FixtureCase>,
@@ -1250,6 +1252,22 @@ struct FixtureDocument {
 struct FixtureHeader {
     concept: String,
     rule: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct FixturePhase2 {
+    #[serde(default)]
+    ast_shape: Option<FixtureAstShapeContract>,
+}
+
+#[derive(Debug, Deserialize)]
+struct FixtureAstShapeContract {
+    #[serde(default)]
+    owner: Option<String>,
+    #[serde(default)]
+    forbid: Vec<String>,
+    #[serde(default)]
+    note: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1902,6 +1920,11 @@ fn run_ast_test(options: Phase2Options) -> Result<AstTestReport> {
         update: false,
         json: false,
     })?;
+    let fixture_doc = read_fixture_document(&parse_report.fixture_path)?;
+    let ast_shape = fixture_doc
+        .phase2
+        .as_ref()
+        .and_then(|phase2| phase2.ast_shape.as_ref());
     let snapshot_path = ast_fixture_path(&parse_report.concept);
     let actual_snapshot = AstSnapshot {
         concept: parse_report.concept.clone(),
@@ -1927,6 +1950,7 @@ fn run_ast_test(options: Phase2Options) -> Result<AstTestReport> {
                 parse_report.failures
             );
         }
+        validate_ast_snapshot_shape(&actual_snapshot, ast_shape)?;
         if let Some(parent) = snapshot_path.parent() {
             fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
         }
@@ -1977,12 +2001,17 @@ fn run_ast_test(options: Phase2Options) -> Result<AstTestReport> {
     for actual in &parse_report.cases {
         actual_indices.insert(actual.index);
         let expected = expected_by_index.get(&actual.index);
-        let matched = actual.parsed
+        let snapshot_matched = actual.parsed
             && expected.is_some_and(|expected| {
                 expected.text == actual.text
                     && expected.rule == actual.rule
                     && Some(&expected.ast) == actual.ast.as_ref()
             });
+        let shape_error = actual
+            .ast
+            .as_ref()
+            .and_then(|ast| ast_shape_case_error(ast, ast_shape));
+        let matched = snapshot_matched && shape_error.is_none();
         cases.push(AstCaseResult {
             index: actual.index,
             rule: actual.rule.clone(),
@@ -1992,6 +2021,8 @@ fn run_ast_test(options: Phase2Options) -> Result<AstTestReport> {
             actual_ast: actual.ast.clone(),
             error: if matched {
                 None
+            } else if let Some(shape_error) = shape_error {
+                Some(shape_error)
             } else if !actual.parsed {
                 actual.error.clone()
             } else {
@@ -2026,6 +2057,79 @@ fn run_ast_test(options: Phase2Options) -> Result<AstTestReport> {
         cases,
         json: options.json,
     })
+}
+
+fn validate_ast_snapshot_shape(
+    snapshot: &AstSnapshot,
+    contract: Option<&FixtureAstShapeContract>,
+) -> Result<()> {
+    let Some(contract) = contract else {
+        return Ok(());
+    };
+    let violations: Vec<String> = snapshot
+        .cases
+        .iter()
+        .filter_map(|case| {
+            ast_shape_case_error(&case.ast, Some(contract))
+                .map(|error| format!("example #{}: {error}", case.index))
+        })
+        .collect();
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        bail!("AST shape contract failed:\n{}", violations.join("\n"))
+    }
+}
+
+fn ast_shape_case_error(
+    ast: &serde_json::Value,
+    contract: Option<&FixtureAstShapeContract>,
+) -> Option<String> {
+    let contract = contract?;
+    let mut variants = BTreeSet::new();
+    collect_ast_variant_keys(ast, &mut variants);
+
+    let mut errors = Vec::new();
+    if let Some(owner) = &contract.owner {
+        if !variants.contains(owner) {
+            errors.push(format!("expected AST owner `{owner}`"));
+        }
+    }
+    for forbidden in &contract.forbid {
+        if variants.contains(forbidden) {
+            errors.push(format!("forbidden legacy AST variant `{forbidden}`"));
+        }
+    }
+    if errors.is_empty() {
+        None
+    } else if let Some(note) = &contract.note {
+        Some(format!("{} ({note})", errors.join("; ")))
+    } else {
+        Some(errors.join("; "))
+    }
+}
+
+fn collect_ast_variant_keys(value: &serde_json::Value, out: &mut BTreeSet<String>) {
+    match value {
+        serde_json::Value::Object(map) => {
+            if map.len() == 1 {
+                if let Some(key) = map.keys().next() {
+                    if key.chars().next().is_some_and(char::is_uppercase) {
+                        out.insert(key.clone());
+                    }
+                }
+            }
+            for child in map.values() {
+                collect_ast_variant_keys(child, out);
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                collect_ast_variant_keys(item, out);
+            }
+        }
+        _ => {}
+    }
 }
 
 fn run_phase2_map(options: Phase2MapOptions) -> Result<Phase2MapReport> {
@@ -2523,7 +2627,7 @@ Concept artifacts:
 Current status: {status:?}
 First error: {first_error}
 
-Use the existing concept fixture as the behavioral contract. Make the smallest parser/AST/grammar integration change that makes accepted fixture examples parse through `mtg_grammar::parse` with an appropriate AST shape. Prefer generalizing existing rules and parser helpers over adding one rule per example. Do not edit generated tests or run `cargo xtask add-card`.
+Use the existing concept fixture as the behavioral contract. Make the smallest parser/AST/grammar integration change that makes accepted fixture examples parse through `mtg_grammar::parse` with the concept-owned AST shape. If the fixture has `[phase2.ast_shape]`, treat it as a hard contract: the `owner` variant is the desired concept shape, and `forbid` variants are legacy/card-centric shapes that must be merged away. Prefer generalizing existing rules and parser helpers over adding one rule per example. Do not edit generated tests or run `cargo xtask add-card`.
 
 Allowed implementation areas:
 - crates/mtg-grammar/src/grammar.pest
@@ -8378,6 +8482,45 @@ unrelated_rule = { "unrelated" }
             report.cases[0].rule,
             "static_you_may_have_source_enter_as_copy"
         );
+    }
+
+    #[test]
+    fn ast_shape_contract_rejects_forbidden_legacy_variant() {
+        let contract = FixtureAstShapeContract {
+            owner: Some("CounterTargetSpell".to_string()),
+            forbid: vec!["CounterTargetColoredSpell".to_string()],
+            note: Some("use the concept-owned shape".to_string()),
+        };
+        let ast = serde_json::json!({
+            "CounterTargetColoredSpell": {
+                "color": "Red"
+            }
+        });
+
+        let error = ast_shape_case_error(&ast, Some(&contract)).expect("shape violation");
+        assert!(error.contains("expected AST owner `CounterTargetSpell`"));
+        assert!(error.contains("forbidden legacy AST variant `CounterTargetColoredSpell`"));
+    }
+
+    #[test]
+    fn ast_shape_contract_accepts_owner_inside_wrapper() {
+        let contract = FixtureAstShapeContract {
+            owner: Some("CounterTargetSpell".to_string()),
+            forbid: vec!["CounterTargetColoredSpell".to_string()],
+            note: None,
+        };
+        let ast = serde_json::json!({
+            "ActivatedAbility": {
+                "costs": [],
+                "effect": {
+                    "CounterTargetSpell": {
+                        "condition": null
+                    }
+                }
+            }
+        });
+
+        assert!(ast_shape_case_error(&ast, Some(&contract)).is_none());
     }
 
     #[test]

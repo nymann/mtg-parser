@@ -2,6 +2,11 @@
 concept = "counter_target_spell"
 rule = "counter_target_spell"
 
+[phase2.ast_shape]
+owner = "CounterTargetSpell"
+forbid = ["CounterTargetColoredSpell"]
+note = "Colored counter spells should be represented as the counter-target-spell concept with color as an axis, not as a sibling card-centric variant."
+
 [[example]]
 text = "Counter target spell unless its controller pays {X}."
 
