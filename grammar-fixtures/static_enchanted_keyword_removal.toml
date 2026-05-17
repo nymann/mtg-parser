@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_enchanted_keyword_removal"
+rule = "static_enchanted_loses_keyword_fragment"
+
+[[example]]
+text = "Enchanted creature loses flying."
+reason = "Keyword ability removal from an enchanted creature."
+
+[[example]]
+text = "Enchanted artifact loses indestructible."
+reason = "Keyword ability removal from an enchanted artifact."
+
+[[example]]
+text = "enchanted creature loses flying"
+reason = "No-period phrase form for the same keyword ability removal concept."
+
+[[counterexample]]
+text = "Enchanted creature has flying."
+reason = "Keyword ability grant, owned by static_enchanted_keyword_grant."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1."
+reason = "Enchanted-object P/T modification, not a keyword ability removal effect."
+
+[[counterexample]]
+text = "Enchanted creature can attack as though it didn't have flying."
+reason = "Attack permission effect that mentions a keyword, not keyword ability removal."
+
+[[counterexample]]
+text = "Enchanted creature loses flying. trailing"
+reason = "Exact-consumption guard."

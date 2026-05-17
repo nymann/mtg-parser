@@ -1,0 +1,73 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_ability_removal"]
+
+[[axis]]
+name = "add_affected_object"
+values = ["enchanted_permanent"]
+
+[[axis]]
+name = "add_removed_ability"
+values = ["keyword"]
+
+[boundary]
+excludes = [
+    "Enchanted-object keyword ability grants.",
+    "Enchanted-object power/toughness modifications.",
+    "Enchanted-object attack permission or restriction effects that mention a keyword.",
+]
+includes = [
+    "Enchanted creature loses flying.",
+    "Enchanted artifact loses indestructible.",
+    "enchanted creature loses flying",
+]
+
+[concept]
+name = "static_enchanted_keyword_removal"
+pest_rules = [
+    "static_enchanted_loses_keyword",
+    "static_enchanted_loses_keyword_fragment",
+]
+rules_queries = [
+    "lex: enchanted permanent loses keyword ability",
+    "lex: enchanted creature loses flying",
+]
+rules_terms = [
+    "static",
+    "continuous",
+    "enchanted",
+    "keyword ability",
+    "remove abilities",
+]
+
+[[counterexample]]
+reason = "Keyword ability grant, owned by static_enchanted_keyword_grant."
+text = "Enchanted creature has flying."
+
+[[counterexample]]
+reason = "Enchanted-object P/T modification, not a keyword ability removal effect."
+text = "Enchanted creature gets +1/+1."
+
+[[counterexample]]
+reason = "Attack permission effect that mentions a keyword, not keyword ability removal."
+text = "Enchanted creature can attack as though it didn't have flying."
+
+[[example]]
+text = "Enchanted creature loses flying."
+
+[[example]]
+text = "Enchanted artifact loses indestructible."
+
+[[example]]
+text = "enchanted creature loses flying"
+
+[grammar_query]
+candidate_rules = [
+    "static_enchanted_loses_keyword",
+    "static_enchanted_loses_keyword_fragment",
+]
+selected_rule = "static_enchanted_loses_keyword_fragment"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

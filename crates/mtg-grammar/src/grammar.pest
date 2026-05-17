@@ -999,7 +999,7 @@ static_enchanted_loses_keyword = {
     ^"enchanted" ~ enchanted_object ~ ^"loses" ~ keyword ~ "."
 }
 static_enchanted_loses_keyword_fragment = {
-    ^"enchanted" ~ enchanted_object ~ ^"loses" ~ keyword
+    ^"enchanted" ~ enchanted_object ~ ^"loses" ~ keyword ~ "."?
 }
 
 static_enchanted_is_basic_land_type = {

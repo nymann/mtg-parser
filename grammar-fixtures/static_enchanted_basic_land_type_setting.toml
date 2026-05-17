@@ -1,0 +1,39 @@
+[fixture]
+concept = "static_enchanted_basic_land_type_setting"
+rule = "static_enchanted_is_basic_land_type"
+
+[[example]]
+text = "Enchanted land is a Plains."
+reason = "Static type-setting effect making the enchanted land a specific basic land type."
+
+[[example]]
+text = "Enchanted land is an Island."
+reason = "Static type-setting effect making the enchanted land a specific basic land type."
+
+[[example]]
+text = "Enchanted land is the chosen type."
+reason = "Static type-setting effect using a previously chosen basic land type."
+
+[[counterexample]]
+text = "Enchanted creature has flying."
+reason = "Keyword ability grant, not a basic land type-setting effect."
+
+[[counterexample]]
+text = "Enchanted creature loses flying."
+reason = "Keyword-removal effect, not a basic land type-setting effect."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1."
+reason = "Power/toughness modification, not a basic land type-setting effect."
+
+[[counterexample]]
+text = "Enchanted creature has \"Whenever this creature attacks, draw a card.\""
+reason = "Quoted triggered ability grant, not a basic land type-setting effect."
+
+[[counterexample]]
+text = "Target land becomes a Forest until CARDNAME leaves the battlefield."
+reason = "Temporary target-land type-changing effect, not an enchanted-permanent static type setting."
+
+[[counterexample]]
+text = "Enchanted land is a Plains. trailing"
+reason = "Exact-consumption guard."
