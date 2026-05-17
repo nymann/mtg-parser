@@ -174,13 +174,12 @@ cargo xtask concept-phase-loop [--agent codex|claude]
 Runs Phase 2 in small committed batches until objective quality stop signals
 fire: no AST-green progress, repeated commits for the same concept, new
 top-level Statement enum variants, AST failures becoming the majority of
-remaining non-green concepts, or all Phase 2 concepts going green. Optional
-max flags are fuses for scheduled/manual runs, not normal stop goals. When a
-Phase 2 stop signal fires, it writes a summary and hands off to
-concept-grind-loop for Phase 1 concept work. Notification hooks may also be
-provided through PHASE_NOTIFY_IMESSAGE or PHASE_NOTIFY_COMMAND. By default,
-the phase loop pushes successful concept commits; use --no-push or
-PHASE_GIT_PUSH=0 for local-only runs.
+remaining non-green concepts, or all Phase 2 concepts going green. It then runs
+one bounded Phase 1 concept-grind batch and cycles back to Phase 2. Optional max
+flags are fuses for scheduled/manual runs, not normal stop goals. Notification
+hooks may also be provided through PHASE_NOTIFY_IMESSAGE or
+PHASE_NOTIFY_COMMAND. By default, the phase loop pushes successful concept
+commits; use --no-push or PHASE_GIT_PUSH=0 for local-only runs.
 ";
 
 const PHASE_STATUS_USAGE: &str = "\
@@ -660,6 +659,22 @@ struct PhaseLoopBatchSummary {
     after: PhaseLoopMapSummary,
     commits: Vec<PhaseLoopCommitSummary>,
     stop_reasons: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct PhaseLoopCycleSummary {
+    cycle: u32,
+    phase2_stop_reasons: Vec<String>,
+    phase1_batch: Option<PhaseLoopPhase1Summary>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct PhaseLoopPhase1Summary {
+    batch: u32,
+    before: PhaseLoopMapSummary,
+    after: PhaseLoopMapSummary,
+    commits: Vec<PhaseLoopCommitSummary>,
+    grind_run: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -3832,143 +3847,215 @@ fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
     println!("concept-phase-loop log: {}", loop_dir.display());
 
     if options.dry_run {
-        println!("dry-run: would run Phase 2 batches, then concept-grind-loop on stop");
+        println!("dry-run: would cycle Phase 2 batches and bounded Phase 1 concept-grind batches");
         return Ok(());
     }
 
     let mut phase2_commits = 0u32;
-    let mut concept_commit_counts: BTreeMap<String, u32> = BTreeMap::new();
-    let mut stop_reasons = Vec::new();
+    let mut phase1_batches = 0u32;
+    let mut phase2_batch = 1u32;
+    let mut cycle = 1u32;
 
-    let mut batch = 1u32;
     loop {
-        if options.phase2_max_batches.is_some_and(|max| batch > max) {
-            stop_reasons.push(format!(
-                "Phase 2 max batches reached: {}",
-                options.phase2_max_batches.expect("checked some")
-            ));
-            break;
-        }
-        let batch_dir = loop_dir.join(format!("phase2-batch-{batch:03}"));
-        fs::create_dir_all(&batch_dir)
-            .with_context(|| format!("create {}", batch_dir.display()))?;
+        let cycle_dir = loop_dir.join(format!("cycle-{cycle:03}"));
+        fs::create_dir_all(&cycle_dir)
+            .with_context(|| format!("create {}", cycle_dir.display()))?;
+        write_text(loop_dir.join("current_cycle.txt"), &format!("{cycle}\n"))?;
 
-        let before = run_phase2_map_fresh()?;
-        write_json(batch_dir.join("phase2_map_before.json"), &before)?;
-        let before_head = current_head()?;
-        let before_statement_variants = statement_variants_at_ref("HEAD")?;
+        let mut concept_commit_counts = BTreeMap::<String, u32>::new();
+        let mut stop_reasons;
+        loop {
+            stop_reasons = Vec::new();
+            if options
+                .phase2_max_batches
+                .is_some_and(|max| phase2_batch > max)
+            {
+                stop_reasons.push(format!(
+                    "Phase 2 max batches reached: {}",
+                    options.phase2_max_batches.expect("checked some")
+                ));
+                break;
+            }
+            let batch_dir = loop_dir.join(format!("phase2-batch-{phase2_batch:03}"));
+            fs::create_dir_all(&batch_dir)
+                .with_context(|| format!("create {}", batch_dir.display()))?;
+            write_text(batch_dir.join("cycle.txt"), &format!("{cycle}\n"))?;
 
-        run_phase_loop_phase2_batch(&options, &batch_dir)?;
+            let before = run_phase2_map_fresh()?;
+            write_json(batch_dir.join("phase2_map_before.json"), &before)?;
+            let before_head = current_head()?;
+            let before_statement_variants = statement_variants_at_ref("HEAD")?;
 
-        let after_head = current_head()?;
-        let after = run_phase2_map_fresh()?;
-        write_json(batch_dir.join("phase2_map_after.json"), &after)?;
-        let after_statement_variants = statement_variants_at_ref("HEAD")?;
+            run_phase_loop_phase2_batch(&options, &batch_dir)?;
 
-        let commits = phase_loop_commits_between(&before_head, &after_head)?;
-        let mut batch_stop_reasons = Vec::new();
-        if commits.is_empty() {
-            batch_stop_reasons.push("Phase 2 batch created no commits".to_string());
-        }
-        if after.ast_green_concepts <= before.ast_green_concepts {
-            batch_stop_reasons.push(format!(
-                "Phase 2 AST-green did not improve: {} -> {}",
-                before.ast_green_concepts, after.ast_green_concepts
-            ));
-        }
-        if after.ast_failed_concepts > 0 && after.ast_failed_concepts >= after.parse_failed_concepts
-        {
-            batch_stop_reasons.push(format!(
-                "AST failures are now the majority of remaining non-green concepts: ast_failed={} parse_failed={}",
-                after.ast_failed_concepts, after.parse_failed_concepts
-            ));
-        }
+            let after_head = current_head()?;
+            let after = run_phase2_map_fresh()?;
+            write_json(batch_dir.join("phase2_map_after.json"), &after)?;
+            let after_statement_variants = statement_variants_at_ref("HEAD")?;
 
-        let mut commit_summaries = Vec::new();
-        for commit in commits {
-            phase2_commits += 1;
-            if let Some(concept) = &commit.concept {
-                let count = concept_commit_counts.entry(concept.clone()).or_default();
-                *count += 1;
-                if *count >= options.repeat_stop_after {
-                    batch_stop_reasons.push(format!(
-                        "concept {concept:?} was committed {count} time(s) in this Phase 2 cycle"
-                    ));
+            let commits = phase_loop_commits_between(&before_head, &after_head)?;
+            if commits.is_empty() {
+                stop_reasons.push("Phase 2 batch created no commits".to_string());
+            }
+            if after.ast_green_concepts <= before.ast_green_concepts {
+                stop_reasons.push(format!(
+                    "Phase 2 AST-green did not improve: {} -> {}",
+                    before.ast_green_concepts, after.ast_green_concepts
+                ));
+            }
+            if after.ast_failed_concepts > 0
+                && after.ast_failed_concepts >= after.parse_failed_concepts
+            {
+                stop_reasons.push(format!(
+                    "AST failures are now the majority of remaining non-green concepts: ast_failed={} parse_failed={}",
+                    after.ast_failed_concepts, after.parse_failed_concepts
+                ));
+            }
+
+            let mut commit_summaries = Vec::new();
+            for commit in commits {
+                phase2_commits += 1;
+                if let Some(concept) = &commit.concept {
+                    let count = concept_commit_counts.entry(concept.clone()).or_default();
+                    *count += 1;
+                    if *count >= options.repeat_stop_after {
+                        stop_reasons.push(format!(
+                            "concept {concept:?} was committed {count} time(s) in this Phase 2 cycle"
+                        ));
+                    }
+                }
+                commit_summaries.push(commit);
+            }
+
+            let added_statement_variants: Vec<String> = after_statement_variants
+                .difference(&before_statement_variants)
+                .cloned()
+                .collect();
+            if !added_statement_variants.is_empty() {
+                stop_reasons.push(format!(
+                    "Phase 2 added top-level Statement variant(s): {}",
+                    added_statement_variants.join(", ")
+                ));
+                if let Some(last) = commit_summaries.last_mut() {
+                    last.added_statement_variants = added_statement_variants;
                 }
             }
-            commit_summaries.push(commit);
+
+            if options
+                .phase2_max_commits
+                .is_some_and(|max| phase2_commits >= max)
+            {
+                stop_reasons.push(format!(
+                    "Phase 2 commit budget reached: {phase2_commits}/{}",
+                    options.phase2_max_commits.expect("checked some")
+                ));
+            }
+            if after.ast_green_concepts == after.grammar_green_concepts {
+                stop_reasons.push("all grammar-green concepts are Phase 2 AST-green".to_string());
+            }
+
+            let summary = PhaseLoopBatchSummary {
+                batch: phase2_batch,
+                before: PhaseLoopMapSummary::from_report(&before),
+                after: PhaseLoopMapSummary::from_report(&after),
+                commits: commit_summaries,
+                stop_reasons: stop_reasons.clone(),
+            };
+            write_json(batch_dir.join("summary.json"), &summary)?;
+            println!(
+                "phase2 batch {phase2_batch} cycle {cycle}: ast_green {} -> {}, parse_green {} -> {}, commits {}",
+                summary.before.ast_green_concepts,
+                summary.after.ast_green_concepts,
+                summary.before.parse_green_concepts,
+                summary.after.parse_green_concepts,
+                summary.commits.len()
+            );
+            phase2_batch += 1;
+
+            if !stop_reasons.is_empty() {
+                break;
+            }
         }
 
-        let added_statement_variants: Vec<String> = after_statement_variants
-            .difference(&before_statement_variants)
-            .cloned()
-            .collect();
-        if !added_statement_variants.is_empty() {
-            batch_stop_reasons.push(format!(
-                "Phase 2 added top-level Statement variant(s): {}",
-                added_statement_variants.join(", ")
-            ));
-            if let Some(last) = commit_summaries.last_mut() {
-                last.added_statement_variants = added_statement_variants;
-            }
+        write_json(loop_dir.join("phase2_stop_reasons.json"), &stop_reasons)?;
+        write_json(cycle_dir.join("phase2_stop_reasons.json"), &stop_reasons)?;
+        println!("phase2 stop (cycle {cycle}):");
+        for reason in &stop_reasons {
+            println!("  - {reason}");
+        }
+        let phase2_fuse_reached = stop_reasons.iter().any(|reason| {
+            reason.starts_with("Phase 2 max batches reached")
+                || reason.starts_with("Phase 2 commit budget reached")
+        });
+        notify_phase_loop(
+            &options,
+            "mtg-parser: Phase 2 stopped",
+            &format!(
+                "Phase 2 stopped in cycle {cycle}. {}\n{}",
+                if phase2_fuse_reached {
+                    "A Phase 2 fuse was reached, so Phase 1 will not start."
+                } else {
+                    "Running one bounded Phase 1 batch next."
+                },
+                stop_reasons
+                    .iter()
+                    .map(|reason| format!("- {reason}"))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            ),
+            &loop_dir,
+        );
+
+        if phase2_fuse_reached {
+            write_json(
+                cycle_dir.join("summary.json"),
+                &PhaseLoopCycleSummary {
+                    cycle,
+                    phase2_stop_reasons: stop_reasons,
+                    phase1_batch: None,
+                },
+            )?;
+            break;
         }
 
         if options
-            .phase2_max_commits
-            .is_some_and(|max| phase2_commits >= max)
+            .phase1_max_batches
+            .is_some_and(|max| phase1_batches >= max)
         {
-            batch_stop_reasons.push(format!(
-                "Phase 2 commit budget reached: {phase2_commits}/{}",
-                options.phase2_max_commits.expect("checked some")
-            ));
-        }
-        if after.ast_green_concepts == after.grammar_green_concepts {
-            batch_stop_reasons.push("all grammar-green concepts are Phase 2 AST-green".to_string());
-        }
-
-        let summary = PhaseLoopBatchSummary {
-            batch,
-            before: PhaseLoopMapSummary::from_report(&before),
-            after: PhaseLoopMapSummary::from_report(&after),
-            commits: commit_summaries,
-            stop_reasons: batch_stop_reasons.clone(),
-        };
-        write_json(batch_dir.join("summary.json"), &summary)?;
-        println!(
-            "phase2 batch {batch}: ast_green {} -> {}, parse_green {} -> {}, commits {}",
-            summary.before.ast_green_concepts,
-            summary.after.ast_green_concepts,
-            summary.before.parse_green_concepts,
-            summary.after.parse_green_concepts,
-            summary.commits.len()
-        );
-
-        if !batch_stop_reasons.is_empty() {
-            stop_reasons = batch_stop_reasons;
+            write_json(
+                cycle_dir.join("summary.json"),
+                &PhaseLoopCycleSummary {
+                    cycle,
+                    phase2_stop_reasons: stop_reasons,
+                    phase1_batch: None,
+                },
+            )?;
+            println!(
+                "phase1 max batches reached: {}/{}",
+                phase1_batches,
+                options.phase1_max_batches.expect("checked some")
+            );
             break;
         }
-        batch += 1;
-    }
-    write_json(loop_dir.join("phase2_stop_reasons.json"), &stop_reasons)?;
-    println!("phase2 stop:");
-    for reason in &stop_reasons {
-        println!("  - {reason}");
-    }
-    notify_phase_loop(
-        &options,
-        "mtg-parser: Phase 2 stopped",
-        &format!(
-            "Phase 2 stopped and is handing off to Phase 1.\n{}",
-            stop_reasons
-                .iter()
-                .map(|reason| format!("- {reason}"))
-                .collect::<Vec<_>>()
-                .join("\n")
-        ),
-        &loop_dir,
-    );
 
-    run_phase_loop_phase1(&options, &loop_dir)?;
+        phase1_batches += 1;
+        let phase1_summary =
+            run_phase_loop_phase1_batch(&options, &loop_dir, cycle, phase1_batches)?;
+        let phase1_commits = phase1_summary.commits.len();
+        write_json(
+            cycle_dir.join("summary.json"),
+            &PhaseLoopCycleSummary {
+                cycle,
+                phase2_stop_reasons: stop_reasons,
+                phase1_batch: Some(phase1_summary),
+            },
+        )?;
+        if phase1_commits == 0 {
+            println!("phase1 batch {phase1_batches} created no commits; stopping phase loop");
+            break;
+        }
+        cycle += 1;
+    }
     Ok(())
 }
 
@@ -4214,41 +4301,82 @@ fn run_phase_loop_phase2_batch(options: &ConceptPhaseLoopOptions, batch_dir: &Pa
     Ok(())
 }
 
-fn run_phase_loop_phase1(options: &ConceptPhaseLoopOptions, loop_dir: &Path) -> Result<()> {
-    let phase1_dir = loop_dir.join("phase1");
+fn run_phase_loop_phase1_batch(
+    options: &ConceptPhaseLoopOptions,
+    loop_dir: &Path,
+    cycle: u32,
+    batch: u32,
+) -> Result<PhaseLoopPhase1Summary> {
+    let phase1_dir = loop_dir.join(format!("phase1-batch-{batch:03}"));
     fs::create_dir_all(&phase1_dir).with_context(|| format!("create {}", phase1_dir.display()))?;
-    let mut args = vec![
-        "xtask".to_string(),
-        "concept-grind-loop".to_string(),
-        "--agent".to_string(),
-        options.agent.label().to_string(),
-        "--batch-size".to_string(),
-        options.phase1_batch_size.to_string(),
-    ];
-    if let Some(max_batches) = options.phase1_max_batches {
-        args.push("--max-batches".to_string());
-        args.push(max_batches.to_string());
-    }
+    write_text(phase1_dir.join("cycle.txt"), &format!("{cycle}\n"))?;
+
+    let before = run_phase2_map_fresh()?;
+    write_json(phase1_dir.join("phase1_map_before.json"), &before)?;
+    let before_head = current_head()?;
+    let batch_start = SystemTime::now();
+
     let output = Command::new("cargo")
-        .args(&args)
+        .args([
+            "xtask",
+            "concept-grind",
+            "--agent",
+            options.agent.label(),
+            "--max-iterations",
+            &options.phase1_batch_size.to_string(),
+        ])
         .env(
             "CONCEPT_PIPELINE_PUSH",
             if options.git_push { "1" } else { "0" },
         )
         .current_dir(repo_root())
         .output()
-        .context("cargo xtask concept-grind-loop")?;
+        .context("cargo xtask concept-grind phase1 batch")?;
     let text = command_output_text(&output);
-    fs::write(phase1_dir.join("concept_grind_loop_output.txt"), &text).with_context(|| {
+    fs::write(phase1_dir.join("concept_grind_output.txt"), &text).with_context(|| {
         format!(
             "write {}",
-            phase1_dir.join("concept_grind_loop_output.txt").display()
+            phase1_dir.join("concept_grind_output.txt").display()
         )
     })?;
     if !output.status.success() {
-        bail!("concept-grind-loop failed\n{text}");
+        bail!("concept-grind Phase 1 batch failed\n{text}");
     }
-    Ok(())
+
+    let after_head = current_head()?;
+    let after = run_phase2_map_fresh()?;
+    write_json(phase1_dir.join("phase1_map_after.json"), &after)?;
+    let commits = phase_loop_commits_between(&before_head, &after_head)?;
+    let grind_run = newest_grind_run_since(batch_start)?;
+    if let Some(grind_run) = &grind_run {
+        write_text(
+            phase1_dir.join("grind_run_path.txt"),
+            &format!("{}\n", grind_run.display()),
+        )?;
+        copy_if_exists(
+            grind_run.join("metrics.json"),
+            phase1_dir.join("metrics.json"),
+        )?;
+    }
+    let summary = PhaseLoopPhase1Summary {
+        batch,
+        before: PhaseLoopMapSummary::from_report(&before),
+        after: PhaseLoopMapSummary::from_report(&after),
+        commits,
+        grind_run,
+    };
+    write_json(phase1_dir.join("summary.json"), &summary)?;
+    println!(
+        "phase1 batch {batch} cycle {cycle}: grammar_green {} -> {}, parse_green {} -> {}, ast_green {} -> {}, commits {}",
+        summary.before.grammar_green_concepts,
+        summary.after.grammar_green_concepts,
+        summary.before.parse_green_concepts,
+        summary.after.parse_green_concepts,
+        summary.before.ast_green_concepts,
+        summary.after.ast_green_concepts,
+        summary.commits.len()
+    );
+    Ok(summary)
 }
 
 fn latest_phase_loop_batch_summary() -> Result<Option<(PathBuf, PathBuf, PhaseLoopBatchSummary)>> {
