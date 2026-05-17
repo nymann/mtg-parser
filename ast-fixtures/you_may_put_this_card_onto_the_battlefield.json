@@ -1,0 +1,14 @@
+{
+  "concept": "you_may_put_this_card_onto_the_battlefield",
+  "fixture_path": "grammar-fixtures/you_may_put_this_card_onto_the_battlefield.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_may_put_this_card_onto_the_battlefield",
+      "text": "you may put this card onto the battlefield.",
+      "ast": {
+        "TriggerEffect": "YouMayPutThisCardOntoTheBattlefield"
+      }
+    }
+  ]
+}
