@@ -3,8 +3,9 @@ concept = "life_gain_equal_to_power"
 rule = "life_gain_equal_to_its_power"
 
 [[example]]
-text = "life equal to its power"
-reason = "Amount fragment for the power-referenced life-gain amount."
+rule = "player_gains_life"
+text = "Target player gains life equal to its power."
+reason = "Full target-player instruction exercising the power-referenced life-gain amount."
 
 [[example]]
 rule = "target_player_gains_life"
