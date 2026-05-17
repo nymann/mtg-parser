@@ -71,6 +71,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" more to cast for each target beyond the first.");
         }
         Statement::RegenerateTargetCreature => out.push_str("Regenerate target creature."),
+        Statement::Regenerate { recipient } => {
+            out.push_str("Regenerate ");
+            write_regenerate_recipient(out, *recipient);
+            out.push('.');
+        }
         Statement::NamedSourceDealsDamage { event } => {
             write_named_damage_event(out, event);
         }
@@ -3504,6 +3509,7 @@ fn write_source_object(out: &mut String, source: SourceObject) {
 
 fn write_regenerate_recipient(out: &mut String, recipient: RegenerateRecipient) {
     match recipient {
+        RegenerateRecipient::TargetCreature => out.push_str("target creature"),
         RegenerateRecipient::Source(source) => write_source_object(out, source),
         RegenerateRecipient::Enchanted(object) => {
             out.push_str("enchanted ");

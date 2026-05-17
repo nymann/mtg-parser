@@ -50,6 +50,7 @@ sentence_statement = _{
   | destroy
   | exile
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
+  | regenerate_source
   | regenerate_target_creature
   | damage_event_statement
   | next_damage_event_effect

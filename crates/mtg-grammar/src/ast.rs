@@ -24,8 +24,13 @@ pub enum Statement {
     ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst {
         mana: ManaCost,
     },
-    /// "Regenerate target creature."
+    /// "Regenerate target creature." Legacy one-off shape retained for old
+    /// property generators; new parser output uses `Regenerate`.
     RegenerateTargetCreature,
+    /// "Regenerate <recipient>." — CR 701.15 regenerate keyword action.
+    Regenerate {
+        recipient: RegenerateRecipient,
+    },
     /// "<source name> deals <amount> damage <recipients>."
     NamedSourceDealsDamage {
         #[serde(flatten)]
@@ -1576,6 +1581,8 @@ pub enum ActivatedCost {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RegenerateRecipient {
+    /// "target creature"
+    TargetCreature,
     /// "this <permanent_type>"
     Source(SourceObject),
     /// "enchanted <object>"

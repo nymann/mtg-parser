@@ -163,7 +163,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::destroy => destroy_from_pair(pair),
         Rule::exile => exile_from_pair(pair),
-        Rule::regenerate_target_creature => Ok(Statement::RegenerateTargetCreature),
+        Rule::regenerate_target_creature => Ok(Statement::Regenerate {
+            recipient: RegenerateRecipient::TargetCreature,
+        }),
+        Rule::regenerate_source => Ok(Statement::Regenerate {
+            recipient: regenerate_recipient_from_pair(pair)?,
+        }),
         Rule::damage_event_statement => damage_event_statement_from_pair(pair),
         Rule::next_damage_event_effect => Ok(Statement::DamageEffect(
             next_damage_event_effect_from_pair(pair)?,
@@ -5261,19 +5266,9 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             )?))
         }
         Rule::take_extra_turn_after_this_one => Ok(ActivatedEffect::TakeExtraTurnAfterThisOne),
-        Rule::regenerate_source => {
-            let object_pair = only_inner(pair, "regenerate_source missing object")?;
-            let recipient = match object_pair.as_rule() {
-                Rule::source_object => {
-                    RegenerateRecipient::Source(source_object_from_pair(object_pair)?)
-                }
-                Rule::permanent_type | Rule::creature_type => {
-                    RegenerateRecipient::Enchanted(enchanted_object_from_pair(object_pair)?)
-                }
-                _ => return Err(ParseError::Internal("regenerate_source object")),
-            };
-            Ok(ActivatedEffect::Regenerate(recipient))
-        }
+        Rule::regenerate_source => Ok(ActivatedEffect::Regenerate(regenerate_recipient_from_pair(
+            pair,
+        )?)),
         Rule::colored_target_effect => match colored_target_effect_from_pair(pair)? {
             ColoredTargetEffect::CounterSpell { color } => {
                 Ok(ActivatedEffect::CounterTargetColoredSpell { color })
@@ -5523,6 +5518,22 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             physical_action_from_pair(pair)?,
         )),
         _ => Err(ParseError::Internal("activated_effect")),
+    }
+}
+
+fn regenerate_recipient_from_pair(pair: Pair<Rule>) -> Result<RegenerateRecipient, ParseError> {
+    if pair.as_rule() != Rule::regenerate_source {
+        return Err(ParseError::Internal("regenerate_recipient rule"));
+    }
+    let object_pair = only_inner(pair, "regenerate_source missing object")?;
+    match object_pair.as_rule() {
+        Rule::source_object => Ok(RegenerateRecipient::Source(source_object_from_pair(
+            object_pair,
+        )?)),
+        Rule::permanent_type | Rule::creature_type => Ok(RegenerateRecipient::Enchanted(
+            enchanted_object_from_pair(object_pair)?,
+        )),
+        _ => Err(ParseError::Internal("regenerate_source object")),
     }
 }
 

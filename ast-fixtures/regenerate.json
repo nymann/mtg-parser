@@ -1,0 +1,104 @@
+{
+  "concept": "regenerate",
+  "fixture_path": "grammar-fixtures/regenerate.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "regenerate_target_creature",
+      "text": "Regenerate target creature.",
+      "ast": {
+        "Regenerate": {
+          "recipient": "TargetCreature"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "sentence_statement",
+      "text": "Regenerate target creature.",
+      "ast": {
+        "Regenerate": {
+          "recipient": "TargetCreature"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "activated_ability",
+      "text": "{B}: Regenerate this creature.",
+      "ast": {
+        "ActivatedAbility": {
+          "costs": [
+            {
+              "Mana": {
+                "symbols": [
+                  "Black"
+                ]
+              }
+            }
+          ],
+          "effect": {
+            "Regenerate": {
+              "Source": {
+                "This": "Creature"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "regenerate_source",
+      "text": "Regenerate this creature.",
+      "ast": {
+        "Regenerate": {
+          "recipient": {
+            "Source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "activated_ability",
+      "text": "{G}: Regenerate enchanted creature.",
+      "ast": {
+        "ActivatedAbility": {
+          "costs": [
+            {
+              "Mana": {
+                "symbols": [
+                  "Green"
+                ]
+              }
+            }
+          ],
+          "effect": {
+            "Regenerate": {
+              "Enchanted": {
+                "Permanent": "Creature"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "regenerate_source",
+      "text": "Regenerate enchanted creature.",
+      "ast": {
+        "Regenerate": {
+          "recipient": {
+            "Enchanted": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
