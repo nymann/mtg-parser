@@ -180,6 +180,7 @@ sentence_statement = _{
 
 phrase_statement = _{
     modal_choice
+  | you_play_permanent
   | player_casts_colored_spell
   | player_taps_permanent_for_mana
   | you_are_dealt_damage

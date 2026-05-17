@@ -1,0 +1,42 @@
+{
+  "concept": "you_play_permanent",
+  "fixture_path": "grammar-fixtures/you_play_permanent.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_play_permanent",
+      "text": "you play a land",
+      "ast": {
+        "TriggerEvent": {
+          "YouPlayPermanent": {
+            "permanent_type": "Land"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "you_play_permanent",
+      "text": "you play an artifact",
+      "ast": {
+        "TriggerEvent": {
+          "YouPlayPermanent": {
+            "permanent_type": "Artifact"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "you_play_permanent",
+      "text": "you play a creature",
+      "ast": {
+        "TriggerEvent": {
+          "YouPlayPermanent": {
+            "permanent_type": "Creature"
+          }
+        }
+      }
+    }
+  ]
+}
