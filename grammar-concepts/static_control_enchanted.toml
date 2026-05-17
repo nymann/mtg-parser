@@ -1,0 +1,71 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_control_change"]
+
+[[axis]]
+name = "controller"
+values = ["you"]
+
+[[axis]]
+name = "controlled_object"
+values = ["enchanted_object"]
+
+[boundary]
+excludes = [
+    "Static cost increases for colored spells.",
+    "Static cost increases for activated abilities of colored permanents.",
+    "Control-player effects with resolution-duration anchors.",
+    "Targeted or one-shot control-changing effects.",
+]
+includes = [
+    "You control enchanted creature.",
+    "You control enchanted artifact.",
+    "You control enchanted permanent.",
+]
+
+[concept]
+name = "static_control_enchanted"
+pest_rules = ["static_you_control_enchanted"]
+rules_queries = [
+    "lex: you control enchanted creature",
+    "lex: control enchanted permanent",
+]
+rules_terms = [
+    "static",
+    "control",
+    "enchanted",
+    "Aura",
+]
+
+[[counterexample]]
+reason = "Static cost increase for colored spells, owned by static_cost_increase."
+text = "White spells cost {3} more to cast."
+
+[[counterexample]]
+reason = "Static cost increase for activated abilities of colored permanents, owned by static_cost_increase."
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[counterexample]]
+reason = "Control-player duration effect, not control of an enchanted object."
+text = "You control that player until Word of Command finishes resolving."
+
+[[counterexample]]
+reason = "Targeted one-shot control-changing effect, not a static Aura effect on the enchanted object."
+text = "Gain control of target creature."
+
+[[example]]
+text = "You control enchanted creature."
+
+[[example]]
+text = "You control enchanted artifact."
+
+[[example]]
+text = "You control enchanted permanent."
+
+[grammar_query]
+candidate_rules = ["static_you_control_enchanted"]
+selected_rule = "static_you_control_enchanted"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

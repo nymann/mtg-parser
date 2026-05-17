@@ -1,0 +1,35 @@
+[fixture]
+concept = "static_control_enchanted"
+rule = "static_you_control_enchanted"
+
+[[example]]
+text = "You control enchanted creature."
+reason = "Static Aura control-changing effect for an enchanted creature."
+
+[[example]]
+text = "You control enchanted artifact."
+reason = "Static Aura control-changing effect for an enchanted artifact."
+
+[[example]]
+text = "You control enchanted permanent."
+reason = "Static Aura control-changing effect for an enchanted permanent."
+
+[[counterexample]]
+text = "White spells cost {3} more to cast."
+reason = "Static cost increase for colored spells, owned by static_cost_increase."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Static cost increase for activated abilities of colored permanents, owned by static_cost_increase."
+
+[[counterexample]]
+text = "You control that player until Word of Command finishes resolving."
+reason = "Control-player duration effect, not control of an enchanted object."
+
+[[counterexample]]
+text = "Gain control of target creature."
+reason = "Targeted one-shot control-changing effect, not a static Aura effect on the enchanted object."
+
+[[counterexample]]
+text = "You control enchanted creature. trailing"
+reason = "Exact-consumption guard."
