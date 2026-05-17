@@ -1,0 +1,101 @@
+{
+  "concept": "damage_redirection_effect",
+  "fixture_path": "grammar-fixtures/damage_redirection_effect.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead",
+      "text": "All damage that would be dealt to you by a source is dealt to that source instead",
+      "ast": {
+        "StaticAbility": {
+          "Continuous": {
+            "effect": {
+              "DamageThatWouldBeDealtToYouBySourceIsDealtToSourceInstead": {
+                "destination": "ThatSource",
+                "source": "Source"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead",
+      "text": "All damage that would be dealt to you by unblocked creatures is dealt to this creature instead",
+      "ast": {
+        "StaticAbility": {
+          "Continuous": {
+            "effect": {
+              "DamageThatWouldBeDealtToYouBySourceIsDealtToSourceInstead": {
+                "destination": {
+                  "SourceObject": {
+                    "This": "Creature"
+                  }
+                },
+                "source": "UnblockedCreatures"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "next_damage_redirection_effect",
+      "text": "The next 1 damage that would be dealt to target creature this turn is dealt to its owner instead.",
+      "ast": {
+        "DamageEffect": {
+          "RedirectNextDamageThisTurn": {
+            "amount": {
+              "Number": 1
+            },
+            "destination": "ItsOwner",
+            "kind": null,
+            "recipient": {
+              "TargetPermanent": {
+                "permanent_type": "Creature"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "next_damage_redirection_effect",
+      "text": "The next 2 combat damage that would be dealt to you this turn is dealt to its owner instead.",
+      "ast": {
+        "DamageEffect": {
+          "RedirectNextDamageThisTurn": {
+            "amount": {
+              "Number": 2
+            },
+            "destination": "ItsOwner",
+            "kind": "CombatDamage",
+            "recipient": "You"
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "next_damage_redirection_effect",
+      "text": "The next 1 damage that would be dealt to CARDNAME this turn is dealt to its owner instead.",
+      "ast": {
+        "DamageEffect": {
+          "RedirectNextDamageThisTurn": {
+            "amount": {
+              "Number": 1
+            },
+            "destination": "ItsOwner",
+            "kind": null,
+            "recipient": {
+              "Source": "ThisPermanent"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

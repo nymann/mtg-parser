@@ -2066,6 +2066,8 @@ pub enum PlayRestrictionFilter {
 /// through a keyword restriction such as defender.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StaticAbility {
+    /// Unconditional continuous effect printed as a standalone static ability.
+    Continuous { effect: ContinuousEffect },
     /// "As long as <cond>, <effect>." — continuous effect gated on a
     /// condition.
     Conditional {
@@ -2463,7 +2465,7 @@ pub enum ContinuousEffect {
     /// this <object> instead" — static damage redirection replacement effect.
     DamageThatWouldBeDealtToYouBySourceIsDealtToSourceInstead {
         source: StaticDamageSource,
-        destination: SourceObject,
+        destination: StaticDamageRedirectionDestination,
     },
     /// "Prevent <amount> [combat] damage <source> would deal to <recipients>"
     /// — CR 615 prevention effect expressed as a static continuous effect.
@@ -2488,8 +2490,18 @@ pub enum ContinuousEffect {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StaticDamageSource {
+    /// "a source"
+    Source,
     /// "unblocked creatures"
     UnblockedCreatures,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StaticDamageRedirectionDestination {
+    /// "this <object>"
+    SourceObject(SourceObject),
+    /// "that source"
+    ThatSource,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

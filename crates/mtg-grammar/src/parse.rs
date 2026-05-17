@@ -28,9 +28,10 @@ use crate::ast::{
     PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
     RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect, StaticDamageSource,
-    StaticUntapRestriction, StatusCreatureController, StatusCreatureGetDuration, Step,
-    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
+    StaticDamageRedirectionDestination, StaticDamageSource, StaticUntapRestriction,
+    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
+    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -167,6 +168,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::next_damage_event_effect => Ok(Statement::DamageEffect(
             next_damage_event_effect_from_pair(pair)?,
         )),
+        Rule::next_damage_redirection_effect => Ok(Statement::DamageEffect(
+            next_damage_redirection_effect_from_pair(pair)?,
+        )),
         Rule::damage_prevention_effect => damage_prevention_effect_statement_from_pair(pair),
         Rule::for_each_damage_prevented_by_removing_pt_counter => {
             for_each_damage_prevented_by_removing_pt_counter_from_pair(pair)
@@ -296,6 +300,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::keyword_ability_list => keyword_list_from_pair(pair),
         Rule::semicolon_keyword_ability_list => semicolon_keyword_list_from_pair(pair),
         Rule::static_as_long_as
+        | Rule::damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead
         | Rule::static_mana_spending_permission
         | Rule::static_colored_spells_cost_mana_more_to_cast
         | Rule::static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate
@@ -4207,6 +4212,11 @@ fn play_restriction_action_from_pair(
 
 fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseError> {
     match pair.as_rule() {
+        Rule::damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead => {
+            Ok(StaticAbility::Continuous {
+                effect: continuous_effect_from_pair(pair)?,
+            })
+        }
         Rule::static_as_long_as => {
             let mut inner = pair.into_inner();
             let first_pair = inner.next().expect("static_as_long_as has a first child");
@@ -5863,7 +5873,7 @@ fn continuous_effect_from_pair(pair: Pair<Rule>) -> Result<ContinuousEffect, Par
             Ok(
                 ContinuousEffect::DamageThatWouldBeDealtToYouBySourceIsDealtToSourceInstead {
                     source: static_damage_source_from_pair(source_pair)?,
-                    destination: source_object_from_pair(destination_pair)?,
+                    destination: static_damage_redirection_destination_from_pair(destination_pair)?,
                 },
             )
         }
@@ -5934,8 +5944,28 @@ fn static_untap_restriction_from_pair(
 
 fn static_damage_source_from_pair(pair: Pair<Rule>) -> Result<StaticDamageSource, ParseError> {
     match pair.as_rule() {
+        Rule::generic_damage_source => Ok(StaticDamageSource::Source),
         Rule::unblocked_creatures_damage_source => Ok(StaticDamageSource::UnblockedCreatures),
         _ => Err(ParseError::Internal("static_damage_source")),
+    }
+}
+
+fn static_damage_redirection_destination_from_pair(
+    pair: Pair<Rule>,
+) -> Result<StaticDamageRedirectionDestination, ParseError> {
+    match pair.as_rule() {
+        Rule::that_source_damage_redirection_destination => {
+            Ok(StaticDamageRedirectionDestination::ThatSource)
+        }
+        Rule::source_object_damage_redirection_destination => {
+            let source_pair = only_inner(pair, "static damage redirection missing destination")?;
+            Ok(StaticDamageRedirectionDestination::SourceObject(
+                source_object_from_pair(source_pair)?,
+            ))
+        }
+        _ => Err(ParseError::Internal(
+            "static_damage_redirection_destination",
+        )),
     }
 }
 

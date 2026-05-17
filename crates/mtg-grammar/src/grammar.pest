@@ -52,6 +52,7 @@ sentence_statement = _{
   | regenerate_target_creature
   | damage_event_statement
   | next_damage_event_effect
+  | next_damage_redirection_effect
   | damage_prevention_effect
   | for_each_damage_prevented_by_removing_pt_counter
   | spend_only_color_mana_on_variable
@@ -178,6 +179,7 @@ phrase_statement = _{
   | keyword_ability
   | triggered_ability_fragment
   | static_enchanted_loses_keyword_fragment
+  | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead
 }
 
 // Modal spells print a choice header followed by bullet-pointed modes.
@@ -1599,10 +1601,17 @@ banded_creatures_prevention_recipient = {
 damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead = {
     ^"all" ~ ^"damage" ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"
   ~ ^"to" ~ ^"you" ~ ^"by" ~ static_damage_source
-  ~ ^"is" ~ ^"dealt" ~ ^"to" ~ (source_object | ^"that" ~ ^"source") ~ ^"instead"
+  ~ ^"is" ~ ^"dealt" ~ ^"to" ~ static_damage_redirection_destination ~ ^"instead"
 }
-static_damage_source = _{ article ~ ^"source" | unblocked_creatures_damage_source }
+static_damage_source = _{ generic_damage_source | unblocked_creatures_damage_source }
+generic_damage_source = { article ~ ^"source" }
 unblocked_creatures_damage_source = { ^"unblocked" ~ ^"creatures" }
+static_damage_redirection_destination = _{
+    that_source_damage_redirection_destination
+  | source_object_damage_redirection_destination
+}
+that_source_damage_redirection_destination = { ^"that" ~ ^"source" }
+source_object_damage_redirection_destination = { source_object }
 becomes_pt_from_mv = {
     ^"it's" ~ article ~ permanent_type+
   ~ ^"with" ~ ^"power" ~ ^"and" ~ ^"toughness"

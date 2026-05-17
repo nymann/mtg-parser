@@ -26,9 +26,10 @@ use crate::ast::{
     PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
     RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
     SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect, StaticDamageSource,
-    StaticUntapRestriction, StatusCreatureController, StatusCreatureGetDuration, Step,
-    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
+    StaticDamageRedirectionDestination, StaticDamageSource, StaticUntapRestriction,
+    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
+    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -1976,6 +1977,9 @@ fn write_physical_action(out: &mut String, action: PhysicalAction) {
 
 fn write_static_ability(out: &mut String, sa: &StaticAbility) {
     match sa {
+        StaticAbility::Continuous { effect } => {
+            write_continuous_effect(out, effect);
+        }
         StaticAbility::Conditional {
             order,
             condition,
@@ -3693,7 +3697,7 @@ fn write_continuous_effect(out: &mut String, eff: &ContinuousEffect) {
             out.push_str("all damage that would be dealt to you by ");
             out.push_str(static_damage_source_name(*source));
             out.push_str(" is dealt to ");
-            write_source_object(out, *destination);
+            write_static_damage_redirection_destination(out, *destination);
             out.push_str(" instead");
         }
         ContinuousEffect::PreventDamage { effect } => {
@@ -3806,7 +3810,20 @@ fn write_static_untap_restriction(
 
 fn static_damage_source_name(source: StaticDamageSource) -> &'static str {
     match source {
+        StaticDamageSource::Source => "a source",
         StaticDamageSource::UnblockedCreatures => "unblocked creatures",
+    }
+}
+
+fn write_static_damage_redirection_destination(
+    out: &mut String,
+    destination: StaticDamageRedirectionDestination,
+) {
+    match destination {
+        StaticDamageRedirectionDestination::SourceObject(source) => {
+            write_source_object(out, source)
+        }
+        StaticDamageRedirectionDestination::ThatSource => out.push_str("that source"),
     }
 }
 
