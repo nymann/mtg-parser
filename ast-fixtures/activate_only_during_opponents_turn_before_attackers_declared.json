@@ -1,0 +1,18 @@
+{
+  "concept": "activate_only_during_opponents_turn_before_attackers_declared",
+  "fixture_path": "grammar-fixtures/activate_only_during_opponents_turn_before_attackers_declared.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "activate_only_during_opponents_turn_before_attackers_declared",
+      "text": "Activate only during an opponent's turn, before attackers are declared.",
+      "ast": "ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared"
+    },
+    {
+      "index": 2,
+      "rule": "activate_only_during_opponents_turn_before_attackers_declared",
+      "text": "activate only during an opponent's turn, before attackers are declared.",
+      "ast": "ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared"
+    }
+  ]
+}
