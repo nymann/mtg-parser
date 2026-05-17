@@ -1,0 +1,27 @@
+[fixture]
+concept = "static_effect_preserves_aura"
+rule = "static_effect_doesnt_remove_this_aura"
+
+[[example]]
+text = "This effect doesn't remove this Aura."
+reason = "Effect-continuity text that preserves this Aura while the effect applies."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Static enters-tapped replacement effect, owned by static_enters_tapped."
+
+[[counterexample]]
+text = "This artifact enters tapped."
+reason = "Static enters-tapped replacement effect, owned by static_enters_tapped."
+
+[[counterexample]]
+text = "This effect removes this Aura."
+reason = "Removes the Aura instead of preserving it."
+
+[[counterexample]]
+text = "This Aura doesn't remove this effect."
+reason = "Different protected object and prohibited result."
+
+[[counterexample]]
+text = "This effect doesn't remove this Aura. trailing"
+reason = "Exact-consumption guard."
