@@ -23,16 +23,20 @@ text = "If you do, prevent the next 1 damage that would be dealt to any target t
 reason = "Damage-prevention body with this-turn duration."
 
 [[counterexample]]
-text = "When you do, add {G}."
+text = "When you do, you gain 3 life."
 reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
 
 [[counterexample]]
-text = "If you don't, add {G}."
+text = "If you don't, you gain 3 life."
 reason = "Negative polarity branch, outside the actor axis."
 
 [[counterexample]]
 text = "If you do, draw a card."
 reason = "Draw-card body is not part of the existing if_you_do_effect_body axis."
+
+[[counterexample]]
+text = "If you would gain life, draw that many cards instead."
+reason = "Life-gain replacement effect, not an if-you-do follow-up."
 
 [[counterexample]]
 text = "If you do, add {G}. trailing"

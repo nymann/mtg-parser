@@ -30,6 +30,7 @@ includes = [
 name = "if_you_do_effect"
 pest_rules = [
     "if_you_do_effect",
+    "if_you_do_gain_life",
     "if_do_actor",
     "if_you_do_effect_body",
 ]
@@ -44,15 +45,19 @@ rules_terms = [
 
 [[counterexample]]
 reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
-text = "When you do, add {G}."
+text = "When you do, you gain 3 life."
 
 [[counterexample]]
 reason = "Negative polarity branch, outside the actor axis."
-text = "If you don't, add {G}."
+text = "If you don't, you gain 3 life."
 
 [[counterexample]]
 reason = "Draw-card body is not part of the existing if_you_do_effect_body axis."
 text = "If you do, draw a card."
+
+[[counterexample]]
+reason = "Life-gain replacement effect, not an if-you-do follow-up."
+text = "If you would gain life, draw that many cards instead."
 
 [[example]]
 text = "If you do, add {G}."
