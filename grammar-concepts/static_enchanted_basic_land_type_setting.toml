@@ -1,0 +1,76 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_type_setting"]
+
+[[axis]]
+name = "preserve_affected_object"
+values = ["enchanted_permanent"]
+
+[[axis]]
+name = "add_set_characteristic"
+values = ["basic_land_type"]
+
+[boundary]
+excludes = [
+    "Enchanted-object keyword ability grants.",
+    "Enchanted-object keyword-removal effects.",
+    "Enchanted-object power/toughness modifications.",
+    "Enchanted-object grants of quoted triggered abilities.",
+    "Target-land temporary type-changing effects.",
+]
+includes = [
+    "Enchanted land is a Plains.",
+    "Enchanted land is an Island.",
+    "Enchanted land is the chosen type.",
+]
+
+[concept]
+name = "static_enchanted_basic_land_type_setting"
+pest_rules = ["static_enchanted_is_basic_land_type"]
+rules_queries = [
+    "lex: enchanted land is a basic land type",
+    "lex: enchanted land is the chosen type",
+]
+rules_terms = [
+    "static",
+    "continuous",
+    "enchanted",
+    "basic land type",
+]
+
+[[counterexample]]
+reason = "Keyword ability grant, not a basic land type-setting effect."
+text = "Enchanted creature has flying."
+
+[[counterexample]]
+reason = "Keyword-removal effect, not a basic land type-setting effect."
+text = "Enchanted creature loses flying."
+
+[[counterexample]]
+reason = "Power/toughness modification, not a basic land type-setting effect."
+text = "Enchanted creature gets +1/+1."
+
+[[counterexample]]
+reason = "Quoted triggered ability grant, not a basic land type-setting effect."
+text = 'Enchanted creature has "Whenever this creature attacks, draw a card."'
+
+[[counterexample]]
+reason = "Temporary target-land type-changing effect, not an enchanted-permanent static type setting."
+text = "Target land becomes a Forest until CARDNAME leaves the battlefield."
+
+[[example]]
+text = "Enchanted land is a Plains."
+
+[[example]]
+text = "Enchanted land is an Island."
+
+[[example]]
+text = "Enchanted land is the chosen type."
+
+[grammar_query]
+candidate_rules = ["static_enchanted_is_basic_land_type"]
+selected_rule = "static_enchanted_is_basic_land_type"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
