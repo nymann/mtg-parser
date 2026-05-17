@@ -20,8 +20,8 @@ use crate::flow::{
 use crate::grammar_query as grammar_query_engine;
 use crate::grammar_query::GrammarQuery;
 use crate::paths::{
-    corpus_sets_path, grammar_concept_log_root, grammar_concepts_dir, grammar_fixtures_dir,
-    grammar_pest_path, repo_root,
+    ast_rs_path, corpus_sets_path, grammar_concept_log_root, grammar_concepts_dir,
+    grammar_fixtures_dir, grammar_pest_path, repo_root,
 };
 use crate::refactor_hotspot;
 use crate::rules_context;
@@ -3061,6 +3061,7 @@ fn build_phase2_repair_prompt(
     let parse = run_concept_parse_fresh(&candidate.concept)?;
     let parse_json = serde_json::to_string_pretty(&parse).context("serialize parse report")?;
     let ast_failures_section = render_ast_failures_section(&candidate.ast_failures);
+    let ast_shape_section = render_ast_shape_section(&candidate.fixture_path);
     Ok(format!(
         "\
 You are working in the mtg-parser repository.
@@ -3079,7 +3080,7 @@ Concept artifacts:
 
 Current status: {status:?}
 First error: {first_error}
-{ast_failures_section}
+{ast_failures_section}{ast_shape_section}
 Use the existing concept fixture as the behavioral contract. Make the smallest parser/AST/grammar integration change that makes accepted fixture examples parse through `mtg_grammar::parse` with the concept-owned AST shape. If the fixture has `[phase2.ast_shape]`, treat it as a hard contract: the `owner` variant is the desired concept shape, and `forbid` variants are legacy/card-centric shapes that must be merged away. Prefer generalizing existing rules and parser helpers over adding one rule per example. Do not edit generated tests or run `cargo xtask add-card`.
 
 Allowed implementation areas:
@@ -3109,8 +3110,139 @@ Current concept-parse report:
         status = candidate.ast_status,
         first_error = candidate.first_error.as_deref().unwrap_or("none"),
         ast_failures_section = ast_failures_section,
+        ast_shape_section = ast_shape_section,
         parse_json = parse_json
     ))
+}
+
+/// Render a section showing the `[phase2.ast_shape]` contract from the
+/// fixture plus the current ast.rs definitions of the owner and forbidden
+/// variants. The fixture path is referenced in the prompt today, but the
+/// agent doesn't always read it; inlining the contract guarantees the
+/// rejection rule is visible. Showing the current variant definitions tells
+/// the agent whether the owner already exists in ast.rs (so the fix is
+/// "use this variant") or has to be invented (and which existing forbidden
+/// variants should be merged away when introducing it).
+fn render_ast_shape_section(fixture_path: &Path) -> String {
+    let Ok(doc) = read_fixture_document(fixture_path) else {
+        return String::new();
+    };
+    let Some(contract) = doc.phase2.as_ref().and_then(|p| p.ast_shape.as_ref()) else {
+        return String::new();
+    };
+
+    let mut buf = String::from("\nFixture `[phase2.ast_shape]` contract:\n");
+    if let Some(owner) = &contract.owner {
+        buf.push_str(&format!("  owner (required top-level Statement variant): `{owner}`\n"));
+    }
+    if !contract.forbid.is_empty() {
+        buf.push_str(&format!(
+            "  forbid (legacy card-centric variants that must be merged away): {}\n",
+            contract
+                .forbid
+                .iter()
+                .map(|s| format!("`{s}`"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
+    if let Some(note) = &contract.note {
+        buf.push_str(&format!("  note: {note}\n"));
+    }
+
+    let ast_source = std::fs::read_to_string(ast_rs_path()).ok();
+    let mut shown_variants = BTreeSet::new();
+    let mut render_variant = |buf: &mut String, name: &str, label: &str| {
+        if !shown_variants.insert(name.to_string()) {
+            return;
+        }
+        let Some(src) = ast_source.as_deref() else {
+            return;
+        };
+        match find_ast_variant_definition(src, name) {
+            Some(def) => {
+                buf.push_str(&format!(
+                    "\nCurrent ast.rs definition of {label} `{name}`:\n```rust\n{def}\n```\n"
+                ));
+            }
+            None => {
+                buf.push_str(&format!(
+                    "\n{label} `{name}` is not yet present in ast.rs — introduce it on the `Statement` enum.\n"
+                ));
+            }
+        }
+    };
+    if let Some(owner) = &contract.owner {
+        render_variant(&mut buf, owner, "owner");
+    }
+    for forbidden in &contract.forbid {
+        render_variant(&mut buf, forbidden, "forbidden variant");
+    }
+    buf
+}
+
+/// Extract the source of a single enum variant from ast.rs given its name.
+/// Captures any preceding `///` doc comments and balances braces/parens so
+/// `Variant { ... }` and `Variant(...)` definitions come out whole. Returns
+/// None when the variant name is not found at the start of any line.
+fn find_ast_variant_definition(source: &str, variant_name: &str) -> Option<String> {
+    let lines: Vec<&str> = source.lines().collect();
+    let needle_prefix = format!("{variant_name}");
+
+    for (line_idx, line) in lines.iter().enumerate() {
+        let trimmed = line.trim_start();
+        if !trimmed.starts_with(&needle_prefix) {
+            continue;
+        }
+        let after = &trimmed[needle_prefix.len()..];
+        let first_char = after.chars().next();
+        let is_variant = matches!(first_char, Some(' ') | Some('{') | Some('(') | Some(','))
+            || after.is_empty();
+        if !is_variant {
+            continue;
+        }
+
+        // Walk backwards to capture leading doc comments and attributes.
+        let mut start_idx = line_idx;
+        while start_idx > 0 {
+            let prev = lines[start_idx - 1].trim_start();
+            if prev.starts_with("///") || prev.starts_with("#[") {
+                start_idx -= 1;
+            } else {
+                break;
+            }
+        }
+
+        // Determine the variant body's closing delimiter by balancing.
+        let mut end_idx = line_idx;
+        let mut brace_depth: i32 = 0;
+        let mut paren_depth: i32 = 0;
+        let mut found_terminator = false;
+        for (idx, current_line) in lines.iter().enumerate().skip(line_idx) {
+            for ch in current_line.chars() {
+                match ch {
+                    '{' => brace_depth += 1,
+                    '}' => brace_depth -= 1,
+                    '(' => paren_depth += 1,
+                    ')' => paren_depth -= 1,
+                    ',' if brace_depth == 0 && paren_depth == 0 => {
+                        end_idx = idx;
+                        found_terminator = true;
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+            if found_terminator {
+                break;
+            }
+        }
+        if !found_terminator {
+            return None;
+        }
+        return Some(lines[start_idx..=end_idx].join("\n"));
+    }
+    None
 }
 
 /// Render a prompt section that summarises every failing AST case from the
