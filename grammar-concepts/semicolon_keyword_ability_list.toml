@@ -1,0 +1,95 @@
+[[axis]]
+name = "list_separator"
+values = ["semicolon"]
+
+[[axis]]
+name = "list_arity"
+values = ["two_or_more"]
+
+[[axis]]
+name = "item_kind"
+values = ["keyword_ability"]
+
+[[axis]]
+name = "keyword_form"
+values = [
+    "keyword_ability_name",
+    "protection",
+    "landwalk",
+    "enchant",
+]
+
+[boundary]
+excludes = [
+    "A single keyword ability without a list separator.",
+    "Comma-separated keyword ability lists.",
+    "Keyword lists joined by and/or.",
+    "Semicolon-separated lists whose items are not all keyword abilities.",
+    "Semicolon-separated keyword ability lists with trailing input.",
+]
+includes = [
+    "Semicolon-separated lists of two or more keyword abilities.",
+    "Lists containing evergreen keyword ability names.",
+    "Lists containing multiword keyword ability names.",
+    "Lists containing parameterized keyword abilities such as protection and landwalk.",
+    "Lists containing enchant keyword abilities.",
+]
+
+[concept]
+name = "semicolon_keyword_ability_list"
+pest_rules = ["semicolon_keyword_ability_list"]
+rules_queries = [
+    "lex: keyword ability list semicolon",
+    "lex: flying; first strike",
+    "lex: protection from black; forestwalk",
+]
+rules_terms = [
+    "keyword ability",
+    "list",
+    "semicolon",
+]
+
+[[counterexample]]
+reason = "Single keyword ability, not a keyword ability list."
+text = "flying"
+
+[[counterexample]]
+reason = "Comma separator belongs to keyword_ability_list."
+text = "flying, trample"
+
+[[counterexample]]
+reason = "And/or separator belongs to keyword_and_or_list."
+text = "flying and/or trample"
+
+[[counterexample]]
+reason = "Second item is not a keyword ability."
+text = "flying; draw a card"
+
+[[counterexample]]
+reason = "Exact-consumption guard."
+text = "flying; trample trailing"
+
+[[example]]
+text = "flying; trample"
+
+[[example]]
+text = "first strike; vigilance; reach"
+
+[[example]]
+text = "protection from black; forestwalk"
+
+[[example]]
+text = "enchant creature; flying"
+
+[grammar_query]
+candidate_rules = [
+    "semicolon_keyword_ability_list",
+    "keyword_ability_list",
+    "keyword_and_or_list",
+    "keyword_ability",
+]
+selected_rule = "semicolon_keyword_ability_list"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

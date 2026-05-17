@@ -1,0 +1,39 @@
+[fixture]
+concept = "semicolon_keyword_ability_list"
+rule = "semicolon_keyword_ability_list"
+
+[[example]]
+text = "flying; trample"
+reason = "Semicolon-separated list of two evergreen keyword abilities."
+
+[[example]]
+text = "first strike; vigilance; reach"
+reason = "Semicolon-separated list supports multiword keyword names and three-or-more arity."
+
+[[example]]
+text = "protection from black; forestwalk"
+reason = "Semicolon-separated list supports parameterized keyword abilities through the existing keyword axis."
+
+[[example]]
+text = "enchant creature; flying"
+reason = "Semicolon-separated list supports enchant keyword abilities through the existing keyword axis."
+
+[[counterexample]]
+text = "flying"
+reason = "Single keyword ability, not a keyword ability list."
+
+[[counterexample]]
+text = "flying, trample"
+reason = "Comma separator belongs to keyword_ability_list."
+
+[[counterexample]]
+text = "flying and/or trample"
+reason = "And/or separator belongs to keyword_and_or_list."
+
+[[counterexample]]
+text = "flying; draw a card"
+reason = "Second item is not a keyword ability."
+
+[[counterexample]]
+text = "flying; trample trailing"
+reason = "Exact-consumption guard."
