@@ -1,0 +1,31 @@
+[fixture]
+concept = "that_player_draws_an_additional_card"
+rule = "that_player_draws_an_additional_card"
+
+[[example]]
+text = "that player draws an additional card."
+reason = "Triggered-effect sentence with that-player actor, one-card quantity, and additional-card modifier."
+
+[[example]]
+text = "That player draws an additional card."
+reason = "Oracle-style sentence capitalization for the same that-player additional-card draw effect."
+
+[[counterexample]]
+text = "that player adds one mana of any type that land produced."
+reason = "Mana-production effect by that player, not a card-draw effect."
+
+[[counterexample]]
+text = "that player discards a card at random."
+reason = "Discard instruction by that player, not a card-draw effect."
+
+[[counterexample]]
+text = "target player draws a card."
+reason = "Target-player draw instruction, not a that-player referenced draw instruction."
+
+[[counterexample]]
+text = "that player draws a card."
+reason = "Unmodified one-card draw instruction; missing the additional-card modifier."
+
+[[counterexample]]
+text = "that player draws an additional card. trailing"
+reason = "Exact-consumption guard."

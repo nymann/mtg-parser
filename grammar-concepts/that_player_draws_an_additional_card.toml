@@ -1,0 +1,80 @@
+[[axis]]
+name = "actor"
+values = ["that_player"]
+
+[[axis]]
+name = "draw_action"
+values = ["draw_card"]
+
+[[axis]]
+name = "quantity"
+values = ["one"]
+
+[[axis]]
+name = "draw_modifier"
+values = ["additional"]
+
+[[axis]]
+name = "object"
+values = ["card"]
+
+[[axis]]
+name = "ability_context"
+values = ["trigger_effect_sentence"]
+
+[boundary]
+excludes = [
+    "Mana-production effects by that player belong to mana concepts, not card-draw effects.",
+    "Discard instructions by that player belong to discard concepts, not card-draw effects.",
+    "Target-player draw instructions are a sibling card-draw shape, not the referenced that-player triggered effect.",
+    "Unmodified that-player draw instructions do not preserve the additional-card modifier.",
+]
+includes = [
+    "Triggered-effect sentences instructing that player to draw one additional card.",
+    "The additional-card modifier is part of this concept boundary, distinct from ordinary one-card draw instructions.",
+]
+
+[concept]
+name = "that_player_draws_an_additional_card"
+pest_rules = ["that_player_draws_an_additional_card"]
+rules_queries = ["lex: that player draws an additional card"]
+rules_terms = [
+    "draw",
+    "card",
+    "additional",
+]
+
+[[counterexample]]
+reason = "Mana-production effect by that player, not a card-draw effect."
+text = "that player adds one mana of any type that land produced."
+
+[[counterexample]]
+reason = "Discard instruction by that player, not a card-draw effect."
+text = "that player discards a card at random."
+
+[[counterexample]]
+reason = "Target-player draw instruction, not a that-player referenced draw instruction."
+text = "target player draws a card."
+
+[[counterexample]]
+reason = "Unmodified one-card draw instruction; missing the additional-card modifier."
+text = "that player draws a card."
+
+[[example]]
+text = "that player draws an additional card."
+
+[[example]]
+text = "That player draws an additional card."
+
+[grammar_query]
+candidate_rules = [
+    "that_player_draws_an_additional_card",
+    "that_player_adds_mana_of_any_type_that_permanent_produced",
+    "that_player_discards_card_at_random",
+    "draw_cards",
+]
+selected_rule = "that_player_draws_an_additional_card"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
