@@ -1,0 +1,35 @@
+[fixture]
+concept = "their_controllers_sacrifice_them"
+rule = "their_controllers_sacrifice_them"
+
+[[example]]
+text = "their controllers sacrifice them."
+reason = "Triggered effect instructing the controllers of plural referenced objects to sacrifice those objects."
+
+[[example]]
+text = "Their controllers sacrifice them."
+reason = "Oracle-style sentence capitalization for the same plural controller-sacrifice effect."
+
+[[counterexample]]
+text = "that creature's controller sacrifices it."
+reason = "Singular controller sacrifice belongs to that_creatures_controller_sacrifices_it."
+
+[[counterexample]]
+text = "sacrifice them."
+reason = "Source-object or imperative sacrifice wording, not their-controllers plural sacrifice."
+
+[[counterexample]]
+text = "sacrifice creatures."
+reason = "Generic permanent-type sacrifice, not plural referenced-object controller sacrifice."
+
+[[counterexample]]
+text = "destroy them."
+reason = "Destroy instruction, not the sacrifice keyword action."
+
+[[counterexample]]
+text = "their controllers sacrifice them"
+reason = "The selected rule requires terminal sentence punctuation."
+
+[[counterexample]]
+text = "their controllers sacrifice them. trailing"
+reason = "Exact-consumption guard."
