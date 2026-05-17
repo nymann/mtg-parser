@@ -1,0 +1,38 @@
+{
+  "concept": "next_card_draw_replacement",
+  "fixture_path": "grammar-fixtures/next_card_draw_replacement.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "next_card_draw_replacement",
+      "text": "The next time you would draw a card this turn, instead look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card.",
+      "ast": {
+        "NextCardDrawReplacement": {
+          "replacement": {
+            "FilterTopLibraryCards": {
+              "count": {
+                "Variable": "X"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "next_card_draw_replacement",
+      "text": "The next time you would draw a card this turn, instead look at the top three cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card.",
+      "ast": {
+        "NextCardDrawReplacement": {
+          "replacement": {
+            "FilterTopLibraryCards": {
+              "count": {
+                "Number": 3
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

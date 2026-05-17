@@ -47,6 +47,10 @@ pub enum Statement {
     /// Damage prevention/replacement effects, with source, recipient,
     /// and event timing captured as axes.
     DamageEffect(ActivatedDamageEffect),
+    /// CR 614.11 replacement effect for the next card draw this turn.
+    NextCardDrawReplacement {
+        replacement: DrawReplacementEffect,
+    },
     /// Damage prevention effect whose replacement event is "prevent
     /// <amount> [combat] damage that would be dealt" or "prevent
     /// <amount> of that damage".

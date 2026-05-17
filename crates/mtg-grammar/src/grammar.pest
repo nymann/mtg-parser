@@ -57,6 +57,7 @@ sentence_statement = _{
   | regenerate_source
   | regenerate_target_creature
   | damage_event_statement
+  | next_card_draw_replacement
   | next_damage_event_effect
   | next_damage_redirection_effect
   | damage_prevention_effect

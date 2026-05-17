@@ -183,6 +183,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             recipient: regenerate_recipient_from_pair(pair)?,
         }),
         Rule::damage_event_statement => damage_event_statement_from_pair(pair),
+        Rule::next_card_draw_replacement => {
+            let replacement_pair = only_inner(pair, "next card draw replacement missing effect")?;
+            Ok(Statement::NextCardDrawReplacement {
+                replacement: draw_replacement_effect_from_pair(replacement_pair)?,
+            })
+        }
         Rule::next_damage_event_effect => Ok(Statement::DamageEffect(
             next_damage_event_effect_from_pair(pair)?,
         )),

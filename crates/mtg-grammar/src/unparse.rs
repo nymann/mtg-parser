@@ -73,6 +73,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_named_damage_event(out, event);
         }
         Statement::DamageEffect(effect) => write_activated_damage_effect(out, effect),
+        Statement::NextCardDrawReplacement { replacement } => {
+            write_next_card_draw_replacement(out, replacement);
+        }
         Statement::PreventDamageThisTurn {
             effect,
             definitions,
@@ -1954,8 +1957,7 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             out.push_str("Look at target player's hand.");
         }
         ActivatedEffect::NextCardDrawReplacement { replacement } => {
-            out.push_str("The next time you would draw a card this turn, instead look at the top ");
-            write_draw_replacement_effect(out, replacement);
+            write_next_card_draw_replacement(out, replacement);
         }
         ActivatedEffect::DrawCards { count } => {
             out.push_str("Draw ");
@@ -2132,6 +2134,11 @@ fn write_draw_replacement_effect(out: &mut String, effect: &DrawReplacementEffec
             out.push_str(" cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card.");
         }
     }
+}
+
+fn write_next_card_draw_replacement(out: &mut String, effect: &DrawReplacementEffect) {
+    out.push_str("The next time you would draw a card this turn, instead look at the top ");
+    write_draw_replacement_effect(out, effect);
 }
 
 fn write_create_token(out: &mut String, token: &TokenDescription) {
