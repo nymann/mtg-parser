@@ -186,6 +186,7 @@ phrase_statement = _{
   | pay_mana_amount
   | pay_mana_player
   | label_phrase
+  | ante_top_card_of_your_library_action
   | tap_source_action
   | draw_cards_action
   | draw_that_many_cards_replacement_result

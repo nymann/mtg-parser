@@ -152,6 +152,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::label_phrase => Ok(Statement::Label {
             label: label_from_pair(pair)?,
         }),
+        Rule::ante_top_card_of_your_library_action => Ok(Statement::ImperativeActionSequence {
+            actions: vec![imperative_action_from_pair(pair)?],
+        }),
         Rule::tap_source_action => Ok(Statement::ImperativeActionSequence {
             actions: vec![imperative_action_from_pair(pair)?],
         }),

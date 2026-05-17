@@ -1,0 +1,30 @@
+{
+  "concept": "ante_top_card_of_library_action",
+  "fixture_path": "grammar-fixtures/ante_top_card_of_library_action.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "ante_top_card_of_your_library_action",
+      "text": "Ante the top card of your library",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            "AnteTopCardOfYourLibrary"
+          ]
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "each_player_performs_action",
+      "text": "Each player antes the top card of their library.",
+      "ast": {
+        "EachPlayerPerformsAction": {
+          "actions": [
+            "AnteTopCardOfTheirLibrary"
+          ]
+        }
+      }
+    }
+  ]
+}
