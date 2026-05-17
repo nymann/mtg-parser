@@ -1,0 +1,31 @@
+[fixture]
+concept = "label_phrase"
+rule = "label_phrase"
+
+[[example]]
+text = "left"
+reason = "Standalone unquoted label phrase using the existing left label value."
+
+[[example]]
+text = "right"
+reason = "Standalone unquoted label phrase using the existing right label value."
+
+[[counterexample]]
+text = "\"left\""
+reason = "Quoted label surface is owned by quoted_label, not label_phrase."
+
+[[counterexample]]
+text = "\"right.\""
+reason = "Quoted label with an inner period is owned by quoted_label_with_inner_period, not label_phrase."
+
+[[counterexample]]
+text = "center"
+reason = "True boundary negative: not in the current left-or-right label value set."
+
+[[counterexample]]
+text = "choose \"left\" or \"right.\""
+reason = "Full label-choice instruction, not a standalone label phrase."
+
+[[counterexample]]
+text = "left trailing"
+reason = "Exact-consumption guard."

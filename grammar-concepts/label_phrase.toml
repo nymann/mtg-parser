@@ -1,0 +1,69 @@
+[[axis]]
+name = "label_value"
+values = [
+    "left",
+    "right",
+]
+
+[[axis]]
+name = "surface"
+values = ["unquoted_phrase"]
+
+[boundary]
+excludes = [
+    "Quoted labels used inside pile-choice wording.",
+    "Quoted labels with an inner period.",
+    "Other directional or positional words outside the current label-word value set.",
+    "Full combat pile instructions that use labels but are owned by larger combat concepts.",
+]
+includes = ["Standalone unquoted label phrases using the existing left or right label values."]
+
+[concept]
+name = "label_phrase"
+pest_rules = ["label_phrase"]
+rules_queries = [
+    "lex: left right label pile chosen label",
+    "lex: choose left or right chosen label",
+]
+rules_terms = [
+    "label",
+    "chosen label",
+    "pile",
+]
+
+[[counterexample]]
+reason = "Quoted label surface, not a standalone unquoted label phrase."
+text = '"left"'
+
+[[counterexample]]
+reason = "Quoted label with an inner period, not a standalone unquoted label phrase."
+text = '"right."'
+
+[[counterexample]]
+reason = "Directional word outside the current label-word value set."
+text = "center"
+
+[[counterexample]]
+reason = "Full label-choice combat instruction, not the standalone phrase root."
+text = 'choose "left" or "right."'
+
+[[example]]
+text = "left"
+
+[[example]]
+text = "right"
+
+[grammar_query]
+candidate_rules = [
+    "label_phrase",
+    "label_word",
+    "quoted_label",
+    "quoted_label_with_inner_period",
+    "quoted_label_pile",
+    "then_for_each_attacking_creature_choose_label_blocking_restriction",
+]
+selected_rule = "label_phrase"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
