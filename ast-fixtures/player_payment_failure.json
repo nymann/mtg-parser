@@ -1,0 +1,36 @@
+{
+  "concept": "player_payment_failure",
+  "fixture_path": "grammar-fixtures/player_payment_failure.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "player_payment_failure",
+      "text": "if that player doesn't, they tap all lands they control and lose all unspent mana.",
+      "ast": {
+        "PlayerPaymentFailure": {
+          "effect": {
+            "TapAllPermanentsAndLoseUnspentMana": {
+              "permanent_type": "Land",
+              "with_mana_abilities": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "player_payment_failure",
+      "text": "if that player doesn't, they tap all creatures with mana abilities they control and lose all unspent mana.",
+      "ast": {
+        "PlayerPaymentFailure": {
+          "effect": {
+            "TapAllPermanentsAndLoseUnspentMana": {
+              "permanent_type": "Creature",
+              "with_mana_abilities": true
+            }
+          }
+        }
+      }
+    }
+  ]
+}
