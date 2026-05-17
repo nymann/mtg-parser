@@ -1,0 +1,31 @@
+[fixture]
+concept = "change_text_of_target_spell_or_permanent_replacing_basic_land_type"
+rule = "change_text_of_target_spell_or_permanent_replacing_basic_land_type"
+
+[[example]]
+text = "Change the text of target spell or permanent by replacing all instances of one basic land type with another."
+reason = "Text-changing effect replacing every instance of one basic land type term with another on a target spell or permanent."
+
+[[example]]
+text = "Change the text of target spell or permanent by replacing all instances of one color word with another."
+reason = "Text-changing effect replacing every instance of one color word with another on a target spell or permanent."
+
+[[counterexample]]
+text = "Target spell or permanent becomes red."
+reason = "Object color characteristic change, not text-changing by replacement."
+
+[[counterexample]]
+text = "Target artifact becomes an Island until CARDNAME leaves the battlefield."
+reason = "Target permanent type-changing effect with a source-linked duration, not text-changing."
+
+[[counterexample]]
+text = "All Islands are Mountains."
+reason = "Static global basic-land-type-to-basic-land-type continuous effect, not target text-changing."
+
+[[counterexample]]
+text = "Change the text of CARDNAME by replacing all instances of one color word with another."
+reason = "Text-changing effect without the target spell or permanent recipient."
+
+[[counterexample]]
+text = "Change the text of target spell or permanent by replacing all instances of one color word with another. trailing"
+reason = "Exact-consumption guard."

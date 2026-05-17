@@ -1,0 +1,84 @@
+[[axis]]
+name = "effect_kind"
+values = ["text_change"]
+
+[[axis]]
+name = "recipient"
+values = ["target_spell_or_permanent"]
+
+[[axis]]
+name = "target_selector"
+values = ["target_spell_or_permanent_selector"]
+
+[[axis]]
+name = "operation"
+values = ["replace_all_instances"]
+
+[[axis]]
+name = "replacement_term"
+values = [
+    "basic_land_type",
+    "color_word",
+]
+
+[boundary]
+excludes = [
+    "Target spell or permanent color characteristic changes.",
+    "Target permanent temporary basic land type-changing effects.",
+    "Static global basic-land-type-to-basic-land-type effects.",
+    "Text-changing effects that do not target a spell or permanent.",
+]
+includes = [
+    "Change the text of target spell or permanent by replacing all instances of one basic land type with another.",
+    "Change the text of target spell or permanent by replacing all instances of one color word with another.",
+]
+
+[concept]
+name = "change_text_of_target_spell_or_permanent_replacing_basic_land_type"
+pest_rules = ["change_text_of_target_spell_or_permanent_replacing_basic_land_type"]
+rules_queries = [
+    "lex: change text of target spell or permanent replacing basic land type",
+    "lex: change text replacing all instances of one color word with another",
+]
+rules_terms = [
+    "text-changing effect",
+    "basic land type",
+    "color word",
+    "target spell",
+    "target permanent",
+]
+
+[[counterexample]]
+reason = "Object color characteristic change, not text-changing by replacement."
+text = "Target spell or permanent becomes red."
+
+[[counterexample]]
+reason = "Target permanent type-changing effect with a source-linked duration, not text-changing."
+text = "Target artifact becomes an Island until CARDNAME leaves the battlefield."
+
+[[counterexample]]
+reason = "Static global basic-land-type-to-basic-land-type continuous effect, not target text-changing."
+text = "All Islands are Mountains."
+
+[[counterexample]]
+reason = "Text-changing effect without the target spell or permanent recipient."
+text = "Change the text of CARDNAME by replacing all instances of one color word with another."
+
+[[example]]
+text = "Change the text of target spell or permanent by replacing all instances of one basic land type with another."
+
+[[example]]
+text = "Change the text of target spell or permanent by replacing all instances of one color word with another."
+
+[grammar_query]
+candidate_rules = [
+    "change_text_of_target_spell_or_permanent_replacing_basic_land_type",
+    "target_spell_or_permanent_becomes_color",
+    "target_permanent_becomes_basic_land_type_until_source_leaves",
+    "static_basic_lands_are_basic_lands",
+]
+selected_rule = "change_text_of_target_spell_or_permanent_replacing_basic_land_type"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
