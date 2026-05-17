@@ -4833,11 +4833,7 @@ fn run_phase_watch(options: PhaseWatchOptions) -> Result<()> {
         } else {
             "mtg-parser: phase metrics"
         };
-        let body = if stopped_transition {
-            format!("Loop is not running. {metrics}")
-        } else {
-            metrics
-        };
+        let body = metrics;
 
         println!("{title}\n{body}");
         if options.notify_imessage.is_some() || options.notify_command.is_some() {
@@ -4866,32 +4862,70 @@ fn render_phase_watch_metrics(status: &PhaseStatusReport, roadmap: &RoadmapRepor
     } else {
         "running"
     };
+    let touched = roadmap.exact_concept_matches + roadmap.mentioned_by_concept;
+    let actions_touched = roadmap_touched_by_kind(roadmap, RoadmapCandidateKind::KeywordAction);
+    let abilities_touched = roadmap_touched_by_kind(roadmap, RoadmapCandidateKind::KeywordAbility);
+    let effects_touched = roadmap_touched_by_kind(roadmap, RoadmapCandidateKind::EffectFamily);
     let mut parts = vec![
         format!("loop {running}"),
         format!(
-            "Phase2 AST {}/{}, parse {}/{}, AST fail {}",
+            "concepts AST {}/{}, parse {}/{}",
             status.current.ast_green_concepts,
             status.current.grammar_green_concepts,
             status.current.parse_green_concepts,
-            status.current.grammar_green_concepts,
-            status.current.ast_failed_concepts
+            status.current.grammar_green_concepts
         ),
         format!(
-            "roadmap AST {}/{}; exact {}, mentioned {}, missing {}",
-            roadmap.ast_green_candidates,
+            "rulebook touched {}/{}: actions {}/{}, abilities {}/{}, effects {}/{}",
+            touched,
             roadmap.total_candidates,
-            roadmap.exact_concept_matches,
-            roadmap.mentioned_by_concept,
-            roadmap.missing_candidates
+            actions_touched,
+            roadmap.action_candidates,
+            abilities_touched,
+            roadmap.ability_candidates,
+            effects_touched,
+            roadmap.effect_candidates
         ),
     ];
+    if status.current.parse_failed_concepts > 0 || status.current.missing_snapshot_concepts() > 0 {
+        let mut lag = Vec::new();
+        if status.current.parse_failed_concepts > 0 {
+            lag.push(format!("{} parse fail", status.current.parse_failed_concepts));
+        }
+        if status.current.missing_snapshot_concepts() > 0 {
+            lag.push(format!(
+                "{} missing snapshot",
+                status.current.missing_snapshot_concepts()
+            ));
+        }
+        parts.push(lag.join(", "));
+    }
     if let Some(batch) = &status.latest_batch {
         parts.push(format!(
-            "latest batch #{} AST {:+}, commits {}",
-            batch.batch, batch.ast_green_delta, batch.commits
+            "batch #{}, AST {:+}, parse {:+}, commits {}",
+            batch.batch, batch.ast_green_delta, batch.parse_green_delta, batch.commits
         ));
     }
     parts.join(". ")
+}
+
+fn roadmap_touched_by_kind(roadmap: &RoadmapReport, kind: RoadmapCandidateKind) -> usize {
+    roadmap
+        .candidates
+        .iter()
+        .filter(|candidate| {
+            candidate.kind == kind && candidate.coverage != RoadmapCoverage::Missing
+        })
+        .count()
+}
+
+impl PhaseLoopMapSummary {
+    fn missing_snapshot_concepts(&self) -> usize {
+        self.grammar_green_concepts
+            .saturating_sub(self.ast_green_concepts)
+            .saturating_sub(self.parse_failed_concepts)
+            .saturating_sub(self.ast_failed_concepts)
+    }
 }
 
 fn run_phase_status(options: PhaseStatusOptions) -> Result<PhaseStatusReport> {
