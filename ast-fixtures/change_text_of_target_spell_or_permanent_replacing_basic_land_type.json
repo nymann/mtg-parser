@@ -1,0 +1,26 @@
+{
+  "concept": "change_text_of_target_spell_or_permanent_replacing_basic_land_type",
+  "fixture_path": "grammar-fixtures/change_text_of_target_spell_or_permanent_replacing_basic_land_type.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "change_text_of_target_spell_or_permanent_replacing_basic_land_type",
+      "text": "Change the text of target spell or permanent by replacing all instances of one basic land type with another.",
+      "ast": {
+        "ChangeTextOfTargetSpellOrPermanentReplacing": {
+          "term": "BasicLandType"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "change_text_of_target_spell_or_permanent_replacing_basic_land_type",
+      "text": "Change the text of target spell or permanent by replacing all instances of one color word with another.",
+      "ast": {
+        "ChangeTextOfTargetSpellOrPermanentReplacing": {
+          "term": "ColorWord"
+        }
+      }
+    }
+  ]
+}
