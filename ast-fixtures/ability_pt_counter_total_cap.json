@@ -1,0 +1,48 @@
+{
+  "concept": "ability_pt_counter_total_cap",
+  "fixture_path": "grammar-fixtures/ability_pt_counter_total_cap.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "this_ability_cant_cause_total_pt_counters_greater_than",
+      "text": "this ability can't cause the total number of +1/+1 counters on it to be greater than three.",
+      "ast": {
+        "ThisAbilityCantCauseTotalCountersGreaterThan": {
+          "counter": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Plus"
+            }
+          },
+          "maximum": 3,
+          "source": "It"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "this_ability_cant_cause_total_pt_counters_greater_than",
+      "text": "this ability can't cause the total number of -1/-1 counters on it to be greater than two.",
+      "ast": {
+        "ThisAbilityCantCauseTotalCountersGreaterThan": {
+          "counter": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Minus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Minus"
+            }
+          },
+          "maximum": 2,
+          "source": "It"
+        }
+      }
+    }
+  ]
+}
