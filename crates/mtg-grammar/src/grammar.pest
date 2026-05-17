@@ -237,8 +237,7 @@ phrase_statement = _{
   | permanent_enters
   | permanent_dealt_damage_by_source_this_turn_dies
   | static_enchanted_loses_keyword_fragment
-  | static_damage_prevention_effect
-  | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead
+  | continuous_effect
   | variable_definition
   | variable_name
   | value_expression
@@ -1677,7 +1676,7 @@ source_is_object_status = { source_object ~ ^"is" ~ object_status }
 source_isnt_attacking = { proper_name ~ ^"isn't" ~ ^"attacking" }
 source_is_attacking   = { proper_name ~ ^"is" ~ ^"attacking" }
 
-continuous_effect       = _{ source_gets | static_damage_prevention_effect | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead | source_pt_equal_to_basic_lands_controlled | becomes_pt_from_mv | static_untap_restriction_during_untap_steps }
+continuous_effect       = _{ source_pt_equal_to_basic_lands_controlled | becomes_pt_from_mv | static_untap_restriction_during_untap_steps | source_gets | static_damage_prevention_effect | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead }
 source_gets = {
     source_object ~ ^"gets" ~ pt_modifier
 }
@@ -1710,7 +1709,7 @@ static_damage_redirection_destination = _{
 that_source_damage_redirection_destination = { ^"that" ~ ^"source" }
 source_object_damage_redirection_destination = { source_object }
 becomes_pt_from_mv = {
-    ^"it's" ~ article ~ permanent_type+
+    ^"it's" ~ article ~ (permanent_type ~ (!^"with" ~ permanent_type)*)
   ~ ^"with" ~ ^"power" ~ ^"and" ~ ^"toughness"
   ~ ^"each" ~ ^"equal" ~ ^"to" ~ ^"its" ~ ^"mana" ~ ^"value"
 }

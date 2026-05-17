@@ -1,0 +1,129 @@
+{
+  "concept": "continuous_effect",
+  "fixture_path": "grammar-fixtures/continuous_effect.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "continuous_effect",
+      "text": "CARDNAME gets +1/+1",
+      "ast": {
+        "StaticAbility": {
+          "Continuous": {
+            "effect": {
+              "SourceGets": {
+                "modifier": {
+                  "power": {
+                    "magnitude": 1,
+                    "sign": "Plus"
+                  },
+                  "toughness": {
+                    "magnitude": 1,
+                    "sign": "Plus"
+                  }
+                },
+                "source": "ThisPermanent"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "continuous_effect",
+      "text": "Prevent all damage Forests would deal to this creature",
+      "ast": {
+        "StaticAbility": {
+          "Continuous": {
+            "effect": {
+              "PreventDamage": {
+                "effect": {
+                  "amount": "All",
+                  "kind": null,
+                  "recipients": [
+                    {
+                      "SourceObject": {
+                        "This": "Creature"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "LandSubtype": "Forest"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "continuous_effect",
+      "text": "All damage that would be dealt to you by a source is dealt to that source instead",
+      "ast": {
+        "StaticAbility": {
+          "Continuous": {
+            "effect": {
+              "DamageThatWouldBeDealtToYouBySourceIsDealtToSourceInstead": {
+                "destination": "ThatSource",
+                "source": "Source"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "continuous_effect",
+      "text": "Its power and toughness are each equal to the number of Forests you control",
+      "ast": {
+        "StaticAbility": {
+          "Continuous": {
+            "effect": {
+              "SourcePowerToughnessEachEqualToBasicLandsControlled": {
+                "controller": "You",
+                "land_type": "Forest"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "continuous_effect",
+      "text": "It's a creature with power and toughness each equal to its mana value",
+      "ast": {
+        "StaticAbility": {
+          "Continuous": {
+            "effect": {
+              "BecomesWithPtFromManaValue": {
+                "types": [
+                  "Creature"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "continuous_effect",
+      "text": "Players skip their untap steps",
+      "ast": {
+        "StaticAbility": {
+          "Continuous": {
+            "effect": {
+              "UntapRestrictionDuringUntapSteps": {
+                "restriction": "PlayersSkipTheirUntapSteps"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
