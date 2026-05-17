@@ -1,0 +1,57 @@
+{
+  "concept": "variable_value_restriction",
+  "fixture_path": "grammar-fixtures/variable_value_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "variable_cant_be_number",
+      "text": "X can't be 0.",
+      "ast": {
+        "VariableCantBeNumber": {
+          "value": 0,
+          "variable": "X"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "variable_cant_be_number",
+      "text": "X can't be 1.",
+      "ast": {
+        "VariableCantBeNumber": {
+          "value": 1,
+          "variable": "X"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "variable_cant_be_number",
+      "text": "Y can't be 0.",
+      "ast": {
+        "VariableCantBeNumber": {
+          "value": 0,
+          "variable": "Y"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "variable_name",
+      "text": "Y",
+      "ast": {
+        "VariableName": "Y"
+      }
+    },
+    {
+      "index": 5,
+      "rule": "unsigned_number",
+      "text": "1",
+      "ast": {
+        "ValueExpression": {
+          "UnsignedNumber": 1
+        }
+      }
+    }
+  ]
+}
