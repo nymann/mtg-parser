@@ -1,0 +1,51 @@
+{
+  "concept": "static_enchanted_keyword_removal",
+  "fixture_path": "grammar-fixtures/static_enchanted_keyword_removal.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_enchanted_loses_keyword_fragment",
+      "text": "Enchanted creature loses flying.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedLosesKeyword": {
+            "keyword": "Flying",
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_enchanted_loses_keyword_fragment",
+      "text": "Enchanted artifact loses indestructible.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedLosesKeyword": {
+            "keyword": "Indestructible",
+            "object": {
+              "Permanent": "Artifact"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "static_enchanted_loses_keyword_fragment",
+      "text": "enchanted creature loses flying",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedLosesKeyword": {
+            "keyword": "Flying",
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
