@@ -1,0 +1,98 @@
+[[axis]]
+name = "subject"
+values = [
+    "you",
+    "source_object",
+    "named_source",
+    "enchanted_permanent",
+]
+
+[[axis]]
+name = "predicate"
+values = [
+    "control_basic_land_type",
+    "source_has_status",
+    "source_attacking_state",
+    "enchanted_is_not_permanent_type",
+]
+
+[[axis]]
+name = "polarity"
+values = [
+    "affirmative",
+    "negative",
+]
+
+[[axis]]
+name = "checked_value"
+values = [
+    "basic_land_type",
+    "creature_status",
+    "attacking",
+    "permanent_type",
+]
+
+[[axis]]
+name = "surface"
+values = ["bare_condition_clause"]
+
+[boundary]
+excludes = [
+    "If- and trigger-prefixed condition wrappers are owned by their enclosing conditional or triggered ability concepts.",
+    "Status checks for target objects are outside this source/named/enchant condition root.",
+    "Positive enchanted permanent type assertions are outside the existing negative enchanted condition shape.",
+]
+includes = [
+    "Bare condition clauses that check whether you control a concrete basic land type.",
+    "Bare condition clauses that check whether the source or a named source is attacking or has a creature status.",
+    "Bare condition clauses that check an enchanted permanent is not another permanent type.",
+]
+
+[concept]
+name = "condition"
+pest_rules = ["condition"]
+rules_queries = ["lex: condition clause control basic land source attacking enchanted"]
+rules_terms = [
+    "condition",
+    "control",
+    "attacking",
+    "status",
+]
+
+[[counterexample]]
+reason = "Conditional wrapper, not a bare condition clause."
+text = "if you control a Plains"
+
+[[counterexample]]
+reason = "Target-object status check, not a source or named-source condition."
+text = "target creature is tapped"
+
+[[counterexample]]
+reason = "Positive enchanted permanent type assertion is outside the existing negative enchanted condition shape."
+text = "enchanted creature is an artifact"
+
+[[example]]
+text = "you control a Plains"
+
+[[example]]
+text = "you control no Islands"
+
+[[example]]
+text = "CARDNAME is tapped"
+
+[[example]]
+text = "Arc Runner isn't attacking"
+
+[[example]]
+text = "Arc Runner is attacking"
+
+[[example]]
+text = "enchanted creature isn't an artifact"
+
+[grammar_query]
+candidate_rules = ["condition"]
+selected_rule = "condition"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

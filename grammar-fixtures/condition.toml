@@ -1,0 +1,43 @@
+[fixture]
+concept = "condition"
+rule = "condition"
+
+[[example]]
+text = "you control a Plains"
+reason = "Affirmative control condition over a concrete basic land type."
+
+[[example]]
+text = "you control no Islands"
+reason = "Negative control condition over a plural concrete basic land type."
+
+[[example]]
+text = "CARDNAME is tapped"
+reason = "Source-object status condition."
+
+[[example]]
+text = "Arc Runner isn't attacking"
+reason = "Named-source negative attacking-state condition."
+
+[[example]]
+text = "Arc Runner is attacking"
+reason = "Named-source affirmative attacking-state condition."
+
+[[example]]
+text = "enchanted creature isn't an artifact"
+reason = "Negative enchanted permanent type condition."
+
+[[counterexample]]
+text = "if you control a Plains"
+reason = "Conditional wrapper, not a bare condition clause."
+
+[[counterexample]]
+text = "target creature is tapped"
+reason = "Target-object status check, not a source or named-source condition."
+
+[[counterexample]]
+text = "enchanted creature is an artifact"
+reason = "Positive enchanted permanent type assertion is outside the existing negative enchanted condition shape."
+
+[[counterexample]]
+text = "CARDNAME is tapped trailing"
+reason = "Exact-consumption guard."
