@@ -1,0 +1,98 @@
+[[axis]]
+name = "effect_kind"
+values = ["continuous_keyword_ability_grant_and_pt_modification"]
+
+[[axis]]
+name = "recipient"
+values = ["target_permanent"]
+
+[[axis]]
+name = "target_selector"
+values = ["target_permanent_selector"]
+
+[[axis]]
+name = "duration"
+values = ["until_end_of_turn"]
+
+[[axis]]
+name = "modification"
+values = ["power_toughness_modification"]
+
+[[axis]]
+name = "modifier"
+values = ["mixed_pt_modifier"]
+
+[[axis]]
+name = "keyword"
+values = ["keyword"]
+
+[[axis]]
+name = "variable_definition"
+values = ["where_clause"]
+
+[boundary]
+excludes = [
+    "Pure target-object P/T modifications until end of turn, owned by target_permanent_pt_modification_until_eot.",
+    "Pure target-object keyword ability grants until end of turn, owned by target_permanent_keyword_ability_gain_until_eot.",
+    "Enchanted-object combined keyword grants and P/T modifications until end of turn.",
+    "Source-object combined keyword grants and P/T modifications until end of turn.",
+]
+includes = [
+    "Target permanent combined keyword ability grants and P/T modifications until end of turn.",
+    "Target creature combined keyword grants with mixed variable and numeric P/T modifiers.",
+    "Target creature combined keyword grants with combat-role selectors.",
+    "Where-clause definitions for the printed P/T variable.",
+]
+
+[concept]
+name = "target_permanent_keyword_gain_and_pt_modification_until_eot"
+pest_rules = ["target_permanent_gains_keyword_and_gets_eot_effect"]
+rules_queries = [
+    "lex: target creature gains trample and gets +X/+0 until end of turn where X is its power",
+    "lex: target attacking creature gains flying and gets +X/+0 until end of turn where X is its power",
+]
+rules_terms = [
+    "continuous effect",
+    "keyword ability",
+    "power",
+    "toughness",
+    "target permanent",
+    "until end of turn",
+]
+
+[[counterexample]]
+reason = "Pure target-object P/T modification, not a combined keyword grant and P/T modification."
+text = "Target creature gets +1/+1 until end of turn."
+
+[[counterexample]]
+reason = "Pure target-object keyword ability grant, not a combined keyword grant and P/T modification."
+text = "Target creature gains flying until end of turn."
+
+[[counterexample]]
+reason = "Enchanted-object recipient, not target-permanent recipient."
+text = "Enchanted creature gains flying and gets +X/+0 until end of turn, where X is its power."
+
+[[counterexample]]
+reason = "Source-object recipient, not target-permanent recipient."
+text = "This creature gains flying and gets +X/+0 until end of turn, where X is its power."
+
+[[example]]
+text = "Target creature gains trample and gets +X/+0 until end of turn, where X is its power."
+
+[[example]]
+text = "Target attacking creature gains flying and gets +X/+0 until end of turn, where X is its power."
+
+[grammar_query]
+candidate_rules = [
+    "target_permanent_gains_keyword_and_gets_eot_effect",
+    "target_permanent_until_eot",
+    "target_permanent_gets_eot_effect",
+    "target_permanent_gains_keyword_eot_effect",
+    "target_permanent_gets_until_eot",
+    "target_permanent_gains_keyword_until_eot",
+]
+selected_rule = "target_permanent_gains_keyword_and_gets_eot_effect"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

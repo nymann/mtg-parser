@@ -1,0 +1,43 @@
+[fixture]
+concept = "target_permanent_keyword_gain_and_pt_modification_until_eot"
+rule = "target_permanent_gains_keyword_and_gets_eot_effect"
+
+[[example]]
+text = "gains trample and gets +X/+0 until end of turn, where X is its power"
+reason = "Owned effect fragment with keyword grant, mixed P/T modifier, until-end-of-turn duration, and variable definition."
+
+[[example]]
+text = "gains flying and gets +X/+0 until end of turn, where X is its power"
+reason = "Owned effect fragment with a different keyword and the same variable P/T modifier shape."
+
+[[example]]
+rule = "target_permanent_until_eot"
+text = "Target creature gains trample and gets +X/+0 until end of turn, where X is its power."
+reason = "Full target-permanent sentence with a combined keyword grant and P/T modification."
+
+[[example]]
+rule = "target_permanent_until_eot"
+text = "Target attacking creature gains flying and gets +X/+0 until end of turn, where X is its power."
+reason = "Full target-permanent sentence with a combat-role selector."
+
+[[counterexample]]
+text = "gets +1/+1 until end of turn"
+reason = "Pure P/T modification, owned by target_permanent_pt_modification_until_eot."
+
+[[counterexample]]
+text = "gains flying until end of turn"
+reason = "Pure keyword ability grant, owned by target_permanent_keyword_ability_gain_until_eot."
+
+[[counterexample]]
+rule = "target_permanent_until_eot"
+text = "Enchanted creature gains flying and gets +X/+0 until end of turn, where X is its power."
+reason = "Enchanted-object recipient, not target-permanent recipient."
+
+[[counterexample]]
+rule = "target_permanent_until_eot"
+text = "This creature gains flying and gets +X/+0 until end of turn, where X is its power."
+reason = "Source-object recipient, not target-permanent recipient."
+
+[[counterexample]]
+text = "gains trample and gets +X/+0 until end of turn, where X is its power trailing"
+reason = "Exact-consumption guard."
