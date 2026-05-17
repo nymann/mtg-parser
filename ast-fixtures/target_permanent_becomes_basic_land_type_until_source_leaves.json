@@ -1,0 +1,42 @@
+{
+  "concept": "target_permanent_becomes_basic_land_type_until_source_leaves",
+  "fixture_path": "grammar-fixtures/target_permanent_becomes_basic_land_type_until_source_leaves.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "target_permanent_becomes_basic_land_type_until_source_leaves",
+      "text": "Target artifact becomes an Island until CARDNAME leaves the battlefield.",
+      "ast": {
+        "TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield": {
+          "land_type": "Island",
+          "permanent_type": "Artifact",
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "target_permanent_becomes_basic_land_type_until_source_leaves",
+      "text": "Target creature becomes a Forest until this leaves the battlefield.",
+      "ast": {
+        "TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield": {
+          "land_type": "Forest",
+          "permanent_type": "Creature",
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "target_permanent_becomes_basic_land_type_until_source_leaves",
+      "text": "Target land becomes a Plains until that source leaves the battlefield.",
+      "ast": {
+        "TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield": {
+          "land_type": "Plains",
+          "permanent_type": "Land",
+          "source": "ThatSource"
+        }
+      }
+    }
+  ]
+}

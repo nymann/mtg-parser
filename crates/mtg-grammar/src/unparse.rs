@@ -709,6 +709,18 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push('.');
         }
         Statement::ModalChoice { modes } => write_modal_choice(out, modes),
+        Statement::TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield {
+            permanent_type,
+            land_type,
+            source,
+        } => {
+            write_target_permanent_becomes_basic_land_type_until_source_leaves(
+                out,
+                *permanent_type,
+                *land_type,
+                *source,
+            );
+        }
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
         Statement::ActivatedAbility(aa) => write_activated_ability(out, aa),
         Statement::ActivatedAbilityWithActivationPermission {
@@ -2064,16 +2076,32 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             land_type,
             source,
         } => {
-            out.push_str("Target ");
-            out.push_str(permanent_type_name(*permanent_type));
-            out.push_str(" becomes a ");
-            out.push_str(basic_land_type_name(*land_type));
-            out.push_str(" until ");
-            write_source_object(out, *source);
-            out.push_str(" leaves the battlefield.");
+            write_target_permanent_becomes_basic_land_type_until_source_leaves(
+                out,
+                *permanent_type,
+                *land_type,
+                *source,
+            );
         }
         ActivatedEffect::PhysicalAction(action) => write_physical_action(out, *action),
     }
+}
+
+fn write_target_permanent_becomes_basic_land_type_until_source_leaves(
+    out: &mut String,
+    permanent_type: PermanentType,
+    land_type: BasicLandType,
+    source: SourceObject,
+) {
+    out.push_str("Target ");
+    out.push_str(permanent_type_name(permanent_type));
+    out.push_str(" becomes ");
+    out.push_str(indefinite_article_for_basic_land_type(land_type));
+    out.push(' ');
+    out.push_str(basic_land_type_name(land_type));
+    out.push_str(" until ");
+    write_source_object(out, source);
+    out.push_str(" leaves the battlefield.");
 }
 
 fn write_draw_replacement_effect(out: &mut String, effect: &DrawReplacementEffect) {

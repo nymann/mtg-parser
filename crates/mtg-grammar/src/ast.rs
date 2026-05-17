@@ -28,6 +28,13 @@ pub enum Statement {
     Regenerate {
         recipient: RegenerateRecipient,
     },
+    /// "Target <permanent_type> becomes a/an <basic_land_type> until
+    /// this <source> leaves the battlefield."
+    TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield {
+        permanent_type: PermanentType,
+        land_type: BasicLandType,
+        source: SourceObject,
+    },
     /// "<source name> deals <amount> damage <recipients>."
     NamedSourceDealsDamage {
         #[serde(flatten)]

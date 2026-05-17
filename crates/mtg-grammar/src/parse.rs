@@ -342,6 +342,17 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::target_spell_or_permanent_becomes_color => {
             target_spell_or_permanent_becomes_color_from_pair(pair)
         }
+        Rule::target_permanent_becomes_basic_land_type_until_source_leaves => {
+            let (permanent_type, land_type, source) =
+                target_permanent_becomes_basic_land_type_until_source_leaves_parts(pair)?;
+            Ok(
+                Statement::TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield {
+                    permanent_type,
+                    land_type,
+                    source,
+                },
+            )
+        }
         Rule::target_permanent_until_eot => target_permanent_until_eot_from_pair(pair),
         Rule::activated_enchanted_gets_until_eot => {
             activated_enchanted_gets_until_eot_statement_from_pair(pair)
@@ -5734,21 +5745,13 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             )
         }
         Rule::target_permanent_becomes_basic_land_type_until_source_leaves => {
-            let mut inner = pair.into_inner();
-            let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
-                "target becomes land type missing permanent_type",
-            ))?;
-            let land_type_pair = inner.next().ok_or(ParseError::Internal(
-                "target becomes land type missing basic_land_type",
-            ))?;
-            let source_pair = inner.next().ok_or(ParseError::Internal(
-                "target becomes land type missing source_object",
-            ))?;
+            let (permanent_type, land_type, source) =
+                target_permanent_becomes_basic_land_type_until_source_leaves_parts(pair)?;
             Ok(
                 ActivatedEffect::TargetPermanentBecomesBasicLandTypeUntilSourceLeavesBattlefield {
-                    permanent_type: permanent_type_from_pair(permanent_type_pair)?,
-                    land_type: basic_land_type_from_pair(land_type_pair)?,
-                    source: source_object_from_pair(source_pair)?,
+                    permanent_type,
+                    land_type,
+                    source,
                 },
             )
         }
@@ -6174,6 +6177,26 @@ fn variable_from_str(s: &str) -> Result<Variable, ParseError> {
         "Y" => Ok(Variable::Y),
         _ => Err(ParseError::Internal("variable_name")),
     }
+}
+
+fn target_permanent_becomes_basic_land_type_until_source_leaves_parts(
+    pair: Pair<Rule>,
+) -> Result<(PermanentType, BasicLandType, SourceObject), ParseError> {
+    let mut inner = pair.into_inner();
+    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+        "target becomes land type missing permanent_type",
+    ))?;
+    let land_type_pair = inner.next().ok_or(ParseError::Internal(
+        "target becomes land type missing basic_land_type",
+    ))?;
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "target becomes land type missing source_object",
+    ))?;
+    Ok((
+        permanent_type_from_pair(permanent_type_pair)?,
+        basic_land_type_from_pair(land_type_pair)?,
+        source_object_from_pair(source_pair)?,
+    ))
 }
 
 fn basic_land_type_from_plural_pair(pair: Pair<Rule>) -> Result<BasicLandType, ParseError> {
