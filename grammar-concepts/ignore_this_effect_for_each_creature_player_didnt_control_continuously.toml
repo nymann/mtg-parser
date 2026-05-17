@@ -1,0 +1,75 @@
+[[axis]]
+name = "action"
+values = ["ignore_effect"]
+
+[[axis]]
+name = "effect_ref"
+values = ["this_effect"]
+
+[[axis]]
+name = "ignored_scope"
+values = ["each_creature"]
+
+[[axis]]
+name = "controller_ref"
+values = ["the_player"]
+
+[[axis]]
+name = "control_polarity"
+values = ["didnt_control"]
+
+[[axis]]
+name = "control_duration"
+values = ["continuously_since_beginning_of_turn"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "Ignore-effect instructions for permanents or other object classes rather than creatures.",
+    "Ignore-effect instructions keyed to a different controller reference than the player.",
+    "Ignore-effect instructions without continuous control since the beginning of the turn.",
+    "Effects that refer to continuous control since a different event or duration.",
+]
+includes = ["Standalone instructions to ignore this effect for each creature the player did not control continuously since the beginning of the turn."]
+
+[concept]
+name = "ignore_this_effect_for_each_creature_player_didnt_control_continuously"
+pest_rules = ["ignore_this_effect_for_each_creature_player_didnt_control_continuously"]
+rules_queries = ["lex: ignore this effect for each creature the player didn't control continuously since the beginning of the turn"]
+rules_terms = [
+    "effect",
+    "creature",
+    "control",
+    "continuously",
+    "beginning of the turn",
+]
+
+[[counterexample]]
+reason = "The ignored scope is permanents rather than creatures."
+text = "Ignore this effect for each permanent the player didn't control continuously since the beginning of the turn."
+
+[[counterexample]]
+reason = "The controller reference is you rather than the player."
+text = "Ignore this effect for each creature you didn't control continuously since the beginning of the turn."
+
+[[counterexample]]
+reason = "The continuous-control duration is missing."
+text = "Ignore this effect for each creature the player didn't control since the beginning of the turn."
+
+[[counterexample]]
+reason = "The duration starts at the beginning of combat rather than the beginning of the turn."
+text = "Ignore this effect for each creature the player didn't control continuously since the beginning of combat."
+
+[[example]]
+text = "Ignore this effect for each creature the player didn't control continuously since the beginning of the turn."
+
+[grammar_query]
+candidate_rules = ["ignore_this_effect_for_each_creature_player_didnt_control_continuously"]
+selected_rule = "ignore_this_effect_for_each_creature_player_didnt_control_continuously"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

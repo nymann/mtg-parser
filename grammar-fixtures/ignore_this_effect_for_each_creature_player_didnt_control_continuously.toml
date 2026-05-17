@@ -1,0 +1,32 @@
+[fixture]
+concept = "ignore_this_effect_for_each_creature_player_didnt_control_continuously"
+rule = "ignore_this_effect_for_each_creature_player_didnt_control_continuously"
+
+[[example]]
+text = "Ignore this effect for each creature the player didn't control continuously since the beginning of the turn."
+reason = "Standalone ignore-effect instruction scoped to each creature the player did not control continuously since the beginning of the turn."
+
+[[example]]
+rule = "sentence_statement"
+text = "Ignore this effect for each creature the player didn't control continuously since the beginning of the turn."
+reason = "The concept is available through the sentence statement surface."
+
+[[counterexample]]
+text = "Ignore this effect for each permanent the player didn't control continuously since the beginning of the turn."
+reason = "The ignored scope is permanents rather than creatures."
+
+[[counterexample]]
+text = "Ignore this effect for each creature you didn't control continuously since the beginning of the turn."
+reason = "The controller reference is you rather than the player."
+
+[[counterexample]]
+text = "Ignore this effect for each creature the player didn't control since the beginning of the turn."
+reason = "The continuous-control duration is missing."
+
+[[counterexample]]
+text = "Ignore this effect for each creature the player didn't control continuously since the beginning of combat."
+reason = "The duration starts at the beginning of combat rather than the beginning of the turn."
+
+[[counterexample]]
+text = "Ignore this effect for each creature the player didn't control continuously since the beginning of the turn. trailing"
+reason = "Exact-consumption guard."
