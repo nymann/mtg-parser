@@ -1,0 +1,39 @@
+[fixture]
+concept = "until_eot_you_may_pay_cost_at_timing"
+rule = "until_eot_you_may_pay_cost_at_timing"
+
+[[example]]
+text = "Until end of turn, any time you could activate a mana ability, you may pay 1 life."
+reason = "Timing-before-permission ordering with the mana-ability timing window and life cost."
+
+[[example]]
+text = "Until end of turn, you may pay 2 life any time you could activate a mana ability."
+reason = "Permission-before-timing ordering with the mana-ability timing window and life cost."
+
+[[example]]
+text = "Until end of turn, any time you could cast an instant, you may pay {G}."
+reason = "Timing-before-permission ordering with the instant timing window and mana cost."
+
+[[example]]
+text = "Until end of turn, you may pay {1} any time you could cast an instant."
+reason = "Permission-before-timing ordering with the instant timing window and mana cost."
+
+[[counterexample]]
+text = "You may pay {1}."
+reason = "Standalone payment permission, not bounded by an until-end-of-turn timing window."
+
+[[counterexample]]
+text = "Target player activates a mana ability of each land they control."
+reason = "Instruction to activate a mana ability, not permission to pay a cost at a timing window."
+
+[[counterexample]]
+text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
+reason = "Restriction on activating mana abilities while doing so, not an until-end-of-turn optional payment timing permission."
+
+[[counterexample]]
+text = "CARDNAME gets +1/+1 until end of turn."
+reason = "Until-end-of-turn continuous effect, but it changes power/toughness rather than granting a payment permission."
+
+[[counterexample]]
+text = "Until end of turn, any time you could activate a mana ability, you may pay 1 life. trailing"
+reason = "Exact-consumption guard."

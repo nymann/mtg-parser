@@ -1,0 +1,104 @@
+[[axis]]
+name = "duration"
+values = ["until_end_of_turn"]
+
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "permission_polarity"
+values = ["may"]
+
+[[axis]]
+name = "action"
+values = ["pay_optional_cost"]
+
+[[axis]]
+name = "cost_kind"
+values = [
+    "life",
+    "mana",
+]
+
+[[axis]]
+name = "timing"
+values = [
+    "any_time_you_could_activate_a_mana_ability",
+    "any_time_you_could_cast_an_instant",
+]
+
+[[axis]]
+name = "timing_position"
+values = [
+    "before_permission",
+    "after_cost",
+]
+
+[boundary]
+excludes = [
+    "Standalone payment permissions without an until-end-of-turn timing window.",
+    "Instructions to activate mana abilities rather than timing permissions for optional payments.",
+    "Restrictions on when mana abilities can be activated.",
+    "Until-end-of-turn continuous effects that grant power/toughness or keyword changes rather than payment permissions.",
+]
+includes = [
+    "Until-end-of-turn sentences where you may pay a life cost or mana cost at a stated instant/mana-ability timing window.",
+    "Both supported orderings: timing phrase before the payment permission, and payment permission before the timing phrase.",
+]
+
+[concept]
+name = "until_eot_you_may_pay_cost_at_timing"
+pest_rules = ["until_eot_you_may_pay_cost_at_timing"]
+rules_queries = ["lex: until end of turn you may pay cost any time you could cast an instant"]
+rules_terms = [
+    "pay",
+    "cost",
+    "activate",
+    "mana ability",
+    "cast",
+    "instant",
+]
+
+[[counterexample]]
+reason = "Standalone payment permission, not bounded by an until-end-of-turn timing window."
+text = "You may pay {1}."
+
+[[counterexample]]
+reason = "Instruction to activate a mana ability, not permission to pay a cost at a timing window."
+text = "Target player activates a mana ability of each land they control."
+
+[[counterexample]]
+reason = "Restriction on activating mana abilities while doing so, not an until-end-of-turn optional payment timing permission."
+text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
+
+[[counterexample]]
+reason = "Until-end-of-turn continuous effect, but it changes power/toughness rather than granting a payment permission."
+text = "CARDNAME gets +1/+1 until end of turn."
+
+[[example]]
+text = "Until end of turn, any time you could activate a mana ability, you may pay 1 life."
+
+[[example]]
+text = "Until end of turn, you may pay 2 life any time you could activate a mana ability."
+
+[[example]]
+text = "Until end of turn, any time you could cast an instant, you may pay {G}."
+
+[[example]]
+text = "Until end of turn, you may pay {1} any time you could cast an instant."
+
+[grammar_query]
+candidate_rules = [
+    "until_eot_you_may_pay_cost_at_timing",
+    "pay_life_cost",
+    "pay_mana_cost",
+    "target_player_activates_mana_ability_of_each_permanent_they_control",
+    "mana_ability_activation_limit",
+    "target_permanent_until_eot",
+]
+selected_rule = "until_eot_you_may_pay_cost_at_timing"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
