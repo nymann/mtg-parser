@@ -1,26 +1,29 @@
 [fixture]
 concept = "you_control_basic_land_condition"
-rule = "you_control_basic_land"
+rule = "you_control_no_basic_lands"
 
 [[example]]
+rule = "you_control_basic_land"
 text = "you control a Plains"
 reason = "Affirmative condition clause where you control one article-qualified basic land type."
 
 [[example]]
+rule = "you_control_basic_land"
 text = "you control an Island"
 reason = "Same condition shape with the alternate article required by Island."
 
 [[example]]
+rule = "you_control_basic_land"
 text = "you control a Forest"
 reason = "Same condition shape with a different basic land type."
+
+[[example]]
+text = "you control no Islands"
+reason = "Negative plural condition where you control no basic lands of a concrete type."
 
 [[counterexample]]
 text = "You own target card in the graveyard."
 reason = "Ownership relationship, not control."
-
-[[counterexample]]
-text = "you control no basic lands"
-reason = "Negative plural condition, separate polarity and quantity shape."
 
 [[counterexample]]
 text = "basic lands you control"
