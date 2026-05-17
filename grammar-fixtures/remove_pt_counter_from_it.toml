@@ -1,0 +1,31 @@
+[fixture]
+concept = "remove_pt_counter_from_it"
+rule = "remove_pt_counter_from_it"
+
+[[example]]
+text = "Remove a +1/+1 counter from it."
+reason = "Mandatory trigger effect removing one +1/+1 counter from it."
+
+[[example]]
+text = "Remove a -1/-1 counter from it."
+reason = "Mandatory trigger effect removing one -1/-1 counter from it."
+
+[[counterexample]]
+text = "Remove a spore counter from it."
+reason = "Named-counter removal, not power/toughness counter removal."
+
+[[counterexample]]
+text = "Remove a +1/+1 counter from this creature"
+reason = "Source is this creature, not the pronoun it."
+
+[[counterexample]]
+text = "You may remove a +1/+1 counter from it."
+reason = "Optional you-may modality, not a mandatory trigger effect."
+
+[[counterexample]]
+text = "Put a +1/+1 counter on it."
+reason = "Put-counter instruction, not remove-counter instruction."
+
+[[counterexample]]
+text = "Remove a +1/+1 counter from it. trailing"
+reason = "Exact-consumption guard."

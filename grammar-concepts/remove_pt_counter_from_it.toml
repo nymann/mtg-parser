@@ -1,0 +1,69 @@
+[[axis]]
+name = "action"
+values = ["remove_counter"]
+
+[[axis]]
+name = "counter_ref"
+values = ["pt_counter"]
+
+[[axis]]
+name = "counter_quantity"
+values = ["article"]
+
+[[axis]]
+name = "source"
+values = ["it_source_object"]
+
+[[axis]]
+name = "surface"
+values = ["trigger_effect"]
+
+[boundary]
+excludes = [
+    "Named-counter removal, not power/toughness counter removal.",
+    "Source objects other than the pronoun it.",
+    "Optional you-may remove-counter instructions.",
+    "Put-counter instructions, not remove-counter instructions.",
+]
+includes = ["Mandatory trigger effects that remove one power/toughness counter from it."]
+
+[concept]
+name = "remove_pt_counter_from_it"
+pest_rules = ["remove_pt_counter_from_it"]
+rules_queries = ["lex: remove a +1/+1 counter from it"]
+rules_terms = [
+    "counter",
+    "power",
+    "remove",
+    "toughness",
+]
+
+[[counterexample]]
+reason = "Named-counter removal, not power/toughness counter removal."
+text = "Remove a spore counter from it."
+
+[[counterexample]]
+reason = "Source is this creature, not the pronoun it."
+text = "Remove a +1/+1 counter from this creature"
+
+[[counterexample]]
+reason = "Optional you-may modality, not a mandatory trigger effect."
+text = "You may remove a +1/+1 counter from it."
+
+[[counterexample]]
+reason = "Put-counter instruction, not remove-counter instruction."
+text = "Put a +1/+1 counter on it."
+
+[[example]]
+text = "Remove a +1/+1 counter from it."
+
+[[example]]
+text = "Remove a -1/-1 counter from it."
+
+[grammar_query]
+candidate_rules = ["remove_pt_counter_from_it"]
+selected_rule = "remove_pt_counter_from_it"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
