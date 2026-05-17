@@ -84,6 +84,7 @@ sentence_statement = _{
   | you_may_have_that_player_shuffle
   | draw_cards
   | activated_draw_cards
+  | player_may_pay_mana
   | you_may_draw_cards
   | player_discards_cards
   | target_player_discards_cards_at_random
@@ -172,6 +173,8 @@ sentence_statement = _{
 
 phrase_statement = _{
     modal_choice
+  | pay_mana_amount
+  | pay_mana_player
   | mana_cost
   | label_phrase
   | draw_cards_action
@@ -2143,10 +2146,10 @@ you_gain_life = { ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "." }
 player_may_pay_mana = {
     pay_mana_player ~ ^"may" ~ ^"pay" ~ pay_mana_amount ~ "."
 }
-pay_mana_player = _{ you_pay_mana_player | that_player_pay_mana_player }
+pay_mana_player = { you_pay_mana_player | that_player_pay_mana_player }
 you_pay_mana_player = { ^"you" }
 that_player_pay_mana_player = { ^"that" ~ ^"player" }
-pay_mana_amount = _{ any_amount_of_mana | mana_cost }
+pay_mana_amount = { any_amount_of_mana | mana_cost }
 any_amount_of_mana = { ^"any" ~ ^"amount" ~ ^"of" ~ ^"mana" }
 you_may_pay_mana = _{ player_may_pay_mana }
 you_may_draw_cards = {

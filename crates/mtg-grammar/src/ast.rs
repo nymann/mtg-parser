@@ -132,6 +132,15 @@ pub enum Statement {
     YouMayDrawCards {
         count: CardCount,
     },
+    /// "<player> may pay <mana_cost/any amount of mana>."
+    PlayerMayPayMana {
+        player: PayManaPlayer,
+        amount: PayManaAmount,
+    },
+    /// "you"/"that player" as the player axis in a mana-payment permission.
+    PayManaPlayer(PayManaPlayer),
+    /// "<mana_cost>"/"any amount of mana" as the amount axis in a mana-payment permission.
+    PayManaAmount(PayManaAmount),
     /// "Target player discards N cards at random."
     TargetPlayerDiscardsCardsAtRandom {
         count: CardCount,

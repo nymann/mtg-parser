@@ -1,0 +1,76 @@
+{
+  "concept": "player_may_pay_mana",
+  "fixture_path": "grammar-fixtures/player_may_pay_mana.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "player_may_pay_mana",
+      "text": "You may pay {1}.",
+      "ast": {
+        "PlayerMayPayMana": {
+          "amount": {
+            "Cost": {
+              "symbols": [
+                {
+                  "Generic": 1
+                }
+              ]
+            }
+          },
+          "player": "You"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "player_may_pay_mana",
+      "text": "That player may pay any amount of mana.",
+      "ast": {
+        "PlayerMayPayMana": {
+          "amount": "AnyAmountOfMana",
+          "player": "ThatPlayer"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "pay_mana_player",
+      "text": "You",
+      "ast": {
+        "PayManaPlayer": "You"
+      }
+    },
+    {
+      "index": 4,
+      "rule": "pay_mana_player",
+      "text": "That player",
+      "ast": {
+        "PayManaPlayer": "ThatPlayer"
+      }
+    },
+    {
+      "index": 5,
+      "rule": "pay_mana_amount",
+      "text": "{1}",
+      "ast": {
+        "PayManaAmount": {
+          "Cost": {
+            "symbols": [
+              {
+                "Generic": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "pay_mana_amount",
+      "text": "any amount of mana",
+      "ast": {
+        "PayManaAmount": "AnyAmountOfMana"
+      }
+    }
+  ]
+}

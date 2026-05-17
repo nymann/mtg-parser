@@ -237,6 +237,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             Ok(Statement::PlayerLosesLife { player, amount })
         }
         Rule::life_loss_player => Ok(Statement::LifeLossPlayer(life_loss_player_from_pair(pair)?)),
+        Rule::player_may_pay_mana => player_may_pay_mana_statement_from_pair(pair),
+        Rule::pay_mana_player => Ok(Statement::PayManaPlayer(pay_mana_player_from_pair(pair)?)),
+        Rule::pay_mana_amount => Ok(Statement::PayManaAmount(pay_mana_amount_from_pair(pair)?)),
         Rule::target_player_gains_life => target_player_gains_life_from_pair(pair),
         Rule::its_controller_gains_life => its_controller_gains_life_from_pair(pair),
         Rule::take_extra_turn_after_this_one => Ok(Statement::TakeExtraTurnAfterThisOne),
@@ -1574,6 +1577,20 @@ fn you_may_draw_cards_statement_from_pair(pair: Pair<Rule>) -> Result<Statement,
     let draw_pair = only_inner(pair, "you_may_draw_cards missing draw effect")?;
     let count = draw_cards_trigger_count_from_pair(draw_pair, "you_may_draw_cards counted draw")?;
     Ok(Statement::YouMayDrawCards { count })
+}
+
+fn player_may_pay_mana_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let player_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("player_may_pay_mana missing player"))?;
+    let amount_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("player_may_pay_mana missing amount"))?;
+    Ok(Statement::PlayerMayPayMana {
+        player: pay_mana_player_from_pair(player_pair)?,
+        amount: pay_mana_amount_from_pair(amount_pair)?,
+    })
 }
 
 fn draw_that_many_cards_replacement_result_from_pair(
@@ -3511,6 +3528,10 @@ fn draw_card_object_count_from_pair(
 
 fn pay_mana_player_from_pair(pair: Pair<Rule>) -> Result<PayManaPlayer, ParseError> {
     match pair.as_rule() {
+        Rule::pay_mana_player => {
+            let inner = only_inner(pair, "pay_mana_player missing player")?;
+            pay_mana_player_from_pair(inner)
+        }
         Rule::you_pay_mana_player => Ok(PayManaPlayer::You),
         Rule::that_player_pay_mana_player => Ok(PayManaPlayer::ThatPlayer),
         _ => Err(ParseError::Internal("pay mana player")),
@@ -3519,6 +3540,10 @@ fn pay_mana_player_from_pair(pair: Pair<Rule>) -> Result<PayManaPlayer, ParseErr
 
 fn pay_mana_amount_from_pair(pair: Pair<Rule>) -> Result<PayManaAmount, ParseError> {
     match pair.as_rule() {
+        Rule::pay_mana_amount => {
+            let inner = only_inner(pair, "pay_mana_amount missing amount")?;
+            pay_mana_amount_from_pair(inner)
+        }
         Rule::mana_cost => Ok(PayManaAmount::Cost(mana_cost_from_pair(pair))),
         Rule::any_amount_of_mana => Ok(PayManaAmount::AnyAmountOfMana),
         _ => Err(ParseError::Internal("pay mana amount")),

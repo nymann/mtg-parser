@@ -198,6 +198,22 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_card_count_object(out, *count);
             out.push('.');
         }
+        Statement::PlayerMayPayMana { player, amount } => {
+            write_pay_mana_player(out, *player);
+            if let Some(first) = out.get_mut(0..1) {
+                first.make_ascii_uppercase();
+            }
+            out.push_str(" may pay ");
+            write_pay_mana_amount(out, amount);
+            out.push('.');
+        }
+        Statement::PayManaPlayer(player) => {
+            write_pay_mana_player(out, *player);
+            if let Some(first) = out.get_mut(0..1) {
+                first.make_ascii_uppercase();
+            }
+        }
+        Statement::PayManaAmount(amount) => write_pay_mana_amount(out, amount),
         Statement::TargetPlayerDiscardsCardsAtRandom { count } => {
             out.push_str("Target player discards ");
             write_discard_count(out, *count);
