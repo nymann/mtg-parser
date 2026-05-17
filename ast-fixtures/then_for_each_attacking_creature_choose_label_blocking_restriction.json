@@ -1,0 +1,48 @@
+{
+  "concept": "then_for_each_attacking_creature_choose_label_blocking_restriction",
+  "fixture_path": "grammar-fixtures/then_for_each_attacking_creature_choose_label_blocking_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "then_for_each_attacking_creature_choose_label_blocking_restriction",
+      "text": "then, for each attacking creature you control, choose \"left\" or \"right.\" that creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label.",
+      "ast": {
+        "ForEachAttackingCreatureChooseLabelBlockingRestriction": {
+          "keyword": "Flying",
+          "labels": [
+            "left",
+            "right"
+          ]
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "then_for_each_attacking_creature_choose_label_blocking_restriction",
+      "text": "Then, for each attacking creature you control, choose \"right\" or \"left.\" that creature can't be blocked this combat except by creatures with trample and creatures in a pile with the chosen label.",
+      "ast": {
+        "ForEachAttackingCreatureChooseLabelBlockingRestriction": {
+          "keyword": "Trample",
+          "labels": [
+            "right",
+            "left"
+          ]
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "then_for_each_attacking_creature_choose_label_blocking_restriction",
+      "text": "then, for each attacking creature you control, choose \"left\" or \"left.\" that creature can't be blocked this combat except by creatures with first strike and creatures in a pile with the chosen label.",
+      "ast": {
+        "ForEachAttackingCreatureChooseLabelBlockingRestriction": {
+          "keyword": "FirstStrike",
+          "labels": [
+            "left",
+            "left"
+          ]
+        }
+      }
+    }
+  ]
+}
