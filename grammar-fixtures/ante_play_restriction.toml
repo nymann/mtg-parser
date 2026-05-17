@@ -1,0 +1,31 @@
+[fixture]
+concept = "ante_play_restriction"
+rule = "ante_play_restriction"
+
+[[example]]
+text = "Remove this card from your deck before playing if you're not playing for ante."
+reason = "Oracle-style capitalization for the obsolete ante deck-removal restriction."
+
+[[example]]
+text = "remove this card from your deck before playing if you're not playing for ante."
+reason = "Lowercase sentence accepted by the case-insensitive literal rule."
+
+[[counterexample]]
+text = "Ante the top card of your library."
+reason = "Ante action, not a deck-removal play restriction."
+
+[[counterexample]]
+text = "Players can't play lands with a name originally printed in the Alpha expansion."
+reason = "Static play restriction on players, owned by static_play_restriction."
+
+[[counterexample]]
+text = "The player plays that card if able."
+reason = "Referenced-card play instruction, owned by play_referenced_card_instruction."
+
+[[counterexample]]
+text = "Remove this card from your deck."
+reason = "Remove-from-deck fragment without the before-playing ante condition."
+
+[[counterexample]]
+text = "Remove this card from your deck before playing if you're not playing for ante. trailing"
+reason = "Exact-consumption guard."

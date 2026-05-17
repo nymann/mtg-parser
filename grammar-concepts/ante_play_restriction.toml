@@ -1,0 +1,74 @@
+[[axis]]
+name = "action"
+values = ["remove_this_card_from_your_deck"]
+
+[[axis]]
+name = "timing"
+values = ["before_playing"]
+
+[[axis]]
+name = "condition"
+values = ["if_youre_not_playing_for_ante"]
+
+[[axis]]
+name = "scope"
+values = ["standalone_sentence"]
+
+[boundary]
+excludes = [
+    "Ante actions that put a card into the ante zone or ante the top card of a library.",
+    "Static play restrictions on casting spells or playing lands.",
+    "Referenced-card play instructions.",
+    "Partial remove-from-deck instructions that do not include the before-playing ante condition.",
+]
+includes = ["The obsolete ante instruction telling a player to remove this card from their deck before playing if they are not playing for ante."]
+
+[concept]
+name = "ante_play_restriction"
+pest_rules = ["ante_play_restriction"]
+rules_queries = [
+    "lex: ante play restriction remove this card from your deck before playing",
+    "lex: playing for ante remove this card from your deck",
+]
+rules_terms = [
+    "ante",
+    "play",
+    "deck",
+    "restriction",
+]
+
+[[counterexample]]
+reason = "Ante action, not a deck-removal play restriction."
+text = "Ante the top card of your library."
+
+[[counterexample]]
+reason = "Static play restriction on players, owned by static_play_restriction."
+text = "Players can't play lands with a name originally printed in the Alpha expansion."
+
+[[counterexample]]
+reason = "Referenced-card play instruction, owned by play_referenced_card_instruction."
+text = "The player plays that card if able."
+
+[[counterexample]]
+reason = "Remove-from-deck fragment without the before-playing ante condition."
+text = "Remove this card from your deck."
+
+[[example]]
+text = "Remove this card from your deck before playing if you're not playing for ante."
+
+[[example]]
+text = "remove this card from your deck before playing if you're not playing for ante."
+
+[grammar_query]
+candidate_rules = [
+    "ante_play_restriction",
+    "ante_top_card_of_your_library_action",
+    "each_player_antes_top_card_of_their_library_action",
+    "static_play_restriction",
+    "referenced_card_play_instruction",
+]
+selected_rule = "ante_play_restriction"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
