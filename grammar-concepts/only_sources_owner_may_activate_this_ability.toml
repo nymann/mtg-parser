@@ -1,0 +1,91 @@
+[[axis]]
+name = "permission_polarity"
+values = ["only"]
+
+[[axis]]
+name = "activation_actor"
+values = ["source_owner"]
+
+[[axis]]
+name = "source_reference"
+values = [
+    "this_abilitys_source",
+    "this_source_object",
+]
+
+[[axis]]
+name = "activated_object"
+values = ["this_ability"]
+
+[boundary]
+excludes = [
+    "Activation permissions that restrict timing windows rather than who may activate an ability.",
+    "Activation permissions that restrict how often an ability may be activated.",
+    "Mana ability activation restrictions with source-scope and spending-limit conditions.",
+    "Instructions that cause a player to activate an ability rather than permission text for who may activate this ability.",
+]
+includes = [
+    "Standalone activation permission sentences where only the source object's owner may activate this ability.",
+    "Source-owner references written as this ability's source's owner or as the owner of this source object.",
+]
+
+[concept]
+name = "only_sources_owner_may_activate_this_ability"
+pest_rules = ["only_sources_owner_may_activate_this_ability"]
+rules_queries = [
+    "lex: only this ability's source's owner may activate this ability",
+    "lex: activate activated ability source owner",
+]
+rules_terms = [
+    "activate",
+    "activated ability",
+    "source",
+    "owner",
+]
+
+[[counterexample]]
+reason = "Timing-window permission, not a source-owner activation actor restriction."
+text = "Activate only as a sorcery."
+
+[[counterexample]]
+reason = "Your-turn timing permission, not a restriction to the source object's owner."
+text = "Activate only during your turn."
+
+[[counterexample]]
+reason = "Timing and frequency permission, not a source-owner activation actor restriction."
+text = "Activate only during your turn and only once each turn."
+
+[[counterexample]]
+reason = "Conditional mana ability activation restriction with source-scope and spending-limit clauses."
+text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
+
+[[counterexample]]
+reason = "Instruction to activate abilities, not permission text limiting who may activate this ability."
+text = "Target player activates a mana ability of each land they control."
+
+[[example]]
+text = "Only this ability's source's owner may activate this ability."
+
+[[example]]
+text = "Only this permanent's owner may activate this ability."
+
+[[example]]
+text = "Only this artifact creature's owner may activate this ability."
+
+[grammar_query]
+candidate_rules = [
+    "only_sources_owner_may_activate_this_ability",
+    "activate_only_as_sorcery",
+    "activate_only_during_your_turn",
+    "activate_only_during_your_turn_and_only_once_each_turn",
+    "activate_only_during_your_upkeep",
+    "activate_only_during_combat",
+    "activate_only_during_opponents_turn_before_attackers_declared",
+    "mana_ability_activation_limit",
+    "target_player_activates_mana_ability_of_each_permanent_they_control",
+]
+selected_rule = "only_sources_owner_may_activate_this_ability"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

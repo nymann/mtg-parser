@@ -2265,7 +2265,10 @@ only_sources_owner_may_activate_this_ability = {
     ^"only" ~ source_object_possessive ~ ^"owner" ~ ^"may" ~ ^"activate"
   ~ ^"this" ~ ^"ability" ~ "."
 }
-source_object_possessive = { ^"this" ~ source_object_kind ~ ("'s" | "s")? }
+source_object_possessive = {
+    (^"this" ~ source_object_kind ~ ("'s" | "s")?)
+  | (^"this" ~ ^"ability's" ~ ^"source's")
+}
 
 unless_you_pay_mana_do_actions = {
     ^"unless" ~ ^"you" ~ ^"pay" ~ mana_cost ~ ","

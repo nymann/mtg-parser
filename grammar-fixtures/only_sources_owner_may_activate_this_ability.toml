@@ -1,0 +1,43 @@
+[fixture]
+concept = "only_sources_owner_may_activate_this_ability"
+rule = "only_sources_owner_may_activate_this_ability"
+
+[[example]]
+text = "Only this ability's source's owner may activate this ability."
+reason = "Source-owner activation actor restriction using the canonical this-ability's-source wording."
+
+[[example]]
+text = "Only this permanent's owner may activate this ability."
+reason = "Source-owner activation actor restriction using a source-object possessive."
+
+[[example]]
+text = "Only this artifact creature's owner may activate this ability."
+reason = "Source-owner activation actor restriction using a compound source-object kind."
+
+[[example]]
+text = "only this ability's source's owner may activate this ability."
+reason = "Same activation permission shape in lowercase; the grammar literals are case-insensitive."
+
+[[counterexample]]
+text = "Activate only as a sorcery."
+reason = "Timing-window permission, not a source-owner activation actor restriction."
+
+[[counterexample]]
+text = "Activate only during your turn."
+reason = "Your-turn timing permission, not a restriction to the source object's owner."
+
+[[counterexample]]
+text = "Activate only during your turn and only once each turn."
+reason = "Timing and frequency permission, not a source-owner activation actor restriction."
+
+[[counterexample]]
+text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
+reason = "Conditional mana ability activation restriction with source-scope and spending-limit clauses."
+
+[[counterexample]]
+text = "Target player activates a mana ability of each land they control."
+reason = "Instruction to activate abilities, not permission text limiting who may activate this ability."
+
+[[counterexample]]
+text = "Only this ability's source's owner may activate this ability. trailing"
+reason = "Exact-consumption guard."
