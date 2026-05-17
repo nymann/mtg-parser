@@ -1,0 +1,31 @@
+[fixture]
+concept = "additional_blockers_may_be_put_into_additional_piles"
+rule = "additional_blockers_may_be_put_into_additional_piles"
+
+[[example]]
+text = "Creatures those players control that can block additional creatures may likewise be put into additional piles."
+reason = "Canonical standalone permission for creatures that can block additional creatures to be put into additional piles."
+
+[[example]]
+text = "creatures those players control that can block additional creatures may likewise be put into additional piles."
+reason = "Same sentence with lowercase initial word; the grammar rule uses case-insensitive literals."
+
+[[counterexample]]
+text = "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+reason = "This is the earlier declaring-blockers replacement sentence, not the follow-up permission for additional blockers."
+
+[[counterexample]]
+text = "Assign each pile to a different one of those attacking creatures at random."
+reason = "This assigns existing piles to attacking creatures rather than allowing additional blockers into additional piles."
+
+[[counterexample]]
+text = "Creatures those players control that can block additional creatures must likewise be put into additional piles."
+reason = "The concept is scoped to optional placement, not mandatory placement."
+
+[[counterexample]]
+text = "Creatures those players control that can block additional creatures may likewise be put into those piles."
+reason = "The concept is scoped to placement into additional piles, not into the already-created piles."
+
+[[counterexample]]
+text = "Creatures those players control that can block additional creatures may likewise be put into additional piles. trailing"
+reason = "Exact-consumption guard."

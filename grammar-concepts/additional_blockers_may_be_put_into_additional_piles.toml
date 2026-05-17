@@ -1,0 +1,76 @@
+[[axis]]
+name = "affected_creatures"
+values = ["creatures_those_players_control"]
+
+[[axis]]
+name = "blocking_capability"
+values = ["can_block_additional_creatures"]
+
+[[axis]]
+name = "permission"
+values = ["may_likewise_be_put"]
+
+[[axis]]
+name = "destination"
+values = ["additional_piles"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "The earlier declaring-blockers replacement sentence where defending players divide creatures into piles.",
+    "Later random blocking-pile procedure sentences that assign piles to attacking creatures.",
+    "Mandatory additional-blocker placement effects.",
+    "Additional-blocker placement effects with a different destination than additional piles.",
+]
+includes = [
+    "Creatures those players control that can block additional creatures may likewise be put into additional piles.",
+    "The same sentence with case-insensitive literal words.",
+]
+
+[concept]
+name = "additional_blockers_may_be_put_into_additional_piles"
+pest_rules = ["additional_blockers_may_be_put_into_additional_piles"]
+rules_queries = ["lex: additional blockers may be put into additional piles"]
+rules_terms = [
+    "block",
+    "additional creatures",
+    "may",
+    "piles",
+]
+
+[[counterexample]]
+reason = "This is the earlier declaring-blockers replacement sentence, not the follow-up permission for additional blockers."
+text = "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+
+[[counterexample]]
+reason = "This assigns existing piles to attacking creatures rather than allowing additional blockers into additional piles."
+text = "Assign each pile to a different one of those attacking creatures at random."
+
+[[counterexample]]
+reason = "The concept is scoped to optional placement, not mandatory placement."
+text = "Creatures those players control that can block additional creatures must likewise be put into additional piles."
+
+[[counterexample]]
+reason = "The concept is scoped to placement into additional piles, not into the already-created piles."
+text = "Creatures those players control that can block additional creatures may likewise be put into those piles."
+
+[[example]]
+text = "Creatures those players control that can block additional creatures may likewise be put into additional piles."
+
+[[example]]
+text = "creatures those players control that can block additional creatures may likewise be put into additional piles."
+
+[grammar_query]
+candidate_rules = [
+    "additional_blockers_may_be_put_into_additional_piles",
+    "this_turn_defending_players_make_random_blocking_piles",
+    "assign_each_pile_to_attacking_creature_at_random",
+]
+selected_rule = "additional_blockers_may_be_put_into_additional_piles"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
