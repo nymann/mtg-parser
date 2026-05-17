@@ -1,0 +1,67 @@
+{
+  "concept": "static_play_restriction",
+  "fixture_path": "grammar-fixtures/static_play_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_play_restriction",
+      "text": "Players can't cast spells with a name originally printed in the Alpha expansion.",
+      "ast": {
+        "StaticAbility": {
+          "PlayRestriction": {
+            "actions": [
+              "CastSpells"
+            ],
+            "affected": "Players",
+            "filter": {
+              "OriginalPrinting": {
+                "expansion": "Alpha"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_play_restriction",
+      "text": "Players can't play lands with a name originally printed in the Alpha expansion.",
+      "ast": {
+        "StaticAbility": {
+          "PlayRestriction": {
+            "actions": [
+              "PlayLands"
+            ],
+            "affected": "Players",
+            "filter": {
+              "OriginalPrinting": {
+                "expansion": "Alpha"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "static_play_restriction",
+      "text": "Players can't cast spells or play lands with a name originally printed in the Alpha expansion.",
+      "ast": {
+        "StaticAbility": {
+          "PlayRestriction": {
+            "actions": [
+              "CastSpells",
+              "PlayLands"
+            ],
+            "affected": "Players",
+            "filter": {
+              "OriginalPrinting": {
+                "expansion": "Alpha"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
