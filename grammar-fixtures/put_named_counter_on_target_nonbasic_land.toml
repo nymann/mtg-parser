@@ -1,0 +1,31 @@
+[fixture]
+concept = "put_named_counter_on_target_nonbasic_land"
+rule = "put_named_counter_on_target_non_basic_land"
+
+[[example]]
+text = "Put a flood counter on target non-Island land."
+reason = "Activated effect placing one named flood counter on a target non-Island land."
+
+[[example]]
+text = "Put a mire counter on target non-Swamp land."
+reason = "Activated effect placing one named mire counter on a target non-Swamp land."
+
+[[counterexample]]
+text = "Put a +1/+1 counter on target creature."
+reason = "Power/toughness counter placement, not named-counter placement."
+
+[[counterexample]]
+text = "Put a spore counter on it."
+reason = "Source-object named-counter placement, not target nonbasic land placement."
+
+[[counterexample]]
+text = "Put a flood counter on target land."
+reason = "Missing the nonbasic land-type qualifier required by this concept."
+
+[[counterexample]]
+text = "Target land becomes an Island until CARDNAME leaves the battlefield."
+reason = "Basic land type changing effect, not a put-counter instruction."
+
+[[counterexample]]
+text = "Put a flood counter on target non-Island land. trailing"
+reason = "Exact-consumption guard."

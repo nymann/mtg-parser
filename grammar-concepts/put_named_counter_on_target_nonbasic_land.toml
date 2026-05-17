@@ -1,0 +1,78 @@
+[[axis]]
+name = "ability_context"
+values = ["activated_effect"]
+
+[[axis]]
+name = "action"
+values = ["put_counter"]
+
+[[axis]]
+name = "counter_ref"
+values = ["named_counter"]
+
+[[axis]]
+name = "counter_quantity"
+values = ["article"]
+
+[[axis]]
+name = "recipient"
+values = ["target_nonbasic_land_permanent"]
+
+[boundary]
+excludes = [
+    "Power/toughness counter placement, not named-counter placement.",
+    "Source-object named-counter placement, not target nonbasic land placement.",
+    "Target land placement without a nonbasic land-type qualifier.",
+    "Basic land type changing effects, not put-counter instructions.",
+]
+includes = [
+    "Activated ability effects that put one named counter on a target nonbasic land permanent.",
+    "Target nonbasic land wording using non-<basic land type> land.",
+    "Article quantity named-counter placement.",
+]
+
+[concept]
+name = "put_named_counter_on_target_nonbasic_land"
+pest_rules = ["put_named_counter_on_target_non_basic_land"]
+rules_queries = ["lex: put a flood counter on target non-Island land"]
+rules_terms = [
+    "counter",
+    "land",
+    "put",
+    "target",
+]
+
+[[counterexample]]
+reason = "Power/toughness counter placement, not named-counter placement."
+text = "Put a +1/+1 counter on target creature."
+
+[[counterexample]]
+reason = "Source-object named-counter placement, not target nonbasic land placement."
+text = "Put a spore counter on it."
+
+[[counterexample]]
+reason = "Missing the nonbasic land-type qualifier required by this concept."
+text = "Put a flood counter on target land."
+
+[[counterexample]]
+reason = "Basic land type changing effect, not a put-counter instruction."
+text = "Target land becomes an Island until CARDNAME leaves the battlefield."
+
+[[example]]
+text = "Put a flood counter on target non-Island land."
+
+[[example]]
+text = "Put a mire counter on target non-Swamp land."
+
+[grammar_query]
+candidate_rules = [
+    "put_named_counter_on_target_non_basic_land",
+    "put_pt_counters_on_source",
+    "put_named_counters_on_source",
+    "target_permanent_becomes_basic_land_type_until_source_leaves",
+]
+selected_rule = "put_named_counter_on_target_non_basic_land"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
