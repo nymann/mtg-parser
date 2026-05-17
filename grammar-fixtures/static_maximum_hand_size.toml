@@ -1,0 +1,23 @@
+[fixture]
+concept = "static_maximum_hand_size"
+rule = "static_you_have_no_maximum_hand_size"
+
+[[example]]
+text = "You have no maximum hand size."
+reason = "Static rules-modifying continuous effect removing your maximum hand size."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Static enters-tapped replacement effect, owned by static_enters_tapped."
+
+[[counterexample]]
+text = "Look at target player's hand."
+reason = "Instruction to look at a target player's hand, owned by look_at_target_hand."
+
+[[counterexample]]
+text = "Discard your hand."
+reason = "Instruction to discard your hand, owned by player_discards_cards."
+
+[[counterexample]]
+text = "You have no maximum hand size. trailing"
+reason = "Exact-consumption guard."

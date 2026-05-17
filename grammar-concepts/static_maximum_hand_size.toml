@@ -1,0 +1,61 @@
+[[axis]]
+name = "ability_kind"
+values = ["static_ability"]
+
+[[axis]]
+name = "continuous_effect_kind"
+values = ["rules_modifying_continuous_effect"]
+
+[[axis]]
+name = "affected_player"
+values = ["you"]
+
+[[axis]]
+name = "modified_rule"
+values = ["maximum_hand_size"]
+
+[[axis]]
+name = "limit_value"
+values = ["no_maximum"]
+
+[boundary]
+excludes = [
+    "Static enters-tapped replacement effects, owned by static_enters_tapped.",
+    "Instructions to look at a target player's hand, owned by look_at_target_hand.",
+    "Instructions to discard your hand, owned by player_discards_cards.",
+]
+includes = ["You have no maximum hand size."]
+
+[concept]
+name = "static_maximum_hand_size"
+pest_rules = ["static_you_have_no_maximum_hand_size"]
+rules_queries = ["lex: maximum hand size rules modifying continuous effect"]
+rules_terms = [
+    "continuous effect",
+    "maximum hand size",
+    "rules-modifying continuous effect",
+    "static ability",
+]
+
+[[counterexample]]
+reason = "Static enters-tapped replacement effect, owned by static_enters_tapped."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "Instruction to look at a target player's hand, owned by look_at_target_hand."
+text = "Look at target player's hand."
+
+[[counterexample]]
+reason = "Instruction to discard your hand, owned by player_discards_cards."
+text = "Discard your hand."
+
+[[example]]
+text = "You have no maximum hand size."
+
+[grammar_query]
+candidate_rules = ["static_you_have_no_maximum_hand_size"]
+selected_rule = "static_you_have_no_maximum_hand_size"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
