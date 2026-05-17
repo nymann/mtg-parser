@@ -1,0 +1,49 @@
+{
+  "concept": "static_creature_type_pt_and_ability_grant",
+  "fixture_path": "grammar-fixtures/static_creature_type_pt_and_ability_grant.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_other_creature_type_get_and_have_keyword",
+      "text": "Other Goblin creatures get +1/+1 and have flying.",
+      "ast": {
+        "StaticAbility": {
+          "OtherCreatureTypeGetAndHaveAbility": {
+            "ability": {
+              "Keyword": "Flying"
+            },
+            "creature_type": "Goblin",
+            "modifier": {
+              "power": {
+                "magnitude": 1,
+                "sign": "Plus"
+              },
+              "toughness": {
+                "magnitude": 1,
+                "sign": "Plus"
+              }
+            },
+            "subject": "TypeCreatures"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_other_creature_type_get_and_have_keyword",
+      "text": "Other Elves have trample.",
+      "ast": {
+        "StaticAbility": {
+          "OtherCreatureTypeGetAndHaveAbility": {
+            "ability": {
+              "Keyword": "Trample"
+            },
+            "creature_type": "Elf",
+            "modifier": null,
+            "subject": "TypePlural"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -4349,6 +4349,7 @@ fn write_permanent_controller(out: &mut String, controller: PermanentController)
 fn creature_type_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Djinn => "Djinn",
+        CreatureType::Elf => "Elf",
         CreatureType::Goblin => "Goblin",
         CreatureType::Golem => "Golem",
         CreatureType::Insect => "Insect",
@@ -4361,6 +4362,7 @@ fn creature_type_name(ct: CreatureType) -> &'static str {
 fn creature_type_plural_name(ct: CreatureType) -> &'static str {
     match ct {
         CreatureType::Djinn => "Djinns",
+        CreatureType::Elf => "Elves",
         CreatureType::Goblin => "Goblins",
         CreatureType::Golem => "Golems",
         CreatureType::Insect => "Insects",
