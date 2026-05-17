@@ -1,0 +1,22 @@
+{
+  "concept": "that_player_draws_an_additional_card",
+  "fixture_path": "grammar-fixtures/that_player_draws_an_additional_card.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "that_player_draws_an_additional_card",
+      "text": "that player draws an additional card.",
+      "ast": {
+        "TriggerEffect": "ThatPlayerDrawsAnAdditionalCard"
+      }
+    },
+    {
+      "index": 2,
+      "rule": "that_player_draws_an_additional_card",
+      "text": "That player draws an additional card.",
+      "ast": {
+        "TriggerEffect": "ThatPlayerDrawsAnAdditionalCard"
+      }
+    }
+  ]
+}

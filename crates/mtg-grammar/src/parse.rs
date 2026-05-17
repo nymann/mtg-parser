@@ -324,6 +324,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 that_player_adds_mana_of_any_type_that_permanent_produced_from_pair(pair)?,
             ))
         }
+        Rule::that_player_draws_an_additional_card => Ok(Statement::TriggerEffect(
+            TriggerEffect::ThatPlayerDrawsAnAdditionalCard,
+        )),
         Rule::pay_mana_player => Ok(Statement::PayManaPlayer(pay_mana_player_from_pair(pair)?)),
         Rule::pay_mana_amount => Ok(Statement::PayManaAmount(pay_mana_amount_from_pair(pair)?)),
         Rule::target_player_gains_life => target_player_gains_life_from_pair(pair),
