@@ -1,0 +1,27 @@
+[fixture]
+concept = "static_enchanted_triggered_ability_grant"
+rule = "static_enchanted_has_triggered_ability"
+
+[[example]]
+text = "Enchanted creature has \"Whenever this creature attacks, draw a card.\""
+reason = "Quoted triggered ability grant to an enchanted creature."
+
+[[example]]
+text = "Enchanted artifact has \"At the beginning of your upkeep, you gain 1 life.\""
+reason = "Quoted triggered ability grant to an enchanted artifact."
+
+[[counterexample]]
+text = "Enchanted creature has flying."
+reason = "Keyword ability grant, owned by static_enchanted_keyword_grant."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1."
+reason = "Enchanted-object P/T modification, not an ability grant."
+
+[[counterexample]]
+text = "Enchanted creature loses flying."
+reason = "Keyword-removal effect, not an ability grant."
+
+[[counterexample]]
+text = "Enchanted creature has \"Whenever this creature attacks, draw a card.\" trailing"
+reason = "Exact-consumption guard."

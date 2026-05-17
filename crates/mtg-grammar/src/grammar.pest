@@ -1731,6 +1731,7 @@ trigger_event = _{
   | player_casts_colored_spell
   | basic_land_type_is_tapped_for_mana
   | basic_land_type_controller_becomes_status
+  | source_object ~ ^"attacks"
   | article ~ color_word ~ ^"creature" ~ ^"attacks"
   | one_or_more_creatures_you_control_attack
   | one_or_more_permanents_with_original_printing_on_battlefield

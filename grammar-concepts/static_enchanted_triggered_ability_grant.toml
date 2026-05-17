@@ -1,0 +1,62 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_ability_grant"]
+
+[[axis]]
+name = "preserve_affected_object"
+values = ["enchanted_permanent"]
+
+[[axis]]
+name = "add_granted_ability"
+values = ["quoted_triggered_ability"]
+
+[boundary]
+excludes = [
+    "Enchanted-object keyword ability grants.",
+    "Enchanted-object power/toughness modifications.",
+    "Enchanted-object keyword-removal effects.",
+]
+includes = [
+    "Static continuous ability grants where an enchanted permanent has a quoted triggered ability.",
+    "Creature and artifact enchanted-object surfaces.",
+]
+
+[concept]
+name = "static_enchanted_triggered_ability_grant"
+pest_rules = ["static_enchanted_has_triggered_ability"]
+rules_queries = [
+    "lex: enchanted permanent has quoted triggered ability",
+    "lex: enchanted creature has whenever this creature attacks draw a card",
+]
+rules_terms = [
+    "static",
+    "continuous",
+    "enchanted",
+    "triggered ability",
+]
+
+[[counterexample]]
+reason = "Keyword ability grant, owned by static_enchanted_keyword_grant."
+text = "Enchanted creature has flying."
+
+[[counterexample]]
+reason = "Enchanted-object P/T modification, not an ability grant."
+text = "Enchanted creature gets +1/+1."
+
+[[counterexample]]
+reason = "Keyword-removal effect, not an ability grant."
+text = "Enchanted creature loses flying."
+
+[[example]]
+text = 'Enchanted creature has "Whenever this creature attacks, draw a card."'
+
+[[example]]
+text = 'Enchanted artifact has "At the beginning of your upkeep, you gain 1 life."'
+
+[grammar_query]
+candidate_rules = ["static_enchanted_has_triggered_ability"]
+selected_rule = "static_enchanted_has_triggered_ability"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
