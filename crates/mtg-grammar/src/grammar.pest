@@ -93,6 +93,7 @@ sentence_statement = _{
   | activated_draw_cards
   | player_may_pay_mana
   | you_may_draw_cards
+  | you_may_have_source_become_copy_of_target
   | player_discards_cards
   | target_player_discards_cards_at_random
   | gain_control_of_target_permanent_for_as_long_as_you_control_source

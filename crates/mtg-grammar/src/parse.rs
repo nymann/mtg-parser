@@ -290,6 +290,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             )
         }
         Rule::you_may_have_that_player_shuffle => Ok(Statement::YouMayHaveThatPlayerShuffle),
+        Rule::you_may_have_source_become_copy_of_target => Ok(Statement::TriggerEffect(
+            you_may_have_source_become_copy_of_target_from_pair(pair)?,
+        )),
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::draw_cards_action | Rule::activated_draw_cards => draw_cards_statement_from_pair(pair),
         Rule::you_may_draw_cards => you_may_draw_cards_statement_from_pair(pair),

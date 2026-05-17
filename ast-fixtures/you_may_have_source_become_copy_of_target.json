@@ -1,0 +1,45 @@
+{
+  "concept": "you_may_have_source_become_copy_of_target",
+  "fixture_path": "grammar-fixtures/you_may_have_source_become_copy_of_target.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_may_have_source_become_copy_of_target",
+      "text": "You may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability.",
+      "ast": {
+        "TriggerEffect": {
+          "YouMayHaveSourceBecomeCopyOfTarget": {
+            "exception": {
+              "DoesntCopyColorAndHasAbility": {
+                "ability": "ThisAbility",
+                "permanent_type": "Creature"
+              }
+            },
+            "permanent_type": "Creature",
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "you_may_have_source_become_copy_of_target",
+      "text": "You may have CARDNAME become a copy of target artifact, except it's an enchantment in addition to its other types.",
+      "ast": {
+        "TriggerEffect": {
+          "YouMayHaveSourceBecomeCopyOfTarget": {
+            "exception": {
+              "PermanentTypeInAdditionToItsOtherTypes": {
+                "permanent_type": "Enchantment"
+              }
+            },
+            "permanent_type": "Artifact",
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    }
+  ]
+}
