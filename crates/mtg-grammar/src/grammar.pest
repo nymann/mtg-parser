@@ -94,6 +94,7 @@ sentence_statement = _{
   | activated_draw_cards
   | player_may_pay_mana
   | you_may_draw_cards
+  | remove_pt_counter_from_it
   | you_may_remove_named_counter_from_source
   | you_may_have_source_become_copy_of_target
   | you_may_put_this_card_onto_the_battlefield

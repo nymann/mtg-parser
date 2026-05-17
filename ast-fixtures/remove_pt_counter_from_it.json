@@ -1,0 +1,48 @@
+{
+  "concept": "remove_pt_counter_from_it",
+  "fixture_path": "grammar-fixtures/remove_pt_counter_from_it.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "remove_pt_counter_from_it",
+      "text": "Remove a +1/+1 counter from it.",
+      "ast": {
+        "TriggerEffect": {
+          "RemoveCounterFromIt": {
+            "counter": {
+              "power": {
+                "magnitude": 1,
+                "sign": "Plus"
+              },
+              "toughness": {
+                "magnitude": 1,
+                "sign": "Plus"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "remove_pt_counter_from_it",
+      "text": "Remove a -1/-1 counter from it.",
+      "ast": {
+        "TriggerEffect": {
+          "RemoveCounterFromIt": {
+            "counter": {
+              "power": {
+                "magnitude": 1,
+                "sign": "Minus"
+              },
+              "toughness": {
+                "magnitude": 1,
+                "sign": "Minus"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
