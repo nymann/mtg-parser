@@ -1,0 +1,58 @@
+{
+  "concept": "sacrifice_permanent_other_than_source",
+  "fixture_path": "grammar-fixtures/sacrifice_permanent_other_than_source.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "sacrifice_permanent_other_than_source",
+      "text": "sacrifice a creature other than CARDNAME.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificePermanentOtherThanSource": {
+            "permanent_type": "Creature",
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "sacrifice_permanent_other_than_source",
+      "text": "sacrifice an artifact other than it.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificePermanentOtherThanSource": {
+            "permanent_type": "Artifact",
+            "source": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "sacrifice_permanent_other_than_source",
+      "text": "sacrifice a creature other than this.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificePermanentOtherThanSource": {
+            "permanent_type": "Creature",
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "sacrifice_permanent_other_than_source",
+      "text": "sacrifice an enchantment other than that source.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificePermanentOtherThanSource": {
+            "permanent_type": "Enchantment",
+            "source": "ThatSource"
+          }
+        }
+      }
+    }
+  ]
+}

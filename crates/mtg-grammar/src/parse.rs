@@ -327,6 +327,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::you_may_have_source_become_copy_of_target => Ok(Statement::TriggerEffect(
             you_may_have_source_become_copy_of_target_from_pair(pair)?,
         )),
+        Rule::sacrifice_permanent_other_than_source => Ok(Statement::TriggerEffect(
+            sacrifice_permanent_other_than_source_from_pair(pair)?,
+        )),
         Rule::you_may_remove_named_counter_from_source => Ok(Statement::TriggerEffect(
             you_may_remove_named_counter_from_source_from_pair(pair)?,
         )),
