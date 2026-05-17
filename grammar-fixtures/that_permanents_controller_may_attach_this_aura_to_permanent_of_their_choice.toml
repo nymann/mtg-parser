@@ -1,0 +1,27 @@
+[fixture]
+concept = "that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice"
+rule = "that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice"
+
+[[example]]
+text = "that creature's controller may attach this Aura to a creature of their choice."
+reason = "That creature's controller may attach this Aura to a creature of their choice."
+
+[[example]]
+text = "That creature's controller may attach this Aura to an artifact of their choice."
+reason = "Artifact destination variant with Oracle-style sentence capitalization."
+
+[[counterexample]]
+text = "that player draws an additional card."
+reason = "That-player card draw is a different effect family and does not perform the attach keyword action."
+
+[[counterexample]]
+text = "return enchanted creature card to the battlefield under your control and attach this Aura to it."
+reason = "Return-and-attach wording attaches this Aura to the returned object and is not the standalone controller-choice permission."
+
+[[counterexample]]
+text = "sacrifice a creature of an opponent's choice."
+reason = "Choice-scoped sacrifice wording is not an Aura attach permission."
+
+[[counterexample]]
+text = "that creature's controller may attach this Aura to a creature of their choice. trailing"
+reason = "Exact-consumption guard."

@@ -1,0 +1,89 @@
+[[axis]]
+name = "actor"
+values = ["that_permanents_controller"]
+
+[[axis]]
+name = "modality"
+values = ["may"]
+
+[[axis]]
+name = "keyword_action"
+values = ["attach"]
+
+[[axis]]
+name = "object"
+values = ["this_aura"]
+
+[[axis]]
+name = "object_kind"
+values = ["aura"]
+
+[[axis]]
+name = "destination"
+values = ["article_permanent_type"]
+
+[[axis]]
+name = "choice_scope"
+values = ["of_their_choice"]
+
+[[axis]]
+name = "ability_context"
+values = ["sentence_statement"]
+
+[boundary]
+excludes = [
+    "That-player card-draw effects belong to card-draw concepts, not attach keyword-action concepts.",
+    "Return-and-attach effects that attach this Aura to a returned object belong to return-and-attach concepts, not this standalone permission sentence.",
+    "Choice-scoped sacrifice instructions belong to sacrifice concepts, not Aura attachment permission concepts.",
+]
+includes = [
+    "Sentence statements where that permanent's controller may attach this Aura to a permanent type of their choice.",
+    "The destination is an article-qualified permanent type selected by that permanent's controller.",
+]
+
+[concept]
+name = "that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice"
+pest_rules = ["that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice"]
+rules_queries = [
+    "lex: that creature's controller may attach this Aura to a creature of their choice",
+    "lex: attach this Aura to a creature of their choice",
+]
+rules_terms = [
+    "Aura",
+    "attach",
+    "choice",
+    "controller",
+    "permanent",
+]
+
+[[counterexample]]
+reason = "That-player card draw is a different effect family and does not perform the attach keyword action."
+text = "that player draws an additional card."
+
+[[counterexample]]
+reason = "Return-and-attach wording attaches this Aura to the returned object and is not the standalone controller-choice permission."
+text = "return enchanted creature card to the battlefield under your control and attach this Aura to it."
+
+[[counterexample]]
+reason = "Choice-scoped sacrifice wording is not an Aura attach permission."
+text = "sacrifice a creature of an opponent's choice."
+
+[[example]]
+reason = "That creature's controller may attach this Aura to a creature of their choice."
+text = "that creature's controller may attach this Aura to a creature of their choice."
+
+[[example]]
+reason = "Artifact destination variant with Oracle-style sentence capitalization."
+text = "That creature's controller may attach this Aura to an artifact of their choice."
+
+[grammar_query]
+candidate_rules = [
+    "that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice",
+    "return_enchanted_card_and_attach",
+    "that_player_draws_an_additional_card",
+]
+selected_rule = "that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
