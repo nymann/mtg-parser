@@ -1,0 +1,30 @@
+{
+  "concept": "creatures_attack_this_turn_if_able",
+  "fixture_path": "grammar-fixtures/creatures_attack_this_turn_if_able.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "creatures_attack_this_turn_if_able",
+      "text": "That creature attacks this turn if able.",
+      "ast": {
+        "StaticAbility": {
+          "CreaturesAttackThisTurnIfAble": {
+            "subject": "ThatCreature"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "creatures_attack_this_turn_if_able",
+      "text": "Creatures the active player controls attack this turn if able.",
+      "ast": {
+        "StaticAbility": {
+          "CreaturesAttackThisTurnIfAble": {
+            "subject": "CreaturesActivePlayerControls"
+          }
+        }
+      }
+    }
+  ]
+}
