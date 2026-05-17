@@ -1,0 +1,56 @@
+{
+  "concept": "then_destroy_source",
+  "fixture_path": "grammar-fixtures/then_destroy_source.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "then_destroy_source",
+      "text": "then destroy CARDNAME.",
+      "ast": {
+        "PhysicalAction": {
+          "ThenDestroySource": {
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "then_destroy_source",
+      "text": "Then destroy CARDNAME.",
+      "ast": {
+        "PhysicalAction": {
+          "ThenDestroySource": {
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "then_destroy_source",
+      "text": "then destroy this creature.",
+      "ast": {
+        "PhysicalAction": {
+          "ThenDestroySource": {
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "then_destroy_source",
+      "text": "then destroy that source.",
+      "ast": {
+        "PhysicalAction": {
+          "ThenDestroySource": {
+            "source": "ThatSource"
+          }
+        }
+      }
+    }
+  ]
+}
