@@ -35,7 +35,7 @@ pub fn render(f: &mut Frame<'_>, state: &mut AppState) {
     let show_complexity = state
         .session
         .as_ref()
-        .map(|s| !s.history.is_empty())
+        .map(|s| s.workflow != "concept-phase2-grind" && !s.history.is_empty())
         .unwrap_or(false);
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -222,7 +222,11 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         f,
         cols[2],
         vec![
-            label_span("cost/card"),
+            label_span(if s.workflow == "add-card" {
+                "cost/card"
+            } else {
+                "cost/iter"
+            }),
             Span::raw(avg_cost.map(format_usd).unwrap_or_else(|| "—".into())),
         ],
         Alignment::Center,
