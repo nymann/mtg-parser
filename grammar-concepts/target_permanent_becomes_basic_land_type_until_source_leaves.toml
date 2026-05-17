@@ -1,0 +1,88 @@
+[[axis]]
+name = "effect_kind"
+values = ["continuous_type_change"]
+
+[[axis]]
+name = "subject"
+values = ["target_permanent"]
+
+[[axis]]
+name = "target_type"
+values = ["permanent_type"]
+
+[[axis]]
+name = "action"
+values = ["becomes"]
+
+[[axis]]
+name = "resulting_type"
+values = ["basic_land_type"]
+
+[[axis]]
+name = "duration"
+values = ["until_source_leaves_battlefield"]
+
+[[axis]]
+name = "source"
+values = ["source_object"]
+
+[boundary]
+excludes = [
+    "Blocking-capacity permissions for target creatures controlled by the defending player.",
+    "Color-changing effects for target spells or permanents.",
+    "Static enchanted-object basic land type-setting effects.",
+    "Text-changing effects that replace basic land type words.",
+]
+includes = [
+    "Target artifact becomes an Island until CARDNAME leaves the battlefield.",
+    "Target creature becomes a Forest until this leaves the battlefield.",
+    "Target land becomes a Plains until that source leaves the battlefield.",
+]
+
+[concept]
+name = "target_permanent_becomes_basic_land_type_until_source_leaves"
+pest_rules = ["target_permanent_becomes_basic_land_type_until_source_leaves"]
+rules_queries = [
+    "lex: target permanent becomes a basic land type until source leaves the battlefield",
+    "lex: target land becomes a basic land type until CARDNAME leaves the battlefield",
+]
+rules_terms = [
+    "continuous effect",
+    "type-changing effect",
+    "basic land type",
+    "target permanent",
+    "until source leaves the battlefield",
+]
+
+[[counterexample]]
+reason = "Blocking-capacity permission, not a continuous type-changing effect."
+text = "Target creature defending player controls can block any number of creatures this turn."
+
+[[counterexample]]
+reason = "Color-changing effect for target spell or permanent, not a basic land type change."
+text = "Target spell or permanent becomes red."
+
+[[counterexample]]
+reason = "Static enchanted-object type-setting effect, not a target permanent effect with a source-linked duration."
+text = "Enchanted land is the chosen type."
+
+[[counterexample]]
+reason = "Text-changing effect over basic land type words, not a permanent becoming a basic land type."
+text = "Change the text of target spell or permanent by replacing all instances of one basic land type with another."
+
+[[example]]
+text = "Target artifact becomes an Island until CARDNAME leaves the battlefield."
+
+[[example]]
+text = "Target creature becomes a Forest until this leaves the battlefield."
+
+[[example]]
+text = "Target land becomes a Plains until that source leaves the battlefield."
+
+[grammar_query]
+candidate_rules = ["target_permanent_becomes_basic_land_type_until_source_leaves"]
+selected_rule = "target_permanent_becomes_basic_land_type_until_source_leaves"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

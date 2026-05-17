@@ -1,0 +1,35 @@
+[fixture]
+concept = "target_permanent_becomes_basic_land_type_until_source_leaves"
+rule = "target_permanent_becomes_basic_land_type_until_source_leaves"
+
+[[example]]
+text = "Target artifact becomes an Island until CARDNAME leaves the battlefield."
+reason = "Target permanent type-changing effect to a basic land type with CARDNAME as the source-linked duration."
+
+[[example]]
+text = "Target creature becomes a Forest until this leaves the battlefield."
+reason = "Target permanent type-changing effect to a basic land type with this as the source-linked duration."
+
+[[example]]
+text = "Target land becomes a Plains until that source leaves the battlefield."
+reason = "Target permanent type-changing effect to a basic land type with that source as the source-linked duration."
+
+[[counterexample]]
+text = "Target creature defending player controls can block any number of creatures this turn."
+reason = "Blocking-capacity permission, not a continuous type-changing effect."
+
+[[counterexample]]
+text = "Target spell or permanent becomes red."
+reason = "Color-changing effect for target spell or permanent, not a basic land type change."
+
+[[counterexample]]
+text = "Enchanted land is the chosen type."
+reason = "Static enchanted-object type-setting effect, not a target permanent effect with a source-linked duration."
+
+[[counterexample]]
+text = "Change the text of target spell or permanent by replacing all instances of one basic land type with another."
+reason = "Text-changing effect over basic land type words, not a permanent becoming a basic land type."
+
+[[counterexample]]
+text = "Target artifact becomes an Island until CARDNAME leaves the battlefield. trailing"
+reason = "Exact-consumption guard."
