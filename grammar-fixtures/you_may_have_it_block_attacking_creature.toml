@@ -1,0 +1,27 @@
+[fixture]
+concept = "you_may_have_it_block_attacking_creature"
+rule = "you_may_have_it_block_attacking_creature"
+
+[[example]]
+text = "You may have it block an attacking creature of your choice."
+reason = "Standalone optional instruction to have it block one attacking creature chosen by you."
+
+[[counterexample]]
+text = "You own target card in the graveyard."
+reason = "Ownership statement for a target card in a zone, not optional blocking permission."
+
+[[counterexample]]
+text = "It blocks each attacking creature this turn if able."
+reason = "Mandatory blocking requirement for each attacking creature, not a choice of one attacking creature."
+
+[[counterexample]]
+text = "Target creature defending player controls can block any number of creatures this turn."
+reason = "Blocking capacity effect for a target creature, not you having it block an attacking creature."
+
+[[counterexample]]
+text = "All creatures able to block enchanted creature do so."
+reason = "Global blocking requirement for creatures able to block enchanted creature."
+
+[[counterexample]]
+text = "You may have it block an attacking creature of your choice. trailing"
+reason = "Exact-consumption guard."

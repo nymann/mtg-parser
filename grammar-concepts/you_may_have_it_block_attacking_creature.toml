@@ -1,0 +1,77 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "modality"
+values = ["may"]
+
+[[axis]]
+name = "causative"
+values = ["have"]
+
+[[axis]]
+name = "blocker_ref"
+values = ["it"]
+
+[[axis]]
+name = "action"
+values = ["block"]
+
+[[axis]]
+name = "blocked_object"
+values = ["attacking_creature"]
+
+[[axis]]
+name = "selection"
+values = ["of_your_choice"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "Ownership statements about target cards in zones.",
+    "Mandatory blocking requirements where it blocks each attacking creature if able.",
+    "Blocking capacity effects that let a target creature block any number of creatures.",
+    "Blocking requirements for all creatures able to block an enchanted creature.",
+]
+includes = ["Standalone statements where you may have it block an attacking creature of your choice."]
+
+[concept]
+name = "you_may_have_it_block_attacking_creature"
+pest_rules = ["you_may_have_it_block_attacking_creature"]
+rules_queries = ["lex: you may have it block an attacking creature of your choice"]
+rules_terms = [
+    "attacking creature",
+    "block",
+    "choice",
+]
+
+[[counterexample]]
+reason = "Ownership statement for a target card in a zone, not optional blocking permission."
+text = "You own target card in the graveyard."
+
+[[counterexample]]
+reason = "Mandatory blocking requirement for each attacking creature, not a choice of one attacking creature."
+text = "It blocks each attacking creature this turn if able."
+
+[[counterexample]]
+reason = "Blocking capacity effect for a target creature, not you having it block an attacking creature."
+text = "Target creature defending player controls can block any number of creatures this turn."
+
+[[counterexample]]
+reason = "Global blocking requirement for creatures able to block enchanted creature."
+text = "All creatures able to block enchanted creature do so."
+
+[[example]]
+text = "You may have it block an attacking creature of your choice."
+
+[grammar_query]
+candidate_rules = ["you_may_have_it_block_attacking_creature"]
+selected_rule = "you_may_have_it_block_attacking_creature"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
