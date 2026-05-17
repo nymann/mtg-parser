@@ -1,0 +1,57 @@
+{
+  "concept": "semicolon_keyword_ability_list",
+  "fixture_path": "grammar-fixtures/semicolon_keyword_ability_list.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "semicolon_keyword_ability_list",
+      "text": "flying; trample",
+      "ast": {
+        "SemicolonKeywordList": [
+          "Flying",
+          "Trample"
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "rule": "semicolon_keyword_ability_list",
+      "text": "first strike; vigilance; reach",
+      "ast": {
+        "SemicolonKeywordList": [
+          "FirstStrike",
+          "Vigilance",
+          "Reach"
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "rule": "semicolon_keyword_ability_list",
+      "text": "protection from black; forestwalk",
+      "ast": {
+        "SemicolonKeywordList": [
+          {
+            "Protection": "Black"
+          },
+          "Forestwalk"
+        ]
+      }
+    },
+    {
+      "index": 4,
+      "rule": "semicolon_keyword_ability_list",
+      "text": "enchant creature; flying",
+      "ast": {
+        "SemicolonKeywordList": [
+          {
+            "Enchant": {
+              "Permanent": "Creature"
+            }
+          },
+          "Flying"
+        ]
+      }
+    }
+  ]
+}
