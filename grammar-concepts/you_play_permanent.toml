@@ -1,0 +1,70 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "action"
+values = ["play"]
+
+[[axis]]
+name = "object"
+values = ["permanent_type"]
+
+[[axis]]
+name = "sentence_form"
+values = ["trigger_event_phrase"]
+
+[boundary]
+excludes = [
+    "Boundary negative: You own target card in the graveyard.",
+    "Boundary negative: you cast a spell",
+    "Boundary negative: it wasn't the first permanent you played this turn",
+    "Boundary negative: you may play any number of lands on each of your turns.",
+]
+includes = [
+    "Accepted no-PEST fixture wording: you play a land",
+    "Accepted no-PEST fixture wording: you play an artifact",
+    "Accepted no-PEST fixture wording: you play a creature",
+]
+
+[concept]
+name = "you_play_permanent"
+pest_rules = ["you_play_permanent"]
+rules_queries = ["lex: you play permanent"]
+rules_terms = [
+    "play",
+    "permanent",
+]
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "You own target card in the graveyard."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "you cast a spell"
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "it wasn't the first permanent you played this turn"
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "you may play any number of lands on each of your turns."
+
+[[example]]
+text = "you play a land"
+
+[[example]]
+text = "you play an artifact"
+
+[[example]]
+text = "you play a creature"
+
+[grammar_query]
+candidate_rules = ["you_play_permanent"]
+selected_rule = "you_play_permanent"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

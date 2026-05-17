@@ -1,0 +1,35 @@
+[fixture]
+concept = "you_play_permanent"
+rule = "you_play_permanent"
+
+[[example]]
+text = "you play a land"
+reason = "Accepted no-PEST boundary example."
+
+[[example]]
+text = "you play an artifact"
+reason = "Accepted no-PEST boundary example."
+
+[[example]]
+text = "you play a creature"
+reason = "Accepted no-PEST boundary example."
+
+[[counterexample]]
+text = "You own target card in the graveyard."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "you cast a spell"
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "it wasn't the first permanent you played this turn"
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "you may play any number of lands on each of your turns."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "you play a land trailing"
+reason = "Exact-consumption guard."
