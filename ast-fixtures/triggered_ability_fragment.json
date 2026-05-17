@@ -1,0 +1,151 @@
+{
+  "concept": "triggered_ability_fragment",
+  "fixture_path": "grammar-fixtures/triggered_ability_fragment.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "triggered_ability_fragment",
+      "text": "When this creature attacks, you may pay {1}. If you do, you gain 3 life",
+      "ast": {
+        "TriggeredAbility": {
+          "effects": [
+            {
+              "YouMayPayMana": {
+                "amount": {
+                  "Cost": {
+                    "symbols": [
+                      {
+                        "Generic": 1
+                      }
+                    ]
+                  }
+                },
+                "player": "You"
+              }
+            },
+            {
+              "IfYouDoGainLife": {
+                "amount": 3
+              }
+            }
+          ],
+          "event": {
+            "SourceAttacks": {
+              "source": {
+                "This": "Creature"
+              }
+            }
+          },
+          "intervening_if": null
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "triggered_ability_fragment",
+      "text": "Whenever a creature dies, you may pay {G}. If you do, you gain 1 life",
+      "ast": {
+        "TriggeredAbility": {
+          "effects": [
+            {
+              "YouMayPayMana": {
+                "amount": {
+                  "Cost": {
+                    "symbols": [
+                      "Green"
+                    ]
+                  }
+                },
+                "player": "You"
+              }
+            },
+            {
+              "IfYouDoGainLife": {
+                "amount": 1
+              }
+            }
+          ],
+          "event": {
+            "PermanentPutIntoGraveyardFromBattlefield": {
+              "permanent_type": "Creature",
+              "wording": "Dies"
+            }
+          },
+          "intervening_if": null
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "triggered_ability_fragment",
+      "text": "When this creature attacks, if this creature is tapped, you may pay {1}. If you do, you gain 3 life",
+      "ast": {
+        "TriggeredAbility": {
+          "effects": [
+            {
+              "YouMayPayMana": {
+                "amount": {
+                  "Cost": {
+                    "symbols": [
+                      {
+                        "Generic": 1
+                      }
+                    ]
+                  }
+                },
+                "player": "You"
+              }
+            },
+            {
+              "IfYouDoGainLife": {
+                "amount": 3
+              }
+            }
+          ],
+          "event": {
+            "SourceAttacks": {
+              "source": {
+                "This": "Creature"
+              }
+            }
+          },
+          "intervening_if": {
+            "SourceIsStatus": {
+              "source": {
+                "This": "Creature"
+              },
+              "status": "Tapped"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "triggered_ability_fragment",
+      "text": "At the beginning of your upkeep, you may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability",
+      "ast": {
+        "TriggeredAbility": {
+          "effects": [
+            {
+              "YouMayHaveSourceBecomeCopyOfTarget": {
+                "exception": {
+                  "DoesntCopyColorAndHasAbility": {
+                    "ability": "ThisAbility",
+                    "permanent_type": "Creature"
+                  }
+                },
+                "permanent_type": "Creature",
+                "source": {
+                  "This": "Creature"
+                }
+              }
+            }
+          ],
+          "event": "BeginningOfYourUpkeep",
+          "intervening_if": null
+        }
+      }
+    }
+  ]
+}
