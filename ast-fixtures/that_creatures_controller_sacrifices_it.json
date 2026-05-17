@@ -1,0 +1,22 @@
+{
+  "concept": "that_creatures_controller_sacrifices_it",
+  "fixture_path": "grammar-fixtures/that_creatures_controller_sacrifices_it.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "that_creatures_controller_sacrifices_it",
+      "text": "that creature's controller sacrifices it.",
+      "ast": {
+        "TriggerEffect": "ThatCreaturesControllerSacrificesIt"
+      }
+    },
+    {
+      "index": 2,
+      "rule": "that_creatures_controller_sacrifices_it",
+      "text": "That creature's controller sacrifices it.",
+      "ast": {
+        "TriggerEffect": "ThatCreaturesControllerSacrificesIt"
+      }
+    }
+  ]
+}

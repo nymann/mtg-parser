@@ -358,6 +358,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::remove_pt_counter_from_it => Ok(Statement::TriggerEffect(
             remove_pt_counter_from_it_from_pair(pair)?,
         )),
+        Rule::that_creatures_controller_sacrifices_it => Ok(Statement::TriggerEffect(
+            TriggerEffect::ThatCreaturesControllerSacrificesIt,
+        )),
         Rule::you_may_put_this_card_onto_the_battlefield => Ok(Statement::TriggerEffect(
             TriggerEffect::YouMayPutThisCardOntoTheBattlefield,
         )),
