@@ -1,0 +1,76 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_effect"]
+
+[[axis]]
+name = "affected_object"
+values = ["source_object"]
+
+[[axis]]
+name = "restriction_kind"
+values = ["blocking_restriction"]
+
+[[axis]]
+name = "restriction_subject"
+values = ["source_object_as_attacker"]
+
+[[axis]]
+name = "prohibited_blocker"
+values = ["creature_type"]
+
+[boundary]
+excludes = [
+    "Source-object enters-the-battlefield replacement effects.",
+    "Enchanted-object blocking restrictions with an exception.",
+    "Target-object temporary blocking restrictions.",
+    "Source-object blocking prohibitions where the source is the blocker.",
+]
+includes = [
+    "This creature can't be blocked by Walls.",
+    "This creature can't be blocked by Dragons.",
+]
+
+[concept]
+name = "static_source_blocking_restriction"
+pest_rules = ["static_source_cant_be_blocked_by_creature_type"]
+rules_queries = [
+    "lex: this creature can't be blocked by creature type",
+    "lex: can't be blocked by Walls",
+]
+rules_terms = [
+    "static",
+    "continuous",
+    "blocking restriction",
+    "blocked",
+    "creature type",
+]
+
+[[counterexample]]
+reason = "Enters-battlefield replacement effect, owned by static_enters_tapped."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "Enchanted-object blocking restriction with an exception, owned by static_enchanted_blocking_restriction."
+text = "Enchanted creature can't be blocked except by Walls."
+
+[[counterexample]]
+reason = "Temporary target-object blocking restriction, not a static source-object restriction."
+text = "Target creature with power 2 or less can't be blocked this turn."
+
+[[counterexample]]
+reason = "Restriction on this source as a blocker, not a restriction on blockers of this source."
+text = "This creature can't block creatures with power 2 or greater."
+
+[[example]]
+text = "This creature can't be blocked by Walls."
+
+[[example]]
+text = "This creature can't be blocked by Dragons."
+
+[grammar_query]
+candidate_rules = ["static_source_cant_be_blocked_by_creature_type"]
+selected_rule = "static_source_cant_be_blocked_by_creature_type"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

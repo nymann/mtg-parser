@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_source_blocking_restriction"
+rule = "static_source_cant_be_blocked_by_creature_type"
+
+[[example]]
+text = "This creature can't be blocked by Walls."
+reason = "Static source-object blocking restriction prohibiting blockers of a creature type."
+
+[[example]]
+text = "This creature can't be blocked by Dragons."
+reason = "Same source-object blocking restriction axis with a different prohibited blocker creature type."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Enters-battlefield replacement effect, owned by static_enters_tapped."
+
+[[counterexample]]
+text = "Enchanted creature can't be blocked except by Walls."
+reason = "Enchanted-object blocking restriction with an exception, owned by static_enchanted_blocking_restriction."
+
+[[counterexample]]
+text = "Target creature with power 2 or less can't be blocked this turn."
+reason = "Temporary target-object blocking restriction, not this static source-object restriction."
+
+[[counterexample]]
+text = "This creature can't block creatures with power 2 or greater."
+reason = "Restriction on this source as a blocker, not a restriction on blockers of this source."
+
+[[counterexample]]
+text = "This creature can't be blocked by Walls. trailing"
+reason = "Exact-consumption guard."
