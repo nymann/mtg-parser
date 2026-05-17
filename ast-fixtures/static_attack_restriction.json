@@ -1,0 +1,36 @@
+{
+  "concept": "static_attack_restriction",
+  "fixture_path": "grammar-fixtures/static_attack_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_source_cant_attack_unless_defending_player_controls_basic_land",
+      "text": "This creature can't attack unless defending player controls an Island.",
+      "ast": {
+        "StaticAbility": {
+          "SourceCantAttackUnlessDefendingPlayerControlsBasicLand": {
+            "land_type": "Island",
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_source_cant_attack_unless_defending_player_controls_basic_land",
+      "text": "This artifact creature can't attack unless defending player controls a Forest.",
+      "ast": {
+        "StaticAbility": {
+          "SourceCantAttackUnlessDefendingPlayerControlsBasicLand": {
+            "land_type": "Forest",
+            "source": {
+              "This": "Artifact"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
