@@ -1,0 +1,34 @@
+{
+  "concept": "permanent_dealt_damage_by_source_this_turn_dies",
+  "fixture_path": "grammar-fixtures/permanent_dealt_damage_by_source_this_turn_dies.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "permanent_dealt_damage_by_source_this_turn_dies",
+      "text": "a creature dealt damage by this creature this turn dies",
+      "ast": {
+        "TriggerEvent": {
+          "PermanentDealtDamageBySourceThisTurnDies": {
+            "permanent_type": "Creature",
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "permanent_dealt_damage_by_source_this_turn_dies",
+      "text": "an artifact dealt damage by that source this turn dies",
+      "ast": {
+        "TriggerEvent": {
+          "PermanentDealtDamageBySourceThisTurnDies": {
+            "permanent_type": "Artifact",
+            "source": "ThatSource"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -375,6 +375,11 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::triggered_ability | Rule::triggered_ability_fragment => Ok(
             Statement::TriggeredAbility(triggered_ability_from_pair(pair)?),
         ),
+        Rule::permanent_dealt_damage_by_source_this_turn_dies => {
+            Ok(Statement::TriggerEvent(
+                permanent_dealt_damage_by_source_this_turn_dies_from_pair(pair)?,
+            ))
+        }
         Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
         | Rule::if_source_turns_over_destroy_touched_nontoken_permanents
         | Rule::then_destroy_source => {
@@ -2955,6 +2960,11 @@ fn permanent_enters_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseErr
                 ));
             }
             SourceObject::ThisAura => PermanentType::Enchantment,
+            SourceObject::ThatSource => {
+                return Err(ParseError::Internal(
+                    "permanent_enters source missing permanent type",
+                ));
+            }
         },
         _ => return Err(ParseError::Internal("permanent_enters object")),
     };
@@ -4135,6 +4145,9 @@ fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError>
     }
     if pair.as_str() == "CARDNAME" {
         return Ok(SourceObject::ThisPermanent);
+    }
+    if pair.as_str().eq_ignore_ascii_case("that source") {
+        return Ok(SourceObject::ThatSource);
     }
     let kind = only_inner(pair, "source_object missing kind")?;
     match kind.as_rule() {

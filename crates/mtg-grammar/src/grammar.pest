@@ -186,6 +186,7 @@ phrase_statement = _{
   | keyword_ability_list
   | keyword_ability
   | triggered_ability_fragment
+  | permanent_dealt_damage_by_source_this_turn_dies
   | static_enchanted_loses_keyword_fragment
   | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead
 }

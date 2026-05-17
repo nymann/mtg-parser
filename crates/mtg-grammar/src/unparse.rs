@@ -621,6 +621,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push(' ');
             write_activation_permission(out, *permission);
         }
+        Statement::TriggerEvent(ev) => write_trigger_event(out, ev.clone()),
         Statement::TriggeredAbility(ta) => write_triggered_ability(out, ta),
         Statement::PhysicalAction(pa) => write_physical_action(out, *pa),
         Statement::Compound(stmts) => {
@@ -3410,6 +3411,7 @@ fn write_source_object(out: &mut String, source: SourceObject) {
         }
         SourceObject::ThisPermanent => out.push_str("this permanent"),
         SourceObject::ThisAura => out.push_str("this Aura"),
+        SourceObject::ThatSource => out.push_str("that source"),
     }
 }
 
@@ -3432,6 +3434,7 @@ fn write_source_object_possessive_without_apostrophe(out: &mut String, source: S
         }
         SourceObject::ThisPermanent => out.push_str("this permanents"),
         SourceObject::ThisAura => out.push_str("this Auras"),
+        SourceObject::ThatSource => out.push_str("that sources"),
     }
 }
 
@@ -3443,6 +3446,7 @@ fn write_source_object_capitalized(out: &mut String, source: SourceObject) {
         }
         SourceObject::ThisPermanent => out.push_str("This permanent"),
         SourceObject::ThisAura => out.push_str("This Aura"),
+        SourceObject::ThatSource => out.push_str("That source"),
     }
 }
 

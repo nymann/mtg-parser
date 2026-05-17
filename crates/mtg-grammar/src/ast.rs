@@ -423,6 +423,9 @@ pub enum Statement {
         ability: ActivatedAbility,
         permission: ActivationPermission,
     },
+    /// A trigger event fragment used by concept fixtures before a full
+    /// triggered-ability payload is attached.
+    TriggerEvent(TriggerEvent),
     TriggeredAbility(TriggeredAbility),
     /// Physical dexterity instructions and their conditional results.
     PhysicalAction(PhysicalAction),
@@ -1444,6 +1447,8 @@ pub enum SourceObject {
     ThisPermanent,
     /// "this Aura"
     ThisAura,
+    /// "that source"
+    ThatSource,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
