@@ -1,0 +1,31 @@
+[fixture]
+concept = "add_mana_of_any_one_color"
+rule = "add_mana_of_any_one_color"
+
+[[example]]
+text = "Add one mana of any one color."
+reason = "Quantity one with the any-one-color choice scope."
+
+[[example]]
+text = "Add two mana of any one color."
+reason = "Number-word quantity axis greater than one."
+
+[[example]]
+text = "Add three mana of any one color."
+reason = "Additional number-word quantity coverage for the same choice scope."
+
+[[counterexample]]
+text = "Add one mana of any color."
+reason = "Neighbor wording without the word one before color; owned by add_one_mana_of_any_color."
+
+[[counterexample]]
+text = "Add one mana of that color."
+reason = "Constrained-color mana production, not any-one-color choice scope."
+
+[[counterexample]]
+text = "Add one mana of any one type."
+reason = "Any-one-type mana can include colorless; this concept is limited to colors."
+
+[[counterexample]]
+text = "Add one mana of any one color. trailing"
+reason = "Exact-consumption guard."

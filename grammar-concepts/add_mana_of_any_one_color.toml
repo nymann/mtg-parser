@@ -1,0 +1,66 @@
+[[axis]]
+name = "action"
+values = ["add_mana"]
+
+[[axis]]
+name = "quantity"
+values = ["number_word"]
+
+[[axis]]
+name = "choice_scope"
+values = ["any_one_color"]
+
+[[axis]]
+name = "ability_kind"
+values = ["activated_effect"]
+
+[boundary]
+excludes = [
+    "Add-one-mana wording without the word one before color, owned by add_one_mana_of_any_color.",
+    "Mana of a constrained color is not the any-one-color choice scope.",
+    "Mana of any one type includes colorless and is outside the any-one-color scope.",
+]
+includes = ["Activated effects that instruct adding a number-word quantity of mana of any one color."]
+
+[concept]
+name = "add_mana_of_any_one_color"
+pest_rules = ["add_mana_of_any_one_color"]
+rules_queries = ["lex: add mana of any one color"]
+rules_terms = [
+    "add",
+    "mana",
+    "color",
+]
+
+[[counterexample]]
+reason = "Neighbor wording without the word one before color; owned by add_one_mana_of_any_color."
+text = "Add one mana of any color."
+
+[[counterexample]]
+reason = "Constrained-color mana production, not any-one-color choice scope."
+text = "Add one mana of that color."
+
+[[counterexample]]
+reason = "Any-one-type mana can include colorless; this concept is limited to colors."
+text = "Add one mana of any one type."
+
+[[example]]
+text = "Add one mana of any one color."
+
+[[example]]
+text = "Add two mana of any one color."
+
+[[example]]
+text = "Add three mana of any one color."
+
+[grammar_query]
+candidate_rules = [
+    "add_mana_of_any_one_color",
+    "add_one_mana_of_any_color",
+    "add_mana",
+]
+selected_rule = "add_mana_of_any_one_color"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
