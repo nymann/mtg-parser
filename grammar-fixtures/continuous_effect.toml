@@ -1,0 +1,43 @@
+[fixture]
+concept = "continuous_effect"
+rule = "continuous_effect"
+
+[[example]]
+text = "CARDNAME gets +1/+1"
+reason = "Static source-object power/toughness modification."
+
+[[example]]
+text = "Prevent all damage Forests would deal to this creature"
+reason = "Static land-subtype prevention effect."
+
+[[example]]
+text = "All damage that would be dealt to you by a source is dealt to that source instead"
+reason = "Static all-damage replacement/redirection effect."
+
+[[example]]
+text = "Its power and toughness are each equal to the number of Forests you control"
+reason = "Static source power/toughness set from controlled basic land count."
+
+[[example]]
+text = "It's a creature with power and toughness each equal to its mana value"
+reason = "Static animation-like effect with power/toughness equal to mana value."
+
+[[example]]
+text = "Players skip their untap steps"
+reason = "Static rule-modifying untap-step restriction."
+
+[[counterexample]]
+text = "CARDNAME deals 3 damage to any target."
+reason = "One-shot damage instruction, not a continuous effect fragment."
+
+[[counterexample]]
+text = "Draw a card."
+reason = "One-shot draw instruction, not a continuous effect fragment."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Enters-tapped replacement effect, owned outside this static continuous-effect fragment root."
+
+[[counterexample]]
+text = "CARDNAME gets +1/+1 trailing"
+reason = "Exact-consumption guard."

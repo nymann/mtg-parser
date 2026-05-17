@@ -1,0 +1,96 @@
+[[axis]]
+name = "effect_duration"
+values = ["fixed_or_indefinite_period"]
+
+[[axis]]
+name = "effect_source"
+values = ["static_ability_fragment"]
+
+[[axis]]
+name = "effect_kind"
+values = [
+    "power_toughness_modification",
+    "static_damage_prevention",
+    "static_damage_redirection",
+    "power_toughness_set_by_basic_land_count",
+    "becomes_permanent_with_pt_from_mana_value",
+    "untap_step_rule_modification",
+]
+
+[[axis]]
+name = "affected_subject"
+values = [
+    "source_object",
+    "damage_event",
+    "players_or_creatures",
+]
+
+[boundary]
+excludes = [
+    "One-shot spell or ability instructions that do not create a fixed or indefinite continuous effect.",
+    "Activated or modal this-turn effects owned by their narrower effect concepts.",
+    "Replacement effects that modify how a permanent enters the battlefield, owned by enters replacement concepts.",
+]
+includes = [
+    "Static ability fragments that modify power and toughness.",
+    "Static prevention and redirection effects that apply continuously to damage events.",
+    "Static effects that modify untap-step rules for players or creatures.",
+]
+
+[concept]
+name = "continuous_effect"
+pest_rules = ["continuous_effect"]
+rules_queries = [
+    "lex: continuous effect modifies characteristics affects players rules of game",
+    "lex: prevention effects replacement effects continuous effects",
+]
+rules_terms = [
+    "continuous effect",
+    "static ability",
+    "prevention effect",
+    "replacement effect",
+]
+
+[[counterexample]]
+reason = "One-shot damage instruction, not a continuous effect fragment."
+text = "CARDNAME deals 3 damage to any target."
+
+[[counterexample]]
+reason = "One-shot draw instruction, not a continuous effect fragment."
+text = "Draw a card."
+
+[[counterexample]]
+reason = "Enters-tapped replacement effect, owned outside this static continuous-effect fragment root."
+text = "This creature enters tapped."
+
+[[example]]
+reason = "Static source-object power/toughness modification."
+text = "CARDNAME gets +1/+1"
+
+[[example]]
+reason = "Static land-subtype prevention effect."
+text = "Prevent all damage Forests would deal to this creature"
+
+[[example]]
+reason = "Static all-damage replacement/redirection effect."
+text = "All damage that would be dealt to you by a source is dealt to that source instead"
+
+[[example]]
+reason = "Static source power/toughness set from controlled basic land count."
+text = "Its power and toughness are each equal to the number of Forests you control"
+
+[[example]]
+reason = "Static animation-like effect with power/toughness equal to mana value."
+text = "It's a creature with power and toughness each equal to its mana value"
+
+[[example]]
+reason = "Static rule-modifying untap-step restriction."
+text = "Players skip their untap steps"
+
+[grammar_query]
+candidate_rules = ["continuous_effect"]
+selected_rule = "continuous_effect"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
