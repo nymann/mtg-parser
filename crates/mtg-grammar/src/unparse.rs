@@ -146,6 +146,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(" the flip, ");
             write_activated_effect_lowercase(out, effect);
         }
+        Statement::CreateToken { token } => write_create_token(out, token),
         Statement::ItCantBeRegenerated { subject } => {
             match subject {
                 RegenerationRestrictionSubject::It => out.push_str("It"),

@@ -107,6 +107,11 @@ pub enum Statement {
         result: CoinFlipResult,
         effect: ActivatedEffect,
     },
+    /// "Create a N/N [color] [creature_type] <types> token [with <keyword>] [named <name>]."
+    /// CR 701.7 create keyword action.
+    CreateToken {
+        token: TokenDescription,
+    },
     /// "<subject> can't be regenerated." — a CR 614.17 can't effect
     /// restricting the CR 701.15 regenerate keyword action.
     ItCantBeRegenerated {
@@ -1739,7 +1744,7 @@ pub enum ActivatedEffect {
         actions: Vec<ImperativeAction>,
     },
     /// "Create a N/N [color] [creature_type] <types> token [with <keyword>] [named <name>]."
-    /// CR 701.6 create keyword action.
+    /// CR 701.7 create keyword action.
     CreateToken {
         token: TokenDescription,
     },

@@ -105,6 +105,7 @@ sentence_statement = _{
   | add_mana
   | if_you_flip_result_effect
   | if_you_cant_source_deals_damage_to_you
+  | create_token
   | until_eot_you_may_pay_cost_at_timing
   // Shared "If you do," wrapper; the payload decides the concrete effect.
   | if_you_do_effect

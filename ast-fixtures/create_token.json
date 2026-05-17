@@ -1,0 +1,115 @@
+{
+  "concept": "create_token",
+  "fixture_path": "grammar-fixtures/create_token.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "create_token",
+      "text": "Create a 1/1 green Insect creature token.",
+      "ast": {
+        "CreateToken": {
+          "token": {
+            "color": {
+              "Color": "Green"
+            },
+            "creature_type": "Insect",
+            "keyword": null,
+            "name": null,
+            "permanent_types": [
+              "Creature"
+            ],
+            "power": 1,
+            "toughness": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "create_token",
+      "text": "Create a 0/1 colorless artifact creature token.",
+      "ast": {
+        "CreateToken": {
+          "token": {
+            "color": "Colorless",
+            "creature_type": null,
+            "keyword": null,
+            "name": null,
+            "permanent_types": [
+              "Artifact",
+              "Creature"
+            ],
+            "power": 0,
+            "toughness": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "create_token",
+      "text": "Create a 1/1 green Insect creature token with flying.",
+      "ast": {
+        "CreateToken": {
+          "token": {
+            "color": {
+              "Color": "Green"
+            },
+            "creature_type": "Insect",
+            "keyword": "Flying",
+            "name": null,
+            "permanent_types": [
+              "Creature"
+            ],
+            "power": 1,
+            "toughness": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "create_token",
+      "text": "Create a 2/2 black Zombie creature token named Walker.",
+      "ast": {
+        "CreateToken": {
+          "token": {
+            "color": {
+              "Color": "Black"
+            },
+            "creature_type": "Zombie",
+            "keyword": null,
+            "name": "Walker",
+            "permanent_types": [
+              "Creature"
+            ],
+            "power": 2,
+            "toughness": 2
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "create_token",
+      "text": "Create a 3/3 red creature token.",
+      "ast": {
+        "CreateToken": {
+          "token": {
+            "color": {
+              "Color": "Red"
+            },
+            "creature_type": null,
+            "keyword": null,
+            "name": null,
+            "permanent_types": [
+              "Creature"
+            ],
+            "power": 3,
+            "toughness": 3
+          }
+        }
+      }
+    }
+  ]
+}
