@@ -1,0 +1,32 @@
+{
+  "concept": "static_basic_land_type_change",
+  "fixture_path": "grammar-fixtures/static_basic_land_type_change.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_basic_lands_are_basic_lands",
+      "text": "All Islands are Mountains.",
+      "ast": {
+        "StaticAbility": {
+          "BasicLandsAreBasicLands": {
+            "from": "Island",
+            "to": "Mountain"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_basic_lands_are_basic_lands",
+      "text": "All Swamps are Forests.",
+      "ast": {
+        "StaticAbility": {
+          "BasicLandsAreBasicLands": {
+            "from": "Swamp",
+            "to": "Forest"
+          }
+        }
+      }
+    }
+  ]
+}
