@@ -1,0 +1,31 @@
+[fixture]
+concept = "you_own_target_card_in_zone"
+rule = "you_own_target_card_in_zone"
+
+[[example]]
+text = "You own target card in the graveyard."
+reason = "Standalone ownership statement for a target card in the graveyard."
+
+[[example]]
+text = "You own target card in the ante."
+reason = "Standalone ownership statement for a target card in the ante."
+
+[[counterexample]]
+text = "You control target card in the graveyard."
+reason = "Control relationship, not ownership."
+
+[[counterexample]]
+text = "You own target permanent in the graveyard."
+reason = "Target permanent, not target card."
+
+[[counterexample]]
+text = "You own target card in your graveyard."
+reason = "Player-owned zone wording, not the bare zone wording owned by this concept."
+
+[[counterexample]]
+text = "Return target card from your graveyard to your hand."
+reason = "Zone-change instruction, not an ownership statement."
+
+[[counterexample]]
+text = "You own target card in the graveyard. trailing"
+reason = "Exact-consumption guard."

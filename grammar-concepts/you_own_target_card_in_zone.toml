@@ -1,0 +1,75 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "relationship"
+values = ["own"]
+
+[[axis]]
+name = "object"
+values = ["target_card"]
+
+[[axis]]
+name = "zone"
+values = [
+    "graveyard",
+    "ante",
+]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "Control-changing or control-checking text is not ownership text.",
+    "Target permanent or target spell references are not target card references in a zone.",
+    "Cards in a player's zone such as your graveyard are not the same wording as cards in the zone.",
+    "Zone-change instructions such as return target card are separate actions.",
+]
+includes = [
+    "Standalone statements that you own target card in the graveyard.",
+    "Standalone statements that you own target card in the ante.",
+]
+
+[concept]
+name = "you_own_target_card_in_zone"
+pest_rules = ["you_own_target_card_in_zone"]
+rules_queries = ["lex: you own target card in zone"]
+rules_terms = [
+    "card",
+    "own",
+    "target",
+    "zone",
+]
+
+[[counterexample]]
+reason = "Control relationship, not ownership."
+text = "You control target card in the graveyard."
+
+[[counterexample]]
+reason = "Target permanent, not target card."
+text = "You own target permanent in the graveyard."
+
+[[counterexample]]
+reason = "Player-owned zone wording, not the bare zone wording owned by this concept."
+text = "You own target card in your graveyard."
+
+[[counterexample]]
+reason = "Zone-change instruction, not an ownership statement."
+text = "Return target card from your graveyard to your hand."
+
+[[example]]
+text = "You own target card in the graveyard."
+
+[[example]]
+text = "You own target card in the ante."
+
+[grammar_query]
+candidate_rules = ["you_own_target_card_in_zone"]
+selected_rule = "you_own_target_card_in_zone"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
