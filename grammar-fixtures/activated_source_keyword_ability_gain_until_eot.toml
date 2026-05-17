@@ -1,0 +1,35 @@
+[fixture]
+concept = "activated_source_keyword_ability_gain_until_eot"
+rule = "activated_source_gains_keyword_until_eot"
+
+[[example]]
+text = "This gains flying until end of turn."
+reason = "Activated source-object evergreen keyword grant until end of turn."
+
+[[example]]
+text = "CARDNAME gains first strike until end of turn."
+reason = "CARDNAME source-object multiword keyword grant until end of turn."
+
+[[example]]
+text = "This gains protection from black until end of turn."
+reason = "Activated source-object parameterized keyword grant until end of turn."
+
+[[counterexample]]
+text = "This gets +1/+1 until end of turn."
+reason = "Source P/T modifier, not a keyword ability grant."
+
+[[counterexample]]
+text = "Target creature gains flying until end of turn."
+reason = "Target-object recipient, not source-object recipient."
+
+[[counterexample]]
+text = "Enchanted creature gains flying until end of turn."
+reason = "Enchanted-object recipient, not source-object recipient."
+
+[[counterexample]]
+text = "Target creature gains flying and gets +1/+1 until end of turn, where X is the number of cards in your hand."
+reason = "Target-object combined keyword grant and P/T modifier, not source-object keyword-only grant."
+
+[[counterexample]]
+text = "This gains flying until end of turn. trailing"
+reason = "Exact-consumption guard."

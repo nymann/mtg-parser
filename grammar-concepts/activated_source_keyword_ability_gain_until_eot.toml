@@ -1,0 +1,83 @@
+[[axis]]
+name = "ability_context"
+values = ["activated_effect"]
+
+[[axis]]
+name = "recipient"
+values = ["source_object"]
+
+[[axis]]
+name = "modification"
+values = ["keyword_ability_grant"]
+
+[[axis]]
+name = "duration"
+values = ["until_end_of_turn"]
+
+[boundary]
+excludes = [
+    "Activated source-object P/T modifications until end of turn.",
+    "Target-object keyword grants until end of turn.",
+    "Enchanted-object keyword grants until end of turn.",
+    "Target-object combined keyword grants and P/T modifications with variable definitions.",
+]
+includes = [
+    "Activated ability effects where the source object gains a keyword ability until end of turn.",
+    "Source-object wording using 'this' or CARDNAME.",
+    "Evergreen keyword abilities and keyword abilities with parameters such as protection from a color.",
+]
+
+[concept]
+name = "activated_source_keyword_ability_gain_until_eot"
+pest_rules = ["activated_source_gains_keyword_until_eot"]
+rules_queries = [
+    "lex: this gains flying until end of turn",
+    "lex: source gains first strike until end of turn",
+    "lex: source gains protection from black until end of turn",
+]
+rules_terms = [
+    "activated ability",
+    "continuous effect",
+    "keyword ability",
+    "source",
+    "until end of turn",
+]
+
+[[counterexample]]
+reason = "Source P/T modifier, not a keyword ability grant."
+text = "This gets +1/+1 until end of turn."
+
+[[counterexample]]
+reason = "Target-object recipient, not source-object recipient."
+text = "Target creature gains flying until end of turn."
+
+[[counterexample]]
+reason = "Enchanted-object recipient, not source-object recipient."
+text = "Enchanted creature gains flying until end of turn."
+
+[[counterexample]]
+reason = "Target-object combined keyword grant and P/T modifier, not source-object keyword-only grant."
+text = "Target creature gains flying and gets +1/+1 until end of turn, where X is the number of cards in your hand."
+
+[[example]]
+text = "This gains flying until end of turn."
+
+[[example]]
+text = "CARDNAME gains first strike until end of turn."
+
+[[example]]
+text = "This gains protection from black until end of turn."
+
+[grammar_query]
+candidate_rules = [
+    "activated_source_gains_keyword_until_eot",
+    "activated_source_gets_until_eot",
+    "target_permanent_gains_keyword_until_eot",
+    "target_permanent_until_eot",
+    "static_enchanted_has_keyword",
+]
+selected_rule = "activated_source_gains_keyword_until_eot"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
