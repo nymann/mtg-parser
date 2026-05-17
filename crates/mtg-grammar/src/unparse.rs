@@ -1413,6 +1413,7 @@ fn write_damage_prevention_replacement_event(
 ) {
     out.push_str(prevention_verb);
     match amount {
+        DamagePreventionAmount::ThatDamage => {}
         DamagePreventionAmount::All => out.push_str("all "),
         DamagePreventionAmount::Next(amount) => {
             out.push_str("the next ");
@@ -3749,6 +3750,7 @@ fn write_static_damage_prevention_effect(out: &mut String, effect: &StaticDamage
 
 fn write_damage_prevention_amount_axis(out: &mut String, amount: DamagePreventionAmount) {
     match amount {
+        DamagePreventionAmount::ThatDamage => {}
         DamagePreventionAmount::All => out.push_str("all "),
         DamagePreventionAmount::Next(amount) => {
             out.push_str("the next ");

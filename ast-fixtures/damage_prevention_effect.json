@@ -1,0 +1,89 @@
+{
+  "concept": "damage_prevention_effect",
+  "fixture_path": "grammar-fixtures/damage_prevention_effect.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "damage_prevention_effect_this_turn",
+      "text": "Prevent the next 1 damage that would be dealt to any target this turn.",
+      "ast": {
+        "PreventDamageThisTurn": {
+          "amount": {
+            "Next": {
+              "Number": 1
+            }
+          },
+          "definitions": [],
+          "duration": "ThisTurn",
+          "event": "ThatWouldBeDealt",
+          "kind": null,
+          "recipient": "AnyTarget"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "damage_prevention_effect_this_turn",
+      "text": "Prevent all damage that would be dealt this turn.",
+      "ast": {
+        "PreventDamageThisTurn": {
+          "amount": "All",
+          "definitions": [],
+          "duration": "ThisTurn",
+          "event": "ThatWouldBeDealt",
+          "kind": null,
+          "recipient": null
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "damage_prevention_effect_this_turn",
+      "text": "Prevent that damage this turn.",
+      "ast": {
+        "PreventDamageThisTurn": {
+          "amount": "ThatDamage",
+          "definitions": [],
+          "duration": "ThisTurn",
+          "event": "OfThatDamage",
+          "kind": null,
+          "recipient": null
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "damage_prevention_effect_this_turn",
+      "text": "Prevent X of that damage this turn.",
+      "ast": {
+        "PreventDamageThisTurn": {
+          "amount": {
+            "Amount": {
+              "Variable": "X"
+            }
+          },
+          "definitions": [],
+          "duration": "ThisTurn",
+          "event": "OfThatDamage",
+          "kind": null,
+          "recipient": null
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "damage_prevention_effect_this_turn",
+      "text": "prevent that damage this turn.",
+      "ast": {
+        "PreventDamageThisTurn": {
+          "amount": "ThatDamage",
+          "definitions": [],
+          "duration": "ThisTurn",
+          "event": "OfThatDamage",
+          "kind": null,
+          "recipient": null
+        }
+      }
+    }
+  ]
+}

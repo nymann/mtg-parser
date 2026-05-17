@@ -755,6 +755,8 @@ pub struct DamagePreventionEffect<R = PreventionRecipient> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DamagePreventionAmount {
+    /// Implicit amount in "that damage".
+    ThatDamage,
     /// "all"
     All,
     /// "the next N"

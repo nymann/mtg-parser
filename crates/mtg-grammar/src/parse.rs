@@ -1927,6 +1927,10 @@ fn damage_prevention_effect_from_this_turn_pair_with_recipient<R>(
                 event = Some(parsed_event);
                 kind = parsed_kind;
             }
+            Rule::damage_prevention_of_that_damage => {
+                amount = Some(DamagePreventionAmount::ThatDamage);
+                event = Some(DamagePreventionEvent::OfThatDamage);
+            }
             Rule::damage_kind => {
                 kind = Some(damage_kind_from_pair(child)?);
             }
