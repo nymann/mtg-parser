@@ -1,0 +1,18 @@
+{
+  "concept": "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way",
+  "fixture_path": "grammar-fixtures/then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way",
+      "text": "then that player loses all unspent mana and you add the mana lost this way.",
+      "ast": "ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay"
+    },
+    {
+      "index": 2,
+      "rule": "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way",
+      "text": "Then that player loses all unspent mana and you add the mana lost this way.",
+      "ast": "ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay"
+    }
+  ]
+}
