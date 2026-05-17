@@ -111,6 +111,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::VariableDefinition(definition) => write_variable_definition(out, definition),
         Statement::VariableName(variable) => out.push_str(variable_name(*variable)),
         Statement::ValueExpression(expression) => write_value_expression(out, expression),
+        Statement::Condition(condition) => write_condition(out, condition),
         Statement::IfYouPaySourceDealsDamage {
             source,
             counter_name,

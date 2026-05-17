@@ -1,0 +1,42 @@
+{
+  "concept": "you_control_basic_land_condition",
+  "fixture_path": "grammar-fixtures/you_control_basic_land_condition.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_control_basic_land",
+      "text": "you control a Plains",
+      "ast": {
+        "Condition": {
+          "YouControlBasicLand": {
+            "land_type": "Plains"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "you_control_basic_land",
+      "text": "you control an Island",
+      "ast": {
+        "Condition": {
+          "YouControlBasicLand": {
+            "land_type": "Island"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "you_control_basic_land",
+      "text": "you control a Forest",
+      "ast": {
+        "Condition": {
+          "YouControlBasicLand": {
+            "land_type": "Forest"
+          }
+        }
+      }
+    }
+  ]
+}

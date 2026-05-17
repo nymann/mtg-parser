@@ -33,7 +33,8 @@ line      = _{ sentence_chain | phrase_statement }
 // `parse("{2} {R}")` from silently accepting two mana costs.
 sentence_chain     = _{ sentence_statement+ }
 sentence_statement = _{
-    modal_mode
+    condition ~ &(EOI | "\n")
+  | modal_mode
   | cast_restriction
   | this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first
   | ante_play_restriction
@@ -211,6 +212,7 @@ phrase_statement = _{
   | variable_definition
   | variable_name
   | value_expression
+  | condition
 }
 
 // Modal spells print a choice header followed by bullet-pointed modes.
@@ -622,7 +624,8 @@ target_player_activates_mana_ability_of_each_permanent_they_control = {
 }
 
 control_player_effect = {
-    controller_ref ~ ^"control" ~ controlled_player_ref ~ control_duration ~ "."
+    &(controller_ref ~ ^"control" ~ controlled_player_ref)
+  ~ controller_ref ~ ^"control" ~ controlled_player_ref ~ control_duration ~ "."
 }
 controller_ref = { ^"you" }
 controlled_player_ref = { ^"that" ~ ^"player" | ^"the" ~ ^"player" }

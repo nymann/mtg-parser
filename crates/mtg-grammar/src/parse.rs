@@ -201,6 +201,11 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::number_of_cards_in_their_hand_minus
         | Rule::amount_of_mana_that_player_paid_this_way
         | Rule::its_power => Ok(Statement::ValueExpression(value_expression_from_pair(pair)?)),
+        Rule::you_control_basic_land
+        | Rule::enchanted_isnt
+        | Rule::source_is_object_status
+        | Rule::source_isnt_attacking
+        | Rule::source_is_attacking => Ok(Statement::Condition(condition_from_pair(pair)?)),
         Rule::if_you_pay_source_deals_damage => if_you_pay_source_deals_damage_from_pair(pair),
         Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
             as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(pair)

@@ -67,6 +67,8 @@ pub enum Statement {
     VariableName(Variable),
     /// Standalone value-expression fragments used by concept-level parsing.
     ValueExpression(ValueExpression),
+    /// Standalone condition fragments used by concept-level parsing.
+    Condition(Condition),
     /// "If you pay, this <source> deals damage equal to the number of
     /// <counter> counters on it to <recipient>[ and <recipient>]."
     IfYouPaySourceDealsDamage {
