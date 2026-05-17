@@ -1,0 +1,26 @@
+{
+  "concept": "label_phrase",
+  "fixture_path": "grammar-fixtures/label_phrase.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "label_phrase",
+      "text": "left",
+      "ast": {
+        "Label": {
+          "label": "left"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "label_phrase",
+      "text": "right",
+      "ast": {
+        "Label": {
+          "label": "right"
+        }
+      }
+    }
+  ]
+}
