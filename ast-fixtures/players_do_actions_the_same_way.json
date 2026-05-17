@@ -1,0 +1,84 @@
+{
+  "concept": "players_do_actions_the_same_way",
+  "fixture_path": "grammar-fixtures/players_do_actions_the_same_way.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "players_do_actions_the_same_way",
+      "text": "Players discard cards the same way.",
+      "ast": {
+        "PlayersDoActionsTheSameWay": {
+          "actions": [
+            "DiscardCards"
+          ]
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "players_do_actions_the_same_way",
+      "text": "Players sacrifice creatures the same way.",
+      "ast": {
+        "PlayersDoActionsTheSameWay": {
+          "actions": [
+            {
+              "SacrificePermanents": {
+                "permanent_type": "Creature"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "players_do_actions_the_same_way",
+      "text": "Players sacrifice lands the same way.",
+      "ast": {
+        "PlayersDoActionsTheSameWay": {
+          "actions": [
+            {
+              "SacrificePermanents": {
+                "permanent_type": "Land"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "players_do_actions_the_same_way",
+      "text": "Players discard cards and sacrifice creatures the same way.",
+      "ast": {
+        "PlayersDoActionsTheSameWay": {
+          "actions": [
+            "DiscardCards",
+            {
+              "SacrificePermanents": {
+                "permanent_type": "Creature"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "players_do_actions_the_same_way",
+      "text": "players discard cards and sacrifice artifacts the same way.",
+      "ast": {
+        "PlayersDoActionsTheSameWay": {
+          "actions": [
+            "DiscardCards",
+            {
+              "SacrificePermanents": {
+                "permanent_type": "Artifact"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
