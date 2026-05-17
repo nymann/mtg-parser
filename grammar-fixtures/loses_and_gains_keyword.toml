@@ -1,0 +1,35 @@
+[fixture]
+concept = "loses_and_gains_keyword"
+rule = "loses_and_gains_keyword"
+
+[[example]]
+text = "it loses \"flying\" and gains \"trample.\""
+reason = "Named keyword ability axis with the gained keyword sentence period inside the closing quote."
+
+[[example]]
+text = "it loses \"islandwalk\" and gains \"protection from black.\""
+reason = "Parameterized keyword axis covering landwalk and protection."
+
+[[example]]
+text = "it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\""
+reason = "Enchant keyword rewrite used by reanimator Aura trigger text."
+
+[[counterexample]]
+text = "it gains \"flying.\""
+reason = "One-sided keyword gain effect without the paired loses-and-gains rewrite."
+
+[[counterexample]]
+text = "it loses \"flying\"."
+reason = "One-sided keyword loss effect without the paired gains clause."
+
+[[counterexample]]
+text = "it loses flying and gains trample."
+reason = "Unquoted keyword ability change, not the quoted keyword rewrite form."
+
+[[counterexample]]
+text = "it gains \"enchanted creature loses flying.\""
+reason = "Quoted static ability grant, not a quoted keyword ability loses-and-gains rewrite."
+
+[[counterexample]]
+text = "it loses \"flying\" and gains \"trample.\" trailing"
+reason = "Exact-consumption guard."

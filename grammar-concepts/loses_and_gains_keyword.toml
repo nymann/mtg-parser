@@ -1,0 +1,91 @@
+[[axis]]
+name = "effect_context"
+values = ["trigger_effect"]
+
+[[axis]]
+name = "subject"
+values = ["it"]
+
+[[axis]]
+name = "action_sequence"
+values = ["loses_keyword_and_gains_keyword"]
+
+[[axis]]
+name = "keyword_surface"
+values = [
+    "quoted_lost_keyword",
+    "quoted_gained_keyword_with_inner_period",
+]
+
+[[axis]]
+name = "keyword_kind"
+values = [
+    "keyword_ability_name",
+    "landwalk",
+    "protection",
+    "enchant",
+]
+
+[boundary]
+excludes = [
+    "One-sided keyword gain effects without a paired loss.",
+    "One-sided keyword loss effects without a paired gain.",
+    "Unquoted keyword ability changes.",
+    "Quoted static ability grants that are not keyword abilities.",
+]
+includes = [
+    "Triggered effects where the source object referred to as it loses one quoted keyword ability and gains another.",
+    "Lost keyword text quoted without a period and gained keyword text quoted with the sentence period inside the quote.",
+    "Keyword ability names and parameterized keyword abilities such as landwalk, protection, and enchant.",
+]
+
+[concept]
+name = "loses_and_gains_keyword"
+pest_rules = ["loses_and_gains_keyword"]
+rules_queries = [
+    "lex: it loses quoted keyword and gains quoted keyword",
+    "lex: keyword abilities enchant protection landwalk",
+]
+rules_terms = [
+    "keyword ability",
+    "loses",
+    "gains",
+]
+
+[[counterexample]]
+reason = "One-sided keyword gain effect without the paired loses-and-gains rewrite."
+text = 'it gains "flying."'
+
+[[counterexample]]
+reason = "One-sided keyword loss effect without the paired gains clause."
+text = 'it loses "flying".'
+
+[[counterexample]]
+reason = "Unquoted keyword ability change, not the quoted keyword rewrite form."
+text = "it loses flying and gains trample."
+
+[[counterexample]]
+reason = "Quoted static ability grant, not a quoted keyword ability loses-and-gains rewrite."
+text = 'it gains "enchanted creature loses flying."'
+
+[[example]]
+text = 'it loses "flying" and gains "trample."'
+
+[[example]]
+text = 'it loses "islandwalk" and gains "protection from black."'
+
+[[example]]
+text = 'it loses "enchant creature card in a graveyard" and gains "enchant creature put onto the battlefield with this Aura."'
+
+[grammar_query]
+candidate_rules = [
+    "loses_and_gains_keyword",
+    "source_gains_static_ability",
+    "activated_source_gains_keyword_until_eot",
+    "static_enchanted_loses_keyword",
+]
+selected_rule = "loses_and_gains_keyword"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
