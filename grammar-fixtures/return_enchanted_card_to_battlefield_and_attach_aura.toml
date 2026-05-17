@@ -1,0 +1,31 @@
+[fixture]
+concept = "return_enchanted_card_to_battlefield_and_attach_aura"
+rule = "return_enchanted_card_and_attach"
+
+[[example]]
+text = "Return enchanted creature card to the battlefield under your control and attach this Aura to it."
+reason = "Return-and-attach effect for an enchanted creature card."
+
+[[example]]
+text = "Return enchanted artifact card to the battlefield under your control and attach this Aura to it."
+reason = "Return-and-attach effect for an enchanted artifact card."
+
+[[counterexample]]
+text = "Return target creature card from your graveyard to the battlefield."
+reason = "Targeted return from a source zone belongs to a target-card return concept, not this enchanted-card return-and-attach effect."
+
+[[counterexample]]
+text = "Return enchanted creature card to the battlefield under your control."
+reason = "The concept requires the follow-up instruction to attach this Aura to the returned object."
+
+[[counterexample]]
+text = "Return enchanted creature card to the battlefield under its owner's control and attach this Aura to it."
+reason = "The destination controller axis is under your control, not under its owner's control."
+
+[[counterexample]]
+text = "Attach this Aura to enchanted creature card."
+reason = "Standalone attach instructions do not include the required return action."
+
+[[counterexample]]
+text = "Return enchanted creature card to the battlefield under your control and attach this Aura to it. trailing"
+reason = "Exact-consumption guard."

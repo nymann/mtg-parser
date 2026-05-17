@@ -1,0 +1,94 @@
+[[axis]]
+name = "action"
+values = ["return"]
+
+[[axis]]
+name = "selector"
+values = ["enchanted"]
+
+[[axis]]
+name = "target_kind"
+values = ["permanent_type_card"]
+
+[[axis]]
+name = "destination_zone"
+values = ["the_battlefield"]
+
+[[axis]]
+name = "destination_controller"
+values = ["under_your_control"]
+
+[[axis]]
+name = "followup_action"
+values = ["attach"]
+
+[[axis]]
+name = "attachment_object"
+values = ["this_aura"]
+
+[[axis]]
+name = "attachment_recipient"
+values = ["it"]
+
+[boundary]
+excludes = [
+    "Targeted return effects with explicit source-zone wording.",
+    "Return effects for enchanted cards that omit the follow-up attach instruction.",
+    "Return-and-attach effects that return the enchanted card under another player's control.",
+    "Standalone attach instructions that do not return an enchanted card to the battlefield.",
+]
+includes = [
+    "Imperative effects that return an enchanted permanent-type card to the battlefield under your control.",
+    "Effects that immediately attach this Aura to the returned object using it as the attachment recipient.",
+]
+
+[concept]
+name = "return_enchanted_card_to_battlefield_and_attach_aura"
+pest_rules = ["return_enchanted_card_and_attach"]
+rules_queries = [
+    "lex: return enchanted creature card to the battlefield under your control and attach this Aura to it",
+    "lex: attach this Aura to it",
+]
+rules_terms = [
+    "Aura",
+    "attach",
+    "battlefield",
+    "card",
+    "enchanted",
+    "return",
+]
+
+[[counterexample]]
+reason = "Targeted return from a source zone belongs to a target-card return concept, not this enchanted-card return-and-attach effect."
+text = "Return target creature card from your graveyard to the battlefield."
+
+[[counterexample]]
+reason = "The concept requires the follow-up instruction to attach this Aura to the returned object."
+text = "Return enchanted creature card to the battlefield under your control."
+
+[[counterexample]]
+reason = "The destination controller axis is under your control, not under its owner's control."
+text = "Return enchanted creature card to the battlefield under its owner's control and attach this Aura to it."
+
+[[counterexample]]
+reason = "Standalone attach instructions do not include the required return action."
+text = "Attach this Aura to enchanted creature card."
+
+[[example]]
+reason = "Return-and-attach effect for an enchanted creature card."
+text = "Return enchanted creature card to the battlefield under your control and attach this Aura to it."
+
+[[example]]
+reason = "Return-and-attach effect for an enchanted artifact card."
+text = "Return enchanted artifact card to the battlefield under your control and attach this Aura to it."
+
+[grammar_query]
+candidate_rules = [
+    "return_enchanted_card_and_attach",
+    "return_target_card_from_your_zone_to_zone",
+]
+selected_rule = "return_enchanted_card_and_attach"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
