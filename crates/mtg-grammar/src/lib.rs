@@ -14,11 +14,11 @@ pub use ast::{
     ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentType, PhysicalAction, PlayRestriction,
     PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter, PlayerDiscardActor,
-    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
-    SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement,
-    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentSelector, TextChangeReplacementTerm,
-    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
-    VariablePtModifier, Zone,
+    PreventionRecipient, PtModifier, RegenerateRecipient, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, Step, TapAllPermanentsActor, TargetPermanentSelector,
+    TextChangeReplacementTerm, TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression,
+    Variable, VariableDefinition, VariablePtModifier, Zone,
 };
 pub use parse::{parse, ParseError};
 pub use parse::{parse_pest_rule, pest_rule_names, RuleParseError};

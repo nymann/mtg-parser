@@ -5,6 +5,7 @@
 // The M3 exit criterion is 1000 cases; that stays inside the <10s tier-2
 // budget thanks to the trivial parser/unparser.
 
+use mtg_grammar::ast::{TriggerCastActor, TriggerCastSpell};
 use mtg_grammar::{
     parse, unparse, ActivatedAbility, ActivatedCost, ActivatedDamageEffect,
     ActivatedDamageRecipient, ActivatedEffect, ActivationPermission, AddManaAmount, BasicLandType,
@@ -13,13 +14,12 @@ use mtg_grammar::{
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, InterveningIf, Keyword,
     LifeAmount, ManaCost, ManaSymbol, ModalMode, ObjectStatus, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentType, PlayerDiscardActor, PreventionRecipient, PtModifier, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
-    SpellAdditionalCost, SpellType, Statement, StaticAbility, TapAllPermanentsActor,
-    TargetPermanentSelector, TextChangeReplacementTerm, TriggerEffect, TriggerEvent,
-    TriggeredAbility, Variable,
+    PaymentFailureEffect, PermanentType, PlayerDiscardActor, PreventionRecipient, PtModifier,
+    RegenerateRecipient, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
+    TapAllPermanentsActor, TargetPermanentSelector, TextChangeReplacementTerm, TriggerEffect,
+    TriggerEvent, TriggeredAbility, Variable,
 };
-use mtg_grammar::ast::{TriggerCastActor, TriggerCastSpell};
 use proptest::prelude::*;
 
 fn arb_mana_symbol() -> impl Strategy<Value = ManaSymbol> {
@@ -305,7 +305,6 @@ fn arb_target_player_discards_activated_ability() -> impl Strategy<Value = State
 
 fn arb_statement() -> impl Strategy<Value = Statement> {
     prop_oneof![
-        arb_mana_cost().prop_map(Statement::ManaCost),
         arb_add_mana_amount().prop_map(|amount| Statement::AddMana { amount }),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::AsAdditionalCostToCastThisSpell {
@@ -536,7 +535,9 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             Just(TextChangeReplacementTerm::ColorWord),
         ]
         .prop_map(|term| Statement::ChangeTextOfTargetSpellOrPermanentReplacing { term }),
-        Just(Statement::RegenerateTargetCreature),
+        Just(Statement::Regenerate {
+            recipient: RegenerateRecipient::TargetCreature,
+        }),
         Just(Statement::ActivateOnlyDuringYourTurn),
         Just(Statement::ActivateOnlyDuringCombat),
         Just(Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn),

@@ -9,6 +9,7 @@
 // into a feature-gated `mtg_grammar::testing` module and update the
 // xtask runner to enable that feature for tier 2.
 
+use mtg_grammar::ast::{TriggerCastActor, TriggerCastSpell};
 use mtg_grammar::{
     ActivatedAbility, ActivatedCost, ActivatedDamageEffect, ActivatedDamageRecipient,
     ActivatedEffect, AddManaAmount, BasicLandType, CardCount, Color, CombatRole,
@@ -17,13 +18,12 @@ use mtg_grammar::{
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, LifeAmount,
     ManaCost, ManaSymbol, ModalMode, ObjectStatus, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentType, PlayerDiscardActor, PreventionRecipient, PtModifier, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
-    SpellAdditionalCost, SpellType, Statement, StaticAbility, TapAllPermanentsActor,
-    TargetPermanentSelector, TextChangeReplacementTerm, TriggerEffect, TriggerEvent,
-    TriggeredAbility, Variable, Zone,
+    PaymentFailureEffect, PermanentType, PlayerDiscardActor, PreventionRecipient, PtModifier,
+    RegenerateRecipient, Sign, SignedNumber, SignedPtComponent, SignedVariable,
+    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
+    TapAllPermanentsActor, TargetPermanentSelector, TextChangeReplacementTerm, TriggerEffect,
+    TriggerEvent, TriggeredAbility, Variable, Zone,
 };
-use mtg_grammar::ast::{TriggerCastActor, TriggerCastSpell};
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
 
@@ -515,7 +515,9 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
             Just(TextChangeReplacementTerm::ColorWord),
         ]
         .prop_map(|term| Statement::ChangeTextOfTargetSpellOrPermanentReplacing { term }),
-        Just(Statement::RegenerateTargetCreature),
+        Just(Statement::Regenerate {
+            recipient: RegenerateRecipient::TargetCreature,
+        }),
         Just(Statement::ActivateOnlyDuringYourTurn),
         Just(Statement::ActivateOnlyDuringCombat),
         Just(Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn),
