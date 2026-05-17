@@ -1,0 +1,100 @@
+[[axis]]
+name = "sequence_length"
+values = [
+    "single_effect",
+    "multiple_effects",
+]
+
+[[axis]]
+name = "effect_terminator"
+values = [
+    "period",
+    "comma",
+    "and_lookahead",
+]
+
+[[axis]]
+name = "sequence_connector"
+values = [
+    "none",
+    "and",
+]
+
+[[axis]]
+name = "effect_member"
+values = [
+    "gain_life",
+    "draw_cards",
+    "source_deals_damage",
+    "put_named_counters_on_source",
+]
+
+[boundary]
+excludes = [
+    "Triggered ability introductions and trigger conditions are owned by triggered_ability and trigger_condition.",
+    "Choice or modal separators such as or are not sequential trigger effects.",
+    "Comma-separated imperative action chains are owned by imperative_action_sequence, not this triggered-effect wrapper.",
+    "Activated-effect lists after a colon are owned by activated_ability and activated_effect.",
+]
+includes = [
+    "One or more triggered-effect instructions after a trigger condition.",
+    "Multiple trigger effects joined by and when the preceding effect terminates before the conjunction.",
+    "Multiple trigger effects printed as adjacent complete effect sentences.",
+    "Multiple trigger effects where the preceding effect owns a comma terminator.",
+]
+
+[concept]
+name = "trigger_effect_sequence"
+pest_rules = ["trigger_effect_sequence"]
+rules_queries = [
+    "lex: triggered ability effect sequence",
+    "lex: when triggered ability effect and effect",
+    "lex: trigger effect sequence",
+]
+rules_terms = [
+    "triggered ability",
+    "effect",
+    "sequence",
+    "damage",
+    "draw",
+    "gain life",
+]
+
+[[counterexample]]
+reason = "The trigger word and condition are outside the effect-sequence boundary."
+text = "When CARDNAME dies, you gain 1 life."
+
+[[counterexample]]
+reason = "Or-separated choices are modal or choice text, not sequential trigger effects."
+text = "you gain 1 life or draw a card."
+
+[[counterexample]]
+reason = "Imperative comma-then chains are owned by imperative_action_sequence rather than the trigger-effect sequence wrapper."
+text = "Discard your hand, then draw a card."
+
+[[example]]
+text = "you gain 1 life."
+
+[[example]]
+text = "you gain 1 life. draw a card."
+
+[[example]]
+text = "CARDNAME deals 1 damage to you and you gain 1 life."
+
+[[example]]
+text = "put a charge counter on CARDNAME, you gain 1 life."
+
+[grammar_query]
+candidate_rules = [
+    "trigger_effect_sequence",
+    "trigger_effect",
+    "triggered_ability",
+    "trigger_condition",
+    "imperative_action_sequence",
+    "activated_effect",
+]
+selected_rule = "trigger_effect_sequence"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

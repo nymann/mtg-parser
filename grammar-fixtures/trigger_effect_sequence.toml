@@ -1,0 +1,35 @@
+[fixture]
+concept = "trigger_effect_sequence"
+rule = "trigger_effect_sequence"
+
+[[example]]
+text = "you gain 1 life."
+reason = "Single triggered effect with a period terminator."
+
+[[example]]
+text = "you gain 1 life. draw a card."
+reason = "Adjacent complete triggered effects without an explicit conjunction."
+
+[[example]]
+text = "CARDNAME deals 1 damage to you and you gain 1 life."
+reason = "Damage effect ending before an and-joined following triggered effect."
+
+[[example]]
+text = "put a charge counter on CARDNAME, you gain 1 life."
+reason = "Counter-placement triggered effect using its comma terminator before the next triggered effect."
+
+[[counterexample]]
+text = "When CARDNAME dies, you gain 1 life."
+reason = "The trigger word and condition are outside the effect-sequence boundary."
+
+[[counterexample]]
+text = "you gain 1 life or draw a card."
+reason = "Or-separated choices are modal or choice text, not sequential trigger effects."
+
+[[counterexample]]
+text = "Discard your hand, then draw a card."
+reason = "Imperative comma-then chains are owned by imperative_action_sequence rather than the trigger-effect sequence wrapper."
+
+[[counterexample]]
+text = "you gain 1 life. trailing"
+reason = "Exact-consumption guard."
