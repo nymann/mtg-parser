@@ -1,0 +1,75 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "action"
+values = ["lose"]
+
+[[axis]]
+name = "object"
+values = ["game"]
+
+[[axis]]
+name = "sentence_form"
+values = ["trigger_effect"]
+
+[boundary]
+excludes = [
+    "Boundary negative: you play a land",
+    "Boundary negative: you cast a spell",
+    "Boundary negative: you don't lose the game for having 0 or less life.",
+    "Boundary negative: if you can't, you lose the game.",
+    "Boundary negative: player loses N life",
+    "Boundary negative: that player loses all unspent mana",
+    'Boundary negative: lose" as a coin-flip result',
+]
+includes = ["Accepted no-PEST fixture wording: you lose the game."]
+
+[concept]
+name = "you_lose_game"
+pest_rules = ["you_lose_the_game"]
+rules_queries = ["lex: you lose game"]
+rules_terms = [
+    "lose",
+    "game",
+]
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "you play a land"
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "you cast a spell"
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "you don't lose the game for having 0 or less life."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "if you can't, you lose the game."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "player loses N life"
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "that player loses all unspent mana"
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = 'lose" as a coin-flip result'
+
+[[example]]
+text = "you lose the game."
+
+[grammar_query]
+candidate_rules = ["you_lose_the_game"]
+selected_rule = "you_lose_the_game"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

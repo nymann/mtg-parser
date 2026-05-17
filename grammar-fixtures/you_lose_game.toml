@@ -1,0 +1,39 @@
+[fixture]
+concept = "you_lose_game"
+rule = "you_lose_the_game"
+
+[[example]]
+text = "you lose the game."
+reason = "Accepted no-PEST boundary example."
+
+[[counterexample]]
+text = "you play a land"
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "you cast a spell"
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "you don't lose the game for having 0 or less life."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "if you can't, you lose the game."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "player loses N life"
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "that player loses all unspent mana"
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "lose\" as a coin-flip result"
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "you lose the game. trailing"
+reason = "Exact-consumption guard."
