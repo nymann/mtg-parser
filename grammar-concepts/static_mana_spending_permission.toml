@@ -1,0 +1,88 @@
+[[axis]]
+name = "subject"
+values = ["you"]
+
+[[axis]]
+name = "polarity"
+values = ["may"]
+
+[[axis]]
+name = "action"
+values = ["spend_mana_as_though"]
+
+[[axis]]
+name = "source_mana_color"
+values = [
+    "white",
+    "blue",
+    "black",
+    "red",
+    "green",
+]
+
+[[axis]]
+name = "treated_as_mana_color"
+values = [
+    "white",
+    "blue",
+    "black",
+    "red",
+    "green",
+]
+
+[[axis]]
+name = "ability_kind"
+values = ["static_ability"]
+
+[boundary]
+excludes = [
+    "Boundary negative: Players can't cast spells with a name originally printed in the Alpha expansion.",
+    "Boundary negative: Players can't play lands with a name originally printed in the Alpha expansion.",
+    "Boundary negative: Spend only black mana on X.",
+    "Boundary negative: Mana they produce is spent to play that card.",
+]
+includes = [
+    "Accepted no-PEST fixture wording: You may spend black mana as though it were green mana.",
+    "Accepted no-PEST fixture wording: You may spend white mana as though it were red mana.",
+]
+
+[concept]
+name = "static_mana_spending_permission"
+pest_rules = ["static_mana_spending_permission"]
+rules_queries = ["lex: static mana spending permission"]
+rules_terms = [
+    "static",
+    "mana",
+    "spending",
+    "permission",
+]
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "Players can't cast spells with a name originally printed in the Alpha expansion."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "Players can't play lands with a name originally printed in the Alpha expansion."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "Spend only black mana on X."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "Mana they produce is spent to play that card."
+
+[[example]]
+text = "You may spend black mana as though it were green mana."
+
+[[example]]
+text = "You may spend white mana as though it were red mana."
+
+[grammar_query]
+candidate_rules = ["static_mana_spending_permission"]
+selected_rule = "static_mana_spending_permission"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

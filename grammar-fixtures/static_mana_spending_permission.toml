@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_mana_spending_permission"
+rule = "static_mana_spending_permission"
+
+[[example]]
+text = "You may spend black mana as though it were green mana."
+reason = "Accepted no-PEST boundary example."
+
+[[example]]
+text = "You may spend white mana as though it were red mana."
+reason = "Accepted no-PEST boundary example."
+
+[[counterexample]]
+text = "Players can't cast spells with a name originally printed in the Alpha expansion."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "Players can't play lands with a name originally printed in the Alpha expansion."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "Spend only black mana on X."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "Mana they produce is spent to play that card."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "You may spend black mana as though it were green mana. trailing"
+reason = "Exact-consumption guard."
