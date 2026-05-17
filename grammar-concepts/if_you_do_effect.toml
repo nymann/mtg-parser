@@ -1,0 +1,74 @@
+[[axis]]
+name = "actor"
+values = [
+    "you_do",
+    "the_player_does",
+]
+
+[[axis]]
+name = "body"
+values = [
+    "add_mana",
+    "untap_source",
+    "untap_referenced_permanent",
+    "gain_life",
+    "prevent_damage_this_turn",
+]
+
+[boundary]
+excludes = [
+    "Other conditional templates such as reflexive 'when you do' triggers.",
+    "Negative polarity branches such as 'if you don't'.",
+    "Effect bodies outside the existing if-you-do body axis.",
+]
+includes = [
+    "Conditional follow-up effects introduced by 'if you do,' or 'if the player does,'.",
+    "Mana, untap, life-gain, and damage-prevention bodies already accepted by if_you_do_effect_body.",
+]
+
+[concept]
+name = "if_you_do_effect"
+pest_rules = [
+    "if_you_do_effect",
+    "if_do_actor",
+    "if_you_do_effect_body",
+]
+rules_queries = [
+    "lex: if you do effect",
+    "lex: if the player does effect",
+]
+rules_terms = [
+    "effect",
+    "prevention effect",
+]
+
+[[counterexample]]
+reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
+text = "When you do, add {G}."
+
+[[counterexample]]
+reason = "Negative polarity branch, outside the actor axis."
+text = "If you don't, add {G}."
+
+[[counterexample]]
+reason = "Draw-card body is not part of the existing if_you_do_effect_body axis."
+text = "If you do, draw a card."
+
+[[example]]
+text = "If you do, add {G}."
+
+[[example]]
+text = "If the player does, untap it."
+
+[[example]]
+text = "If you do, untap the land."
+
+[[example]]
+text = "If you do, you gain 3 life."
+
+[[example]]
+text = "If you do, prevent the next 1 damage that would be dealt to any target this turn."
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
