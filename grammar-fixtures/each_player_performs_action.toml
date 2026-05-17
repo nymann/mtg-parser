@@ -1,0 +1,43 @@
+[fixture]
+concept = "each_player_performs_action"
+rule = "each_player_performs_action"
+
+[[example]]
+text = "Each player draws a card."
+reason = "Single supported draw-card action with each-player actor."
+
+[[example]]
+text = "each player draws X cards."
+reason = "Case-insensitive subject and variable card-count draw action."
+
+[[example]]
+text = "Each player antes the top card of their library."
+reason = "Single ante action member with the each-player actor."
+
+[[example]]
+text = "Each player discards their hand, then draws seven cards."
+reason = "Two-action comma-then sequence with hand discard followed by draw."
+
+[[example]]
+text = "Each player shuffles their hand and graveyard into their library, then draws seven cards."
+reason = "Two-action comma-then sequence with explicit hand/graveyard shuffle followed by draw."
+
+[[counterexample]]
+text = "Draw a card."
+reason = "Imperative action sequence without the each-player actor."
+
+[[counterexample]]
+text = "Each player discards two cards."
+reason = "Counted-card discard is a discard instruction, not the supported hand-discard action member."
+
+[[counterexample]]
+text = "Each player sacrifices a creature."
+reason = "Unsupported each-player action member."
+
+[[counterexample]]
+text = "Each opponent draws a card."
+reason = "Each-opponent subject is outside the each-player actor axis."
+
+[[counterexample]]
+text = "Each player draws a card. trailing"
+reason = "Exact-consumption guard."
