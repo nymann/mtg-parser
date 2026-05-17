@@ -844,6 +844,21 @@ struct Phase2ConceptStatus {
     ast_status: Phase2AstStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     first_error: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    ast_failures: Vec<AstFailureSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+struct AstFailureSummary {
+    index: usize,
+    rule: String,
+    text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    expected_owner: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    actual_owners: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -2526,6 +2541,43 @@ fn collect_ast_variant_keys(value: &serde_json::Value, out: &mut BTreeSet<String
     }
 }
 
+fn top_level_variant(value: &serde_json::Value) -> Option<String> {
+    match value {
+        serde_json::Value::Object(map) if map.len() == 1 => {
+            let key = map.keys().next()?;
+            if key.chars().next().is_some_and(char::is_uppercase) {
+                Some(key.clone())
+            } else {
+                None
+            }
+        }
+        serde_json::Value::String(s) if s.chars().next().is_some_and(char::is_uppercase) => {
+            Some(s.clone())
+        }
+        _ => None,
+    }
+}
+
+fn collect_ast_failures(report: &AstTestReport) -> Vec<AstFailureSummary> {
+    report
+        .cases
+        .iter()
+        .filter(|case| !case.matched)
+        .map(|case| {
+            let expected_owner = case.expected_ast.as_ref().and_then(top_level_variant);
+            let actual_owner = case.actual_ast.as_ref().and_then(top_level_variant);
+            AstFailureSummary {
+                index: case.index,
+                rule: case.rule.clone(),
+                text: case.text.clone(),
+                error: case.error.clone(),
+                expected_owner,
+                actual_owners: actual_owner.into_iter().collect(),
+            }
+        })
+        .collect()
+}
+
 fn run_phase2_map(options: Phase2MapOptions) -> Result<Phase2MapReport> {
     let concept_files = read_concept_files()?;
     let total_concepts = concept_files.len();
@@ -2553,6 +2605,7 @@ fn run_phase2_map(options: Phase2MapOptions) -> Result<Phase2MapReport> {
                 parse_failures: 0,
                 ast_status: Phase2AstStatus::MissingFixture,
                 first_error: Some("missing grammar fixture".to_string()),
+                ast_failures: Vec::new(),
             });
             continue;
         }
@@ -2573,6 +2626,7 @@ fn run_phase2_map(options: Phase2MapOptions) -> Result<Phase2MapReport> {
                 parse_failures: 0,
                 ast_status: Phase2AstStatus::NotGrammarGreen,
                 first_error: None,
+                ast_failures: Vec::new(),
             });
             continue;
         }
@@ -2600,6 +2654,7 @@ fn run_phase2_map(options: Phase2MapOptions) -> Result<Phase2MapReport> {
                 parse_failures: parse_report.failures,
                 ast_status: Phase2AstStatus::ParseFailed,
                 first_error: first_parse_error,
+                ast_failures: Vec::new(),
             });
             continue;
         }
@@ -2617,6 +2672,7 @@ fn run_phase2_map(options: Phase2MapOptions) -> Result<Phase2MapReport> {
                 parse_failures: 0,
                 ast_status: Phase2AstStatus::MissingSnapshot,
                 first_error: Some("missing AST snapshot".to_string()),
+                ast_failures: Vec::new(),
             });
             continue;
         }
@@ -2636,6 +2692,7 @@ fn run_phase2_map(options: Phase2MapOptions) -> Result<Phase2MapReport> {
             .cases
             .iter()
             .find_map(|case| case.error.as_ref().cloned());
+        let ast_failures = collect_ast_failures(&ast_report);
         concepts.push(Phase2ConceptStatus {
             concept,
             maturity,
@@ -2648,6 +2705,7 @@ fn run_phase2_map(options: Phase2MapOptions) -> Result<Phase2MapReport> {
             parse_failures: 0,
             ast_status,
             first_error: first_ast_error,
+            ast_failures,
         });
     }
 
@@ -3002,6 +3060,7 @@ fn build_phase2_repair_prompt(
 ) -> Result<String> {
     let parse = run_concept_parse_fresh(&candidate.concept)?;
     let parse_json = serde_json::to_string_pretty(&parse).context("serialize parse report")?;
+    let ast_failures_section = render_ast_failures_section(&candidate.ast_failures);
     Ok(format!(
         "\
 You are working in the mtg-parser repository.
@@ -3020,7 +3079,7 @@ Concept artifacts:
 
 Current status: {status:?}
 First error: {first_error}
-
+{ast_failures_section}
 Use the existing concept fixture as the behavioral contract. Make the smallest parser/AST/grammar integration change that makes accepted fixture examples parse through `mtg_grammar::parse` with the concept-owned AST shape. If the fixture has `[phase2.ast_shape]`, treat it as a hard contract: the `owner` variant is the desired concept shape, and `forbid` variants are legacy/card-centric shapes that must be merged away. Prefer generalizing existing rules and parser helpers over adding one rule per example. Do not edit generated tests or run `cargo xtask add-card`.
 
 Allowed implementation areas:
@@ -3049,8 +3108,63 @@ Current concept-parse report:
         snapshot_file = candidate.snapshot_path.display(),
         status = candidate.ast_status,
         first_error = candidate.first_error.as_deref().unwrap_or("none"),
+        ast_failures_section = ast_failures_section,
         parse_json = parse_json
     ))
+}
+
+/// Render a prompt section that summarises every failing AST case from the
+/// previous concept-ast-test run. The agent's prior attempts kept regenerating
+/// card-centric Statement variants because the prompt only surfaced
+/// `first_error` (a single string) and discarded the per-case detail. Inlining
+/// every failure's input text, expected/actual top-level variant, and the
+/// architectural error message ("forbidden legacy AST variant ...") makes the
+/// rejection reason impossible to miss. Equivalent failures (same error
+/// message, same expected/actual owner pair) are deduplicated to one entry
+/// with representative examples.
+fn render_ast_failures_section(failures: &[AstFailureSummary]) -> String {
+    if failures.is_empty() {
+        return String::new();
+    }
+
+    let mut groups: BTreeMap<(Option<String>, Option<String>, Option<String>), Vec<&AstFailureSummary>> =
+        BTreeMap::new();
+    for failure in failures {
+        let actual = failure.actual_owners.first().cloned();
+        let key = (
+            failure.error.clone(),
+            failure.expected_owner.clone(),
+            actual,
+        );
+        groups.entry(key).or_default().push(failure);
+    }
+
+    let mut buf = String::from("\nLast concept-ast-test rejected this concept. Fix every group below before regenerating the same AST shapes:\n");
+    for (group_idx, ((error, expected, actual), cases)) in groups.iter().enumerate() {
+        buf.push_str(&format!("\n[group {}] {} failing case(s)\n", group_idx + 1, cases.len()));
+        if let Some(expected) = expected {
+            buf.push_str(&format!("  expected top-level Statement variant: `{expected}`\n"));
+        }
+        if let Some(actual) = actual {
+            buf.push_str(&format!("  actual top-level Statement variant:   `{actual}`\n"));
+        }
+        if let Some(error) = error {
+            buf.push_str(&format!("  rejection reason: {error}\n"));
+        }
+        let example_count = cases.len().min(3);
+        buf.push_str("  example inputs:\n");
+        for case in cases.iter().take(example_count) {
+            buf.push_str(&format!("    - (rule={}) {}\n", case.rule, case.text));
+        }
+        if cases.len() > example_count {
+            buf.push_str(&format!(
+                "    - … and {} more with the same failure shape\n",
+                cases.len() - example_count
+            ));
+        }
+    }
+    buf.push('\n');
+    buf
 }
 
 fn run_roadmap(options: RoadmapOptions) -> Result<RoadmapReport> {
