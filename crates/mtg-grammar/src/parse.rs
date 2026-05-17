@@ -379,6 +379,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 permanent_dealt_damage_by_source_this_turn_dies_from_pair(pair)?,
             ))
         }
+        Rule::permanent_put_into_graveyard_from_battlefield => Ok(Statement::TriggerEvent(
+            permanent_put_into_graveyard_from_battlefield_from_pair(pair)?,
+        )),
         Rule::permanent_enters => Ok(Statement::TriggerEvent(permanent_enters_from_pair(pair)?)),
         Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
         | Rule::if_source_turns_over_destroy_touched_nontoken_permanents

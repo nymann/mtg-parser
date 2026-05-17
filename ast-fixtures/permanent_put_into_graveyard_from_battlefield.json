@@ -1,0 +1,45 @@
+{
+  "concept": "permanent_put_into_graveyard_from_battlefield",
+  "fixture_path": "grammar-fixtures/permanent_put_into_graveyard_from_battlefield.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "permanent_put_into_graveyard_from_battlefield",
+      "text": "a creature dies",
+      "ast": {
+        "TriggerEvent": {
+          "PermanentPutIntoGraveyardFromBattlefield": {
+            "permanent_type": "Creature",
+            "wording": "Dies"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "permanent_put_into_graveyard_from_battlefield",
+      "text": "an artifact is put into a graveyard from the battlefield",
+      "ast": {
+        "TriggerEvent": {
+          "PermanentPutIntoGraveyardFromBattlefield": {
+            "permanent_type": "Artifact",
+            "wording": "PutIntoGraveyardFromBattlefield"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "permanent_put_into_graveyard_from_battlefield",
+      "text": "a land is put into a graveyard from the battlefield",
+      "ast": {
+        "TriggerEvent": {
+          "PermanentPutIntoGraveyardFromBattlefield": {
+            "permanent_type": "Land",
+            "wording": "PutIntoGraveyardFromBattlefield"
+          }
+        }
+      }
+    }
+  ]
+}
