@@ -1,0 +1,20 @@
+{
+  "concept": "life_total_floor_replacement",
+  "fixture_path": "grammar-fixtures/life_total_floor_replacement.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_life_total_floor_replacement",
+      "text": "Damage that would reduce your life total to less than 1 reduces it to 1 instead.",
+      "ast": {
+        "StaticAbility": {
+          "LifeTotalFloorReplacement": {
+            "cause": "Damage",
+            "player": "You",
+            "threshold": 1
+          }
+        }
+      }
+    }
+  ]
+}
