@@ -1,0 +1,54 @@
+{
+  "concept": "put_pt_counter_on_it",
+  "fixture_path": "grammar-fixtures/put_pt_counter_on_it.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "put_pt_counter_on_it",
+      "text": "Put a +1/+1 counter on it.",
+      "ast": {
+        "PutCountersOnSource": {
+          "amount": {
+            "Number": 1
+          },
+          "counter": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Plus"
+            }
+          },
+          "source": "It",
+          "up_to": false
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "put_pt_counter_on_it",
+      "text": "Put a -1/-1 counter on it.",
+      "ast": {
+        "PutCountersOnSource": {
+          "amount": {
+            "Number": 1
+          },
+          "counter": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Minus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Minus"
+            }
+          },
+          "source": "It",
+          "up_to": false
+        }
+      }
+    }
+  ]
+}
