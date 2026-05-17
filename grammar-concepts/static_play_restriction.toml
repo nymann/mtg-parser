@@ -1,0 +1,93 @@
+[[axis]]
+name = "subject"
+values = ["players"]
+
+[[axis]]
+name = "polarity"
+values = ["can't"]
+
+[[axis]]
+name = "action"
+values = [
+    "cast_spells",
+    "play_lands",
+]
+
+[[axis]]
+name = "action_join"
+values = [
+    "single",
+    "or_list",
+]
+
+[[axis]]
+name = "object_scope"
+values = ["with_a_name_originally_printed_in_expansion"]
+
+[boundary]
+excludes = [
+    "Referenced-card play instructions such as The player plays that card if able.",
+    "Timing permissions such as You may play this card any time you could cast an instant.",
+    "Mana-spending restrictions that mention playing a referenced card.",
+    "Standalone mana ability activation instructions.",
+]
+includes = [
+    "Static restrictions saying players can't cast spells with a name originally printed in an expansion.",
+    "Static restrictions saying players can't play lands with a name originally printed in an expansion.",
+    "Static restrictions joining cast-spell and play-land actions with or.",
+]
+
+[concept]
+name = "static_play_restriction"
+pest_rules = [
+    "static_play_restriction",
+    "play_restriction_action",
+]
+rules_queries = [
+    "lex: players can't cast spells with a name originally printed in expansion",
+    "lex: players can't play lands with a name originally printed in expansion",
+]
+rules_terms = [
+    "play",
+    "cast",
+    "spell",
+    "land",
+    "restriction",
+]
+
+[[counterexample]]
+reason = "Referenced-card play instruction, not a static restriction on players."
+text = "The player plays that card if able."
+
+[[counterexample]]
+reason = "Timing permission for this card, not a static restriction on players."
+text = "You may play this card any time you could cast an instant."
+
+[[counterexample]]
+reason = "Mana-spending restriction, not a static play restriction."
+text = "Mana they produce is spent to play that card."
+
+[[counterexample]]
+reason = "Standalone mana ability activation instruction, not a static play restriction."
+text = "Target player activates a mana ability of each land they control."
+
+[[example]]
+text = "Players can't cast spells with a name originally printed in the Alpha expansion."
+
+[[example]]
+text = "Players can't play lands with a name originally printed in the Alpha expansion."
+
+[[example]]
+text = "Players can't cast spells or play lands with a name originally printed in the Alpha expansion."
+
+[grammar_query]
+candidate_rules = [
+    "static_play_restriction",
+    "play_restriction_action",
+    "referenced_card_play_instruction",
+]
+selected_rule = "static_play_restriction"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

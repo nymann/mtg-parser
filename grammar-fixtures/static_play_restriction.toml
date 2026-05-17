@@ -1,0 +1,45 @@
+[fixture]
+concept = "static_play_restriction"
+rule = "static_play_restriction"
+
+[[example]]
+text = "Players can't cast spells with a name originally printed in the Alpha expansion."
+reason = "Single cast-spells action with original-printing expansion scope."
+
+[[example]]
+text = "Players can't play lands with a name originally printed in the Alpha expansion."
+reason = "Single play-lands action with original-printing expansion scope."
+
+[[example]]
+text = "Players can't cast spells or play lands with a name originally printed in the Alpha expansion."
+reason = "Or-joined action list with original-printing expansion scope."
+
+[[example]]
+rule = "play_restriction_action"
+text = "cast spells"
+reason = "Action axis variant for casting spells."
+
+[[example]]
+rule = "play_restriction_action"
+text = "play lands"
+reason = "Action axis variant for playing lands."
+
+[[counterexample]]
+text = "The player plays that card if able."
+reason = "Referenced-card play instruction, not a static restriction on players."
+
+[[counterexample]]
+text = "You may play this card any time you could cast an instant."
+reason = "Timing permission for this card, not a static restriction on players."
+
+[[counterexample]]
+text = "Mana they produce is spent to play that card."
+reason = "Mana-spending restriction, not a static play restriction."
+
+[[counterexample]]
+text = "Target player activates a mana ability of each land they control."
+reason = "Standalone mana ability activation instruction, not a static play restriction."
+
+[[counterexample]]
+text = "Players can't cast spells with a name originally printed in the Alpha expansion. trailing"
+reason = "Exact-consumption guard."
