@@ -1,0 +1,18 @@
+{
+  "concept": "copy_target_selection_permission",
+  "fixture_path": "grammar-fixtures/copy_target_selection_permission.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_may_choose_new_targets_for_the_copy",
+      "text": "You may choose new targets for the copy.",
+      "ast": "YouMayChooseNewTargetsForTheCopy"
+    },
+    {
+      "index": 2,
+      "rule": "you_may_choose_new_targets_for_the_copy",
+      "text": "you may choose new targets for the copy.",
+      "ast": "YouMayChooseNewTargetsForTheCopy"
+    }
+  ]
+}
