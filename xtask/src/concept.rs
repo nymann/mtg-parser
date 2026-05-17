@@ -166,6 +166,8 @@ cargo xtask concept-phase-loop [--agent codex|claude]
                                [--repeat-stop-after N]
                                [--phase1-batch-size N]
                                [--phase1-max-batches N]
+                               [--notify-imessage BUDDY]
+                               [--notify-command SHELL]
                                [--dry-run]
 
 Runs Phase 2 in small committed batches until objective quality stop signals
@@ -174,7 +176,8 @@ top-level Statement enum variants, AST failures becoming the majority of
 remaining non-green concepts, or all Phase 2 concepts going green. Optional
 max flags are fuses for scheduled/manual runs, not normal stop goals. When a
 Phase 2 stop signal fires, it writes a summary and hands off to
-concept-grind-loop for Phase 1 concept work.
+concept-grind-loop for Phase 1 concept work. Notification hooks may also be
+provided through PHASE_NOTIFY_IMESSAGE or PHASE_NOTIFY_COMMAND.
 ";
 
 const PHASE_STATUS_USAGE: &str = "\
@@ -641,6 +644,8 @@ struct ConceptPhaseLoopOptions {
     repeat_stop_after: u32,
     phase1_batch_size: u32,
     phase1_max_batches: Option<u32>,
+    notify_imessage: Option<String>,
+    notify_command: Option<String>,
     dry_run: bool,
 }
 
@@ -1965,6 +1970,8 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
     let mut repeat_stop_after = 2u32;
     let mut phase1_batch_size = 5u32;
     let mut phase1_max_batches = None::<u32>;
+    let mut notify_imessage = env_nonempty("PHASE_NOTIFY_IMESSAGE");
+    let mut notify_command = env_nonempty("PHASE_NOTIFY_COMMAND");
     let mut dry_run = false;
 
     let mut iter = args.iter();
@@ -2016,6 +2023,26 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
             s if s.starts_with("--phase1-max-batches=") => {
                 phase1_max_batches = Some(parse_u32_flag_value("--phase1-max-batches", s)?);
             }
+            "--notify-imessage" => {
+                notify_imessage = Some(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--notify-imessage requires a value"))?
+                        .to_string(),
+                );
+            }
+            s if s.starts_with("--notify-imessage=") => {
+                notify_imessage = Some(s["--notify-imessage=".len()..].to_string());
+            }
+            "--notify-command" => {
+                notify_command = Some(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--notify-command requires a value"))?
+                        .to_string(),
+                );
+            }
+            s if s.starts_with("--notify-command=") => {
+                notify_command = Some(s["--notify-command=".len()..].to_string());
+            }
             "--dry-run" => dry_run = true,
             other => bail!("unknown argument: {other}\n\n{PHASE_LOOP_USAGE}"),
         }
@@ -2042,8 +2069,17 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
         repeat_stop_after,
         phase1_batch_size,
         phase1_max_batches,
+        notify_imessage,
+        notify_command,
         dry_run,
     })
+}
+
+fn env_nonempty(name: &str) -> Option<String> {
+    std::env::var(name)
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
 }
 
 fn parse_phase_status_options(args: &[String]) -> Result<PhaseStatusOptions> {
@@ -3831,8 +3867,72 @@ fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
     for reason in &stop_reasons {
         println!("  - {reason}");
     }
+    notify_phase_loop(
+        &options,
+        "mtg-parser: Phase 2 stopped",
+        &format!(
+            "Phase 2 stopped and is handing off to Phase 1.\n{}",
+            stop_reasons
+                .iter()
+                .map(|reason| format!("- {reason}"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        ),
+        &loop_dir,
+    );
 
     run_phase_loop_phase1(&options, &loop_dir)?;
+    Ok(())
+}
+
+fn notify_phase_loop(options: &ConceptPhaseLoopOptions, title: &str, body: &str, loop_dir: &Path) {
+    let mut errors = Vec::new();
+    if let Some(buddy) = &options.notify_imessage {
+        if let Err(error) = send_imessage_notification(buddy, title, body) {
+            errors.push(format!("iMessage notification failed: {error:#}"));
+        }
+    }
+    if let Some(command) = &options.notify_command {
+        if let Err(error) = run_notify_command(command, title, body) {
+            errors.push(format!("notify command failed: {error:#}"));
+        }
+    }
+    if !errors.is_empty() {
+        let text = errors.join("\n");
+        eprintln!("{text}");
+        let _ = fs::write(loop_dir.join("notify_errors.txt"), text);
+    }
+}
+
+fn send_imessage_notification(buddy: &str, title: &str, body: &str) -> Result<()> {
+    let message = format!("{title}\n\n{body}");
+    let script = r#"
+on run argv
+  tell application "Messages"
+    send (item 2 of argv) to buddy (item 1 of argv)
+  end tell
+end run
+"#;
+    let output = Command::new("osascript")
+        .args(["-e", script, buddy, &message])
+        .output()
+        .context("osascript Messages notification")?;
+    if !output.status.success() {
+        bail!("osascript failed\n{}", command_output_text(&output));
+    }
+    Ok(())
+}
+
+fn run_notify_command(command: &str, title: &str, body: &str) -> Result<()> {
+    let output = Command::new("sh")
+        .args(["-c", command])
+        .env("PHASE_NOTIFY_TITLE", title)
+        .env("PHASE_NOTIFY_BODY", body)
+        .output()
+        .context("run PHASE_NOTIFY_COMMAND")?;
+    if !output.status.success() {
+        bail!("notify command failed\n{}", command_output_text(&output));
+    }
     Ok(())
 }
 
@@ -8675,6 +8775,9 @@ mod tests {
             "--repeat-stop-after=3".to_string(),
             "--phase1-batch-size=6".to_string(),
             "--phase1-max-batches=7".to_string(),
+            "--notify-imessage=me@example.com".to_string(),
+            "--notify-command".to_string(),
+            "printf '%s\\n' \"$PHASE_NOTIFY_TITLE\"".to_string(),
             "--dry-run".to_string(),
         ])
         .expect("phase loop options parse");
@@ -8684,6 +8787,11 @@ mod tests {
         assert_eq!(options.repeat_stop_after, 3);
         assert_eq!(options.phase1_batch_size, 6);
         assert_eq!(options.phase1_max_batches, Some(7));
+        assert_eq!(options.notify_imessage.as_deref(), Some("me@example.com"));
+        assert_eq!(
+            options.notify_command.as_deref(),
+            Some("printf '%s\\n' \"$PHASE_NOTIFY_TITLE\"")
+        );
         assert!(options.dry_run);
     }
 
