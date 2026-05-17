@@ -1,0 +1,30 @@
+{
+  "concept": "gain_life",
+  "fixture_path": "grammar-fixtures/gain_life.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_gain_life",
+      "text": "you gain 1 life.",
+      "ast": {
+        "TriggerEffect": {
+          "YouGainLife": {
+            "amount": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "you_gain_life",
+      "text": "you gain 3 life.",
+      "ast": {
+        "TriggerEffect": {
+          "YouGainLife": {
+            "amount": 3
+          }
+        }
+      }
+    }
+  ]
+}

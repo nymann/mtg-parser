@@ -270,6 +270,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             let (player, amount) = player_loses_life_parts_from_pair(pair)?;
             Ok(Statement::PlayerLosesLife { player, amount })
         }
+        Rule::you_gain_life => Ok(Statement::TriggerEffect(you_gain_life_from_pair(pair)?)),
         Rule::life_loss_player => Ok(Statement::LifeLossPlayer(life_loss_player_from_pair(pair)?)),
         Rule::player_may_pay_mana => player_may_pay_mana_statement_from_pair(pair),
         Rule::pay_mana_player => Ok(Statement::PayManaPlayer(pay_mana_player_from_pair(pair)?)),
@@ -2559,15 +2560,8 @@ fn if_you_do_gain_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, ParseEr
 }
 
 fn you_gain_life_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
-    let amount_pair = pair
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal("you_gain_life missing amount"))?;
     Ok(TriggerEffect::YouGainLife {
-        amount: amount_pair
-            .as_str()
-            .parse::<u32>()
-            .map_err(|_| ParseError::Internal("you_gain_life amount"))?,
+        amount: if_you_do_gain_life_amount_from_pair(pair)?,
     })
 }
 
