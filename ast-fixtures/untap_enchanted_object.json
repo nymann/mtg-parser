@@ -1,0 +1,56 @@
+{
+  "concept": "untap_enchanted_object",
+  "fixture_path": "grammar-fixtures/untap_enchanted_object.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "untap_enchanted_object",
+      "text": "Untap enchanted creature.",
+      "ast": {
+        "UntapEnchanted": {
+          "Permanent": "Creature"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "untap_enchanted_object",
+      "text": "Untap enchanted artifact.",
+      "ast": {
+        "UntapEnchanted": {
+          "Permanent": "Artifact"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "untap_enchanted_object",
+      "text": "Untap enchanted land.",
+      "ast": {
+        "UntapEnchanted": {
+          "Permanent": "Land"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "untap_enchanted_object",
+      "text": "Untap enchanted Wall.",
+      "ast": {
+        "UntapEnchanted": {
+          "CreatureType": "Wall"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "activated_effect",
+      "text": "Untap enchanted creature.",
+      "ast": {
+        "UntapEnchanted": {
+          "Permanent": "Creature"
+        }
+      }
+    }
+  ]
+}

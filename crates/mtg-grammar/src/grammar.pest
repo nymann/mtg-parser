@@ -45,6 +45,7 @@ sentence_statement = _{
   | copy_target_spell_except_copy_is_color
   | you_may_choose_new_targets_for_the_copy
   | tap_enchanted_object
+  | untap_enchanted_object
   | unless_you_pay_mana_do_actions
   | imperative_action_sequence
   | tap_target_permanent_choice

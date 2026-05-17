@@ -254,6 +254,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::tap_enchanted_object => Ok(Statement::TapEnchanted(
             enchanted_object_from_tap_enchanted_object_pair(pair)?,
         )),
+        Rule::untap_enchanted_object => {
+            let object_pair = only_inner(pair, "untap_enchanted_object missing object")?;
+            Ok(Statement::UntapEnchanted(enchanted_object_from_pair(
+                object_pair,
+            )?))
+        }
         Rule::tap_all_permanents_then_mana_loss => {
             tap_all_permanents_then_mana_loss_from_pair(pair)
         }

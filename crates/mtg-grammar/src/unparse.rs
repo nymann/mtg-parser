@@ -180,6 +180,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_enchanted_object(out, *object);
             out.push('.');
         }
+        Statement::UntapEnchanted(object) => {
+            out.push_str("Untap enchanted ");
+            write_enchanted_object(out, *object);
+            out.push('.');
+        }
         Statement::Exile { target } => write_exile(out, target),
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of,
