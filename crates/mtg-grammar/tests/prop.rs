@@ -19,6 +19,7 @@ use mtg_grammar::{
     TargetPermanentSelector, TextChangeReplacementTerm, TriggerEffect, TriggerEvent,
     TriggeredAbility, Variable,
 };
+use mtg_grammar::ast::{TriggerCastActor, TriggerCastSpell};
 use proptest::prelude::*;
 
 fn arb_mana_symbol() -> impl Strategy<Value = ManaSymbol> {
@@ -237,7 +238,10 @@ fn arb_each_player_action() -> impl Strategy<Value = EachPlayerAction> {
 fn arb_player_casts_colored_spell_pay_mana_trigger() -> impl Strategy<Value = Statement> {
     (arb_color(), arb_mana_cost()).prop_map(|(color, cost)| {
         Statement::TriggeredAbility(TriggeredAbility {
-            event: TriggerEvent::PlayerCastsColoredSpell { color },
+            event: TriggerEvent::CastsSpell {
+                actor: TriggerCastActor::Player,
+                spell: TriggerCastSpell::Colored { color },
+            },
             intervening_if: None,
             effects: vec![TriggerEffect::YouMayPayMana {
                 player: PayManaPlayer::You,
@@ -250,7 +254,10 @@ fn arb_player_casts_colored_spell_pay_mana_trigger() -> impl Strategy<Value = St
 fn arb_player_casts_colored_spell_pay_mana_gain_life_trigger() -> impl Strategy<Value = Statement> {
     (arb_color(), arb_mana_cost(), 1u32..=10).prop_map(|(color, cost, amount)| {
         Statement::TriggeredAbility(TriggeredAbility {
-            event: TriggerEvent::PlayerCastsColoredSpell { color },
+            event: TriggerEvent::CastsSpell {
+                actor: TriggerCastActor::Player,
+                spell: TriggerCastSpell::Colored { color },
+            },
             intervening_if: None,
             effects: vec![
                 TriggerEffect::YouMayPayMana {

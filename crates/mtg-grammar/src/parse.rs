@@ -3047,9 +3047,6 @@ fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent
     ))?;
     let actor = trigger_cast_actor_from_pair(actor_pair)?;
     let spell = trigger_cast_spell_from_pair(spell_pair)?;
-    if let (TriggerCastActor::Player, TriggerCastSpell::Colored { color }) = (actor, spell) {
-        return Ok(TriggerEvent::PlayerCastsColoredSpell { color });
-    }
     Ok(TriggerEvent::CastsSpell { actor, spell })
 }
 

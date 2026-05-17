@@ -2547,7 +2547,6 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { .. }
         | TriggerEvent::PermanentDealtDamageBySourceThisTurnDies { .. }
         | TriggerEvent::YouPlayPermanent { .. }
-        | TriggerEvent::PlayerCastsColoredSpell { .. }
         | TriggerEvent::CastsSpell { .. }
         | TriggerEvent::PlayerTapsPermanentForMana { .. }
         | TriggerEvent::IsTappedForMana { .. }
@@ -2626,11 +2625,6 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
                 PermanentEntersObject::Source(source) => write_source_object(out, source),
             }
             out.push_str(" enters");
-        }
-        TriggerEvent::PlayerCastsColoredSpell { color } => {
-            out.push_str("a player casts a ");
-            out.push_str(color_name(color));
-            out.push_str(" spell");
         }
         TriggerEvent::CastsSpell { actor, spell } => {
             match actor {

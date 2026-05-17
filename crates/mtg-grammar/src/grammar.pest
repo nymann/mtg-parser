@@ -173,6 +173,10 @@ sentence_statement = _{
 
 phrase_statement = _{
     modal_choice
+  | player_casts_colored_spell
+  | you_cast_spell_actor
+  | player_cast_spell_actor
+  | cast_spell_descriptor
   | pay_mana_amount
   | pay_mana_player
   | mana_cost
@@ -192,10 +196,6 @@ phrase_statement = _{
   | triggered_ability_fragment
   | life_loss_player
   | player_taps_permanent_for_mana
-  | player_casts_colored_spell
-  | you_cast_spell_actor
-  | player_cast_spell_actor
-  | cast_spell_descriptor
   | permanent_put_into_graveyard_from_battlefield
   | permanent_enters
   | permanent_dealt_damage_by_source_this_turn_dies

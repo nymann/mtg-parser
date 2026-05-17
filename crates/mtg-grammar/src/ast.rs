@@ -1114,8 +1114,6 @@ pub enum TriggerEvent {
     ThisAuraLeavesTheBattlefield,
     /// "<permanent-enters-object> enters"
     PermanentEnters { object: PermanentEntersObject },
-    /// "a player casts a/an <color> spell"
-    PlayerCastsColoredSpell { color: Color },
     /// "<actor> casts/cast a/an <color or permanent_type> spell"
     CastsSpell {
         actor: TriggerCastActor,
