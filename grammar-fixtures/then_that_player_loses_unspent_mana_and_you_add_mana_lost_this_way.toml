@@ -1,0 +1,31 @@
+[fixture]
+concept = "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way"
+rule = "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way"
+
+[[example]]
+text = "then that player loses all unspent mana and you add the mana lost this way."
+reason = "Lowercase sentence with then marker, that-player former player, all unspent mana loss, you as receiving player, and mana-lost-this-way reference."
+
+[[example]]
+text = "Then that player loses all unspent mana and you add the mana lost this way."
+reason = "Oracle-style sentence capitalization for the same unspent-mana transfer template."
+
+[[counterexample]]
+text = "that player loses all unspent mana"
+reason = "Unspent-mana loss without adding the mana lost this way."
+
+[[counterexample]]
+text = "Tap all lands target player controls and that player loses all unspent mana."
+reason = "Tap-all-controlled-permanents instruction with unspent-mana loss but no mana transfer."
+
+[[counterexample]]
+text = "Add one mana of any color."
+reason = "Generic mana-add instruction, not mana lost this way."
+
+[[counterexample]]
+text = "Target player loses 3 life."
+reason = "Direct life-loss instruction, owned by player_loses_life."
+
+[[counterexample]]
+text = "then that player loses all unspent mana and you add the mana lost this way. trailing"
+reason = "Exact-consumption guard."

@@ -1,0 +1,84 @@
+[[axis]]
+name = "sequence_marker"
+values = ["then"]
+
+[[axis]]
+name = "former_player"
+values = ["that_player"]
+
+[[axis]]
+name = "mana_loss_scope"
+values = ["all_unspent_mana"]
+
+[[axis]]
+name = "receiving_player"
+values = ["you"]
+
+[[axis]]
+name = "mana_added_reference"
+values = ["the_mana_lost_this_way"]
+
+[[axis]]
+name = "effect_kind"
+values = ["unspent_mana_transfer"]
+
+[boundary]
+excludes = [
+    "Unspent-mana loss that does not add the mana lost this way.",
+    "Tap-all-controlled-permanents instructions that make a player lose unspent mana but do not transfer that mana.",
+    "Mana-add instructions that add a fixed amount or typed mana rather than the mana lost this way.",
+    "Life-loss instructions owned by player_loses_life.",
+]
+includes = [
+    "Sentences where, after a prior instruction, that player loses all unspent mana and you add the mana lost this way.",
+    "The Comprehensive Rules 106.13 unspent-mana transfer template where the emptied mana pool is put into another player's mana pool.",
+]
+
+[concept]
+name = "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way"
+pest_rules = ["then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way"]
+rules_queries = [
+    "lex: then that player loses unspent mana and you add mana lost this way",
+    "lex: lose unspent mana add the mana lost this way",
+]
+rules_terms = [
+    "unspent mana",
+    "mana lost this way",
+    "mana pool",
+]
+
+[[counterexample]]
+reason = "Unspent-mana loss without adding the mana lost this way."
+text = "that player loses all unspent mana"
+
+[[counterexample]]
+reason = "Tap-all-controlled-permanents instruction with unspent-mana loss but no mana transfer."
+text = "Tap all lands target player controls and that player loses all unspent mana."
+
+[[counterexample]]
+reason = "Generic mana-add instruction, not mana lost this way."
+text = "Add one mana of any color."
+
+[[counterexample]]
+reason = "Direct life-loss instruction, owned by player_loses_life."
+text = "Target player loses 3 life."
+
+[[example]]
+text = "then that player loses all unspent mana and you add the mana lost this way."
+
+[[example]]
+text = "Then that player loses all unspent mana and you add the mana lost this way."
+
+[grammar_query]
+candidate_rules = [
+    "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way",
+    "that_player_loses_all_unspent_mana",
+    "tap_all_permanents_then_mana_loss",
+    "add_mana",
+    "player_loses_life",
+]
+selected_rule = "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
