@@ -11,6 +11,16 @@ text = "This creature can't be blocked by Dragons."
 reason = "Same source-object blocking restriction axis with a different prohibited blocker creature type."
 
 [[example]]
+rule = "static_source_cant_block_creatures_with_power_or_greater"
+text = "This creature can't block creatures with power 2 or greater."
+reason = "Static source-object blocking restriction where the source is prohibited from blocking creatures at or above a power threshold."
+
+[[example]]
+rule = "static_source_cant_block_creatures_with_power_or_greater"
+text = "This creature can't block creatures with power 6 or greater."
+reason = "Same source-as-blocker restriction with a different numeric power threshold."
+
+[[example]]
 rule = "static_source_doesnt_untap_during_your_untap_step"
 text = "This creature doesn't untap during your untap step."
 reason = "Static source-object untap restriction during your untap step."
@@ -33,10 +43,6 @@ text = "Target creature with power 2 or less can't be blocked this turn."
 reason = "Temporary target-object blocking restriction, not this static source-object restriction."
 
 [[counterexample]]
-text = "This creature can't block creatures with power 2 or greater."
-reason = "Restriction on this source as a blocker, not a restriction on blockers of this source."
-
-[[counterexample]]
 rule = "static_source_doesnt_untap_during_your_untap_step"
 text = "Creatures with power 3 or greater don't untap during their controllers' untap steps."
 reason = "Global power-based untap restriction, not a source or enchanted-object untap restriction."
@@ -49,6 +55,11 @@ reason = "Player step-skip restriction, not a source or enchanted-object untap r
 [[counterexample]]
 text = "This creature can't be blocked by Walls. trailing"
 reason = "Exact-consumption guard for the blocking restriction root."
+
+[[counterexample]]
+rule = "static_source_cant_block_creatures_with_power_or_greater"
+text = "This creature can't block creatures with power 2 or greater. trailing"
+reason = "Exact-consumption guard for the source-as-blocker power-threshold restriction root."
 
 [[counterexample]]
 rule = "static_source_doesnt_untap_during_your_untap_step"
