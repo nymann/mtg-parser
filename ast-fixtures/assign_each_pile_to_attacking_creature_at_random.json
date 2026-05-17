@@ -1,0 +1,22 @@
+{
+  "concept": "assign_each_pile_to_attacking_creature_at_random",
+  "fixture_path": "grammar-fixtures/assign_each_pile_to_attacking_creature_at_random.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "assign_each_pile_to_attacking_creature_at_random",
+      "text": "Assign each pile to a different one of those attacking creatures at random.",
+      "ast": {
+        "StaticAbility": "AssignEachPileToAttackingCreatureAtRandom"
+      }
+    },
+    {
+      "index": 2,
+      "rule": "assign_each_pile_to_attacking_creature_at_random",
+      "text": "assign each pile to a different one of those attacking creatures at random.",
+      "ast": {
+        "StaticAbility": "AssignEachPileToAttackingCreatureAtRandom"
+      }
+    }
+  ]
+}
