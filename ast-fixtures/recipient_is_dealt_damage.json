@@ -1,0 +1,14 @@
+{
+  "concept": "recipient_is_dealt_damage",
+  "fixture_path": "grammar-fixtures/recipient_is_dealt_damage.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_are_dealt_damage",
+      "text": "you're dealt damage",
+      "ast": {
+        "TriggerEvent": "YouAreDealtDamage"
+      }
+    }
+  ]
+}

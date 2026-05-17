@@ -181,6 +181,7 @@ phrase_statement = _{
     modal_choice
   | player_casts_colored_spell
   | player_taps_permanent_for_mana
+  | you_are_dealt_damage
   | you_cast_spell_actor
   | player_cast_spell_actor
   | cast_spell_descriptor

@@ -432,6 +432,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 permanent_dealt_damage_by_source_this_turn_dies_from_pair(pair)?,
             ))
         }
+        Rule::you_are_dealt_damage => Ok(Statement::TriggerEvent(TriggerEvent::YouAreDealtDamage)),
         Rule::permanent_put_into_graveyard_from_battlefield => Ok(Statement::TriggerEvent(
             permanent_put_into_graveyard_from_battlefield_from_pair(pair)?,
         )),
