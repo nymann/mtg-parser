@@ -1,0 +1,44 @@
+[fixture]
+concept = "untap_enchanted_object"
+rule = "untap_enchanted_object"
+
+[[example]]
+text = "Untap enchanted creature."
+reason = "Enchanted-object axis variant for the generic creature permanent type."
+
+[[example]]
+text = "Untap enchanted artifact."
+reason = "Enchanted-object axis variant for an artifact permanent type."
+
+[[example]]
+text = "Untap enchanted land."
+reason = "Enchanted-object axis variant for a land permanent type."
+
+[[example]]
+text = "Untap enchanted Wall."
+reason = "Enchanted-object axis variant for a creature type."
+
+[[example]]
+rule = "activated_effect"
+text = "Untap enchanted creature."
+reason = "Context axis variant where the enchanted-object untap action appears as an activated effect."
+
+[[counterexample]]
+text = "Untap target creature."
+reason = "Targeted untap instruction, owned by untap_target_permanent."
+
+[[counterexample]]
+text = "Untap the creature."
+reason = "Referenced-permanent untap instruction, owned by untap_referenced_permanent."
+
+[[counterexample]]
+text = "Untap CARDNAME."
+reason = "Source-object untap instruction, owned by untap_source."
+
+[[counterexample]]
+text = "Tap enchanted creature."
+reason = "Tap action, owned by the separate enchanted-object tap concept."
+
+[[counterexample]]
+text = "Untap enchanted creature. trailing"
+reason = "Exact-consumption guard."

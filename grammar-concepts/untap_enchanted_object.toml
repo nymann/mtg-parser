@@ -1,0 +1,95 @@
+[[axis]]
+name = "action"
+values = ["untap"]
+
+[[axis]]
+name = "reference"
+values = ["enchanted"]
+
+[[axis]]
+name = "object_kind"
+values = ["enchanted_object"]
+
+[[axis]]
+name = "object_domain"
+values = [
+    "permanent_object",
+    "permanent_type",
+    "creature_type",
+]
+
+[[axis]]
+name = "context"
+values = ["activated_effect"]
+
+[boundary]
+excludes = [
+    "Targeted untap effects such as untap target creature; those belong to untap_target_permanent.",
+    "Referenced-permanent untap instructions using 'the'; those belong to untap_referenced_permanent.",
+    "Source-object untap instructions such as untap CARDNAME; those belong to untap_source.",
+    "Tap instructions for enchanted objects; those belong to tap_enchanted_object_action or related tap rules.",
+]
+includes = [
+    "Activated-effect instructions that untap the object enchanted by the Aura.",
+    "Enchanted-object untap effects where the enchanted object is a permanent object.",
+    "Enchanted-object untap effects where the enchanted object is a permanent type.",
+    "Enchanted-object untap effects where the enchanted object is a creature type.",
+]
+
+[concept]
+name = "untap_enchanted_object"
+pest_rules = ["untap_enchanted_object"]
+rules_queries = [
+    "lex: untap enchanted creature",
+    "lex: untap enchanted artifact",
+]
+rules_terms = [
+    "enchanted",
+    "object",
+    "tap and untap",
+    "untap",
+]
+
+[[counterexample]]
+reason = "Targeted untap instruction, not an enchanted-object reference."
+text = "Untap target creature."
+
+[[counterexample]]
+reason = "Referenced-permanent untap instruction using 'the', not an enchanted-object reference."
+text = "Untap the creature."
+
+[[counterexample]]
+reason = "Source-object untap instruction, not an enchanted-object reference."
+text = "Untap CARDNAME."
+
+[[counterexample]]
+reason = "Tap action, not an untap action."
+text = "Tap enchanted creature."
+
+[[example]]
+text = "Untap enchanted creature."
+
+[[example]]
+text = "Untap enchanted artifact."
+
+[[example]]
+text = "Untap enchanted land."
+
+[[example]]
+text = "Untap enchanted Wall."
+
+[grammar_query]
+candidate_rules = [
+    "untap_enchanted_object",
+    "enchanted_object",
+    "activated_effect",
+    "untap_target_permanent",
+    "untap_referenced_permanent",
+    "untap_source",
+    "tap_enchanted_object",
+]
+selected_rule = "untap_enchanted_object"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
