@@ -2557,6 +2557,11 @@ fn if_you_do_effect_from_inner_pair(pair: Pair<Rule>) -> Result<IfYouDoEffect, P
             let effect = damage_prevention_effect_from_this_turn_pair(pair)?;
             Ok(IfYouDoEffect::PreventDamageThisTurn { effect })
         }
+        Rule::cant_be_attacked_until_your_next_turn_except_by_creatures_with_keywords => Ok(
+            IfYouDoEffect::CantBeAttackedUntilYourNextTurnExceptByCreaturesWithKeywords {
+                keywords: attack_restriction_keywords_from_pair(pair)?,
+            },
+        ),
         _ => Err(ParseError::Internal("if_you_do effect")),
     }
 }
@@ -2564,16 +2569,19 @@ fn if_you_do_effect_from_inner_pair(pair: Pair<Rule>) -> Result<IfYouDoEffect, P
 fn if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let list_pair = only_inner(pair, "attack restriction missing keyword list")?;
-    let keywords = list_pair
-        .into_inner()
-        .map(keyword_from_inner_pair)
-        .collect::<Result<Vec<_>, _>>()?;
     Ok(
         Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
-            keywords,
+            keywords: attack_restriction_keywords_from_pair(pair)?,
         },
     )
+}
+
+fn attack_restriction_keywords_from_pair(pair: Pair<Rule>) -> Result<Vec<Keyword>, ParseError> {
+    let list_pair = only_inner(pair, "attack restriction missing keyword list")?;
+    list_pair
+        .into_inner()
+        .map(keyword_from_inner_pair)
+        .collect::<Result<Vec<_>, _>>()
 }
 
 fn if_you_do_gain_life_amount_from_pair(pair: Pair<Rule>) -> Result<u32, ParseError> {
@@ -3486,6 +3494,7 @@ fn named_keyword_ability_from_str(text: &str) -> Result<NamedKeywordAbility, Par
         "vigilance" => Ok(NamedKeywordAbility::Vigilance),
         "shroud" => Ok(NamedKeywordAbility::Shroud),
         "hexproof" => Ok(NamedKeywordAbility::Hexproof),
+        "shadow" => Ok(NamedKeywordAbility::Shadow),
         _ => Err(ParseError::Internal("keyword ability name")),
     }
 }

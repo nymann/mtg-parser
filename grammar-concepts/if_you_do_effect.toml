@@ -13,6 +13,7 @@ values = [
     "untap_referenced_permanent",
     "gain_life",
     "prevent_damage_this_turn",
+    "cant_be_attacked_until_your_next_turn_except_by_creatures_with_keywords",
 ]
 
 [boundary]
@@ -24,6 +25,7 @@ excludes = [
 includes = [
     "Conditional follow-up effects introduced by 'if you do,' or 'if the player does,'.",
     "Mana, untap, life-gain, and damage-prevention bodies already accepted by if_you_do_effect_body.",
+    "Attack-restriction bodies that last until your next turn and use keyword_and_or_list after 'except by creatures with'.",
 ]
 
 [concept]
@@ -33,6 +35,9 @@ pest_rules = [
     "if_you_do_gain_life",
     "if_do_actor",
     "if_you_do_effect_body",
+    "cant_be_attacked_until_your_next_turn_except_by_creatures_with_keywords",
+    "if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords",
+    "keyword_and_or_list",
 ]
 rules_queries = [
     "lex: if you do effect",
@@ -50,6 +55,18 @@ text = "When you do, you gain 3 life."
 [[counterexample]]
 reason = "Negative polarity branch, outside the actor axis."
 text = "If you don't, you gain 3 life."
+
+[[counterexample]]
+reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
+text = "When you do, until your next turn, you can't be attacked except by creatures with flying."
+
+[[counterexample]]
+reason = "Negative polarity branch, outside the actor axis."
+text = "If you don't, until your next turn, you can't be attacked except by creatures with flying."
+
+[[counterexample]]
+reason = "Missing if-you-do actor, so the body does not stand alone in this concept."
+text = "Until your next turn, you can't be attacked except by creatures with flying."
 
 [[counterexample]]
 reason = "Draw-card body is not part of the existing if_you_do_effect_body axis."
@@ -73,6 +90,12 @@ text = "If you do, you gain 3 life."
 
 [[example]]
 text = "If you do, prevent the next 1 damage that would be dealt to any target this turn."
+
+[[example]]
+text = "If you do, until your next turn, you can't be attacked except by creatures with flying."
+
+[[example]]
+text = "If you do, until your next turn, you can't be attacked except by creatures with flying and/or shadow."
 
 [maturity]
 blockers = []

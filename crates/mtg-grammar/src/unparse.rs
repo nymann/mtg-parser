@@ -1290,6 +1290,13 @@ fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
             write_untap_referenced_permanent_sentence(out, permanent_type, SentenceCase::Lower);
         }
         IfYouDoEffect::GainLife { amount } => write_you_gain_life(out, amount, SentenceCase::Lower),
+        IfYouDoEffect::CantBeAttackedUntilYourNextTurnExceptByCreaturesWithKeywords {
+            keywords,
+        } => {
+            out.push_str("until your next turn, you can't be attacked except by creatures with ");
+            write_keyword_and_or_list(out, &keywords);
+            out.push('.');
+        }
     });
 }
 
@@ -3683,6 +3690,7 @@ fn keyword_ability_title_name(keyword: NamedKeywordAbility) -> &'static str {
         NamedKeywordAbility::Vigilance => "Vigilance",
         NamedKeywordAbility::Shroud => "Shroud",
         NamedKeywordAbility::Hexproof => "Hexproof",
+        NamedKeywordAbility::Shadow => "Shadow",
     }
 }
 
@@ -3700,6 +3708,7 @@ fn keyword_ability_name(keyword: NamedKeywordAbility) -> &'static str {
         NamedKeywordAbility::Vigilance => "vigilance",
         NamedKeywordAbility::Shroud => "shroud",
         NamedKeywordAbility::Hexproof => "hexproof",
+        NamedKeywordAbility::Shadow => "shadow",
     }
 }
 

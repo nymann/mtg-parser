@@ -22,6 +22,14 @@ reason = "Life-gain body."
 text = "If you do, prevent the next 1 damage that would be dealt to any target this turn."
 reason = "Damage-prevention body with this-turn duration."
 
+[[example]]
+text = "If you do, until your next turn, you can't be attacked except by creatures with flying."
+reason = "You-do actor with next-turn attack restriction body and one keyword."
+
+[[example]]
+text = "If you do, until your next turn, you can't be attacked except by creatures with flying and/or shadow."
+reason = "You-do actor with next-turn attack restriction body and keyword_and_or_list."
+
 [[counterexample]]
 text = "When you do, you gain 3 life."
 reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
@@ -29,6 +37,18 @@ reason = "Reflexive triggered template, not the conditional 'if you do' follow-u
 [[counterexample]]
 text = "If you don't, you gain 3 life."
 reason = "Negative polarity branch, outside the actor axis."
+
+[[counterexample]]
+text = "When you do, until your next turn, you can't be attacked except by creatures with flying."
+reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
+
+[[counterexample]]
+text = "If you don't, until your next turn, you can't be attacked except by creatures with flying."
+reason = "Negative polarity branch, outside the actor axis."
+
+[[counterexample]]
+text = "Until your next turn, you can't be attacked except by creatures with flying."
+reason = "Missing if-you-do actor, so the body does not stand alone in this concept."
 
 [[counterexample]]
 text = "If you do, draw a card."

@@ -640,6 +640,13 @@ impl Statement {
                 Statement::IfYouDoUntapReferencedPermanent { permanent_type }
             }
             IfYouDoEffect::GainLife { amount } => Statement::IfYouDoGainLife { amount },
+            IfYouDoEffect::CantBeAttackedUntilYourNextTurnExceptByCreaturesWithKeywords {
+                keywords,
+            } => {
+                Statement::IfYouDoUntilYourNextTurnYouCantBeAttackedExceptByCreaturesWithKeywords {
+                    keywords,
+                }
+            }
         }
     }
 
@@ -685,6 +692,9 @@ pub(crate) enum IfYouDoEffect {
     },
     GainLife {
         amount: u32,
+    },
+    CantBeAttackedUntilYourNextTurnExceptByCreaturesWithKeywords {
+        keywords: Vec<Keyword>,
     },
 }
 
@@ -1932,6 +1942,7 @@ impl KeywordAbility {
     pub const VIGILANCE: Self = Self::Named(NamedKeywordAbility::Vigilance);
     pub const SHROUD: Self = Self::Named(NamedKeywordAbility::Shroud);
     pub const HEXPROOF: Self = Self::Named(NamedKeywordAbility::Hexproof);
+    pub const SHADOW: Self = Self::Named(NamedKeywordAbility::Shadow);
 
     #[allow(non_upper_case_globals)]
     pub const FirstStrike: Self = Self::FIRST_STRIKE;
@@ -1967,6 +1978,8 @@ impl KeywordAbility {
     pub const Shroud: Self = Self::SHROUD;
     #[allow(non_upper_case_globals)]
     pub const Hexproof: Self = Self::HEXPROOF;
+    #[allow(non_upper_case_globals)]
+    pub const Shadow: Self = Self::SHADOW;
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1989,6 +2002,7 @@ enum KeywordSerde {
     Vigilance,
     Shroud,
     Hexproof,
+    Shadow,
     Protection(Color),
     Enchant(EnchantObject),
 }
@@ -2013,6 +2027,7 @@ impl From<KeywordAbility> for KeywordSerde {
             KeywordAbility::Named(NamedKeywordAbility::Vigilance) => Self::Vigilance,
             KeywordAbility::Named(NamedKeywordAbility::Shroud) => Self::Shroud,
             KeywordAbility::Named(NamedKeywordAbility::Hexproof) => Self::Hexproof,
+            KeywordAbility::Named(NamedKeywordAbility::Shadow) => Self::Shadow,
             KeywordAbility::Protection(color) => Self::Protection(color),
             KeywordAbility::Enchant(object) => Self::Enchant(object),
         }
@@ -2040,6 +2055,7 @@ impl From<KeywordSerde> for KeywordAbility {
             KeywordSerde::Vigilance => Self::Named(NamedKeywordAbility::Vigilance),
             KeywordSerde::Shroud => Self::Named(NamedKeywordAbility::Shroud),
             KeywordSerde::Hexproof => Self::Named(NamedKeywordAbility::Hexproof),
+            KeywordSerde::Shadow => Self::Named(NamedKeywordAbility::Shadow),
             KeywordSerde::Protection(color) => Self::Protection(color),
             KeywordSerde::Enchant(object) => Self::Enchant(object),
         }
@@ -2078,6 +2094,7 @@ pub enum NamedKeywordAbility {
     Vigilance,
     Shroud,
     Hexproof,
+    Shadow,
 }
 
 /// What an `Enchant <X>` keyword attaches to. Most Auras name a
