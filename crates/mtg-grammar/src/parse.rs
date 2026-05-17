@@ -5824,10 +5824,18 @@ fn physical_action_from_pair(pair: Pair<Rule>) -> Result<PhysicalAction, ParseEr
         Rule::then_destroy_source => {
             let source_pair = only_inner(pair, "physical then-destroy missing source_object")?;
             Ok(PhysicalAction::ThenDestroySource {
-                source: source_object_from_pair(source_pair)?,
+                source: source_or_name_as_source_object(source_pair)?,
             })
         }
         _ => Err(ParseError::Internal("physical_action")),
+    }
+}
+
+fn source_or_name_as_source_object(pair: Pair<Rule>) -> Result<SourceObject, ParseError> {
+    match pair.as_rule() {
+        Rule::source_object => source_object_from_pair(pair),
+        Rule::proper_name => Ok(SourceObject::ThisPermanent),
+        _ => Err(ParseError::Internal("source_or_name_as_source_object")),
     }
 }
 

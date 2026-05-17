@@ -1,0 +1,56 @@
+{
+  "concept": "physical_action",
+  "fixture_path": "grammar-fixtures/physical_action.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "physical_action",
+      "text": "If this permanent is on the battlefield, flip it onto the battlefield from a height of at least one foot.",
+      "ast": {
+        "PhysicalAction": {
+          "IfSourceOnBattlefieldFlipOntoBattlefieldFromHeight": {
+            "minimum_height_feet": 1,
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "physical_action",
+      "text": "If it is on the battlefield, flip it onto the battlefield from a height of at least two feet.",
+      "ast": {
+        "PhysicalAction": {
+          "IfSourceOnBattlefieldFlipOntoBattlefieldFromHeight": {
+            "minimum_height_feet": 2,
+            "source": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "physical_action",
+      "text": "If it turns over completely at least once during the flip, destroy all nontoken permanents it touches.",
+      "ast": {
+        "PhysicalAction": {
+          "IfSourceTurnsOverCompletelyAtLeastOnceDuringFlipDestroyAllNontokenPermanentsItTouches": {
+            "source": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "physical_action",
+      "text": "Then destroy Chaos Orb.",
+      "ast": {
+        "PhysicalAction": {
+          "ThenDestroySource": {
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    }
+  ]
+}
