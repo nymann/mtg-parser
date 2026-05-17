@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_enters_tapped"
+rule = "static_source_enters_tapped"
+
+[[example]]
+text = "This creature enters tapped."
+reason = "Source-object creature enters tapped static replacement effect."
+
+[[example]]
+text = "This artifact enters tapped."
+reason = "Source-object artifact enters tapped static replacement effect."
+
+[[counterexample]]
+text = "White spells cost {3} more to cast."
+reason = "Static cost increase for colored spells, owned by static_cost_increase."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Static cost increase for activated abilities, owned by static_cost_increase."
+
+[[counterexample]]
+text = "This permanent enters with N +1/+1 counters on it."
+reason = "Static enters-with-counters replacement effect, not enters tapped."
+
+[[counterexample]]
+text = "As this creature enters, choose a color."
+reason = "As-enters choice replacement effect, not enters tapped."
+
+[[counterexample]]
+text = "This creature enters tapped. trailing"
+reason = "Exact-consumption guard."

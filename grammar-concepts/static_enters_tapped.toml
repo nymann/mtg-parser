@@ -1,0 +1,65 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_replacement_effect"]
+
+[[axis]]
+name = "affected_event"
+values = ["enters_battlefield"]
+
+[[axis]]
+name = "affected_object"
+values = ["source_object"]
+
+[[axis]]
+name = "resulting_status"
+values = ["tapped"]
+
+[boundary]
+excludes = [
+    "Static cost increases for colored spells, owned by static_cost_increase.",
+    "Static cost increases for activated abilities, owned by static_cost_increase.",
+    "Static enters-with-counters replacement effects, not enters tapped.",
+    "As-enters choice replacement effects, not enters tapped.",
+]
+includes = ["Source-object static replacement effects where the source enters tapped."]
+
+[concept]
+name = "static_enters_tapped"
+pest_rules = ["static_source_enters_tapped"]
+rules_queries = ["lex: enters the battlefield tapped static replacement effect"]
+rules_terms = [
+    "enters the battlefield",
+    "replacement effect",
+    "static ability",
+    "tapped",
+]
+
+[[counterexample]]
+reason = "Static cost increase for colored spells, owned by static_cost_increase."
+text = "White spells cost {3} more to cast."
+
+[[counterexample]]
+reason = "Static cost increase for activated abilities, owned by static_cost_increase."
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[counterexample]]
+reason = "Static enters-with-counters replacement effect, not enters tapped."
+text = "This permanent enters with N +1/+1 counters on it."
+
+[[counterexample]]
+reason = "As-enters choice replacement effect, not enters tapped."
+text = "As this creature enters, choose a color."
+
+[[example]]
+text = "This creature enters tapped."
+
+[[example]]
+text = "This artifact enters tapped."
+
+[grammar_query]
+candidate_rules = ["static_source_enters_tapped"]
+selected_rule = "static_source_enters_tapped"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
