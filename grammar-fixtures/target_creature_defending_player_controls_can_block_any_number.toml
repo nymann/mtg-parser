@@ -1,0 +1,39 @@
+[fixture]
+concept = "target_creature_defending_player_controls_can_block_any_number"
+rule = "target_creature_defending_player_controls_can_block_any_number"
+
+[[example]]
+text = "Target creature defending player controls can block any number of creatures this turn."
+reason = "Blocking-capacity permission for a target creature controlled by the defending player, with any-number amount and this-turn duration."
+
+[[example]]
+text = "Target creature defending player controls can block any number of creatures each combat."
+reason = "Same target-creature blocking-capacity permission with each-combat duration."
+
+[[example]]
+text = "Target creature defending player controls can block an additional creature each combat."
+reason = "Same target-creature blocking-capacity permission with the additional-one amount axis."
+
+[[example]]
+text = "This creature can block an additional creature each combat."
+reason = "Blocking-capacity permission using the source-object subject axis."
+
+[[counterexample]]
+text = "You may have it block an attacking creature of your choice."
+reason = "Optional instruction to have an object block an attacking creature, owned by you_may_have_it_block_attacking_creature."
+
+[[counterexample]]
+text = "It blocks each attacking creature this turn if able."
+reason = "Mandatory blocking requirement, not a blocking-capacity permission."
+
+[[counterexample]]
+text = "Remove target creature defending player controls from combat."
+reason = "Combat-removal effect for a defending player's target creature, not a permission to block more creatures."
+
+[[counterexample]]
+text = "Target creature with power 2 or less can't be blocked this turn."
+reason = "Temporary evasion effect, not permission for a creature to block more creatures."
+
+[[counterexample]]
+text = "Target creature defending player controls can block any number of creatures this turn. trailing"
+reason = "Exact-consumption guard."

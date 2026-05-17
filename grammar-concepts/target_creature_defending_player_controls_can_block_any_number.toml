@@ -1,0 +1,102 @@
+[[axis]]
+name = "effect_kind"
+values = ["blocking_capacity_permission"]
+
+[[axis]]
+name = "subject"
+values = [
+    "target_creature_defending_player_controls",
+    "source_object",
+]
+
+[[axis]]
+name = "modality"
+values = ["can"]
+
+[[axis]]
+name = "action"
+values = ["block"]
+
+[[axis]]
+name = "amount"
+values = [
+    "any_number_of",
+    "additional_one",
+]
+
+[[axis]]
+name = "blocked_object"
+values = [
+    "creatures",
+    "creature",
+]
+
+[[axis]]
+name = "duration"
+values = [
+    "this_turn",
+    "each_combat",
+]
+
+[boundary]
+excludes = [
+    "Optional instructions to have an object block an attacking creature of your choice.",
+    "Mandatory blocking requirements where an object blocks attacking creatures if able.",
+    "Effects that remove a defending player's target creature from combat.",
+    "Blocking restrictions that make target creatures unable to be blocked.",
+]
+includes = [
+    "Target creature defending player controls can block any number of creatures this turn.",
+    "Target creature defending player controls can block any number of creatures each combat.",
+    "Target creature defending player controls can block an additional creature each combat.",
+    "This creature can block an additional creature each combat.",
+]
+
+[concept]
+name = "target_creature_defending_player_controls_can_block_any_number"
+pest_rules = ["target_creature_defending_player_controls_can_block_any_number"]
+rules_queries = ["lex: target creature defending player controls can block any number of creatures"]
+rules_terms = [
+    "block",
+    "blocking",
+    "defending player",
+    "creature",
+    "this turn",
+    "each combat",
+]
+
+[[counterexample]]
+reason = "Optional instruction to have an object block an attacking creature, owned by you_may_have_it_block_attacking_creature."
+text = "You may have it block an attacking creature of your choice."
+
+[[counterexample]]
+reason = "Mandatory blocking requirement, not a blocking-capacity permission."
+text = "It blocks each attacking creature this turn if able."
+
+[[counterexample]]
+reason = "Combat-removal effect for a defending player's target creature, not a permission to block more creatures."
+text = "Remove target creature defending player controls from combat."
+
+[[counterexample]]
+reason = "Temporary evasion effect, not permission for a creature to block more creatures."
+text = "Target creature with power 2 or less can't be blocked this turn."
+
+[[example]]
+text = "Target creature defending player controls can block any number of creatures this turn."
+
+[[example]]
+text = "Target creature defending player controls can block any number of creatures each combat."
+
+[[example]]
+text = "Target creature defending player controls can block an additional creature each combat."
+
+[[example]]
+text = "This creature can block an additional creature each combat."
+
+[grammar_query]
+candidate_rules = ["target_creature_defending_player_controls_can_block_any_number"]
+selected_rule = "target_creature_defending_player_controls_can_block_any_number"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
