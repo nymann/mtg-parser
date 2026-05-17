@@ -16,6 +16,7 @@ values = [
 name = "ability_context"
 values = [
     "activated_cost_component",
+    "triggered_effect_plain",
     "triggered_effect_unless_you_pay",
 ]
 
@@ -31,6 +32,7 @@ excludes = [
 ]
 includes = [
     "Activated cost components that use the sacrifice keyword action on the source object.",
+    "Plain triggered-effect instructions that sacrifice the source object.",
     "Triggered-effect instructions that sacrifice the source object unless you pay a trigger payment cost.",
     "Source-object wording using CARDNAME, it, this, this source object kind, or that source.",
 ]
@@ -39,6 +41,7 @@ includes = [
 name = "sacrifice_source"
 pest_rules = [
     "sacrifice_source",
+    "sacrifice_source_effect",
     "sacrifice_source_unless_you_pay",
 ]
 rules_queries = [
@@ -61,6 +64,10 @@ text = "sacrifice target creature"
 [[counterexample]]
 reason = "Destroy instruction, not the sacrifice keyword action."
 text = "destroy CARDNAME"
+
+[[counterexample]]
+reason = "Permanent-type other-than-source sacrifice belongs to sacrifice_permanent_other_than_source."
+text = "sacrifice a creature other than CARDNAME."
 
 [[counterexample]]
 reason = "Generic permanent-type sacrifice, not source-object sacrifice."
@@ -88,6 +95,21 @@ text = "sacrifice this creature"
 
 [[example]]
 text = "sacrifice that source"
+
+[[example]]
+text = "sacrifice CARDNAME."
+
+[[example]]
+text = "sacrifice it."
+
+[[example]]
+text = "sacrifice this."
+
+[[example]]
+text = "sacrifice this creature."
+
+[[example]]
+text = "sacrifice that source."
 
 [[example]]
 text = "sacrifice CARDNAME unless you pay {1}."

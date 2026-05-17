@@ -23,6 +23,31 @@ text = "sacrifice that source"
 reason = "Activated cost component sacrificing a previously referenced source."
 
 [[example]]
+rule = "sacrifice_source_effect"
+text = "sacrifice CARDNAME."
+reason = "Plain triggered effect sacrificing the card source itself."
+
+[[example]]
+rule = "sacrifice_source_effect"
+text = "sacrifice it."
+reason = "Plain triggered effect sacrificing the source object by pronoun."
+
+[[example]]
+rule = "sacrifice_source_effect"
+text = "sacrifice this."
+reason = "Plain triggered effect sacrificing this source object without a kind."
+
+[[example]]
+rule = "sacrifice_source_effect"
+text = "sacrifice this creature."
+reason = "Plain triggered effect sacrificing this source object with a permanent-type kind."
+
+[[example]]
+rule = "sacrifice_source_effect"
+text = "sacrifice that source."
+reason = "Plain triggered effect sacrificing a previously referenced source."
+
+[[example]]
 rule = "sacrifice_source_unless_you_pay"
 text = "sacrifice CARDNAME unless you pay {1}."
 reason = "Triggered effect sacrificing the card source unless its trigger payment cost is paid."
@@ -48,6 +73,26 @@ reason = "Targeted sacrifice instruction, not source-object sacrifice."
 [[counterexample]]
 text = "destroy CARDNAME"
 reason = "Destroy instruction, not the sacrifice keyword action."
+
+[[counterexample]]
+rule = "sacrifice_source_effect"
+text = "sacrifice a creature."
+reason = "Generic permanent-type sacrifice, not source-object sacrifice."
+
+[[counterexample]]
+rule = "sacrifice_source_effect"
+text = "sacrifice target creature."
+reason = "Targeted sacrifice instruction, not source-object sacrifice."
+
+[[counterexample]]
+rule = "sacrifice_source_effect"
+text = "destroy CARDNAME."
+reason = "Destroy instruction, not the sacrifice keyword action."
+
+[[counterexample]]
+rule = "sacrifice_source_effect"
+text = "sacrifice a creature other than CARDNAME."
+reason = "Permanent-type other-than-source sacrifice belongs to a separate concept."
 
 [[counterexample]]
 rule = "sacrifice_source_unless_you_pay"
