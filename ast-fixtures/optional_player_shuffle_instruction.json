@@ -1,0 +1,18 @@
+{
+  "concept": "optional_player_shuffle_instruction",
+  "fixture_path": "grammar-fixtures/optional_player_shuffle_instruction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_may_have_that_player_shuffle",
+      "text": "You may have that player shuffle.",
+      "ast": "YouMayHaveThatPlayerShuffle"
+    },
+    {
+      "index": 2,
+      "rule": "you_may_have_that_player_shuffle",
+      "text": "you may have that player shuffle.",
+      "ast": "YouMayHaveThatPlayerShuffle"
+    }
+  ]
+}
