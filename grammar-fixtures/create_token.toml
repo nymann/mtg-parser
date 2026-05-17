@@ -1,0 +1,39 @@
+[fixture]
+concept = "create_token"
+rule = "create_token"
+
+[[example]]
+text = "Create a 1/1 green Insect creature token."
+reason = "Singular create-token instruction with explicit P/T, color, creature subtype, and creature permanent type."
+
+[[example]]
+text = "Create a 0/1 colorless artifact creature token."
+reason = "Colorless token with multiple permanent types."
+
+[[example]]
+text = "Create a 1/1 green Insect creature token with flying."
+reason = "Optional keyword clause on an explicitly defined creature token."
+
+[[example]]
+text = "Create a 2/2 black Zombie creature token named Walker."
+reason = "Optional name clause on an explicitly defined creature token."
+
+[[example]]
+text = "Create a 3/3 red creature token."
+reason = "Token without a creature subtype, using the optional creature-type axis."
+
+[[counterexample]]
+text = "Create two 1/1 white Zombie creature tokens."
+reason = "Plural counted token creation is outside the singular indefinite-article quantity axis."
+
+[[counterexample]]
+text = "Create a Clue token."
+reason = "Predefined token creation without explicit power/toughness characteristics is outside this concept."
+
+[[counterexample]]
+text = "Create a token that's a copy of target creature."
+reason = "Copy-token creation is outside this direct token-characteristics template."
+
+[[counterexample]]
+text = "Create a 1/1 green Insect creature token. Then draw a card."
+reason = "Exact-consumption guard."

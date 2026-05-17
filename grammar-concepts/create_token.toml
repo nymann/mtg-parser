@@ -1,0 +1,104 @@
+[[axis]]
+name = "action"
+values = ["create"]
+
+[[axis]]
+name = "object"
+values = ["token"]
+
+[[axis]]
+name = "quantity"
+values = ["singular_indefinite_article"]
+
+[[axis]]
+name = "power_toughness"
+values = ["explicit_numeric_pt"]
+
+[[axis]]
+name = "characteristics"
+values = [
+    "optional_color",
+    "optional_creature_type",
+    "one_or_more_permanent_types",
+    "optional_keyword_clause",
+    "optional_name_clause",
+]
+
+[[axis]]
+name = "ability_kind"
+values = ["activated_effect"]
+
+[boundary]
+excludes = [
+    "Plural or counted token creation such as 'Create two ... tokens' is outside the singular indefinite-article quantity axis.",
+    "Predefined tokens without explicit power/toughness characteristics are outside this P/T token-characteristics template.",
+    "Copy-token creation is outside this direct characteristic-definition template.",
+    "Sequenced effects that continue after the token creation sentence are outside this standalone effect.",
+]
+includes = [
+    "Standalone imperative effects that create a singular token with explicit numeric power/toughness.",
+    "Token characteristics defined by optional color, optional creature subtype, one or more permanent types, optional keyword ability, and optional name.",
+    "Create-token terminology from Comprehensive Rules 701.7 and token-characteristic definition from Comprehensive Rules 111.3-111.4.",
+]
+
+[concept]
+name = "create_token"
+pest_rules = ["create_token"]
+rules_queries = [
+    "lex: create token",
+    "lex: create a token with characteristics",
+]
+rules_terms = [
+    "create",
+    "token",
+    "Create",
+    "701.7",
+    "Tokens",
+    "111.3",
+    "111.4",
+]
+
+[[counterexample]]
+reason = "Plural counted token creation is outside the singular indefinite-article quantity axis."
+text = "Create two 1/1 white Zombie creature tokens."
+
+[[counterexample]]
+reason = "Predefined token creation without explicit power/toughness characteristics is outside this concept."
+text = "Create a Clue token."
+
+[[counterexample]]
+reason = "Copy-token creation is outside this direct token-characteristics template."
+text = "Create a token that's a copy of target creature."
+
+[[counterexample]]
+reason = "Exact-consumption guard: the create-token sentence must not leave trailing text."
+text = "Create a 1/1 green Insect creature token. Then draw a card."
+
+[[example]]
+text = "Create a 1/1 green Insect creature token."
+
+[[example]]
+text = "Create a 0/1 colorless artifact creature token."
+
+[[example]]
+text = "Create a 1/1 green Insect creature token with flying."
+
+[[example]]
+text = "Create a 2/2 black Zombie creature token named Walker."
+
+[[example]]
+text = "Create a 3/3 red creature token."
+
+[grammar_query]
+candidate_rules = [
+    "create_token",
+    "token_color",
+    "token_keyword_clause",
+    "token_name_clause",
+    "activated_effect",
+]
+selected_rule = "create_token"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
