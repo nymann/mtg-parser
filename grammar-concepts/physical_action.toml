@@ -1,10 +1,17 @@
 [[axis]]
 name = "condition"
-values = ["source_on_battlefield"]
+values = [
+    "source_on_battlefield",
+    "source_turns_over_during_flip",
+]
 
 [[axis]]
 name = "action"
-values = ["flip_onto_battlefield_from_height"]
+values = [
+    "flip_onto_battlefield_from_height",
+    "destroy_touched_nontoken_permanents",
+    "destroy_source",
+]
 
 [[axis]]
 name = "height_amount"
@@ -14,24 +21,37 @@ values = ["number_word"]
 name = "height_unit"
 values = ["physical_height_unit"]
 
+[[axis]]
+name = "affected_object"
+values = [
+    "touched_nontoken_permanents",
+    "source_object",
+]
+
 [boundary]
 excludes = [
     "Conditional follow-up effects introduced by 'if you do' or 'if the player does', owned by if_you_do_effect.",
     "Reflexive 'when you do' triggered templates.",
     "Non-dexterity conditional effects that do not instruct a physical flip action.",
+    "Ordinary destroy effects on target permanents, owned by destroy.",
+    "Transform instructions, which are game actions rather than physical dexterity actions.",
 ]
 includes = [
     "Physical dexterity text conditioned on the source being on the battlefield.",
     "Instructions to flip the source onto the battlefield from a minimum physical height.",
+    "Physical flip-result text conditioned on the source turning over during the flip.",
+    "Instructions to destroy all nontoken permanents touched by the source during the physical flip.",
+    "Follow-up instructions to destroy the source after the physical action sequence.",
     "Height amounts expressed as number_word and units expressed as physical_height_unit.",
 ]
 
 [concept]
 name = "physical_action"
-pest_rules = ["if_source_on_battlefield_flip_onto_battlefield_from_height"]
+pest_rules = ["physical_action"]
 rules_queries = [
     "lex: flip onto the battlefield from a height",
     "lex: physical dexterity action",
+    "lex: turns over completely at least once during the flip",
 ]
 rules_terms = [
     "battlefield",
@@ -50,19 +70,39 @@ text = "If the player does, untap it."
 reason = "Reflexive trigger template, not a source-on-battlefield physical action."
 text = "When you do, you gain 3 life."
 
+[[counterexample]]
+reason = "Ordinary target destroy effect, not a physical dexterity action."
+text = "Destroy target nontoken permanent."
+
+[[counterexample]]
+reason = "Transform instruction, not a physical dexterity action."
+text = "Transform this permanent."
+
+[[counterexample]]
+reason = "If-you-do target destroy follow-up, not a physical dexterity action."
+text = "If you do, destroy target permanent."
+
 [[example]]
 text = "If this permanent is on the battlefield, flip it onto the battlefield from a height of at least one foot."
 
 [[example]]
 text = "If it is on the battlefield, flip it onto the battlefield from a height of at least two feet."
 
+[[example]]
+text = "If it turns over completely at least once during the flip, destroy all nontoken permanents it touches."
+
+[[example]]
+text = "Then destroy Chaos Orb."
+
 [grammar_query]
 candidate_rules = [
     "physical_action",
     "if_source_on_battlefield_flip_onto_battlefield_from_height",
+    "if_source_turns_over_destroy_touched_nontoken_permanents",
+    "then_destroy_source",
     "if_you_do_effect",
 ]
-selected_rule = "if_source_on_battlefield_flip_onto_battlefield_from_height"
+selected_rule = "physical_action"
 
 [maturity]
 blockers = []

@@ -1625,7 +1625,7 @@ if_source_turns_over_destroy_touched_nontoken_permanents = {
 }
 
 then_destroy_source = {
-    ^"then" ~ ^"destroy" ~ source_object ~ "."
+    ^"then" ~ ^"destroy" ~ (source_object | proper_name) ~ "."
 }
 
 physical_height_unit = @{ ^"feet" | ^"foot" }
