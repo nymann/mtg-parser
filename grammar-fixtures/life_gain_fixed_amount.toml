@@ -3,16 +3,6 @@ concept = "life_gain_fixed_amount"
 rule = "life_gain_fixed_amount_statement"
 
 [[example]]
-rule = "life_gain_fixed_amount"
-text = "3 life"
-reason = "Amount fragment with unsigned-number amount."
-
-[[example]]
-rule = "life_gain_fixed_amount"
-text = "X life"
-reason = "Amount fragment with variable-name amount."
-
-[[example]]
 text = "Target player gains 3 life."
 reason = "Target-player recipient surface with unsigned-number fixed amount."
 

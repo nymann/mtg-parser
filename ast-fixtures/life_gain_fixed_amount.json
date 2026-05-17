@@ -1,0 +1,54 @@
+{
+  "concept": "life_gain_fixed_amount",
+  "fixture_path": "grammar-fixtures/life_gain_fixed_amount.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "life_gain_fixed_amount_statement",
+      "text": "Target player gains 3 life.",
+      "ast": {
+        "TargetPlayerGainsLife": {
+          "amount": {
+            "Number": 3
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "life_gain_fixed_amount_statement",
+      "text": "Target player gains X life.",
+      "ast": {
+        "TargetPlayerGainsLife": {
+          "amount": {
+            "Variable": "X"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "life_gain_fixed_amount_statement",
+      "text": "Its controller gains 3 life.",
+      "ast": {
+        "ItsControllerGainsLife": {
+          "amount": {
+            "Number": 3
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "life_gain_fixed_amount_statement",
+      "text": "Its controller gains X life.",
+      "ast": {
+        "ItsControllerGainsLife": {
+          "amount": {
+            "Variable": "X"
+          }
+        }
+      }
+    }
+  ]
+}
