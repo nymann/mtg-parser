@@ -168,13 +168,15 @@ impl AppState {
         let text = match self.focus {
             FocusPane::Output | FocusPane::Modal => self.visible_output_text(),
             FocusPane::Steps => self.visible_steps_text(),
-            FocusPane::Card => String::new(),
+            FocusPane::Card => self.visible_output_text(),
         };
-        text.lines()
-            .skip(start)
-            .take(end.saturating_sub(start) + 1)
-            .collect::<Vec<_>>()
-            .join("\n")
+        let lines = text.lines().collect::<Vec<_>>();
+        if lines.is_empty() {
+            return String::new();
+        }
+        let start = usize::from(start).min(lines.len() - 1);
+        let end = usize::from(end).min(lines.len() - 1);
+        lines[start..=end].join("\n")
     }
 
     fn visible_steps_text(&self) -> String {
@@ -1203,5 +1205,24 @@ mod tests {
 
         assert!(text.contains("first step"));
         assert!(text.contains("second step"));
+    }
+
+    #[test]
+    fn visual_text_clamps_stale_selection_to_available_output() {
+        let mut state = AppState::new();
+        state.events.push(TimelineRow {
+            iteration_index: 1,
+            delta: 0,
+            kind: TimelineKind::Note {
+                level: NoteLevel::Info,
+                text: "last visible line".into(),
+            },
+        });
+        state.visual.start(500);
+        state.visual.cursor = 500;
+
+        let text = state.visual_text();
+
+        assert!(text.contains("last visible line"));
     }
 }

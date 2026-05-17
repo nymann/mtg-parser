@@ -6378,6 +6378,7 @@ const PHASE2_GRIND_COMMIT_PATHS: &[&str] = &[
     "crates/mtg-grammar/src/ast.rs",
     "crates/mtg-grammar/src/grammar.pest",
     "crates/mtg-grammar/src/parse.rs",
+    "crates/mtg-grammar/src/unparse.rs",
     "grammar-fixtures",
 ];
 
