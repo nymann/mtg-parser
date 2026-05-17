@@ -1,0 +1,75 @@
+[[axis]]
+name = "effect_kind"
+values = ["continuous_effect"]
+
+[[axis]]
+name = "ability_kind"
+values = ["static_ability"]
+
+[[axis]]
+name = "affected_object"
+values = ["all_lands_with_basic_land_type"]
+
+[[axis]]
+name = "source_basic_land_type"
+values = ["basic_land_type_plural"]
+
+[[axis]]
+name = "resulting_land_type"
+values = ["basic_land_type_plural"]
+
+[boundary]
+excludes = [
+    "Static enters-tapped replacement effects, owned by static_enters_tapped.",
+    "Enchanted-object basic land type-setting effects, owned by static_enchanted_basic_land_type_setting.",
+    "Target-land temporary type-changing effects from activated or resolving effects.",
+    "Static land animation effects that set power/toughness or add creature types.",
+]
+includes = [
+    "All Islands are Mountains.",
+    "All Swamps are Forests.",
+]
+
+[concept]
+name = "static_basic_land_type_change"
+pest_rules = ["static_basic_lands_are_basic_lands"]
+rules_queries = [
+    "lex: all Islands are Mountains static continuous effect",
+    "lex: lands with one basic land type are another basic land type",
+]
+rules_terms = [
+    "static ability",
+    "continuous effect",
+    "basic land type",
+    "land type",
+]
+
+[[counterexample]]
+reason = "Enters-battlefield replacement effect, owned by static_enters_tapped."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "Enchanted-object land type setting, not a global basic-land-type-to-basic-land-type effect."
+text = "Enchanted land is a Mountain."
+
+[[counterexample]]
+reason = "Temporary target-land type-changing effect, not a static global effect."
+text = "Target land becomes a Mountain until CARDNAME leaves the battlefield."
+
+[[counterexample]]
+reason = "Static land animation and type-changing effect, not basic-land-type-to-basic-land-type only."
+text = "All Forests are 1/1 creatures that are still lands."
+
+[[example]]
+text = "All Islands are Mountains."
+
+[[example]]
+text = "All Swamps are Forests."
+
+[grammar_query]
+candidate_rules = ["static_basic_lands_are_basic_lands"]
+selected_rule = "static_basic_lands_are_basic_lands"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

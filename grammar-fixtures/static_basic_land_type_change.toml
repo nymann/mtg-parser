@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_basic_land_type_change"
+rule = "static_basic_lands_are_basic_lands"
+
+[[example]]
+text = "All Islands are Mountains."
+reason = "Static continuous effect changing all lands with one basic land type into another basic land type."
+
+[[example]]
+text = "All Swamps are Forests."
+reason = "Static continuous effect changing all lands with one basic land type into another basic land type."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Enters-battlefield replacement effect, owned by static_enters_tapped."
+
+[[counterexample]]
+text = "Enchanted land is a Mountain."
+reason = "Enchanted-object land type setting, not a global basic-land-type-to-basic-land-type effect."
+
+[[counterexample]]
+text = "Target land becomes a Mountain until CARDNAME leaves the battlefield."
+reason = "Temporary target-land type-changing effect, not a static global effect."
+
+[[counterexample]]
+text = "All Forests are 1/1 creatures that are still lands."
+reason = "Static land animation and type-changing effect, not basic-land-type-to-basic-land-type only."
+
+[[counterexample]]
+text = "All Islands are Mountains. trailing"
+reason = "Exact-consumption guard."
