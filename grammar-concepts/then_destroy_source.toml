@@ -1,0 +1,81 @@
+[[axis]]
+name = "sequence_marker"
+values = ["then"]
+
+[[axis]]
+name = "keyword_action"
+values = ["destroy"]
+
+[[axis]]
+name = "destroyed_object"
+values = ["source_object"]
+
+[[axis]]
+name = "effect_kind"
+values = ["destroy_source"]
+
+[boundary]
+excludes = [
+    "Unspent-mana transfer instructions owned by then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way.",
+    "Imperative destroy effects without a then sequence marker, owned by destroy or more specific destroy concepts.",
+    "Destroy effects for target objects rather than the spell or ability source object.",
+    "Physical-action conditional text that destroys nontoken permanents touched during a flip.",
+]
+includes = [
+    "Then-sequenced destroy instructions where the destroyed object is the source object.",
+    "Then destroy instructions using CARDNAME, this source object kind, or that source as the source object.",
+    "Destroy keyword-action terminology from Comprehensive Rules 701.8.",
+]
+
+[concept]
+name = "then_destroy_source"
+pest_rules = ["then_destroy_source"]
+rules_queries = [
+    "lex: then destroy this source",
+    "lex: destroy source",
+]
+rules_terms = [
+    "destroy",
+    "Destroy",
+    "701.8",
+    "source",
+]
+
+[[counterexample]]
+reason = "Unspent-mana transfer sequence is owned by then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way."
+text = "then that player loses all unspent mana and you add the mana lost this way."
+
+[[counterexample]]
+reason = "Target-object destroy effect without the then sequence marker or source-object destroyed object."
+text = "destroy target creature."
+
+[[counterexample]]
+reason = "Physical flip condition with a destroy-all-touched-permanents effect, not then destroy source."
+text = "if CARDNAME turns over completely at least once during the flip, destroy all nontoken permanents it touches."
+
+[[example]]
+text = "then destroy CARDNAME."
+
+[[example]]
+text = "Then destroy CARDNAME."
+
+[[example]]
+text = "then destroy this creature."
+
+[[example]]
+text = "then destroy that source."
+
+[grammar_query]
+candidate_rules = [
+    "then_destroy_source",
+    "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way",
+    "destroy",
+    "destroy_target",
+    "if_source_turns_over_destroy_touched_nontoken_permanents",
+    "source_object",
+]
+selected_rule = "then_destroy_source"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
