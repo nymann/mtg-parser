@@ -12,11 +12,6 @@ reason = "Direct optional mana payment permission with that-player subject and a
 
 [[example]]
 rule = "pay_mana_player"
-text = "You"
-reason = "Player axis variant for the direct optional mana payment concept."
-
-[[example]]
-rule = "pay_mana_player"
 text = "That player"
 reason = "Player axis variant for the direct optional mana payment concept."
 

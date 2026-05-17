@@ -35,21 +35,13 @@
     {
       "index": 3,
       "rule": "pay_mana_player",
-      "text": "You",
-      "ast": {
-        "PayManaPlayer": "You"
-      }
-    },
-    {
-      "index": 4,
-      "rule": "pay_mana_player",
       "text": "That player",
       "ast": {
         "PayManaPlayer": "ThatPlayer"
       }
     },
     {
-      "index": 5,
+      "index": 4,
       "rule": "pay_mana_amount",
       "text": "{1}",
       "ast": {
@@ -65,7 +57,7 @@
       }
     },
     {
-      "index": 6,
+      "index": 5,
       "rule": "pay_mana_amount",
       "text": "any amount of mana",
       "ast": {
