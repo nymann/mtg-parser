@@ -1,0 +1,24 @@
+{
+  "concept": "activate_only_during_your_turn",
+  "fixture_path": "grammar-fixtures/activate_only_during_your_turn.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "activate_only_during_your_turn",
+      "text": "Activate only during your turn.",
+      "ast": "ActivateOnlyDuringYourTurn"
+    },
+    {
+      "index": 2,
+      "rule": "activate_only_during_your_turn",
+      "text": "activate only during your turn.",
+      "ast": "ActivateOnlyDuringYourTurn"
+    },
+    {
+      "index": 3,
+      "rule": "activate_only_during_your_turn_and_only_once_each_turn",
+      "text": "Activate only during your turn and only once each turn.",
+      "ast": "ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn"
+    }
+  ]
+}
