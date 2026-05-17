@@ -456,6 +456,9 @@ pub enum Statement {
     /// A trigger event fragment used by concept fixtures before a full
     /// triggered-ability payload is attached.
     TriggerEvent(TriggerEvent),
+    /// A trigger effect fragment used by concept fixtures before a full
+    /// triggered-ability condition is attached.
+    TriggerEffect(TriggerEffect),
     /// The actor axis from a cast-spell trigger event fragment.
     TriggerCastActor(TriggerCastActor),
     /// The spell descriptor axis from a cast-spell trigger event fragment.

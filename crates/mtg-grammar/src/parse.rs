@@ -152,6 +152,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::label_phrase => Ok(Statement::Label {
             label: label_from_pair(pair)?,
         }),
+        Rule::tap_source_action => Ok(Statement::ImperativeActionSequence {
+            actions: vec![imperative_action_from_pair(pair)?],
+        }),
+        Rule::unless_you_pay_mana_do_actions => Ok(Statement::TriggerEffect(
+            unless_you_pay_mana_do_actions_from_pair(pair)?,
+        )),
         Rule::imperative_action_sequence => imperative_action_sequence_from_pair(pair),
         Rule::tap_target_permanent_choice => tap_target_permanent_choice_statement_from_pair(pair),
         Rule::counter_target_spell => counter_target_spell_from_pair(pair),
@@ -4352,7 +4358,9 @@ fn source_object_from_kind_pair(
                 .into_inner()
                 .next()
                 .ok_or(ParseError::Internal("source_compound_permanent_type"))?;
-            Ok(SourceObject::This(permanent_type_from_pair(permanent_type)?))
+            Ok(SourceObject::This(permanent_type_from_pair(
+                permanent_type,
+            )?))
         }
         Rule::permanent_object => Ok(SourceObject::ThisPermanent),
         Rule::aura_source_object => Ok(SourceObject::ThisAura),

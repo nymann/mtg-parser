@@ -1,0 +1,104 @@
+{
+  "concept": "tap_source_action",
+  "fixture_path": "grammar-fixtures/tap_source_action.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "tap_source_action",
+      "text": "tap CARDNAME",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "TapSource": {
+                "source": "ThisPermanent"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "tap_source_action",
+      "text": "tap this creature",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "TapSource": {
+                "source": {
+                  "This": "Creature"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "tap_source_action",
+      "text": "tap that source",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "TapSource": {
+                "source": "ThatSource"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "imperative_action_sequence",
+      "text": "tap CARDNAME, then draw two cards.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "TapSource": {
+                "source": "ThisPermanent"
+              }
+            },
+            {
+              "DrawCards": {
+                "count": {
+                  "Number": 2
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "unless_you_pay_mana_do_actions",
+      "text": "unless you pay {1}, tap CARDNAME.",
+      "ast": {
+        "TriggerEffect": {
+          "UnlessYouPayManaDoActions": {
+            "actions": [
+              {
+                "TapSource": {
+                  "source": "ThisPermanent"
+                }
+              }
+            ],
+            "cost": {
+              "symbols": [
+                {
+                  "Generic": 1
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

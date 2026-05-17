@@ -674,6 +674,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_activation_permission(out, *permission);
         }
         Statement::TriggerEvent(ev) => write_trigger_event(out, ev.clone()),
+        Statement::TriggerEffect(eff) => write_trigger_effect(out, eff, true, true),
         Statement::TriggerCastActor(actor) => write_trigger_cast_actor(out, *actor),
         Statement::TriggerCastSpell(spell) => write_trigger_cast_spell(out, *spell),
         Statement::TriggeredAbility(ta) => write_triggered_ability(out, ta),

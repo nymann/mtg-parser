@@ -43,6 +43,7 @@ sentence_statement = _{
   | copy_target_spell_except_copy_is_color
   | you_may_choose_new_targets_for_the_copy
   | tap_enchanted_object
+  | unless_you_pay_mana_do_actions
   | imperative_action_sequence
   | tap_target_permanent_choice
   | counter_target_spell
@@ -185,6 +186,7 @@ phrase_statement = _{
   | pay_mana_amount
   | pay_mana_player
   | label_phrase
+  | tap_source_action
   | draw_cards_action
   | draw_that_many_cards_replacement_result
   | activation_limit_context
@@ -693,6 +695,7 @@ exchange_that_card_with_top_card_of_your_library = {
 imperative_action_sequence = {
     (
       (look_at_target_hand_action ~ (^"and" ~ choose_card_from_it_action)?)
+    | (&(tap_source_action ~ ".") ~ tap_source_action)
     | (imperative_action ~ ("," ~ imperative_action)* ~ "," ~ ^"then" ~ imperative_action)
     )
   ~ "."
@@ -2306,7 +2309,7 @@ its_controller_adds_an_additional_mana = {
 }
 source_object = { "CARDNAME" | (^"this" ~ source_object_kind) | (^"that" ~ ^"source") }
 source_object_kind = _{ permanent_object | aura_source_object | source_compound_permanent_type | permanent_type }
-source_compound_permanent_type = { permanent_type ~ permanent_type+ }
+source_compound_permanent_type = { &(permanent_type ~ permanent_type) ~ permanent_type ~ permanent_type+ }
 aura_source_object = { ^"aura" }
 permanent_object = { ^"permanent" }
 that_permanents_controller = { ^"that" ~ permanent_type ~ "'s" ~ ^"controller" }
