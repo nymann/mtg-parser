@@ -1,0 +1,53 @@
+{
+  "concept": "if_you_flip_result_effect",
+  "fixture_path": "grammar-fixtures/if_you_flip_result_effect.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "if_you_flip_result_effect",
+      "text": "If you win the flip, add {G}.",
+      "ast": {
+        "IfYouFlipResult": {
+          "effect": {
+            "AddMana": {
+              "Cost": {
+                "symbols": [
+                  "Green"
+                ]
+              }
+            }
+          },
+          "result": "Win"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "if_you_flip_result_effect",
+      "text": "If you lose the flip, draw a card.",
+      "ast": {
+        "IfYouFlipResult": {
+          "effect": {
+            "DrawCards": {
+              "count": {
+                "Number": 1
+              }
+            }
+          },
+          "result": "Lose"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "if_you_flip_result_effect",
+      "text": "If you win the flip, flip a coin.",
+      "ast": {
+        "IfYouFlipResult": {
+          "effect": "FlipCoin",
+          "result": "Win"
+        }
+      }
+    }
+  ]
+}
