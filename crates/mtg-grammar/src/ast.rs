@@ -2636,6 +2636,11 @@ pub enum StaticDamageRedirectionDestination {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LandSubtype {
+    Plains,
+    Island,
+    Swamp,
+    Mountain,
+    Forest,
     Desert,
 }
 

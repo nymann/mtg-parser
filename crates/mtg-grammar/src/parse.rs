@@ -374,6 +374,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_source_doesnt_untap_during_your_untap_step
         | Rule::static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps
         | Rule::static_source_cant_block_creatures_with_power_or_greater
+        | Rule::static_damage_prevention_effect
         | Rule::static_named_source_pt_equal_to_count
         | Rule::static_basic_lands_are_basic_lands
         | Rule::static_basic_lands_are_pt_colored_creatures_still_lands
@@ -4512,7 +4513,8 @@ fn play_restriction_action_from_pair(
 
 fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseError> {
     match pair.as_rule() {
-        Rule::damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead => {
+        Rule::static_damage_prevention_effect
+        | Rule::damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead => {
             Ok(StaticAbility::Continuous {
                 effect: continuous_effect_from_pair(pair)?,
             })
@@ -5977,6 +5979,11 @@ fn land_subtype_from_plural_pair(pair: Pair<Rule>) -> Result<LandSubtype, ParseE
         return Err(ParseError::Internal("land_subtype_plural"));
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
+        "plains" => Ok(LandSubtype::Plains),
+        "islands" => Ok(LandSubtype::Island),
+        "swamps" => Ok(LandSubtype::Swamp),
+        "mountains" => Ok(LandSubtype::Mountain),
+        "forests" => Ok(LandSubtype::Forest),
         "deserts" => Ok(LandSubtype::Desert),
         _ => Err(ParseError::Internal("land_subtype_plural variant")),
     }
@@ -6134,8 +6141,25 @@ fn static_damage_prevention_effect_from_pair(
                     land_subtype_from_plural_pair(child)?,
                 ));
             }
-            Rule::source_object_damage_recipient | Rule::banded_creatures_prevention_recipient => {
-                recipients.push(prevention_recipient_from_pair(child)?);
+            Rule::source_object_damage_recipient => {
+                let recipient = prevention_recipient_from_pair(child)?;
+                recipients.push(recipient);
+            }
+            Rule::banded_creatures_prevention_recipient => {
+                let source = match child.into_inner().next() {
+                    Some(source_pair) => source_object_from_pair(source_pair)?,
+                    None => recipients
+                        .iter()
+                        .rev()
+                        .find_map(|recipient| match recipient {
+                            PreventionRecipient::SourceObject(source) => Some(*source),
+                            _ => None,
+                        })
+                        .ok_or(ParseError::Internal(
+                            "banded damage prevention missing source object",
+                        ))?,
+                };
+                recipients.push(PreventionRecipient::CreaturesBandedWithSource(source));
             }
             _ => return Err(ParseError::Internal("static damage prevention effect")),
         }

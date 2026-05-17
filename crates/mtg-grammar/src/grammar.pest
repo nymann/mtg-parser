@@ -205,6 +205,7 @@ phrase_statement = _{
   | permanent_enters
   | permanent_dealt_damage_by_source_this_turn_dies
   | static_enchanted_loses_keyword_fragment
+  | static_damage_prevention_effect
   | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead
 }
 

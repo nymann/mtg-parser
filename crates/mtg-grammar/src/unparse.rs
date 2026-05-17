@@ -4409,6 +4409,11 @@ fn basic_land_type_plural_name(land_type: BasicLandType) -> &'static str {
 
 fn land_subtype_plural_name(subtype: LandSubtype) -> &'static str {
     match subtype {
+        LandSubtype::Plains => "Plains",
+        LandSubtype::Island => "Islands",
+        LandSubtype::Swamp => "Swamps",
+        LandSubtype::Mountain => "Mountains",
+        LandSubtype::Forest => "Forests",
         LandSubtype::Desert => "Deserts",
     }
 }

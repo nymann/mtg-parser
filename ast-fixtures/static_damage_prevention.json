@@ -1,0 +1,73 @@
+{
+  "concept": "static_damage_prevention",
+  "fixture_path": "grammar-fixtures/static_damage_prevention.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_damage_prevention_effect",
+      "text": "Prevent all damage Forests would deal to this creature",
+      "ast": {
+        "StaticAbility": {
+          "Continuous": {
+            "effect": {
+              "PreventDamage": {
+                "effect": {
+                  "amount": "All",
+                  "kind": null,
+                  "recipients": [
+                    {
+                      "SourceObject": {
+                        "This": "Creature"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "LandSubtype": "Forest"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_damage_prevention_effect",
+      "text": "Prevent the next 1 combat damage Mountains would deal to this creature and to creatures banded with it",
+      "ast": {
+        "StaticAbility": {
+          "Continuous": {
+            "effect": {
+              "PreventDamage": {
+                "effect": {
+                  "amount": {
+                    "Next": {
+                      "Number": 1
+                    }
+                  },
+                  "kind": "CombatDamage",
+                  "recipients": [
+                    {
+                      "SourceObject": {
+                        "This": "Creature"
+                      }
+                    },
+                    {
+                      "CreaturesBandedWithSource": {
+                        "This": "Creature"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "LandSubtype": "Mountain"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
