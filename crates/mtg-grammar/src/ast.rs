@@ -438,6 +438,25 @@ pub enum DestroyTarget {
     AllPermanents(Vec<PermanentType>),
     /// "all <basic_land_type>s"
     AllBasicLands(BasicLandType),
+    /// "it" / "that creature"
+    ReferencedCreature(ReferencedCreature),
+    /// "that creature if it attacked this turn"
+    ThatCreatureIfItAttackedThisTurn,
+    /// "all non-<creature_type> creatures that player controls that didn't
+    /// attack this turn"
+    AllNonCreatureTypeCreaturesThatPlayerControlsThatDidntAttackThisTurn {
+        excluded_type: CreatureType,
+    },
+    /// "all creatures blocking or blocked by it"
+    AllCreaturesBlockingOrBlockedByIt,
+    /// "it/that creature at the beginning of the next end step [if it didn't
+    /// attack this turn]"
+    ReferencedCreatureAtBeginningOfNextEndStep {
+        target: ReferencedCreature,
+        condition: Option<DestroyReferencedCreatureCondition>,
+    },
+    /// "that creature at end of combat"
+    ThatCreatureAtEndOfCombat,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1113,6 +1132,8 @@ pub enum TriggerEvent {
     SourceDealsDamageToAnOpponent { source: SourceObject },
     /// "you control no <basic_land_type>s"
     YouControlNoBasicLands { land_type: BasicLandType },
+    /// "a/an <color> creature attacks"
+    ColoredCreatureAttacks { color: Color },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1169,6 +1190,9 @@ pub enum PermanentController {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TriggerEffect {
+    /// CR 701 destroy keyword action inside a triggered ability, with the
+    /// target/all/list axis captured as data.
+    Destroy { target: DestroyTarget },
     /// "destroy that creature if it attacked this turn"
     DestroyThatCreatureIfItAttackedThisTurn,
     /// "destroy all non-<creature_type> creatures that player controls that

@@ -1,0 +1,341 @@
+{
+  "concept": "destroy",
+  "fixture_path": "grammar-fixtures/destroy.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "destroy",
+      "text": "Destroy target red permanent.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "TargetColoredPermanent": "Red"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "destroy",
+      "text": "Destroy target creature.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "TargetPermanents": [
+              "Creature"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "destroy",
+      "text": "Destroy all lands.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "AllPermanents": [
+              "Land"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "modal_mode",
+      "text": "• Destroy target red permanent.",
+      "ast": {
+        "ModalChoice": {
+          "modes": [
+            {
+              "DestroyTargetColoredPermanent": {
+                "color": "Red"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "activated_ability",
+      "text": "{U}: Destroy target red permanent.",
+      "ast": {
+        "ActivatedAbility": {
+          "costs": [
+            {
+              "Mana": {
+                "symbols": [
+                  "Blue"
+                ]
+              }
+            }
+          ],
+          "effect": {
+            "Destroy": {
+              "target": {
+                "TargetColoredPermanent": "Red"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "trigger_effect",
+      "text": "Destroy all non-Goblin creatures that player controls that didn't attack this turn.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "AllNonCreatureTypeCreaturesThatPlayerControlsThatDidntAttackThisTurn": {
+              "excluded_type": "Goblin"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 7,
+      "rule": "destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn",
+      "text": "Destroy all non-Goblin creatures that player controls that didn't attack this turn.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "AllNonCreatureTypeCreaturesThatPlayerControlsThatDidntAttackThisTurn": {
+              "excluded_type": "Goblin"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 8,
+      "rule": "destroy",
+      "text": "Destroy all creatures blocking or blocked by it.",
+      "ast": {
+        "Destroy": {
+          "target": "AllCreaturesBlockingOrBlockedByIt"
+        }
+      }
+    },
+    {
+      "index": 9,
+      "rule": "triggered_ability",
+      "text": "When this creature dies, destroy all creatures blocking or blocked by it.",
+      "ast": {
+        "TriggeredAbility": {
+          "effects": [
+            {
+              "Destroy": {
+                "target": "AllCreaturesBlockingOrBlockedByIt"
+              }
+            }
+          ],
+          "event": {
+            "SourceDies": {
+              "source": {
+                "This": "Creature"
+              }
+            }
+          },
+          "intervening_if": null
+        }
+      }
+    },
+    {
+      "index": 10,
+      "rule": "trigger_effect",
+      "text": "Destroy all creatures blocking or blocked by it.",
+      "ast": {
+        "Destroy": {
+          "target": "AllCreaturesBlockingOrBlockedByIt"
+        }
+      }
+    },
+    {
+      "index": 11,
+      "rule": "trigger_effect",
+      "text": "Destroy that creature if it attacked this turn.",
+      "ast": {
+        "Destroy": {
+          "target": "ThatCreatureIfItAttackedThisTurn"
+        }
+      }
+    },
+    {
+      "index": 12,
+      "rule": "destroy_that_creature_if_it_attacked_this_turn",
+      "text": "Destroy that creature if it attacked this turn.",
+      "ast": {
+        "Destroy": {
+          "target": "ThatCreatureIfItAttackedThisTurn"
+        }
+      }
+    },
+    {
+      "index": 13,
+      "rule": "destroy_all_creatures_blocking_or_blocked_by_it",
+      "text": "Destroy all creatures blocking or blocked by it.",
+      "ast": {
+        "Destroy": {
+          "target": "AllCreaturesBlockingOrBlockedByIt"
+        }
+      }
+    },
+    {
+      "index": 14,
+      "rule": "destroy_it",
+      "text": "Destroy it.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "ReferencedCreature": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 15,
+      "rule": "trigger_effect",
+      "text": "Destroy it.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "ReferencedCreature": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 16,
+      "rule": "triggered_ability",
+      "text": "When this creature dies, destroy it.",
+      "ast": {
+        "TriggeredAbility": {
+          "effects": [
+            {
+              "Destroy": {
+                "target": {
+                  "ReferencedCreature": "It"
+                }
+              }
+            }
+          ],
+          "event": {
+            "SourceDies": {
+              "source": {
+                "This": "Creature"
+              }
+            }
+          },
+          "intervening_if": null
+        }
+      }
+    },
+    {
+      "index": 17,
+      "rule": "destroy_referenced_creature_at_beginning_of_next_end_step",
+      "text": "Destroy it at the beginning of the next end step.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "ReferencedCreatureAtBeginningOfNextEndStep": {
+              "condition": null,
+              "target": "It"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 18,
+      "rule": "destroy_referenced_creature_at_beginning_of_next_end_step",
+      "text": "Destroy that creature at the beginning of the next end step.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "ReferencedCreatureAtBeginningOfNextEndStep": {
+              "condition": null,
+              "target": "ThatCreature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 19,
+      "rule": "destroy_referenced_creature_at_beginning_of_next_end_step",
+      "text": "Destroy it at the beginning of the next end step if it didn't attack this turn.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "ReferencedCreatureAtBeginningOfNextEndStep": {
+              "condition": "DidntAttackThisTurn",
+              "target": "It"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 20,
+      "rule": "destroy_referenced_creature_at_beginning_of_next_end_step",
+      "text": "Destroy that creature at the beginning of the next end step if it didn't attack this turn.",
+      "ast": {
+        "Destroy": {
+          "target": {
+            "ReferencedCreatureAtBeginningOfNextEndStep": {
+              "condition": "DidntAttackThisTurn",
+              "target": "ThatCreature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 21,
+      "rule": "destroy_that_creature_at_end_of_combat",
+      "text": "Destroy that creature at end of combat.",
+      "ast": {
+        "Destroy": {
+          "target": "ThatCreatureAtEndOfCombat"
+        }
+      }
+    },
+    {
+      "index": 22,
+      "rule": "trigger_effect",
+      "text": "Destroy that creature at end of combat.",
+      "ast": {
+        "Destroy": {
+          "target": "ThatCreatureAtEndOfCombat"
+        }
+      }
+    },
+    {
+      "index": 23,
+      "rule": "triggered_ability",
+      "text": "Whenever a green creature attacks, destroy that creature at end of combat.",
+      "ast": {
+        "TriggeredAbility": {
+          "effects": [
+            {
+              "Destroy": {
+                "target": "ThatCreatureAtEndOfCombat"
+              }
+            }
+          ],
+          "event": {
+            "ColoredCreatureAttacks": {
+              "color": "Green"
+            }
+          },
+          "intervening_if": null
+        }
+      }
+    }
+  ]
+}

@@ -219,8 +219,16 @@ this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first = {
   ~ ^"first" ~ "."
 }
 
-destroy = { ^"destroy" ~ destroy_target ~ "." }
+destroy = { ^"destroy" ~ destroy_effect_target ~ "." }
 exile = { ^"exile" ~ destroy_target ~ "." }
+destroy_effect_target = {
+    referenced_creature_at_beginning_of_next_end_step
+  | that_creature_at_end_of_combat_target
+  | that_creature_if_it_attacked_this_turn_target
+  | all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn
+  | referenced_creature
+  | destroy_target
+}
 destroy_target = {
     all_creatures_blocking_or_blocked_by_it
   | destroy_all
@@ -233,6 +241,11 @@ destroy_target = {
 }
 destroy_all = { ^"all" ~ destroy_all_objects }
 destroy_all_objects = { basic_land_type_plural | permanent_type_plural_list }
+all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn = {
+    ^"all" ~ ^"non-" ~ creature_type ~ ^"creatures"
+  ~ ^"that" ~ ^"player" ~ ^"controls" ~ ^"that" ~ ^"didn't"
+  ~ ^"attack" ~ ^"this" ~ ^"turn"
+}
 all_creatures_blocking_or_blocked_by_it = {
     ^"all" ~ ^"creatures" ~ ^"blocking" ~ ^"or" ~ ^"blocked" ~ ^"by" ~ ^"it"
 }
@@ -1750,12 +1763,14 @@ trigger_event = _{
   | player_casts_colored_spell
   | basic_land_type_is_tapped_for_mana
   | basic_land_type_controller_becomes_status
-  | source_object ~ ^"attacks"
-  | article ~ color_word ~ ^"creature" ~ ^"attacks"
+  | source_attacks
+  | colored_creature_attacks
   | one_or_more_creatures_you_control_attack
   | one_or_more_permanents_with_original_printing_on_battlefield
   | permanent_enters
 }
+source_attacks = { source_object ~ ^"attacks" }
+colored_creature_attacks = { article ~ color_word ~ ^"creature" ~ ^"attacks" }
 aura_enters             = { ^"this" ~ ^"aura" ~ ^"enters" }
 aura_leaves_battlefield = { ^"this" ~ ^"aura" ~ ^"leaves" ~ ^"the" ~ ^"battlefield" }
 source_put_into_graveyard_from_battlefield = {
@@ -1912,9 +1927,7 @@ trigger_effect = _{
 }
 
 destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn = {
-    ^"destroy" ~ ^"all" ~ ^"non-" ~ creature_type ~ ^"creatures"
-  ~ ^"that" ~ ^"player" ~ ^"controls" ~ ^"that" ~ ^"didn't"
-  ~ ^"attack" ~ ^"this" ~ ^"turn" ~ "."
+    ^"destroy" ~ all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn ~ "."
 }
 
 destroy_all_creatures_blocking_or_blocked_by_it = {
@@ -2041,15 +2054,20 @@ activate_only_as_sorcery = {
 }
 
 destroy_that_creature_if_it_attacked_this_turn = {
-    ^"destroy" ~ that_creature_subject ~ ^"if" ~ ^"it"
-  ~ ^"attacked" ~ ^"this" ~ ^"turn" ~ "."
+    ^"destroy" ~ that_creature_if_it_attacked_this_turn_target ~ "."
+}
+that_creature_if_it_attacked_this_turn_target = {
+    that_creature_subject ~ ^"if" ~ ^"it" ~ ^"attacked" ~ ^"this" ~ ^"turn"
 }
 
 destroy_it = { ^"destroy" ~ ^"it" ~ "." }
 
 destroy_referenced_creature_at_beginning_of_next_end_step = {
-    ^"destroy" ~ referenced_creature ~ ^"at" ~ beginning_of_the_next_end_step
-  ~ destroy_referenced_creature_condition? ~ "."
+    ^"destroy" ~ referenced_creature_at_beginning_of_next_end_step ~ "."
+}
+referenced_creature_at_beginning_of_next_end_step = {
+    referenced_creature ~ ^"at" ~ beginning_of_the_next_end_step
+  ~ destroy_referenced_creature_condition?
 }
 referenced_creature = { ^"it" | ^"that" ~ ^"creature" }
 destroy_referenced_creature_condition = {
@@ -2057,7 +2075,10 @@ destroy_referenced_creature_condition = {
 }
 
 destroy_that_creature_at_end_of_combat = {
-    ^"destroy" ~ that_creature_subject ~ ^"at" ~ end_of_combat ~ "."
+    ^"destroy" ~ that_creature_at_end_of_combat_target ~ "."
+}
+that_creature_at_end_of_combat_target = {
+    that_creature_subject ~ ^"at" ~ end_of_combat
 }
 
 that_creatures_controller_sacrifices_it = {

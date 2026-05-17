@@ -765,18 +765,14 @@ fn target_permanent_gains_keyword_until_eot_from_pair(
 fn destroy_referenced_creature_at_beginning_of_next_end_step_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let mut inner = pair.into_inner();
-    let target_pair = inner.next().ok_or(ParseError::Internal(
-        "destroy referenced creature missing target",
-    ))?;
-    let target = referenced_creature_from_pair(target_pair)?;
-    let _time_pair = inner.next().ok_or(ParseError::Internal(
-        "destroy referenced creature missing timing",
-    ))?;
-    let condition = inner
-        .next()
-        .map(destroy_referenced_creature_condition_from_pair)
-        .transpose()?;
+    let target_pair = only_inner(pair, "destroy referenced creature missing target")?;
+    let DestroyTarget::ReferencedCreatureAtBeginningOfNextEndStep { target, condition } =
+        referenced_creature_at_beginning_of_next_end_step_target_from_pair(target_pair)?
+    else {
+        return Err(ParseError::Internal(
+            "destroy referenced creature target shape",
+        ));
+    };
 
     if target == ReferencedCreature::It
         && condition == Some(DestroyReferencedCreatureCondition::DidntAttackThisTurn)
@@ -1104,6 +1100,10 @@ fn exile_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
 
 fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseError> {
     match pair.as_rule() {
+        Rule::destroy_effect_target => {
+            let target_pair = only_inner(pair, "destroy_effect_target missing target")?;
+            destroy_target_from_pair(target_pair)
+        }
         Rule::destroy_target => {
             let target_pair = only_inner(pair, "destroy_target missing target")?;
             destroy_target_from_pair(target_pair)
@@ -1151,6 +1151,30 @@ fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseErro
             let target_pair = only_inner(pair, "destroy_all_objects missing target")?;
             destroy_target_from_pair(target_pair)
         }
+        Rule::all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn => {
+            let creature_type_pair = only_inner(
+                pair,
+                "all non-creature-type creatures missing creature_type",
+            )?;
+            Ok(
+                DestroyTarget::AllNonCreatureTypeCreaturesThatPlayerControlsThatDidntAttackThisTurn {
+                    excluded_type: creature_type_from_pair(creature_type_pair)?,
+                },
+            )
+        }
+        Rule::all_creatures_blocking_or_blocked_by_it => {
+            Ok(DestroyTarget::AllCreaturesBlockingOrBlockedByIt)
+        }
+        Rule::referenced_creature => Ok(DestroyTarget::ReferencedCreature(
+            referenced_creature_from_pair(pair)?,
+        )),
+        Rule::that_creature_if_it_attacked_this_turn_target => {
+            Ok(DestroyTarget::ThatCreatureIfItAttackedThisTurn)
+        }
+        Rule::referenced_creature_at_beginning_of_next_end_step => {
+            referenced_creature_at_beginning_of_next_end_step_target_from_pair(pair)
+        }
+        Rule::that_creature_at_end_of_combat_target => Ok(DestroyTarget::ThatCreatureAtEndOfCombat),
         Rule::permanent_type_plural_list => Ok(DestroyTarget::AllPermanents(
             permanent_type_plural_list_from_pair(pair)?,
         )),
@@ -1159,6 +1183,28 @@ fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseErro
         )),
         _ => Err(ParseError::Internal("destroy target")),
     }
+}
+
+fn referenced_creature_at_beginning_of_next_end_step_target_from_pair(
+    pair: Pair<Rule>,
+) -> Result<DestroyTarget, ParseError> {
+    let mut inner = pair.into_inner();
+    let target_pair = next_inner(
+        &mut inner,
+        "referenced creature at beginning of next end step missing target",
+    )?;
+    let _timing_pair = next_inner(
+        &mut inner,
+        "referenced creature at beginning of next end step missing timing",
+    )?;
+    let condition = inner
+        .next()
+        .map(destroy_referenced_creature_condition_from_pair)
+        .transpose()?;
+    Ok(DestroyTarget::ReferencedCreatureAtBeginningOfNextEndStep {
+        target: referenced_creature_from_pair(target_pair)?,
+        condition,
+    })
 }
 
 fn target_qualified_creature_from_pair(
@@ -2571,6 +2617,7 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
             source_deals_damage_to_an_opponent_from_pair(event_pair)
         }
         Rule::you_control_no_basic_lands => you_control_no_basic_lands_from_pair(event_pair),
+        Rule::colored_creature_attacks => colored_creature_attacks_from_pair(event_pair),
         Rule::permanent_put_into_graveyard_from_battlefield => {
             permanent_put_into_graveyard_from_battlefield_from_pair(event_pair)
         }
@@ -2586,6 +2633,13 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
         }
         _ => Err(ParseError::Internal("trigger event")),
     }
+}
+
+fn colored_creature_attacks_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let color_pair = only_inner(pair, "colored creature attacks missing color")?;
+    Ok(TriggerEvent::ColoredCreatureAttacks {
+        color: color_from_pair(color_pair)?,
+    })
 }
 
 fn triggered_intervening_if_from_pair(pair: Pair<Rule>) -> Result<InterveningIf, ParseError> {
@@ -2659,19 +2713,11 @@ fn trigger_effect_sequence_from_pair(pair: Pair<Rule>) -> Result<Vec<TriggerEffe
 
 fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
     match pair.as_rule() {
-        Rule::destroy_that_creature_if_it_attacked_this_turn => {
-            Ok(TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn)
-        }
-        Rule::destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn => {
-            destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn_from_pair(pair)
-        }
-        Rule::destroy_all_creatures_blocking_or_blocked_by_it => {
-            Ok(TriggerEffect::DestroyAllCreaturesBlockingOrBlockedByIt)
-        }
-        Rule::destroy_it => Ok(TriggerEffect::DestroyIt),
-        Rule::destroy_that_creature_at_end_of_combat => {
-            Ok(TriggerEffect::DestroyThatCreatureAtEndOfCombat)
-        }
+        Rule::destroy_that_creature_if_it_attacked_this_turn
+        | Rule::destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn
+        | Rule::destroy_all_creatures_blocking_or_blocked_by_it
+        | Rule::destroy_it
+        | Rule::destroy_that_creature_at_end_of_combat => destroy_trigger_effect_from_pair(pair),
         Rule::that_creatures_controller_sacrifices_it => {
             Ok(TriggerEffect::ThatCreaturesControllerSacrificesIt)
         }
@@ -2750,6 +2796,29 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
     }
 }
 
+fn destroy_trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let target = match pair.as_rule() {
+        Rule::destroy_that_creature_if_it_attacked_this_turn => {
+            DestroyTarget::ThatCreatureIfItAttackedThisTurn
+        }
+        Rule::destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn => {
+            let target_pair = only_inner(
+                pair,
+                "destroy all non-creature-type creatures missing target",
+            )?;
+            destroy_target_from_pair(target_pair)?
+        }
+        Rule::destroy_all_creatures_blocking_or_blocked_by_it => {
+            let target_pair = only_inner(pair, "destroy all blocking-or-blocked missing target")?;
+            destroy_target_from_pair(target_pair)?
+        }
+        Rule::destroy_it => DestroyTarget::ReferencedCreature(ReferencedCreature::It),
+        Rule::destroy_that_creature_at_end_of_combat => DestroyTarget::ThatCreatureAtEndOfCombat,
+        _ => return Err(ParseError::Internal("destroy trigger effect")),
+    };
+    Ok(TriggerEffect::Destroy { target })
+}
+
 fn defending_player_divides_creatures_without_keyword_into_labeled_piles_from_pair(
     pair: Pair<Rule>,
 ) -> Result<TriggerEffect, ParseError> {
@@ -2768,20 +2837,6 @@ fn defending_player_divides_creatures_without_keyword_into_labeled_piles_from_pa
         TriggerEffect::DefendingPlayerDividesCreaturesWithoutKeywordIntoLabeledPiles {
             keyword: keyword.ok_or(ParseError::Internal("divide labeled piles missing keyword"))?,
             labels,
-        },
-    )
-}
-
-fn destroy_all_non_creature_type_creatures_that_player_controls_that_didnt_attack_this_turn_from_pair(
-    pair: Pair<Rule>,
-) -> Result<TriggerEffect, ParseError> {
-    let excluded_pair = only_inner(
-        pair,
-        "destroy all non-creature-type creatures missing creature_type",
-    )?;
-    Ok(
-        TriggerEffect::DestroyAllNonCreatureTypeCreaturesThatPlayerControlsThatDidntAttackThisTurn {
-            excluded_type: creature_type_from_pair(excluded_pair)?,
         },
     )
 }

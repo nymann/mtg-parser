@@ -2480,7 +2480,8 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::SourceIsDealtDamage { .. }
         | TriggerEvent::SourceDealsDamageToAnOpponent { .. }
         | TriggerEvent::ObjectBecomesStatus { .. }
-        | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. } => "Whenever ",
+        | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. }
+        | TriggerEvent::ColoredCreatureAttacks { .. } => "Whenever ",
         TriggerEvent::BeginningOfTheNextEndStep
         | TriggerEvent::BeginningOfChosenPlayersUpkeep
         | TriggerEvent::BeginningOfEachPlayersDrawStep
@@ -2721,6 +2722,11 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str("you control no ");
             out.push_str(basic_land_type_plural_name(land_type));
         }
+        TriggerEvent::ColoredCreatureAttacks { color } => {
+            out.push_str("a ");
+            out.push_str(color_name(color));
+            out.push_str(" creature attacks");
+        }
     }
 }
 
@@ -2798,6 +2804,11 @@ fn write_trigger_effect(
     starts_sentence: bool,
 ) {
     match eff {
+        TriggerEffect::Destroy { target } => {
+            out.push_str("destroy ");
+            write_destroy_target(out, target);
+            out.push('.');
+        }
         TriggerEffect::DestroyThatCreatureIfItAttackedThisTurn => {
             out.push_str("destroy that creature if it attacked this turn.");
         }
@@ -3935,6 +3946,30 @@ fn write_destroy_target(out: &mut String, target: &DestroyTarget) {
         DestroyTarget::AllBasicLands(basic_land_type) => {
             out.push_str("all ");
             out.push_str(basic_land_type_plural_name(*basic_land_type));
+        }
+        DestroyTarget::ReferencedCreature(target) => write_referenced_creature(out, *target),
+        DestroyTarget::ThatCreatureIfItAttackedThisTurn => {
+            out.push_str("that creature if it attacked this turn");
+        }
+        DestroyTarget::AllNonCreatureTypeCreaturesThatPlayerControlsThatDidntAttackThisTurn {
+            excluded_type,
+        } => {
+            out.push_str("all non-");
+            write_creature_type(out, *excluded_type);
+            out.push_str(" creatures that player controls that didn't attack this turn");
+        }
+        DestroyTarget::AllCreaturesBlockingOrBlockedByIt => {
+            out.push_str("all creatures blocking or blocked by it");
+        }
+        DestroyTarget::ReferencedCreatureAtBeginningOfNextEndStep { target, condition } => {
+            write_referenced_creature(out, *target);
+            out.push_str(" at the beginning of the next end step");
+            if let Some(DestroyReferencedCreatureCondition::DidntAttackThisTurn) = condition {
+                out.push_str(" if it didn't attack this turn");
+            }
+        }
+        DestroyTarget::ThatCreatureAtEndOfCombat => {
+            out.push_str("that creature at end of combat");
         }
     }
 }
