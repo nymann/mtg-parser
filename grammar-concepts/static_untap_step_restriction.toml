@@ -1,0 +1,99 @@
+[[axis]]
+name = "ability_kind"
+values = ["static_continuous_effect"]
+
+[[axis]]
+name = "restricted_event"
+values = ["untap_step_untap"]
+
+[[axis]]
+name = "restriction_kind"
+values = [
+    "dont_untap",
+    "untap_quantity_cap",
+    "skip_untap_step",
+]
+
+[[axis]]
+name = "affected_subject"
+values = [
+    "creatures_with_power_or_greater",
+    "players",
+]
+
+[[axis]]
+name = "controller_scope"
+values = [
+    "their_controllers",
+    "their",
+]
+
+[boundary]
+excludes = [
+    "Enters-battlefield replacement effects, owned by static_enters_tapped or related enters concepts.",
+    "Enters-with-counters replacement effects, not untap-step restrictions.",
+    "Source-object untap restrictions during your untap step, owned by static_source_blocking_restriction.",
+    "Enchanted-object untap restrictions during its controller's untap step, owned by static_source_blocking_restriction.",
+]
+includes = [
+    "Creatures with power 3 or greater don't untap during their controllers' untap steps.",
+    "Players can't untap more than one creature during their untap steps.",
+    "Players skip their untap steps.",
+]
+
+[concept]
+name = "static_untap_step_restriction"
+pest_rules = [
+    "static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps",
+    "static_untap_restriction_during_untap_steps",
+]
+rules_queries = [
+    "lex: players skip their untap steps",
+    "lex: players can't untap more than one creature during their untap steps",
+    "lex: creatures with power or greater don't untap during their controllers' untap steps",
+]
+rules_terms = [
+    "static ability",
+    "continuous effect",
+    "untap step",
+    "untap",
+    "skip",
+]
+
+[[counterexample]]
+reason = "Enters-battlefield tapped replacement effect, owned by static_enters_tapped."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "Enters-with-counters replacement effect, not an untap-step restriction."
+text = "This permanent enters with N +1/+1 counters on it."
+
+[[counterexample]]
+reason = "Source-object untap restriction during your untap step, owned by static_source_blocking_restriction."
+text = "This creature doesn't untap during your untap step."
+
+[[counterexample]]
+reason = "Enchanted-object untap restriction during its controller's untap step, owned by static_source_blocking_restriction."
+text = "Enchanted creature doesn't untap during its controller's untap step."
+
+[[example]]
+text = "Creatures with power 3 or greater don't untap during their controllers' untap steps."
+
+[[example]]
+text = "Players can't untap more than one creature during their untap steps."
+
+[[example]]
+text = "Players skip their untap steps."
+
+[grammar_query]
+candidate_rules = [
+    "static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps",
+    "static_untap_restriction_during_untap_steps",
+    "static_source_doesnt_untap_during_your_untap_step",
+    "static_source_enters_tapped",
+]
+selected_rule = "static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

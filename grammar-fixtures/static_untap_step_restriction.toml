@@ -1,0 +1,35 @@
+[fixture]
+concept = "static_untap_step_restriction"
+rule = "static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps"
+
+[[example]]
+text = "Creatures with power 3 or greater don't untap during their controllers' untap steps."
+reason = "Global static untap-step restriction for creatures meeting a power threshold."
+
+[[example]]
+text = "Players can't untap more than one creature during their untap steps."
+reason = "Player untap-step quantity cap for untapping a permanent type."
+
+[[example]]
+text = "Players skip their untap steps."
+reason = "Player untap-step skip restriction."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Enters-battlefield tapped replacement effect, not an untap-step restriction."
+
+[[counterexample]]
+text = "This permanent enters with N +1/+1 counters on it."
+reason = "Enters-with-counters replacement effect, not an untap-step restriction."
+
+[[counterexample]]
+text = "This creature doesn't untap during your untap step."
+reason = "Source-object untap restriction, not a global creature/player untap-step restriction."
+
+[[counterexample]]
+text = "Enchanted creature doesn't untap during its controller's untap step."
+reason = "Enchanted-object untap restriction, not a global creature/player untap-step restriction."
+
+[[counterexample]]
+text = "Players skip their untap steps. trailing"
+reason = "Exact-consumption guard."
