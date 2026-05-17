@@ -622,6 +622,8 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_activation_permission(out, *permission);
         }
         Statement::TriggerEvent(ev) => write_trigger_event(out, ev.clone()),
+        Statement::TriggerCastActor(actor) => write_trigger_cast_actor(out, *actor),
+        Statement::TriggerCastSpell(spell) => write_trigger_cast_spell(out, *spell),
         Statement::TriggeredAbility(ta) => write_triggered_ability(out, ta),
         Statement::PhysicalAction(pa) => write_physical_action(out, *pa),
         Statement::Compound(stmts) => {
@@ -2759,6 +2761,22 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
             out.push_str("a ");
             out.push_str(color_name(color));
             out.push_str(" creature attacks");
+        }
+    }
+}
+
+fn write_trigger_cast_actor(out: &mut String, actor: TriggerCastActor) {
+    match actor {
+        TriggerCastActor::You => out.push_str("you"),
+        TriggerCastActor::Player => out.push_str("a player"),
+    }
+}
+
+fn write_trigger_cast_spell(out: &mut String, spell: TriggerCastSpell) {
+    match spell {
+        TriggerCastSpell::Colored { color } => out.push_str(color_name(color)),
+        TriggerCastSpell::PermanentType { permanent_type } => {
+            out.push_str(permanent_type_name(permanent_type));
         }
     }
 }

@@ -426,6 +426,10 @@ pub enum Statement {
     /// A trigger event fragment used by concept fixtures before a full
     /// triggered-ability payload is attached.
     TriggerEvent(TriggerEvent),
+    /// The actor axis from a cast-spell trigger event fragment.
+    TriggerCastActor(TriggerCastActor),
+    /// The spell descriptor axis from a cast-spell trigger event fragment.
+    TriggerCastSpell(TriggerCastSpell),
     TriggeredAbility(TriggeredAbility),
     /// Physical dexterity instructions and their conditional results.
     PhysicalAction(PhysicalAction),

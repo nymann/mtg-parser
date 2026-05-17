@@ -374,6 +374,15 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::triggered_ability | Rule::triggered_ability_fragment => Ok(
             Statement::TriggeredAbility(triggered_ability_from_pair(pair)?),
         ),
+        Rule::player_casts_colored_spell => Ok(Statement::TriggerEvent(
+            player_casts_colored_spell_from_pair(pair)?,
+        )),
+        Rule::you_cast_spell_actor | Rule::player_cast_spell_actor => Ok(
+            Statement::TriggerCastActor(trigger_cast_actor_from_pair(pair)?),
+        ),
+        Rule::cast_spell_descriptor => Ok(Statement::TriggerCastSpell(
+            trigger_cast_spell_from_pair(pair)?,
+        )),
         Rule::permanent_dealt_damage_by_source_this_turn_dies => {
             Ok(Statement::TriggerEvent(
                 permanent_dealt_damage_by_source_this_turn_dies_from_pair(pair)?,
@@ -2974,12 +2983,26 @@ fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent
     let spell_pair = inner.next().ok_or(ParseError::Internal(
         "cast-spell event missing spell descriptor",
     ))?;
-    let actor = match actor_pair.as_rule() {
+    let actor = trigger_cast_actor_from_pair(actor_pair)?;
+    let spell = trigger_cast_spell_from_pair(spell_pair)?;
+    Ok(TriggerEvent::CastsSpell { actor, spell })
+}
+
+fn trigger_cast_actor_from_pair(pair: Pair<Rule>) -> Result<TriggerCastActor, ParseError> {
+    Ok(match pair.as_rule() {
         Rule::you_cast_spell_actor => TriggerCastActor::You,
         Rule::player_cast_spell_actor => TriggerCastActor::Player,
         _ => return Err(ParseError::Internal("cast-spell actor")),
+    })
+}
+
+fn trigger_cast_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerCastSpell, ParseError> {
+    let spell_pair = match pair.as_rule() {
+        Rule::cast_spell_descriptor => only_inner(pair, "cast-spell descriptor missing inner")?,
+        Rule::color_word | Rule::permanent_type => pair,
+        _ => return Err(ParseError::Internal("cast-spell descriptor")),
     };
-    let spell = match spell_pair.as_rule() {
+    Ok(match spell_pair.as_rule() {
         Rule::color_word => TriggerCastSpell::Colored {
             color: color_from_pair(spell_pair)?,
         },
@@ -2987,13 +3010,7 @@ fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent
             permanent_type: permanent_type_from_pair(spell_pair)?,
         },
         _ => return Err(ParseError::Internal("cast-spell descriptor")),
-    };
-    match (actor, spell) {
-        (TriggerCastActor::Player, TriggerCastSpell::Colored { color }) => {
-            Ok(TriggerEvent::PlayerCastsColoredSpell { color })
-        }
-        (actor, spell) => Ok(TriggerEvent::CastsSpell { actor, spell }),
-    }
+    })
 }
 
 fn player_taps_permanent_for_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {

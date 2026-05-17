@@ -1,0 +1,114 @@
+{
+  "concept": "player_casts_spell_trigger_event",
+  "fixture_path": "grammar-fixtures/player_casts_spell_trigger_event.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "player_casts_colored_spell",
+      "text": "a player casts a black spell",
+      "ast": {
+        "TriggerEvent": {
+          "CastsSpell": {
+            "actor": "Player",
+            "spell": {
+              "Colored": {
+                "color": "Black"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "player_casts_colored_spell",
+      "text": "you cast a red spell",
+      "ast": {
+        "TriggerEvent": {
+          "CastsSpell": {
+            "actor": "You",
+            "spell": {
+              "Colored": {
+                "color": "Red"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "player_casts_colored_spell",
+      "text": "a player casts an artifact spell",
+      "ast": {
+        "TriggerEvent": {
+          "CastsSpell": {
+            "actor": "Player",
+            "spell": {
+              "PermanentType": {
+                "permanent_type": "Artifact"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "player_casts_colored_spell",
+      "text": "you cast a creature spell",
+      "ast": {
+        "TriggerEvent": {
+          "CastsSpell": {
+            "actor": "You",
+            "spell": {
+              "PermanentType": {
+                "permanent_type": "Creature"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "you_cast_spell_actor",
+      "text": "you",
+      "ast": {
+        "TriggerCastActor": "You"
+      }
+    },
+    {
+      "index": 6,
+      "rule": "player_cast_spell_actor",
+      "text": "a player",
+      "ast": {
+        "TriggerCastActor": "Player"
+      }
+    },
+    {
+      "index": 7,
+      "rule": "cast_spell_descriptor",
+      "text": "black",
+      "ast": {
+        "TriggerCastSpell": {
+          "Colored": {
+            "color": "Black"
+          }
+        }
+      }
+    },
+    {
+      "index": 8,
+      "rule": "cast_spell_descriptor",
+      "text": "artifact",
+      "ast": {
+        "TriggerCastSpell": {
+          "PermanentType": {
+            "permanent_type": "Artifact"
+          }
+        }
+      }
+    }
+  ]
+}
