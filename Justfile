@@ -79,8 +79,10 @@ refactor *args:
 	cargo xtask refactor-hotspot {{args}}
 
 # Run the autonomous concept phase loop with Telegram watcher notifications.
+# The recipe always fires a Telegram message on non-zero exit so failures are
+# not silent if the in-process watcher misses or is killed with the recipe.
 concept-phase-loop *args:
-	@[ -f .telegram-env ] || { echo "missing .telegram-env; copy .telegram-env.example and set TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID" >&2; exit 2; }; set -a; . ./.telegram-env; set +a; PHASE_NOTIFY_COMMAND="./scripts/telegram_phase_notify.sh" cargo xtask concept-phase-loop --watch-interval-minutes 30 {{args}}
+	@[ -f .telegram-env ] || { echo "missing .telegram-env; copy .telegram-env.example and set TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID" >&2; exit 2; }; set -a; . ./.telegram-env; set +a; PHASE_NOTIFY_COMMAND="./scripts/telegram_phase_notify.sh" cargo xtask concept-phase-loop --watch-interval-minutes 30 {{args}}; status=$?; if [ "$status" -ne 0 ]; then PHASE_NOTIFY_TITLE="mtg-parser: concept-phase-loop FAILED (exit $status)" PHASE_NOTIFY_BODY="cargo xtask concept-phase-loop exited $status. Check the terminal output and the newest .grammar-concept-runs/phase-loop-* and grind-* dirs (gap.json, repair-*-failure.txt) for the failing step." ./scripts/telegram_phase_notify.sh >/dev/null 2>&1 || echo "telegram failure notify failed (exit $?)" >&2; fi; exit $status
 
 # Run just the compact Telegram watcher beside an already-running phase loop.
 concept-phase-watch:
