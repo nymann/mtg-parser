@@ -1,0 +1,111 @@
+[[axis]]
+name = "permission"
+values = [
+    "required",
+    "you_may",
+]
+
+[[axis]]
+name = "tap_mode"
+values = [
+    "tap",
+    "tap_or_untap",
+]
+
+[[axis]]
+name = "target_selector"
+values = [
+    "target_permanent",
+    "target_permanent_type_choice",
+    "target_creature_type",
+]
+
+[[axis]]
+name = "context"
+values = [
+    "sentence_statement",
+    "activated_effect",
+]
+
+[boundary]
+excludes = [
+    "Source-object tap actions such as tap CARDNAME, tap this creature, or tap that source; those belong to tap_source_action.",
+    "Untap-only target instructions, owned by untap_target_permanent or related untap rules.",
+    "Tap-all-controlled-permanents instructions, owned by tap_all_controlled_permanents_and_lose_unspent_mana or a future tap-all concept.",
+    "Static tapped-entry text, owned by permanent_enters.",
+]
+includes = [
+    "Targeted tap effects that tap target permanent, a target permanent type choice, or a target creature type.",
+    "Optional you-may targeted tap effects.",
+    "Targeted tap-or-untap choice effects.",
+    "Sentence-statement and activated-effect surfaces for targeted tap and tap-or-untap effects.",
+]
+
+[concept]
+name = "tap_target_permanent_choice"
+pest_rules = [
+    "tap_target_permanent_choice",
+    "tap_untap_target_choice",
+    "target_permanent_choice",
+    "permanent_type_choice",
+    "target_creature_type",
+]
+rules_queries = [
+    "lex: tap target creature",
+    "lex: you may tap target permanent",
+    "lex: tap or untap target artifact",
+]
+rules_terms = [
+    "permanent",
+    "target",
+    "tap",
+    "untap",
+]
+
+[[counterexample]]
+reason = "Source-object tap action, not a targeted tap effect."
+text = "tap CARDNAME"
+
+[[counterexample]]
+reason = "Source-object tap action using this source object kind, not a targeted tap effect."
+text = "tap this creature"
+
+[[counterexample]]
+reason = "Untap-only target instruction, not a tap or tap-or-untap effect."
+text = "untap target creature."
+
+[[counterexample]]
+reason = "Tap-all-controlled-permanents instruction, not a single-target tap effect."
+text = "tap all lands target player controls."
+
+[[counterexample]]
+reason = "Tapped-entry static text, not a targeted tap effect."
+text = "CARDNAME enters tapped."
+
+[[example]]
+text = "tap target creature."
+
+[[example]]
+text = "you may tap target permanent."
+
+[[example]]
+text = "tap or untap target artifact."
+
+[grammar_query]
+candidate_rules = [
+    "tap_target_permanent_choice",
+    "tap_untap_target_choice",
+    "target_permanent_choice",
+    "target_creature_type",
+    "activated_effect",
+    "sentence_statement",
+    "tap_source_action",
+    "tap_all_permanents_then_mana_loss",
+    "untap_target_permanent",
+    "permanent_enters",
+]
+selected_rule = "tap_target_permanent_choice"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

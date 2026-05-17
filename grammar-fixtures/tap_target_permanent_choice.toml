@@ -1,0 +1,53 @@
+[fixture]
+concept = "tap_target_permanent_choice"
+rule = "tap_target_permanent_choice"
+
+[[example]]
+text = "tap target creature."
+reason = "Required tap mode with target creature type selector."
+
+[[example]]
+text = "you may tap target permanent."
+reason = "Optional you-may permission with target permanent selector."
+
+[[example]]
+text = "tap or untap target artifact."
+reason = "Tap-or-untap mode with target permanent type selector."
+
+[[example]]
+text = "tap target artifact or creature."
+reason = "Required tap mode with target permanent type choice selector."
+
+[[example]]
+rule = "sentence_statement"
+text = "tap target creature."
+reason = "Sentence-statement context for the targeted tap effect."
+
+[[example]]
+rule = "activated_effect"
+text = "tap target creature."
+reason = "Activated-effect context for the targeted tap effect."
+
+[[counterexample]]
+text = "tap CARDNAME"
+reason = "Source-object tap action, not a targeted tap effect."
+
+[[counterexample]]
+text = "tap this creature"
+reason = "Source-object tap action using this source object kind, not a targeted tap effect."
+
+[[counterexample]]
+text = "untap target creature."
+reason = "Untap-only target instruction, not a tap or tap-or-untap effect."
+
+[[counterexample]]
+text = "tap all lands target player controls."
+reason = "Tap-all-controlled-permanents instruction, not a single-target tap effect."
+
+[[counterexample]]
+text = "CARDNAME enters tapped."
+reason = "Tapped-entry static text, not a targeted tap effect."
+
+[[counterexample]]
+text = "tap target creature. trailing"
+reason = "Exact-consumption guard."
