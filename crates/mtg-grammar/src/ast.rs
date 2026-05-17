@@ -2578,6 +2578,8 @@ pub enum DestroyReferencedCreatureCondition {
 pub enum NamedSourcePowerToughnessCount {
     /// "non-<creature_type> creatures you control"
     NonCreatureTypeCreatures { excluded_type: CreatureType },
+    /// "lands you control"
+    Lands,
     /// "<basic_land_type>s you control"
     BasicLands { land_type: BasicLandType },
     /// "creatures named <card name> on the battlefield"

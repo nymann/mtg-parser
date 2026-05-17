@@ -1,0 +1,36 @@
+{
+  "concept": "static_source_pt_equal_to_count",
+  "fixture_path": "grammar-fixtures/static_source_pt_equal_to_count.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_named_source_pt_equal_to_count",
+      "text": "Keldon Warlord's power and toughness are each equal to the number of non-Wall creatures you control.",
+      "ast": {
+        "StaticAbility": {
+          "NamedSourcePowerToughnessEachEqualToCount": {
+            "count": {
+              "NonCreatureTypeCreatures": {
+                "excluded_type": "Wall"
+              }
+            },
+            "source_name": "Keldon Warlord"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_named_source_pt_equal_to_count",
+      "text": "Dakkon Blackblade's power and toughness are each equal to the number of lands you control.",
+      "ast": {
+        "StaticAbility": {
+          "NamedSourcePowerToughnessEachEqualToCount": {
+            "count": "Lands",
+            "source_name": "Dakkon Blackblade"
+          }
+        }
+      }
+    }
+  ]
+}

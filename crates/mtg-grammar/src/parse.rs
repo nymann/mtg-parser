@@ -5013,6 +5013,7 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                         land_type: basic_land_type_from_plural_pair(land_type_pair)?,
                     }
                 }
+                Rule::lands_you_control => NamedSourcePowerToughnessCount::Lands,
                 Rule::creatures_named_on_battlefield => {
                     let name_pair = count_pair
                         .into_inner()

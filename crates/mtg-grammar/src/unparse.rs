@@ -2391,6 +2391,9 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
                 NamedSourcePowerToughnessCount::BasicLands { land_type } => {
                     out.push_str(basic_land_type_plural_name(*land_type));
                 }
+                NamedSourcePowerToughnessCount::Lands => {
+                    out.push_str("lands");
+                }
                 NamedSourcePowerToughnessCount::CreaturesNamedOnTheBattlefield { name } => {
                     out.push_str("creatures named ");
                     out.push_str(name);
@@ -2399,7 +2402,8 @@ fn write_static_ability(out: &mut String, sa: &StaticAbility) {
             }
             match count {
                 NamedSourcePowerToughnessCount::NonCreatureTypeCreatures { .. }
-                | NamedSourcePowerToughnessCount::BasicLands { .. } => {
+                | NamedSourcePowerToughnessCount::BasicLands { .. }
+                | NamedSourcePowerToughnessCount::Lands => {
                     out.push_str(" you control");
                 }
                 NamedSourcePowerToughnessCount::CreaturesNamedOnTheBattlefield { .. } => {}
