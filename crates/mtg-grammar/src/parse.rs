@@ -4283,12 +4283,7 @@ fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError>
         return Ok(SourceObject::ThatSource);
     }
     let kind = only_inner(pair, "source_object missing kind")?;
-    match kind.as_rule() {
-        Rule::permanent_type => Ok(SourceObject::This(permanent_type_from_pair(kind)?)),
-        Rule::permanent_object => Ok(SourceObject::ThisPermanent),
-        Rule::aura_source_object => Ok(SourceObject::ThisAura),
-        _ => Err(ParseError::Internal("source_object kind")),
-    }
+    source_object_from_kind_pair(kind, "source_object kind")
 }
 
 fn blocking_capacity_permission_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseError> {
@@ -4343,10 +4338,25 @@ fn source_object_from_possessive_pair(pair: Pair<Rule>) -> Result<SourceObject, 
         return Err(ParseError::Internal("source_object_possessive"));
     }
     let kind = only_inner(pair, "source_object_possessive missing kind")?;
+    source_object_from_kind_pair(kind, "source_object_possessive kind")
+}
+
+fn source_object_from_kind_pair(
+    kind: Pair<Rule>,
+    fallback_error: &'static str,
+) -> Result<SourceObject, ParseError> {
     match kind.as_rule() {
         Rule::permanent_type => Ok(SourceObject::This(permanent_type_from_pair(kind)?)),
+        Rule::source_compound_permanent_type => {
+            let permanent_type = kind
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal("source_compound_permanent_type"))?;
+            Ok(SourceObject::This(permanent_type_from_pair(permanent_type)?))
+        }
+        Rule::permanent_object => Ok(SourceObject::ThisPermanent),
         Rule::aura_source_object => Ok(SourceObject::ThisAura),
-        _ => Err(ParseError::Internal("source_object_possessive kind")),
+        _ => Err(ParseError::Internal(fallback_error)),
     }
 }
 
