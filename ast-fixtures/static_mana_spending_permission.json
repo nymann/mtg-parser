@@ -1,0 +1,32 @@
+{
+  "concept": "static_mana_spending_permission",
+  "fixture_path": "grammar-fixtures/static_mana_spending_permission.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_mana_spending_permission",
+      "text": "You may spend black mana as though it were green mana.",
+      "ast": {
+        "StaticAbility": {
+          "ManaSpendingPermission": {
+            "from": "Black",
+            "to": "Green"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_mana_spending_permission",
+      "text": "You may spend white mana as though it were red mana.",
+      "ast": {
+        "StaticAbility": {
+          "ManaSpendingPermission": {
+            "from": "White",
+            "to": "Red"
+          }
+        }
+      }
+    }
+  ]
+}
