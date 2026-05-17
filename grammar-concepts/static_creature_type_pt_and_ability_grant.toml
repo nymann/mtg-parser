@@ -1,0 +1,80 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_effect"]
+
+[[axis]]
+name = "affected_object"
+values = [
+    "other_creature_type_subject",
+    "filter=creature_type",
+    "filter=creature_type_plural",
+]
+
+[[axis]]
+name = "effect_part"
+values = [
+    "power_toughness_modifier",
+    "ability_adding_effect",
+]
+
+[[axis]]
+name = "granted_ability"
+values = [
+    "keyword",
+    "quoted_activated_ability",
+]
+
+[boundary]
+excludes = [
+    "Static cost increases for colored spells.",
+    "Static cost increases for activated abilities of colored permanents.",
+    "Keyword grants to enchanted objects.",
+    "P/T modifiers for color-word creature groups.",
+]
+includes = [
+    "Other Goblin creatures get +1/+1 and have flying.",
+    "Other Elves have trample.",
+]
+
+[concept]
+name = "static_creature_type_pt_and_ability_grant"
+pest_rules = ["static_other_creature_type_get_and_have_keyword"]
+rules_queries = ["lex: other creature type creatures get and have keyword ability"]
+rules_terms = [
+    "static",
+    "continuous",
+    "creature type",
+    "power",
+    "toughness",
+    "keyword ability",
+]
+
+[[counterexample]]
+reason = "Static cost increase for colored spells, not a creature-type continuous effect."
+text = "White spells cost {3} more to cast."
+
+[[counterexample]]
+reason = "Static cost increase for activated abilities, not a creature-type continuous effect."
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[counterexample]]
+reason = "Enchanted-object ability grant, not an other-creature-type subject."
+text = "Enchanted creature has flying."
+
+[[counterexample]]
+reason = "Color-word creature P/T modifier, not an other-creature-type subject or ability grant."
+text = "Blue creatures get +1/+1."
+
+[[example]]
+text = "Other Goblin creatures get +1/+1 and have flying."
+
+[[example]]
+text = "Other Elves have trample."
+
+[grammar_query]
+candidate_rules = ["static_other_creature_type_get_and_have_keyword"]
+selected_rule = "static_other_creature_type_get_and_have_keyword"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

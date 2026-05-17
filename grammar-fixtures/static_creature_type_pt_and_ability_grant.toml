@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_creature_type_pt_and_ability_grant"
+rule = "static_other_creature_type_get_and_have_keyword"
+
+[[example]]
+text = "Other Goblin creatures get +1/+1 and have flying."
+reason = "Accepted boundary example with an other creature-type subject, P/T modifier, and keyword ability grant."
+
+[[example]]
+text = "Other Elves have trample."
+reason = "Accepted boundary example with a plural creature-type subject and keyword-only ability grant."
+
+[[counterexample]]
+text = "White spells cost {3} more to cast."
+reason = "Static cost increase for colored spells, not a creature-type continuous effect."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Static cost increase for activated abilities, not a creature-type continuous effect."
+
+[[counterexample]]
+text = "Enchanted creature has flying."
+reason = "Enchanted-object ability grant, not an other-creature-type subject."
+
+[[counterexample]]
+text = "Blue creatures get +1/+1."
+reason = "Color-word creature P/T modifier, not an other-creature-type subject or ability grant."
+
+[[counterexample]]
+text = "Other Goblin creatures get +1/+1 and have flying. trailing"
+reason = "Exact-consumption guard."
