@@ -1,0 +1,35 @@
+[fixture]
+concept = "then_destroy_source"
+rule = "then_destroy_source"
+
+[[example]]
+text = "then destroy CARDNAME."
+reason = "Lowercase then sequence marker with destroy keyword action and CARDNAME as the source object."
+
+[[example]]
+text = "Then destroy CARDNAME."
+reason = "Oracle-style sentence capitalization for the same source-destroy sequence."
+
+[[example]]
+text = "then destroy this creature."
+reason = "Source-object variant using this source object kind."
+
+[[example]]
+text = "then destroy that source."
+reason = "Source-object variant using that source."
+
+[[counterexample]]
+text = "then that player loses all unspent mana and you add the mana lost this way."
+reason = "Unspent-mana transfer sequence is owned by then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way."
+
+[[counterexample]]
+text = "destroy target creature."
+reason = "Target-object destroy effect without the then sequence marker or source-object destroyed object."
+
+[[counterexample]]
+text = "if CARDNAME turns over completely at least once during the flip, destroy all nontoken permanents it touches."
+reason = "Physical flip condition with a destroy-all-touched-permanents effect, not then destroy source."
+
+[[counterexample]]
+text = "then destroy CARDNAME. trailing"
+reason = "Exact-consumption guard."
