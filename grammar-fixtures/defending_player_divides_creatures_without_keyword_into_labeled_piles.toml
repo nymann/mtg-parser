@@ -1,0 +1,35 @@
+[fixture]
+concept = "defending_player_divides_creatures_without_keyword_into_labeled_piles"
+rule = "defending_player_divides_creatures_without_keyword_into_labeled_piles"
+
+[[example]]
+text = "Each defending player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile."
+reason = "Canonical two-pile division for creatures without a keyword controlled by each defending player."
+
+[[example]]
+text = "Each defending player divides all creatures without first strike they control into a \"left\" pile and a \"right\" pile."
+reason = "Same keyword-filter axis using a multiword keyword ability."
+
+[[example]]
+text = "Each defending player divides all creatures without shadow they control into a \"right\" pile and a \"left\" pile."
+reason = "Same two quoted labeled piles with the existing label values in reverse order."
+
+[[counterexample]]
+text = "Each attacking player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile."
+reason = "Actor boundary: this concept is limited to each defending player."
+
+[[counterexample]]
+text = "Each defending player divides all creatures with flying they control into a \"left\" pile and a \"right\" pile."
+reason = "Keyword-filter polarity boundary: this concept covers creatures without a keyword, not creatures with one."
+
+[[counterexample]]
+text = "Each defending player divides all creatures without flying they control into a \"left\" pile."
+reason = "Pile-structure boundary: this concept requires two quoted labeled piles."
+
+[[counterexample]]
+text = "Each defending player divides all creatures without flying they control into a left pile and a right pile."
+reason = "Label-surface boundary: pile labels are quoted label piles, not unquoted label phrases."
+
+[[counterexample]]
+text = "Each defending player divides all creatures without flying they control into a \"left\" pile and a \"right\" pile. trailing"
+reason = "Exact-consumption guard."
