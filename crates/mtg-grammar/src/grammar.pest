@@ -1651,7 +1651,7 @@ static_damage_prevention_recipient = _{
   | banded_creatures_prevention_recipient
 }
 banded_creatures_prevention_recipient = {
-    ^"creatures" ~ ^"banded" ~ ^"with" ~ (source_object | ^"it")
+    ^"creatures" ~ ^"banded" ~ ^"with" ~ (^"it" | source_object)
 }
 damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead = {
     ^"all" ~ ^"damage" ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"
