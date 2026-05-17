@@ -455,9 +455,28 @@ number_word = @{
   | ^"six" | ^"seven" | ^"eight" | ^"nine" | ^"ten"
 }
 target_player_discards_cards_at_random = {
-    ^"target" ~ ^"player" ~ ^"discards"
-  ~ (discard_one_card | discard_counted_cards) ~ ^"at" ~ ^"random" ~ "."
+  target_player_discard_prefix ~ discard_amount ~ discard_at_random ~ "."
 }
+player_discards_cards = {
+  player_discard_prefix ~ discard_amount ~ discard_randomness? ~ "."
+}
+player_discard_prefix = _{
+    target_player_discard_prefix
+  | that_player_discard_prefix
+  | each_player_discard_prefix
+  | you_discard_prefix
+}
+target_player_discard_prefix = _{ target_player_discard_actor ~ ^"discards" }
+that_player_discard_prefix = _{ that_player_discard_actor ~ ^"discards" }
+each_player_discard_prefix = _{ each_player_discard_actor ~ ^"discards" }
+you_discard_prefix = _{ you_discard_actor ~ ^"discard" }
+target_player_discard_actor = _{ ^"target" ~ ^"player" }
+that_player_discard_actor = _{ ^"that" ~ ^"player" }
+each_player_discard_actor = _{ ^"each" ~ ^"player" }
+you_discard_actor = _{ ^"you" }
+discard_amount = _{ discard_one_card | discard_counted_cards }
+discard_randomness = _{ discard_at_random }
+discard_at_random = _{ ^"at" ~ ^"random" }
 if_you_would_event_you_may_skip_that_instead = {
     if_you_would_skip_event ~ ","
   ~ (skip_event_instead_prefix | skip_event_instead_suffix)
@@ -1357,8 +1376,7 @@ take_extra_turn_after_this_one = {
 }
 look_at_target_players_hand = { ^"look" ~ ^"at" ~ ^"target" ~ ^"player's" ~ ^"hand" ~ "." }
 target_player_discards_cards = {
-    ^"target" ~ ^"player" ~ ^"discards"
-  ~ (discard_one_card | discard_counted_cards) ~ "."
+  target_player_discard_prefix ~ discard_amount ~ "."
 }
 discard_one_card = { article ~ ^"card" }
 discard_counted_cards = { draw_count ~ ^"cards" }
@@ -2203,7 +2221,7 @@ that_player_draws_an_additional_card = {
     ^"that" ~ ^"player" ~ ^"draws" ~ article ~ ^"additional" ~ ^"card" ~ "."
 }
 that_player_discards_card_at_random = {
-    ^"that" ~ ^"player" ~ ^"discards" ~ article ~ ^"card" ~ ^"at" ~ ^"random" ~ "."
+  that_player_discard_prefix ~ discard_one_card ~ discard_at_random ~ "."
 }
 its_controller_adds_an_additional_mana = {
     ^"its" ~ ^"controller" ~ ^"adds" ~ article ~ ^"additional" ~ mana_symbol ~ "."

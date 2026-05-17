@@ -1,0 +1,58 @@
+[fixture]
+concept = "player_discards_cards"
+rule = "player_discards_cards"
+
+[[example]]
+text = "Target player discards a card at random."
+reason = "Target-player actor, one-card amount, and at-random axis."
+
+[[example]]
+text = "Target player discards two cards at random."
+reason = "Target-player actor, counted-card amount, and at-random axis."
+
+[[example]]
+text = "Target player discards a card."
+reason = "Target-player actor, one-card amount, and no randomness."
+
+[[example]]
+text = "That player discards a card at random."
+reason = "That-player actor in triggered-effect payload wording."
+
+[[example]]
+text = "Each player discards two cards."
+reason = "Each-player actor and counted-card amount through the shared instruction shape."
+
+[[example]]
+text = "You discard a card."
+reason = "You actor with first/second-person discard verb form."
+
+[[example]]
+rule = "target_player_discards_cards_at_random"
+text = "Target player discards a card at random."
+reason = "Existing target-player random root is routed through the shared instruction shape."
+
+[[example]]
+rule = "target_player_discards_cards"
+text = "Target player discards a card."
+reason = "Existing target-player non-random root is routed through the shared instruction shape."
+
+[[example]]
+rule = "that_player_discards_card_at_random"
+text = "That player discards a card at random."
+reason = "Existing that-player random root is routed through the shared instruction shape."
+
+[[counterexample]]
+text = "Target player draws a card."
+reason = "Card draw instruction, not discard."
+
+[[counterexample]]
+text = "Target player mills two cards."
+reason = "Mill instruction, not discard."
+
+[[counterexample]]
+text = "Target player discards their hand at random."
+reason = "Hand amount is intentionally outside this concept until explicitly added."
+
+[[counterexample]]
+text = "Target player discards a card at random. trailing"
+reason = "Exact-consumption guard."

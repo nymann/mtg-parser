@@ -1,0 +1,103 @@
+[[axis]]
+name = "actor_ref"
+values = [
+    "target_player",
+    "that_player",
+    "each_player",
+    "you",
+]
+
+[[axis]]
+name = "amount"
+values = [
+    "one_card",
+    "counted_cards",
+]
+
+[[axis]]
+name = "randomness"
+values = [
+    "at_random",
+    "none",
+]
+
+[[axis]]
+name = "sentence_context"
+values = [
+    "sentence_statement",
+    "activated_effect",
+    "trigger_effect",
+]
+
+[boundary]
+excludes = [
+    "Card draw and mill instructions are not discard instructions.",
+    "Discard-your-hand instructions are not covered until hand amount is explicitly added.",
+    "Bare discard actions without an actor are separate action grammar.",
+]
+includes = [
+    "Instructions for target player, that player, each player, or you to discard a card.",
+    "Instructions for target player, that player, each player, or you to discard counted cards.",
+    "At-random discard instructions as a randomness axis of the same discard concept.",
+    "Standalone sentence statements and context payloads used by activated and triggered effects.",
+]
+
+[concept]
+name = "player_discards_cards"
+pest_rules = [
+    "player_discards_cards",
+    "target_player_discards_cards_at_random",
+    "target_player_discards_cards",
+    "that_player_discards_card_at_random",
+]
+rules_queries = [
+    "lex: target player discards a card at random",
+    "lex: target player discards two cards",
+    "lex: that player discards a card at random",
+    "lex: each player discards a card",
+]
+rules_terms = [
+    "discard",
+    "card",
+    "hand",
+    "at random",
+]
+
+[[counterexample]]
+reason = "Card draw instruction, not discard."
+text = "Target player draws a card."
+
+[[counterexample]]
+reason = "Mill instruction, not discard."
+text = "Target player mills two cards."
+
+[[counterexample]]
+reason = "Hand amount is intentionally outside this concept until explicitly added."
+text = "Target player discards their hand at random."
+
+[[example]]
+text = "Target player discards a card at random."
+
+[[example]]
+text = "Target player discards two cards at random."
+
+[[example]]
+text = "Target player discards a card."
+
+[[example]]
+text = "That player discards a card at random."
+
+[grammar_query]
+candidate_rules = [
+    "player_discards_cards",
+    "target_player_discards_cards_at_random",
+    "target_player_discards_cards",
+    "that_player_discards_card_at_random",
+    "discard_one_card",
+    "discard_counted_cards",
+]
+selected_rule = "player_discards_cards"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
