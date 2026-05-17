@@ -35,6 +35,10 @@ pub enum Statement {
         land_type: BasicLandType,
         source: SourceObject,
     },
+    /// "Target creature with power N or less can't be blocked this turn."
+    TargetCreatureWithPowerOrLessCantBeBlockedThisTurn {
+        power: u32,
+    },
     /// "<source name> deals <amount> damage <recipients>."
     NamedSourceDealsDamage {
         #[serde(flatten)]

@@ -114,6 +114,7 @@ sentence_statement = _{
   | change_text_of_target_spell_or_permanent_replacing_basic_land_type
   | target_spell_or_permanent_becomes_color
   | target_permanent_becomes_basic_land_type_until_source_leaves
+  | target_creature_with_power_or_less_cant_be_blocked
   | target_permanent_until_eot
   | activated_enchanted_gets_until_eot
   | activated_source_becomes_pt_creature_until_end_of_combat

@@ -353,6 +353,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 },
             )
         }
+        Rule::target_creature_with_power_or_less_cant_be_blocked => {
+            let power = target_creature_with_power_or_less_cant_be_blocked_power(pair)?;
+            Ok(Statement::TargetCreatureWithPowerOrLessCantBeBlockedThisTurn {
+                power,
+            })
+        }
         Rule::target_permanent_until_eot => target_permanent_until_eot_from_pair(pair),
         Rule::activated_enchanted_gets_until_eot => {
             activated_enchanted_gets_until_eot_statement_from_pair(pair)
@@ -5592,11 +5598,7 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             )
         }
         Rule::target_creature_with_power_or_less_cant_be_blocked => {
-            let power_pair = only_inner(pair, "target creature unblockable missing power")?;
-            let power = power_pair
-                .as_str()
-                .parse::<u32>()
-                .map_err(|_| ParseError::Internal("target creature unblockable power"))?;
+            let power = target_creature_with_power_or_less_cant_be_blocked_power(pair)?;
             Ok(ActivatedEffect::TargetCreatureWithPowerOrLessCantBeBlockedThisTurn { power })
         }
         Rule::target_permanent_gains_keyword_until_eot => {
@@ -5778,6 +5780,16 @@ fn gain_control_of_target_permanent_for_as_long_as_you_control_source_parts(
         permanent_type_from_pair(permanent_type_pair)?,
         source_object_from_pair(source_pair)?,
     ))
+}
+
+fn target_creature_with_power_or_less_cant_be_blocked_power(
+    pair: Pair<Rule>,
+) -> Result<u32, ParseError> {
+    let power_pair = only_inner(pair, "target creature unblockable missing power")?;
+    power_pair
+        .as_str()
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("target creature unblockable power"))
 }
 
 fn regenerate_recipient_from_pair(pair: Pair<Rule>) -> Result<RegenerateRecipient, ParseError> {

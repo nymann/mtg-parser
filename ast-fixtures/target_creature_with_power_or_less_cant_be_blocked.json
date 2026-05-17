@@ -1,0 +1,26 @@
+{
+  "concept": "target_creature_with_power_or_less_cant_be_blocked",
+  "fixture_path": "grammar-fixtures/target_creature_with_power_or_less_cant_be_blocked.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "target_creature_with_power_or_less_cant_be_blocked",
+      "text": "Target creature with power 2 or less can't be blocked this turn.",
+      "ast": {
+        "TargetCreatureWithPowerOrLessCantBeBlockedThisTurn": {
+          "power": 2
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "target_creature_with_power_or_less_cant_be_blocked",
+      "text": "Target creature with power 3 or less can't be blocked this turn.",
+      "ast": {
+        "TargetCreatureWithPowerOrLessCantBeBlockedThisTurn": {
+          "power": 3
+        }
+      }
+    }
+  ]
+}

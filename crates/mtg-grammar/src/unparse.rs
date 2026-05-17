@@ -721,6 +721,13 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 *source,
             );
         }
+        Statement::TargetCreatureWithPowerOrLessCantBeBlockedThisTurn { power } => {
+            write!(
+                out,
+                "Target creature with power {power} or less can't be blocked this turn."
+            )
+            .expect("writing to String cannot fail");
+        }
         Statement::StaticAbility(sa) => write_static_ability(out, sa),
         Statement::ActivatedAbility(aa) => write_activated_ability(out, aa),
         Statement::ActivatedAbilityWithActivationPermission {
