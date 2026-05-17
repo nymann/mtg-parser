@@ -1,0 +1,28 @@
+{
+  "concept": "as_enters_life_loss",
+  "fixture_path": "grammar-fixtures/as_enters_life_loss.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "as_source_enters_you_lose_life_equal_to_your_life_total",
+      "text": "As this creature enters, you lose life equal to your life total.",
+      "ast": {
+        "AsSourceEntersYouLoseLifeEqualToYourLifeTotal": {
+          "source": {
+            "This": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "as_source_enters_you_lose_life_equal_to_your_life_total",
+      "text": "As this permanent enters, you lose life equal to your life total.",
+      "ast": {
+        "AsSourceEntersYouLoseLifeEqualToYourLifeTotal": {
+          "source": "ThisPermanent"
+        }
+      }
+    }
+  ]
+}
