@@ -4,6 +4,7 @@
 .scryfall-cache/
 *.swp
 .DS_Store
+/.telegram-env
 /resources/comprehensive_rules.txt
 /resources/rules/
 /resources/rules.tmp/

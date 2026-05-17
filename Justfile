@@ -78,15 +78,16 @@ refactor-hotspot *args:
 refactor *args:
 	cargo xtask refactor-hotspot {{args}}
 
-# Run the autonomous concept phase loop and have it start the compact watcher
-# notifications. Pass extra phase-loop flags after the recipe name, e.g.
-#   just concept-phase-loop +4593972242 --no-push
-concept-phase-loop phone interval="30" *args:
-	cargo xtask concept-phase-loop --watch-imessage "{{phone}}" --watch-interval-minutes {{interval}} {{args}}
+# Run the autonomous concept phase loop with Telegram watcher notifications.
+concept-phase-loop *args:
+	@[ -f .telegram-env ] || { echo "missing .telegram-env; copy .telegram-env.example and set TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID" >&2; exit 2; }; set -a; . ./.telegram-env; set +a; PHASE_NOTIFY_COMMAND="./scripts/telegram_phase_notify.sh" cargo xtask concept-phase-loop --watch-interval-minutes 30 {{args}}
 
-# Run just the compact watcher beside an already-running phase loop.
-concept-phase-watch phone interval="30":
-	cargo xtask concept-phase-watch --notify-imessage "{{phone}}" --interval-minutes {{interval}}
+# Run just the compact Telegram watcher beside an already-running phase loop.
+concept-phase-watch:
+	@[ -f .telegram-env ] || { echo "missing .telegram-env; copy .telegram-env.example and set TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID" >&2; exit 2; }; set -a; . ./.telegram-env; set +a; cargo xtask concept-phase-watch --notify-command "./scripts/telegram_phase_notify.sh" --interval-minutes 30
+
+telegram-test:
+	@[ -f .telegram-env ] || { echo "missing .telegram-env; copy .telegram-env.example and set TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID" >&2; exit 2; }; set -a; . ./.telegram-env; set +a; PHASE_NOTIFY_TITLE="mtg-parser: telegram test" PHASE_NOTIFY_BODY="Telegram notifications are wired." ./scripts/telegram_phase_notify.sh
 
 corpus-summary:
 	@jq '{total, passing, failing: (.total - .passing), grammar_left: ([.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text") | not))] | length), empty_oracle: ([.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text")))] | length)}' corpus_status.json
