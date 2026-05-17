@@ -1,0 +1,18 @@
+{
+  "concept": "activate_only_as_sorcery",
+  "fixture_path": "grammar-fixtures/activate_only_as_sorcery.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "activate_only_as_sorcery",
+      "text": "Activate only as a sorcery.",
+      "ast": "ActivateOnlyAsSorcery"
+    },
+    {
+      "index": 2,
+      "rule": "activate_only_as_sorcery",
+      "text": "activate only as a sorcery.",
+      "ast": "ActivateOnlyAsSorcery"
+    }
+  ]
+}
