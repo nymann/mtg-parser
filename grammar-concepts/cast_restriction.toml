@@ -1,0 +1,94 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_cast_restriction"]
+
+[[axis]]
+name = "restricted_action"
+values = ["cast_this_spell"]
+
+[[axis]]
+name = "polarity"
+values = ["only"]
+
+[[axis]]
+name = "timing_window"
+values = [
+    "before_step",
+    "during_step",
+    "during_your_step",
+    "during_combat_before_blockers_declared",
+    "during_opponents_turn_before_attackers_declared",
+]
+
+[boundary]
+excludes = [
+    "Cost increases for casting a spell.",
+    "Permissions to cast another card.",
+    "Static play restrictions applying to players generally.",
+    "Keyword or activated-ability timing permissions.",
+]
+includes = [
+    "Cast this spell only before the combat damage step.",
+    "Cast this spell only during the declare attackers step.",
+    "Cast this spell only during your combat damage step.",
+    "Cast this spell only during combat before blockers are declared.",
+    "Cast this spell only during an opponent's turn, before attackers are declared.",
+]
+
+[concept]
+name = "cast_restriction"
+pest_rules = ["cast_restriction"]
+rules_files = ["mtg-rules/700-additional-rules/701-keyword-actions/701-5-cast.md"]
+rules_queries = ["lex: cast this spell only"]
+rules_terms = [
+    "cast",
+    "spell",
+    "only",
+    "timing restriction",
+]
+
+[[counterexample]]
+reason = "Casting-cost increase, owned by static_cost_increase."
+text = "This spell costs {1} more to cast for each target beyond the first."
+
+[[counterexample]]
+reason = "Permission to cast another card, not a restriction on casting this spell."
+text = "You may cast that card face down as a 2/2 creature spell without paying its mana cost."
+
+[[counterexample]]
+reason = "Static play restriction applying to players generally, not this-spell timing."
+text = "Players can't cast spells with a name originally printed in the Alpha expansion."
+
+[[counterexample]]
+reason = "Keyword-ability timing permission, not this-spell-only restriction wording."
+text = "Flash"
+
+[[example]]
+text = "Cast this spell only before the combat damage step."
+
+[[example]]
+text = "Cast this spell only during the declare attackers step."
+
+[[example]]
+text = "Cast this spell only during your combat damage step."
+
+[[example]]
+text = "Cast this spell only during combat before blockers are declared."
+
+[[example]]
+text = "Cast this spell only during an opponent's turn, before attackers are declared."
+
+[grammar_query]
+candidate_rules = [
+    "cast_restriction",
+    "this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first",
+    "any_time_you_could_cast_an_instant",
+    "static_colored_spells_cost_mana_more_to_cast",
+    "static_play_restriction",
+    "may_cast_that_card_face_down_as_creature_spell_without_paying_mana_cost",
+]
+selected_rule = "cast_restriction"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

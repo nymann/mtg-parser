@@ -1,0 +1,43 @@
+[fixture]
+concept = "cast_restriction"
+rule = "cast_restriction"
+
+[[example]]
+text = "Cast this spell only before the combat damage step."
+reason = "This-spell cast restriction with a before-step timing window."
+
+[[example]]
+text = "Cast this spell only during the declare attackers step."
+reason = "This-spell cast restriction during a named step."
+
+[[example]]
+text = "Cast this spell only during your combat damage step."
+reason = "This-spell cast restriction scoped to your named step."
+
+[[example]]
+text = "Cast this spell only during combat before blockers are declared."
+reason = "This-spell cast restriction during combat before blockers are declared."
+
+[[example]]
+text = "Cast this spell only during an opponent's turn, before attackers are declared."
+reason = "This-spell cast restriction during an opponent's turn before attackers are declared."
+
+[[counterexample]]
+text = "This spell costs {1} more to cast for each target beyond the first."
+reason = "Casting-cost increase, owned by static_cost_increase."
+
+[[counterexample]]
+text = "You may cast that card face down as a 2/2 creature spell without paying its mana cost."
+reason = "Permission to cast another card, not a restriction on casting this spell."
+
+[[counterexample]]
+text = "Players can't cast spells with a name originally printed in the Alpha expansion."
+reason = "Static play restriction applying to players generally, not this-spell timing."
+
+[[counterexample]]
+text = "Flash"
+reason = "Keyword-ability timing permission, not this-spell-only restriction wording."
+
+[[counterexample]]
+text = "Cast this spell only before the combat damage step. trailing"
+reason = "Exact-consumption guard."
