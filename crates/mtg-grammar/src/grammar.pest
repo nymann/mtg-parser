@@ -58,6 +58,7 @@ sentence_statement = _{
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
   | regenerate_source
   | regenerate_target_creature
+  | damage_trigger_effect_sequence
   | damage_event_statement
   | next_card_draw_replacement
   | next_damage_event_effect
@@ -1811,6 +1812,9 @@ trigger_condition = { trigger_event_clause ~ "," ~ trigger_intervening_if_clause
 trigger_event_clause = { trigger_event }
 trigger_intervening_if_clause = { ^"if" ~ intervening_if ~ "," }
 trigger_effect_sequence = { trigger_effect ~ (^"and"? ~ trigger_effect)* }
+damage_trigger_effect_sequence = {
+    source_deals_damage ~ ^"and" ~ trigger_effect ~ (^"and"? ~ trigger_effect)*
+}
 trigger_effect_fragment_sequence = {
     you_may_pay_mana ~ if_you_do_gain_life_fragment
   | you_may_have_source_become_copy_of_target_fragment

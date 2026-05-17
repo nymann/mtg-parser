@@ -191,6 +191,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::regenerate_source => Ok(Statement::Regenerate {
             recipient: regenerate_recipient_from_pair(pair)?,
         }),
+        Rule::damage_trigger_effect_sequence => damage_trigger_effect_sequence_from_pair(pair),
         Rule::damage_event_statement => damage_event_statement_from_pair(pair),
         Rule::next_card_draw_replacement => {
             let replacement_pair = only_inner(pair, "next card draw replacement missing effect")?;
@@ -3250,6 +3251,24 @@ fn first_played_permanent_from_pair(pair: Pair<Rule>) -> Result<FirstPlayedPerma
 
 fn trigger_effect_sequence_from_pair(pair: Pair<Rule>) -> Result<Vec<TriggerEffect>, ParseError> {
     pair.into_inner().map(trigger_effect_from_pair).collect()
+}
+
+fn damage_trigger_effect_sequence_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let statements = pair
+        .into_inner()
+        .map(|child| {
+            let effect = match child.as_rule() {
+                Rule::source_deals_damage => source_deals_damage_from_pair(child)?,
+                _ => trigger_effect_from_pair(child)?,
+            };
+            Ok::<Statement, ParseError>(Statement::TriggerEffect(effect))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    match statements.len() {
+        0 => Err(ParseError::Internal("damage trigger effect sequence empty")),
+        1 => Ok(statements.into_iter().next().expect("len checked")),
+        _ => Ok(Statement::Compound(statements)),
+    }
 }
 
 fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {

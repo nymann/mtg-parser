@@ -1,0 +1,97 @@
+{
+  "concept": "trigger_effect_sequence",
+  "fixture_path": "grammar-fixtures/trigger_effect_sequence.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "trigger_effect_sequence",
+      "text": "you gain 1 life.",
+      "ast": {
+        "TriggerEffect": {
+          "YouGainLife": {
+            "amount": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "trigger_effect_sequence",
+      "text": "you gain 1 life. draw a card.",
+      "ast": {
+        "Compound": [
+          {
+            "TriggerEffect": {
+              "YouGainLife": {
+                "amount": 1
+              }
+            }
+          },
+          {
+            "DrawCards": {
+              "count": {
+                "Number": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "rule": "trigger_effect_sequence",
+      "text": "CARDNAME deals 1 damage to you and you gain 1 life.",
+      "ast": {
+        "Compound": [
+          {
+            "TriggerEffect": {
+              "SourceDealsDamage": {
+                "amount": {
+                  "Number": 1
+                },
+                "condition": null,
+                "definitions": [],
+                "recipient": "You",
+                "source": {
+                  "Source": "ThisPermanent"
+                }
+              }
+            }
+          },
+          {
+            "TriggerEffect": {
+              "YouGainLife": {
+                "amount": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "index": 4,
+      "rule": "trigger_effect_sequence",
+      "text": "put a charge counter on CARDNAME, you gain 1 life.",
+      "ast": {
+        "Compound": [
+          {
+            "TriggerEffect": {
+              "PutNamedCountersOnSource": {
+                "amount": "One",
+                "counter_name": "charge",
+                "source": "ThisPermanent"
+              }
+            }
+          },
+          {
+            "TriggerEffect": {
+              "YouGainLife": {
+                "amount": 1
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
