@@ -385,6 +385,12 @@ pub enum Statement {
         modifier: MixedPtModifier,
         definitions: Vec<VariableDefinition>,
     },
+    /// "Gain control of target <permanent_type> for as long as you control
+    /// this <source>."
+    GainControlOfTargetPermanentForAsLongAsYouControlSource {
+        permanent_type: PermanentType,
+        source: SourceObject,
+    },
     /// "Each player chooses a number of <permanent_type>s they control
     /// equal to the number of <permanent_type>s controlled by the player
     /// who controls the fewest, then sacrifices the rest."

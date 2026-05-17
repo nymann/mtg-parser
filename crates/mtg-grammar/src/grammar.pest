@@ -95,6 +95,7 @@ sentence_statement = _{
   | you_may_draw_cards
   | player_discards_cards
   | target_player_discards_cards_at_random
+  | gain_control_of_target_permanent_for_as_long_as_you_control_source
   | add_mana
   | if_you_flip_result_effect
   | if_you_cant_source_deals_damage_to_you

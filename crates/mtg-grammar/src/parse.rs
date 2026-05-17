@@ -299,6 +299,14 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::player_discards_cards | Rule::target_player_discards_cards_at_random => {
             player_discards_cards_from_pair(pair)
         }
+        Rule::gain_control_of_target_permanent_for_as_long_as_you_control_source => {
+            let (permanent_type, source) =
+                gain_control_of_target_permanent_for_as_long_as_you_control_source_parts(pair)?;
+            Ok(Statement::GainControlOfTargetPermanentForAsLongAsYouControlSource {
+                permanent_type,
+                source,
+            })
+        }
         Rule::add_mana => add_mana_from_pair(pair),
         Rule::until_eot_you_may_pay_cost_at_timing => {
             until_eot_you_may_pay_cost_at_timing_from_pair(pair)
@@ -5408,17 +5416,12 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             })
         }
         Rule::gain_control_of_target_permanent_for_as_long_as_you_control_source => {
-            let mut inner = pair.into_inner();
-            let permanent_type_pair = inner
-                .next()
-                .ok_or(ParseError::Internal("gain control missing permanent_type"))?;
-            let source_pair = inner
-                .next()
-                .ok_or(ParseError::Internal("gain control missing source_object"))?;
+            let (permanent_type, source) =
+                gain_control_of_target_permanent_for_as_long_as_you_control_source_parts(pair)?;
             Ok(
                 ActivatedEffect::GainControlOfTargetPermanentForAsLongAsYouControlSource {
-                    permanent_type: permanent_type_from_pair(permanent_type_pair)?,
-                    source: source_object_from_pair(source_pair)?,
+                    permanent_type,
+                    source,
                 },
             )
         }
@@ -5601,6 +5604,22 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
         )),
         _ => Err(ParseError::Internal("activated_effect")),
     }
+}
+
+fn gain_control_of_target_permanent_for_as_long_as_you_control_source_parts(
+    pair: Pair<Rule>,
+) -> Result<(PermanentType, SourceObject), ParseError> {
+    let mut inner = pair.into_inner();
+    let permanent_type_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("gain control missing permanent_type"))?;
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("gain control missing source_object"))?;
+    Ok((
+        permanent_type_from_pair(permanent_type_pair)?,
+        source_object_from_pair(source_pair)?,
+    ))
 }
 
 fn regenerate_recipient_from_pair(pair: Pair<Rule>) -> Result<RegenerateRecipient, ParseError> {

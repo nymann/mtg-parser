@@ -562,6 +562,16 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 },
             );
         }
+        Statement::GainControlOfTargetPermanentForAsLongAsYouControlSource {
+            permanent_type,
+            source,
+        } => {
+            out.push_str("Gain control of target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push_str(" for as long as you control ");
+            write_source_object(out, *source);
+            out.push('.');
+        }
         Statement::EachPlayerEqualizesControlledPermanents { permanent_type } => {
             out.push_str("Each player chooses a number of ");
             out.push_str(permanent_type_plural_name(*permanent_type));

@@ -1,0 +1,32 @@
+{
+  "concept": "temporary_gain_control_of_target_permanent",
+  "fixture_path": "grammar-fixtures/temporary_gain_control_of_target_permanent.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "gain_control_of_target_permanent_for_as_long_as_you_control_source",
+      "text": "Gain control of target artifact for as long as you control this creature.",
+      "ast": {
+        "GainControlOfTargetPermanentForAsLongAsYouControlSource": {
+          "permanent_type": "Artifact",
+          "source": {
+            "This": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "gain_control_of_target_permanent_for_as_long_as_you_control_source",
+      "text": "Gain control of target creature for as long as you control this artifact.",
+      "ast": {
+        "GainControlOfTargetPermanentForAsLongAsYouControlSource": {
+          "permanent_type": "Creature",
+          "source": {
+            "This": "Artifact"
+          }
+        }
+      }
+    }
+  ]
+}
