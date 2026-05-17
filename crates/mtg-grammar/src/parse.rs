@@ -254,6 +254,13 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::tap_enchanted_object => Ok(Statement::TapEnchanted(
             enchanted_object_from_tap_enchanted_object_pair(pair)?,
         )),
+        Rule::untap_target_permanent => {
+            let permanent_type_pair =
+                only_inner(pair, "untap_target_permanent missing permanent_type")?;
+            Ok(Statement::UntapTargetPermanent {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            })
+        }
         Rule::untap_enchanted_object => {
             let object_pair = only_inner(pair, "untap_enchanted_object missing object")?;
             Ok(Statement::UntapEnchanted(enchanted_object_from_pair(
@@ -6628,6 +6635,7 @@ fn permanent_type_from_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseErro
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
         "artifact" => Ok(PermanentType::Artifact),
+        "battle" => Ok(PermanentType::Battle),
         "creature" => Ok(PermanentType::Creature),
         "enchantment" => Ok(PermanentType::Enchantment),
         "land" => Ok(PermanentType::Land),

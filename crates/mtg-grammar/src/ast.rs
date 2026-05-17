@@ -140,6 +140,10 @@ pub enum Statement {
         action: TapUntapAction,
         target: TapUntapTarget,
     },
+    /// "Untap target <permanent_type>."
+    UntapTargetPermanent {
+        permanent_type: PermanentType,
+    },
     /// "Tap enchanted <object>."
     TapEnchanted(EnchantedObject),
     /// "Untap enchanted <object>."
@@ -2204,6 +2208,7 @@ pub enum ReturnDestination {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PermanentType {
     Artifact,
+    Battle,
     Creature,
     Enchantment,
     Land,

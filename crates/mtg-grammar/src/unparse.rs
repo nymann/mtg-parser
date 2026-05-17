@@ -175,6 +175,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             action,
             target,
         } => write_tap_target_permanent_choice(out, *optional, *action, target),
+        Statement::UntapTargetPermanent { permanent_type } => {
+            out.push_str("Untap target ");
+            out.push_str(permanent_type_name(*permanent_type));
+            out.push('.');
+        }
         Statement::TapEnchanted(object) => {
             out.push_str("Tap enchanted ");
             write_enchanted_object(out, *object);
@@ -4177,6 +4182,7 @@ fn write_static_damage_redirection_destination(
 fn permanent_type_name(pt: PermanentType) -> &'static str {
     match pt {
         PermanentType::Artifact => "artifact",
+        PermanentType::Battle => "battle",
         PermanentType::Creature => "creature",
         PermanentType::Enchantment => "enchantment",
         PermanentType::Land => "land",
@@ -4487,6 +4493,7 @@ fn write_permanent_type_plural_list(out: &mut String, permanent_types: &[Permane
 fn permanent_type_plural_name(pt: PermanentType) -> &'static str {
     match pt {
         PermanentType::Artifact => "artifacts",
+        PermanentType::Battle => "battles",
         PermanentType::Creature => "creatures",
         PermanentType::Enchantment => "enchantments",
         PermanentType::Land => "lands",
@@ -4671,6 +4678,9 @@ fn rounding_name(rounding: Rounding) -> &'static str {
 fn indefinite_article(pt: PermanentType) -> &'static str {
     match pt {
         PermanentType::Artifact | PermanentType::Enchantment => "an",
-        PermanentType::Creature | PermanentType::Land | PermanentType::Planeswalker => "a",
+        PermanentType::Battle
+        | PermanentType::Creature
+        | PermanentType::Land
+        | PermanentType::Planeswalker => "a",
     }
 }

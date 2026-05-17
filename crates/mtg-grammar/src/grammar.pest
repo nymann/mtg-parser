@@ -49,6 +49,7 @@ sentence_statement = _{
   | unless_you_pay_mana_do_actions
   | imperative_action_sequence
   | tap_target_permanent_choice
+  | untap_target_permanent
   | counter_target_spell
   | as_additional_cost_to_cast_this_spell
   | destroy_referenced_creature_at_beginning_of_next_end_step
