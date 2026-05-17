@@ -1,0 +1,81 @@
+[[axis]]
+name = "action"
+values = ["sacrifice"]
+
+[[axis]]
+name = "sacrificed_object"
+values = ["permanent_type_other_than_source"]
+
+[[axis]]
+name = "source_relation"
+values = ["other_than_source_object"]
+
+[[axis]]
+name = "ability_context"
+values = ["trigger_effect"]
+
+[boundary]
+excludes = [
+    "Source-object sacrifice instructions without an other-than relation.",
+    "Generic permanent-type sacrifice without an other-than source relation.",
+    "Targeted sacrifice instructions.",
+    "Additional costs to cast a spell.",
+]
+includes = [
+    "Triggered-effect sacrifice instructions whose operand is a permanent type other than the source object.",
+    "Other-than-source wording using CARDNAME, it, this, or that source.",
+]
+
+[concept]
+name = "sacrifice_permanent_other_than_source"
+pest_rules = ["sacrifice_permanent_other_than_source"]
+rules_queries = [
+    "lex: sacrifice a creature other than this",
+    "lex: sacrifice an artifact other than it",
+]
+rules_terms = [
+    "sacrifice",
+    "source",
+    "triggered ability",
+]
+
+[[counterexample]]
+reason = "Source-object sacrifice belongs to sacrifice_source, not permanent-type other-than-source sacrifice."
+text = "sacrifice CARDNAME."
+
+[[counterexample]]
+reason = "Generic permanent-type sacrifice lacks the other-than-source relation."
+text = "sacrifice a creature."
+
+[[counterexample]]
+reason = "Targeted sacrifice instruction, not permanent-type other-than-source sacrifice."
+text = "sacrifice target creature."
+
+[[counterexample]]
+reason = "Cast additional-cost sacrifice belongs to spell_additional_cost_to_cast_this_spell."
+text = "As an additional cost to cast this spell, sacrifice a creature."
+
+[[example]]
+text = "sacrifice a creature other than CARDNAME."
+
+[[example]]
+text = "sacrifice an artifact other than it."
+
+[[example]]
+text = "sacrifice a creature other than this."
+
+[[example]]
+text = "sacrifice an enchantment other than that source."
+
+[grammar_query]
+candidate_rules = [
+    "sacrifice_permanent_other_than_source",
+    "sacrifice_source",
+    "sacrifice_source_effect",
+    "sacrifice_permanent_cost",
+]
+selected_rule = "sacrifice_permanent_other_than_source"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

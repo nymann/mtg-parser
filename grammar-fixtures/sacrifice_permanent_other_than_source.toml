@@ -1,0 +1,39 @@
+[fixture]
+concept = "sacrifice_permanent_other_than_source"
+rule = "sacrifice_permanent_other_than_source"
+
+[[example]]
+text = "sacrifice a creature other than CARDNAME."
+reason = "Triggered effect sacrificing a permanent type other than the named source object."
+
+[[example]]
+text = "sacrifice an artifact other than it."
+reason = "Triggered effect sacrificing a permanent type other than the source object by pronoun."
+
+[[example]]
+text = "sacrifice a creature other than this."
+reason = "Triggered effect sacrificing a permanent type other than this source object."
+
+[[example]]
+text = "sacrifice an enchantment other than that source."
+reason = "Triggered effect sacrificing a permanent type other than a referenced source."
+
+[[counterexample]]
+text = "sacrifice CARDNAME."
+reason = "Source-object sacrifice, not permanent-type other-than-source sacrifice."
+
+[[counterexample]]
+text = "sacrifice a creature."
+reason = "Generic permanent-type sacrifice lacks the other-than-source relation."
+
+[[counterexample]]
+text = "sacrifice target creature."
+reason = "Targeted sacrifice instruction, not permanent-type other-than-source sacrifice."
+
+[[counterexample]]
+text = "As an additional cost to cast this spell, sacrifice a creature."
+reason = "Cast additional-cost sacrifice belongs to a separate concept."
+
+[[counterexample]]
+text = "sacrifice a creature other than CARDNAME. trailing"
+reason = "Exact-consumption guard."
