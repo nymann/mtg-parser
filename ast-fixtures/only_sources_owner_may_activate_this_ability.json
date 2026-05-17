@@ -1,0 +1,48 @@
+{
+  "concept": "only_sources_owner_may_activate_this_ability",
+  "fixture_path": "grammar-fixtures/only_sources_owner_may_activate_this_ability.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "only_sources_owner_may_activate_this_ability",
+      "text": "Only this ability's source's owner may activate this ability.",
+      "ast": {
+        "OnlySourcesOwnerMayActivateThisAbility": {
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "only_sources_owner_may_activate_this_ability",
+      "text": "Only this permanent's owner may activate this ability.",
+      "ast": {
+        "OnlySourcesOwnerMayActivateThisAbility": {
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "only_sources_owner_may_activate_this_ability",
+      "text": "Only this artifact creature's owner may activate this ability.",
+      "ast": {
+        "OnlySourcesOwnerMayActivateThisAbility": {
+          "source": {
+            "This": "Artifact"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "only_sources_owner_may_activate_this_ability",
+      "text": "only this ability's source's owner may activate this ability.",
+      "ast": {
+        "OnlySourcesOwnerMayActivateThisAbility": {
+          "source": "ThisPermanent"
+        }
+      }
+    }
+  ]
+}

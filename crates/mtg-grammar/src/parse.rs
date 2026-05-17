@@ -4775,6 +4775,12 @@ fn source_object_from_possessive_pair(pair: Pair<Rule>) -> Result<SourceObject, 
     if pair.as_rule() != Rule::source_object_possessive {
         return Err(ParseError::Internal("source_object_possessive"));
     }
+    if pair
+        .as_str()
+        .eq_ignore_ascii_case("this ability's source's")
+    {
+        return Ok(SourceObject::ThisPermanent);
+    }
     let kind = only_inner(pair, "source_object_possessive missing kind")?;
     source_object_from_kind_pair(kind, "source_object_possessive kind")
 }
