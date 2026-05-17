@@ -204,6 +204,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 pair,
             )
         }
+        Rule::tap_enchanted_object => Ok(Statement::TapEnchanted(
+            enchanted_object_from_tap_enchanted_object_pair(pair)?,
+        )),
         Rule::tap_all_permanents_then_mana_loss => {
             tap_all_permanents_then_mana_loss_from_pair(pair)
         }
@@ -3588,10 +3591,16 @@ fn pay_mana_amount_from_pair(pair: Pair<Rule>) -> Result<PayManaAmount, ParseErr
 }
 
 fn tap_enchanted_object_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    Ok(TriggerEffect::TapEnchanted(
+        enchanted_object_from_tap_enchanted_object_pair(pair)?,
+    ))
+}
+
+fn enchanted_object_from_tap_enchanted_object_pair(
+    pair: Pair<Rule>,
+) -> Result<EnchantedObject, ParseError> {
     let object_pair = only_inner(pair, "tap_enchanted_object missing object")?;
-    Ok(TriggerEffect::TapEnchanted(enchanted_object_from_pair(
-        object_pair,
-    )?))
+    enchanted_object_from_pair(object_pair)
 }
 
 fn unless_you_pay_mana_do_actions_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {

@@ -172,6 +172,11 @@ fn write_statement(out: &mut String, statement: &Statement) {
             action,
             target,
         } => write_tap_target_permanent_choice(out, *optional, *action, target),
+        Statement::TapEnchanted(object) => {
+            out.push_str("Tap enchanted ");
+            write_enchanted_object(out, *object);
+            out.push('.');
+        }
         Statement::Exile { target } => write_exile(out, target),
         Statement::ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice {
             controller_of,

@@ -1,0 +1,46 @@
+{
+  "concept": "tap_enchanted_object_action",
+  "fixture_path": "grammar-fixtures/tap_enchanted_object_action.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "tap_enchanted_object",
+      "text": "tap enchanted creature.",
+      "ast": {
+        "TapEnchanted": {
+          "Permanent": "Creature"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "tap_enchanted_object",
+      "text": "tap enchanted land.",
+      "ast": {
+        "TapEnchanted": {
+          "Permanent": "Land"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "tap_enchanted_object",
+      "text": "tap enchanted artifact.",
+      "ast": {
+        "TapEnchanted": {
+          "Permanent": "Artifact"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "trigger_effect",
+      "text": "tap enchanted creature.",
+      "ast": {
+        "TapEnchanted": {
+          "Permanent": "Creature"
+        }
+      }
+    }
+  ]
+}

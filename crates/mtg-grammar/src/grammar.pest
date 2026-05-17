@@ -42,6 +42,7 @@ sentence_statement = _{
   | return_target_card_from_your_zone_to_zone
   | copy_target_spell_except_copy_is_color
   | you_may_choose_new_targets_for_the_copy
+  | tap_enchanted_object
   | imperative_action_sequence
   | tap_target_permanent_choice
   | counter_target_spell

@@ -110,6 +110,8 @@ pub enum Statement {
         action: TapUntapAction,
         target: TapUntapTarget,
     },
+    /// "Tap enchanted <object>."
+    TapEnchanted(EnchantedObject),
     /// CR 701.11 exile keyword action, sharing the same target/all/list axis
     /// currently used by destroy.
     Exile {
