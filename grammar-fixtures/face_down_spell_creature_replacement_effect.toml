@@ -1,0 +1,27 @@
+[fixture]
+concept = "face_down_spell_creature_replacement_effect"
+rule = "if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead"
+
+[[example]]
+text = "If the creature that spell becomes as it resolves has not been turned face up and would assign or deal damage, be dealt damage, or become tapped, instead it's turned face up and assigns or deals damage, is dealt damage, or becomes tapped."
+reason = "Accepted no-PEST boundary example."
+
+[[counterexample]]
+text = "If you do, add {G}."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "If the player does, untap it."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "If a source would deal damage to you, prevent 1 of that damage."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "All damage that would be dealt to you by that source is dealt to that source instead."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "If the creature that spell becomes as it resolves has not been turned face up and would assign or deal damage, be dealt damage, or become tapped, instead it's turned face up and assigns or deals damage, is dealt damage, or becomes tapped. trailing"
+reason = "Exact-consumption guard."

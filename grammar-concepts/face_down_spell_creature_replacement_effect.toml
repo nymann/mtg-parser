@@ -1,0 +1,60 @@
+[[axis]]
+name = "condition"
+values = ["creature_that_spell_becomes_has_not_been_turned_face_up"]
+
+[[axis]]
+name = "replaced_event"
+values = ["assign_or_deal_damage_or_be_dealt_damage_or_become_tapped"]
+
+[[axis]]
+name = "replacement"
+values = ["turn_face_up_then_event_occurs"]
+
+[boundary]
+excludes = [
+    "Boundary negative: If you do, add {G}.",
+    "Boundary negative: If the player does, untap it.",
+    "Boundary negative: If a source would deal damage to you, prevent 1 of that damage.",
+    "Boundary negative: All damage that would be dealt to you by that source is dealt to that source instead.",
+]
+includes = ["Accepted no-PEST fixture wording: If the creature that spell becomes as it resolves has not been turned face up and would assign or deal damage, be dealt damage, or become tapped, instead it's turned face up and assigns or deals damage, is dealt damage, or becomes tapped."]
+
+[concept]
+name = "face_down_spell_creature_replacement_effect"
+pest_rules = ["if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead"]
+rules_queries = ["lex: face down spell creature replacement effect"]
+rules_terms = [
+    "face",
+    "down",
+    "spell",
+    "creature",
+    "replacement",
+    "effect",
+]
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "If you do, add {G}."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "If the player does, untap it."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "If a source would deal damage to you, prevent 1 of that damage."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "All damage that would be dealt to you by that source is dealt to that source instead."
+
+[[example]]
+text = "If the creature that spell becomes as it resolves has not been turned face up and would assign or deal damage, be dealt damage, or become tapped, instead it's turned face up and assigns or deals damage, is dealt damage, or becomes tapped."
+
+[grammar_query]
+candidate_rules = ["if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead"]
+selected_rule = "if_face_down_spell_creature_would_assign_or_deal_damage_or_tap_turn_face_up_instead"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
