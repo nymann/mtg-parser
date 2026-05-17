@@ -1,0 +1,28 @@
+{
+  "concept": "that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice",
+  "fixture_path": "grammar-fixtures/that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice",
+      "text": "that creature's controller may attach this Aura to a creature of their choice.",
+      "ast": {
+        "ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice": {
+          "attach_to": "Creature",
+          "controller_of": "Creature"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice",
+      "text": "That creature's controller may attach this Aura to an artifact of their choice.",
+      "ast": {
+        "ThatPermanentsControllerMayAttachThisAuraToPermanentOfTheirChoice": {
+          "attach_to": "Artifact",
+          "controller_of": "Creature"
+        }
+      }
+    }
+  ]
+}
