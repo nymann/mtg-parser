@@ -1,0 +1,26 @@
+{
+  "concept": "target_spell_or_permanent_color_change",
+  "fixture_path": "grammar-fixtures/target_spell_or_permanent_color_change.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "target_spell_or_permanent_becomes_color",
+      "text": "Target spell or permanent becomes red.",
+      "ast": {
+        "TargetSpellOrPermanentBecomesColor": {
+          "color": "Red"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "target_spell_or_permanent_becomes_color",
+      "text": "Target spell or permanent becomes blue.",
+      "ast": {
+        "TargetSpellOrPermanentBecomesColor": {
+          "color": "Blue"
+        }
+      }
+    }
+  ]
+}
