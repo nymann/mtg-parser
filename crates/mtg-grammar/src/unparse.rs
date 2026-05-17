@@ -185,8 +185,18 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::SemicolonKeywordList(keywords) => write_semicolon_keyword_list(out, keywords),
         Statement::TargetPlayerDrawsCards { count } => {
             out.push_str("Target player draws ");
-            write_card_count(out, *count);
-            out.push_str(" cards.");
+            write_card_count_object(out, *count);
+            out.push('.');
+        }
+        Statement::DrawCards { count } => {
+            out.push_str("Draw ");
+            write_card_count_object(out, *count);
+            out.push('.');
+        }
+        Statement::YouMayDrawCards { count } => {
+            out.push_str("You may draw ");
+            write_card_count_object(out, *count);
+            out.push('.');
         }
         Statement::TargetPlayerDiscardsCardsAtRandom { count } => {
             out.push_str("Target player discards ");
@@ -1003,8 +1013,7 @@ fn write_imperative_action_sequence(out: &mut String, actions: &[ImperativeActio
             match action {
                 ImperativeAction::DrawCards { count } => {
                     out.push_str("Draw ");
-                    write_card_count(out, *count);
-                    out.push_str(" cards");
+                    write_card_count_object(out, *count);
                     continue;
                 }
                 ImperativeAction::DiscardCards { count } => {
@@ -1044,8 +1053,7 @@ fn write_imperative_action(out: &mut String, action: ImperativeAction) {
         ImperativeAction::Shuffle => out.push_str("shuffle"),
         ImperativeAction::DrawCards { count } => {
             out.push_str("draw ");
-            write_card_count(out, count);
-            out.push_str(" cards");
+            write_card_count_object(out, count);
         }
         ImperativeAction::DiscardCards { count } => {
             out.push_str("discard ");
@@ -1104,8 +1112,7 @@ fn write_each_player_action(out: &mut String, action: EachPlayerAction) {
         }
         EachPlayerAction::DrawCards { count } => {
             out.push_str("draws ");
-            write_card_count(out, count);
-            out.push_str(" cards");
+            write_card_count_object(out, count);
         }
     }
 }
@@ -1153,6 +1160,7 @@ fn write_card_count(out: &mut String, count: CardCount) {
     match count {
         CardCount::Number(n) => out.push_str(u32_to_number_word(n)),
         CardCount::Variable(variable) => out.push_str(variable_name(variable)),
+        CardCount::ThatMany => out.push_str("that many"),
     }
 }
 
@@ -1943,6 +1951,7 @@ fn write_card_count_object(out: &mut String, count: CardCount) {
             out.push_str(variable_name(variable));
             out.push_str(" cards");
         }
+        CardCount::ThatMany => out.push_str("that many cards"),
     }
 }
 

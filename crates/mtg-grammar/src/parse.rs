@@ -234,6 +234,11 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }
         Rule::you_may_have_that_player_shuffle => Ok(Statement::YouMayHaveThatPlayerShuffle),
         Rule::draw_cards => draw_cards_from_pair(pair),
+        Rule::draw_cards_action | Rule::activated_draw_cards => draw_cards_statement_from_pair(pair),
+        Rule::you_may_draw_cards => you_may_draw_cards_statement_from_pair(pair),
+        Rule::draw_that_many_cards_replacement_result => {
+            draw_that_many_cards_replacement_result_from_pair(pair)
+        }
         Rule::target_player_discards_cards_at_random => {
             target_player_discards_cards_at_random_from_pair(pair)
         }
@@ -582,7 +587,7 @@ fn imperative_action_from_pair(pair: Pair<Rule>) -> Result<ImperativeAction, Par
                 .next()
                 .ok_or(ParseError::Internal("draw action missing count"))?;
             Ok(ImperativeAction::DrawCards {
-                count: card_count_from_pair(count_pair)?,
+                count: draw_card_object_count_from_pair(count_pair, "draw action counted draw")?,
             })
         }
         Rule::tap_source_action => {
@@ -642,7 +647,10 @@ fn each_player_action_from_pair(pair: Pair<Rule>) -> Result<EachPlayerAction, Pa
                 "each-player draw action missing count",
             ))?;
             Ok(EachPlayerAction::DrawCards {
-                count: card_count_from_pair(count_pair)?,
+                count: draw_card_object_count_from_pair(
+                    count_pair,
+                    "each-player draw action counted draw",
+                )?,
             })
         }
         _ => Err(ParseError::Internal("each player action")),
@@ -1483,9 +1491,37 @@ fn draw_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let count_pair = pair
         .into_inner()
         .next()
-        .expect("draw_cards always contains a draw_count");
+        .expect("draw_cards always contains a draw card object");
     Ok(Statement::TargetPlayerDrawsCards {
-        count: card_count_from_pair(count_pair)?,
+        count: draw_card_object_count_from_pair(count_pair, "target player draw counted draw")?,
+    })
+}
+
+fn draw_cards_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let count_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("draw statement missing count"))?;
+    Ok(Statement::DrawCards {
+        count: draw_card_object_count_from_pair(count_pair, "draw statement counted draw")?,
+    })
+}
+
+fn you_may_draw_cards_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let draw_pair = only_inner(pair, "you_may_draw_cards missing draw effect")?;
+    let count = draw_cards_trigger_count_from_pair(draw_pair, "you_may_draw_cards counted draw")?;
+    Ok(Statement::YouMayDrawCards { count })
+}
+
+fn draw_that_many_cards_replacement_result_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let count_pair = pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("draw that many cards missing object"))?;
+    Ok(Statement::DrawCards {
+        count: draw_card_object_count_from_pair(count_pair, "draw that many cards")?,
     })
 }
 
@@ -1804,6 +1840,7 @@ fn card_count_from_pair(count_pair: Pair<Rule>) -> Result<CardCount, ParseError>
             CardCount::Number(count)
         }
         Rule::variable_name => CardCount::Variable(variable_from_str(count_pair.as_str())?),
+        Rule::draw_that_many_cards_object => CardCount::ThatMany,
         _ => return Err(ParseError::Internal("draw_count")),
     };
     Ok(count)
@@ -3352,6 +3389,7 @@ fn draw_card_object_count_from_pair(
                 .ok_or(ParseError::Internal(counted_context))?;
             card_count_from_pair(draw_count_pair)
         }
+        Rule::draw_that_many_cards_object => Ok(CardCount::ThatMany),
         _ => Err(ParseError::Internal("draw card object count")),
     }
 }

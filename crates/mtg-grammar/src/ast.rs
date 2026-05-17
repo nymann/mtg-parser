@@ -124,6 +124,14 @@ pub enum Statement {
     TargetPlayerDrawsCards {
         count: CardCount,
     },
+    /// "Draw a card/N cards/that many cards."
+    DrawCards {
+        count: CardCount,
+    },
+    /// "You may draw a card/N cards."
+    YouMayDrawCards {
+        count: CardCount,
+    },
     /// "Target player discards N cards at random."
     TargetPlayerDiscardsCardsAtRandom {
         count: CardCount,
@@ -984,6 +992,7 @@ pub enum EachPlayerAction {
 pub enum CardCount {
     Number(u32),
     Variable(Variable),
+    ThatMany,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

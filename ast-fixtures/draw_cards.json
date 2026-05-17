@@ -1,0 +1,118 @@
+{
+  "concept": "draw_cards",
+  "fixture_path": "grammar-fixtures/draw_cards.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "draw_cards",
+      "text": "Target player draws two cards.",
+      "ast": {
+        "TargetPlayerDrawsCards": {
+          "count": {
+            "Number": 2
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "draw_cards",
+      "text": "Target player draws X cards.",
+      "ast": {
+        "TargetPlayerDrawsCards": {
+          "count": {
+            "Variable": "X"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "draw_cards_action",
+      "text": "Draw two cards",
+      "ast": {
+        "DrawCards": {
+          "count": {
+            "Number": 2
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "draw_cards_action",
+      "text": "Draw X cards",
+      "ast": {
+        "DrawCards": {
+          "count": {
+            "Variable": "X"
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "each_player_performs_action",
+      "text": "Each player draws X cards.",
+      "ast": {
+        "EachPlayerPerformsAction": {
+          "actions": [
+            {
+              "DrawCards": {
+                "count": {
+                  "Variable": "X"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "activated_draw_cards",
+      "text": "Draw a card.",
+      "ast": {
+        "DrawCards": {
+          "count": {
+            "Number": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 7,
+      "rule": "you_may_draw_cards",
+      "text": "You may draw a card.",
+      "ast": {
+        "YouMayDrawCards": {
+          "count": {
+            "Number": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 8,
+      "rule": "you_may_draw_cards",
+      "text": "You may draw two cards.",
+      "ast": {
+        "YouMayDrawCards": {
+          "count": {
+            "Number": 2
+          }
+        }
+      }
+    },
+    {
+      "index": 9,
+      "rule": "draw_that_many_cards_replacement_result",
+      "text": "draw that many cards",
+      "ast": {
+        "DrawCards": {
+          "count": "ThatMany"
+        }
+      }
+    }
+  ]
+}

@@ -81,6 +81,8 @@ sentence_statement = _{
   | look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order
   | you_may_have_that_player_shuffle
   | draw_cards
+  | activated_draw_cards
+  | you_may_draw_cards
   | target_player_discards_cards_at_random
   | add_mana
   | if_you_flip_result_effect
@@ -171,6 +173,8 @@ phrase_statement = _{
     modal_choice
   | mana_cost
   | label_phrase
+  | draw_cards_action
+  | draw_that_many_cards_replacement_result
   | control_duration
   | spell_resolution_duration
   | control_player_condition
@@ -407,9 +411,7 @@ life_gain_replacement_effect = {
 life_gain_replacement_affected_player = { ^"you" }
 life_gain_replacement_replaced_event = { ^"gain" ~ ^"life" }
 life_gain_replacement_result = { draw_that_many_cards_replacement_result }
-draw_that_many_cards_replacement_result = {
-    ^"draw" ~ ^"that" ~ ^"many" ~ ^"cards"
-}
+draw_that_many_cards_replacement_result = { ^"draw" ~ draw_that_many_cards_object }
 if_you_would_gain_life_draw_that_many_cards_instead = { life_gain_replacement_effect }
 
 static_life_total_floor_replacement = {
@@ -471,7 +473,7 @@ if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn = {
   ~ ^"exile" ~ ^"it" ~ ^"instead" ~ "."
 }
 
-draw_cards  = { ^"target" ~ ^"player" ~ ^"draws" ~ draw_count ~ ^"cards" ~ "." }
+draw_cards  = { ^"target" ~ ^"player" ~ ^"draws" ~ draw_card_object ~ "." }
 draw_count  = _{ card_count }
 card_count  = _{ number_word | variable_name }
 number_word = @{
@@ -704,7 +706,7 @@ put_that_card_into_your_hand_action = {
     ^"put" ~ ^"that" ~ ^"card" ~ ^"into" ~ ^"your" ~ ^"hand"
 }
 shuffle_action = { ^"shuffle" }
-draw_cards_action = { draw_verb ~ draw_count ~ ^"cards" }
+draw_cards_action = { draw_verb ~ draw_card_object }
 draw_verb = _{ ^"draws" | ^"draw" }
 tap_source_action = { ^"tap" ~ source_object }
 sacrifice_permanent_of_opponents_choice_action = {
@@ -1375,9 +1377,14 @@ activated_draw_cards = {
     ^"draw" ~ draw_card_object ~ "."
 }
 flip_coin = { ^"flip" ~ article ~ ^"coin" ~ "." }
-draw_card_object = _{ activated_draw_one_card | activated_draw_counted_cards }
+draw_card_object = _{
+    activated_draw_one_card
+  | activated_draw_counted_cards
+  | draw_that_many_cards_object
+}
 activated_draw_one_card = { article ~ ^"card" }
 activated_draw_counted_cards = { draw_count ~ ^"cards" }
+draw_that_many_cards_object = { ^"that" ~ ^"many" ~ ^"cards" }
 next_card_draw_replacement = {
     ^"the" ~ ^"next" ~ ^"time" ~ ^"you" ~ ^"would" ~ ^"draw"
   ~ article ~ ^"card" ~ ^"this" ~ ^"turn" ~ "," ~ ^"instead"
