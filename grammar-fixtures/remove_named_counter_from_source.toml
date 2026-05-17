@@ -1,0 +1,35 @@
+[fixture]
+concept = "remove_named_counter_from_source"
+rule = "remove_named_counter_from_source"
+
+[[example]]
+text = "Remove a corpse counter from this creature"
+reason = "Mandatory activated-cost component removing one named corpse counter from this creature."
+
+[[example]]
+text = "Remove a spore counter from it"
+reason = "Mandatory activated-cost component using the pronoun source object."
+
+[[example]]
+text = "Remove a charge counter from this artifact"
+reason = "Named-counter axis variant using charge counter and this artifact."
+
+[[counterexample]]
+text = "Remove target creature defending player controls from combat."
+reason = "Remove-from-combat effect, not counter removal from a source object."
+
+[[counterexample]]
+text = "You may remove a spore counter from it."
+reason = "Optional standalone effect, not a mandatory activated-cost component."
+
+[[counterexample]]
+text = "Put a spore counter on it."
+reason = "Put-counter instruction, not counter removal."
+
+[[counterexample]]
+text = "Remove a +1/+1 counter from it."
+reason = "Power/toughness counter removal, not named counter removal."
+
+[[counterexample]]
+text = "Remove a spore counter from it trailing"
+reason = "Exact-consumption guard."

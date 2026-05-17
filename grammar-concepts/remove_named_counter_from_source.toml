@@ -1,0 +1,71 @@
+[[axis]]
+name = "action"
+values = ["remove_counter"]
+
+[[axis]]
+name = "counter_ref"
+values = ["named_counter"]
+
+[[axis]]
+name = "counter_quantity"
+values = ["article"]
+
+[[axis]]
+name = "source"
+values = ["source_object"]
+
+[[axis]]
+name = "surface"
+values = ["activated_cost_component"]
+
+[boundary]
+excludes = [
+    "Remove-from-combat effects for target creatures defending player controls.",
+    "Optional you-may remove-counter instructions in standalone effect text.",
+    "Put-counter instructions, not remove-counter instructions.",
+    "Power/toughness counter removal, not named counter removal.",
+]
+includes = ["Mandatory activated-cost components that remove one named counter from the source object."]
+
+[concept]
+name = "remove_named_counter_from_source"
+pest_rules = ["remove_named_counter_from_source"]
+rules_queries = ["lex: remove a spore counter from it"]
+rules_terms = [
+    "counter",
+    "remove",
+    "source",
+]
+
+[[counterexample]]
+reason = "Remove-from-combat effect, not counter removal from a source object."
+text = "Remove target creature defending player controls from combat."
+
+[[counterexample]]
+reason = "Optional standalone effect, not a mandatory activated-cost component."
+text = "You may remove a spore counter from it."
+
+[[counterexample]]
+reason = "Put-counter instruction, not counter removal."
+text = "Put a spore counter on it."
+
+[[counterexample]]
+reason = "Power/toughness counter removal, not named counter removal."
+text = "Remove a +1/+1 counter from it."
+
+[[example]]
+text = "Remove a corpse counter from this creature"
+
+[[example]]
+text = "Remove a spore counter from it"
+
+[[example]]
+text = "Remove a charge counter from this artifact"
+
+[grammar_query]
+candidate_rules = ["remove_named_counter_from_source"]
+selected_rule = "remove_named_counter_from_source"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
