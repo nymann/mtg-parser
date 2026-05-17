@@ -1,0 +1,31 @@
+[fixture]
+concept = "put_pt_counter_on_it"
+rule = "put_pt_counter_on_it"
+
+[[example]]
+text = "Put a +1/+1 counter on it."
+reason = "Mandatory trigger effect placing one +1/+1 counter on it."
+
+[[example]]
+text = "Put a -1/-1 counter on it."
+reason = "Mandatory trigger effect placing one -1/-1 counter on it."
+
+[[counterexample]]
+text = "Put a spore counter on it."
+reason = "Named-counter placement, not power/toughness counter placement."
+
+[[counterexample]]
+text = "Remove a +1/+1 counter from it."
+reason = "Remove-counter instruction, not put-counter instruction."
+
+[[counterexample]]
+text = "You may put a +1/+1 counter on it."
+reason = "Optional you-may modality, not a mandatory trigger effect."
+
+[[counterexample]]
+text = "Put two +1/+0 counters on it."
+reason = "Counted quantity, not a single-counter placement."
+
+[[counterexample]]
+text = "Put a +1/+1 counter on it. trailing"
+reason = "Exact-consumption guard."
