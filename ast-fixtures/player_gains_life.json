@@ -1,0 +1,80 @@
+{
+  "concept": "player_gains_life",
+  "fixture_path": "grammar-fixtures/player_gains_life.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "player_gains_life",
+      "text": "Target player gains 3 life.",
+      "ast": {
+        "TargetPlayerGainsLife": {
+          "amount": {
+            "Number": 3
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "player_gains_life",
+      "text": "Target player gains X life.",
+      "ast": {
+        "TargetPlayerGainsLife": {
+          "amount": {
+            "Variable": "X"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "player_gains_life",
+      "text": "Its controller gains life equal to its power.",
+      "ast": {
+        "ItsControllerGainsLife": {
+          "amount": "EqualToItsPower"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "modal_mode",
+      "text": "• Target player gains 3 life.",
+      "ast": {
+        "ModalChoice": {
+          "modes": [
+            {
+              "TargetPlayerGainsLife": {
+                "amount": {
+                  "Number": 3
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "target_player_gains_life",
+      "text": "Target player gains 3 life.",
+      "ast": {
+        "TargetPlayerGainsLife": {
+          "amount": {
+            "Number": 3
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "its_controller_gains_life",
+      "text": "Its controller gains life equal to its power.",
+      "ast": {
+        "ItsControllerGainsLife": {
+          "amount": "EqualToItsPower"
+        }
+      }
+    }
+  ]
+}
