@@ -65,6 +65,11 @@ Commands:
                               Run grammar-fixtures/<concept>.toml at PEST-rule
                               level. Does not require AST, unparse, lowering, or
                               card corpus success.
+  concept-parse CONCEPT       Phase 2 parser/AST readiness check: full-parser
+                              parse accepted grammar fixture examples and report
+                              AST JSON. Does not require unparse or lowering.
+  concept-ast-test CONCEPT    Phase 2 AST snapshot gate for accepted grammar
+                              fixture examples. Use --update to write snapshots.
   concept-grammar-query --query TEXT
                               Query grammar.pest for candidate rules, dependencies,
                               reverse dependencies, and duplicate RHS shape drift.
@@ -173,6 +178,8 @@ fn main() -> ExitCode {
         Some("concept-discover") => concept::discover(&args[1..]),
         Some("concept-grow") => concept::grow(&args[1..]),
         Some("concept-grammar-test") => concept::grammar_test(&args[1..]),
+        Some("concept-parse") => concept::parse_concept(&args[1..]),
+        Some("concept-ast-test") => concept::ast_test(&args[1..]),
         Some("concept-grammar-query") => concept::grammar_query(&args[1..]),
         Some("concept-maturity") => concept::maturity(&args[1..]),
         Some("concept-map-existing") => concept::map_existing(&args[1..]),
