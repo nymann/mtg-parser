@@ -1,0 +1,34 @@
+{
+  "concept": "static_counter_conditioned_basic_land_type",
+  "fixture_path": "grammar-fixtures/static_counter_conditioned_basic_land_type.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_that_permanent_is_basic_land_type_while_has_named_counter",
+      "text": "That land is an Island for as long as it has a flood counter on it.",
+      "ast": {
+        "StaticAbility": {
+          "ThatPermanentIsBasicLandTypeWhileHasNamedCounter": {
+            "counter_name": "flood",
+            "land_type": "Island",
+            "permanent_type": "Land"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_that_permanent_is_basic_land_type_while_has_named_counter",
+      "text": "That creature is a Forest for as long as it has a named counter on it.",
+      "ast": {
+        "StaticAbility": {
+          "ThatPermanentIsBasicLandTypeWhileHasNamedCounter": {
+            "counter_name": "named",
+            "land_type": "Forest",
+            "permanent_type": "Creature"
+          }
+        }
+      }
+    }
+  ]
+}
