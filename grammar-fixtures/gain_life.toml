@@ -1,0 +1,31 @@
+[fixture]
+concept = "gain_life"
+rule = "you_gain_life"
+
+[[example]]
+text = "you gain 1 life."
+reason = "Fixed unsigned-number amount of life gained by you."
+
+[[example]]
+text = "you gain 3 life."
+reason = "Another fixed unsigned-number amount to cover the amount axis."
+
+[[counterexample]]
+text = "you lose the game."
+reason = "Lose-game effect, not life gain."
+
+[[counterexample]]
+text = "player loses N life"
+reason = "Life-loss instruction, not life gain."
+
+[[counterexample]]
+text = "if you would gain life, you draw that many cards instead."
+reason = "Replacement effect for life-gain events, not a fixed-amount life-gain instruction."
+
+[[counterexample]]
+text = "you gain life equal to the damage prevented this way."
+reason = "Damage-referenced variable life gain, not fixed unsigned-number life gain."
+
+[[counterexample]]
+text = "you gain 1 life. trailing"
+reason = "Exact-consumption guard."

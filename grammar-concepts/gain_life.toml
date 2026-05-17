@@ -1,0 +1,77 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "action"
+values = ["gain"]
+
+[[axis]]
+name = "object"
+values = ["life"]
+
+[[axis]]
+name = "amount"
+values = ["unsigned_number"]
+
+[[axis]]
+name = "sentence_form"
+values = ["trigger_effect"]
+
+[boundary]
+excludes = [
+    "Lose-game effects owned by you_lose_game.",
+    "Life-loss effects owned by player_loses_life or adjacent life-loss concepts.",
+    "Life-gain replacement effects owned by life_gain_replacement_effect.",
+    "Damage-referenced life gain owned by life_gain_equal_to_damage.",
+]
+includes = ["Triggered-effect sentences where you gain a fixed unsigned-number amount of life."]
+
+[concept]
+name = "gain_life"
+pest_rules = ["you_gain_life"]
+rules_queries = [
+    "lex: you gain 1 life",
+    "lex: you gain 3 life",
+]
+rules_terms = [
+    "gain life",
+    "life total",
+]
+
+[[counterexample]]
+reason = "Lose-game effect, not life gain."
+text = "you lose the game."
+
+[[counterexample]]
+reason = "Life-loss instruction, not life gain."
+text = "player loses N life"
+
+[[counterexample]]
+reason = "Replacement effect for life-gain events, not a fixed-amount life-gain instruction."
+text = "if you would gain life, you draw that many cards instead."
+
+[[counterexample]]
+reason = "Damage-referenced variable life gain, not fixed unsigned-number life gain."
+text = "you gain life equal to the damage prevented this way."
+
+[[example]]
+text = "you gain 1 life."
+
+[[example]]
+text = "you gain 3 life."
+
+[grammar_query]
+candidate_rules = [
+    "you_gain_life",
+    "gain_life_effect",
+    "if_you_would_gain_life_draw_that_many_cards_instead",
+    "you_gain_life_equal_damage",
+    "you_lose_game",
+    "player_loses_life",
+]
+selected_rule = "you_gain_life"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
