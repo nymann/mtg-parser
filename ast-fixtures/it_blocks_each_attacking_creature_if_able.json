@@ -1,0 +1,14 @@
+{
+  "concept": "it_blocks_each_attacking_creature_if_able",
+  "fixture_path": "grammar-fixtures/it_blocks_each_attacking_creature_if_able.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "it_blocks_each_attacking_creature_if_able",
+      "text": "It blocks each attacking creature this turn if able.",
+      "ast": {
+        "StaticAbility": "ItBlocksEachAttackingCreatureThisTurnIfAble"
+      }
+    }
+  ]
+}
