@@ -1,0 +1,14 @@
+{
+  "concept": "static_maximum_hand_size",
+  "fixture_path": "grammar-fixtures/static_maximum_hand_size.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_you_have_no_maximum_hand_size",
+      "text": "You have no maximum hand size.",
+      "ast": {
+        "StaticAbility": "YouHaveNoMaximumHandSize"
+      }
+    }
+  ]
+}
