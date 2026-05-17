@@ -1041,12 +1041,42 @@ fn permanent_type_choice_from_pair(pair: Pair<Rule>) -> Result<Vec<PermanentType
     pair.into_inner().map(permanent_type_from_pair).collect()
 }
 
-fn target_permanent_choice_from_pair(pair: Pair<Rule>) -> Result<Vec<PermanentType>, ParseError> {
-    let choice_pair = only_inner(
-        pair,
-        "target_permanent_choice missing permanent_type_choice",
-    )?;
-    permanent_type_choice_from_pair(choice_pair)
+enum TargetPermanentChoice {
+    AnyPermanent,
+    PermanentTypes(Vec<PermanentType>),
+}
+
+fn target_permanent_choice_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TargetPermanentChoice, ParseError> {
+    match pair.into_inner().next() {
+        Some(choice_pair) => Ok(TargetPermanentChoice::PermanentTypes(
+            permanent_type_choice_from_pair(choice_pair)?,
+        )),
+        None => Ok(TargetPermanentChoice::AnyPermanent),
+    }
+}
+
+fn tap_untap_target_permanent_choice_from_pair(
+    pair: Pair<Rule>,
+) -> Result<TapUntapTarget, ParseError> {
+    match target_permanent_choice_from_pair(pair)? {
+        TargetPermanentChoice::AnyPermanent => Ok(TapUntapTarget::TargetPermanent),
+        TargetPermanentChoice::PermanentTypes(permanent_types) => {
+            Ok(TapUntapTarget::TargetPermanents(permanent_types))
+        }
+    }
+}
+
+fn destroy_target_permanent_choice_from_pair(
+    pair: Pair<Rule>,
+) -> Result<DestroyTarget, ParseError> {
+    match target_permanent_choice_from_pair(pair)? {
+        TargetPermanentChoice::AnyPermanent => Ok(DestroyTarget::TargetPermanent),
+        TargetPermanentChoice::PermanentTypes(permanent_types) => {
+            Ok(DestroyTarget::TargetPermanents(permanent_types))
+        }
+    }
 }
 
 fn tap_untap_target_from_pair(pair: Pair<Rule>) -> Result<TapUntapTarget, ParseError> {
@@ -1055,9 +1085,7 @@ fn tap_untap_target_from_pair(pair: Pair<Rule>) -> Result<TapUntapTarget, ParseE
             let target_pair = only_inner(pair, "tap_untap_target_choice missing target")?;
             tap_untap_target_from_pair(target_pair)
         }
-        Rule::target_permanent_choice => Ok(TapUntapTarget::TargetPermanents(
-            target_permanent_choice_from_pair(pair)?,
-        )),
+        Rule::target_permanent_choice => tap_untap_target_permanent_choice_from_pair(pair),
         Rule::target_creature_type => {
             let creature_type_pair =
                 only_inner(pair, "target_creature_type missing creature_type")?;
@@ -1116,9 +1144,7 @@ fn destroy_target_from_pair(pair: Pair<Rule>) -> Result<DestroyTarget, ParseErro
             let target_pair = only_inner(pair, "destroy_target missing target")?;
             destroy_target_from_pair(target_pair)
         }
-        Rule::target_permanent_choice => Ok(DestroyTarget::TargetPermanents(
-            target_permanent_choice_from_pair(pair)?,
-        )),
+        Rule::target_permanent_choice => destroy_target_permanent_choice_from_pair(pair),
         Rule::target_colored_permanent => {
             let color_pair = only_inner(pair, "target_colored_permanent missing color")?;
             Ok(DestroyTarget::TargetColoredPermanent(color_from_pair(

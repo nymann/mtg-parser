@@ -1,0 +1,30 @@
+{
+  "concept": "exile",
+  "fixture_path": "grammar-fixtures/exile.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "exile",
+      "text": "Exile target creature.",
+      "ast": {
+        "Exile": {
+          "target": {
+            "TargetPermanents": [
+              "Creature"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "exile",
+      "text": "Exile target permanent.",
+      "ast": {
+        "Exile": {
+          "target": "TargetPermanent"
+        }
+      }
+    }
+  ]
+}

@@ -3893,6 +3893,9 @@ fn write_tap_target_permanent_choice(
     }
     out.push_str(" target ");
     match target {
+        TapUntapTarget::TargetPermanent => {
+            out.push_str("permanent");
+        }
         TapUntapTarget::TargetPermanents(permanent_types) => {
             write_permanent_type_choice(out, permanent_types);
         }
@@ -3917,6 +3920,9 @@ fn write_exile(out: &mut String, target: &DestroyTarget) {
 
 fn write_destroy_target(out: &mut String, target: &DestroyTarget) {
     match target {
+        DestroyTarget::TargetPermanent => {
+            out.push_str("target permanent");
+        }
         DestroyTarget::TargetPermanents(permanent_types) => {
             out.push_str("target ");
             write_permanent_type_choice(out, permanent_types);

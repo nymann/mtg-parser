@@ -426,6 +426,8 @@ pub enum TextChangeReplacementTerm {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DestroyTarget {
+    /// "target permanent"
+    TargetPermanent,
     /// Shared target axis for the CR 701 destroy keyword action.
     /// "target <permanent_type> [or <permanent_type>]"
     TargetPermanents(Vec<PermanentType>),
@@ -481,6 +483,8 @@ pub enum TapUntapAction {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TapUntapTarget {
+    /// "target permanent"
+    TargetPermanent,
     /// "target <permanent_type> [or <permanent_type>]"
     TargetPermanents(Vec<PermanentType>),
     /// "target <creature_type>"
