@@ -1,0 +1,73 @@
+[[axis]]
+name = "keyword_action"
+values = ["exchange"]
+
+[[axis]]
+name = "first_object"
+values = ["that_card"]
+
+[[axis]]
+name = "second_object"
+values = ["top_card_of_your_library"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "Ante actions involving the top card of a library.",
+    "Exchange instructions involving a target card rather than the previously referenced card.",
+    "Exchange instructions involving a library other than your library.",
+    "Library inspection, search, or replacement effects involving the top card of a library.",
+]
+includes = ["Standalone exchange instructions that exchange that card with the top card of your library."]
+
+[concept]
+name = "exchange_that_card_with_top_card_of_your_library"
+pest_rules = ["exchange_that_card_with_top_card_of_your_library"]
+rules_queries = [
+    "lex: exchange that card with the top card of your library",
+    "lex: exchange keyword action top card of your library",
+]
+rules_terms = [
+    "exchange",
+    "card",
+    "library",
+]
+
+[[counterexample]]
+reason = "Ante action, not an exchange instruction."
+text = "Ante the top card of your library."
+
+[[counterexample]]
+reason = "Targets a card directly instead of exchanging the previously referenced card."
+text = "Exchange target card with the top card of your library."
+
+[[counterexample]]
+reason = "Different library owner from the concept's your-library axis."
+text = "Exchange that card with the top card of target player's library."
+
+[[counterexample]]
+reason = "Library inspection effect, not an exchange instruction."
+text = "Look at the top card of your library."
+
+[[example]]
+text = "Exchange that card with the top card of your library."
+
+[[example]]
+text = "exchange that card with the top card of your library."
+
+[grammar_query]
+candidate_rules = [
+    "exchange_that_card_with_top_card_of_your_library",
+    "ante_top_card_of_your_library_action",
+    "each_player_antes_top_card_of_their_library_action",
+    "look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order",
+    "search_your_library_for_a_card_action",
+]
+selected_rule = "exchange_that_card_with_top_card_of_your_library"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

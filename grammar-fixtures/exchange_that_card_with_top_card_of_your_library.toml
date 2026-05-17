@@ -1,0 +1,31 @@
+[fixture]
+concept = "exchange_that_card_with_top_card_of_your_library"
+rule = "exchange_that_card_with_top_card_of_your_library"
+
+[[example]]
+text = "Exchange that card with the top card of your library."
+reason = "Oracle-style standalone exchange instruction for a previously referenced card and the top card of your library."
+
+[[example]]
+text = "exchange that card with the top card of your library."
+reason = "Lowercase sentence accepted by the case-insensitive literal rule."
+
+[[counterexample]]
+text = "Ante the top card of your library."
+reason = "Ante action, not an exchange instruction."
+
+[[counterexample]]
+text = "Exchange target card with the top card of your library."
+reason = "Targets a card directly instead of exchanging the previously referenced card."
+
+[[counterexample]]
+text = "Exchange that card with the top card of target player's library."
+reason = "Different library owner from the concept's your-library axis."
+
+[[counterexample]]
+text = "Look at the top card of your library."
+reason = "Library inspection effect, not an exchange instruction."
+
+[[counterexample]]
+text = "Exchange that card with the top card of your library. trailing"
+reason = "Exact-consumption guard."
