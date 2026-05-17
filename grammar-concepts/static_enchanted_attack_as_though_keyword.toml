@@ -1,0 +1,78 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_permission"]
+
+[[axis]]
+name = "add_affected_object"
+values = ["enchanted_permanent"]
+
+[[axis]]
+name = "add_action"
+values = ["attack"]
+
+[[axis]]
+name = "add_as_though_keyword_state"
+values = ["had_keyword"]
+
+[[axis]]
+name = "future_axis_candidate"
+values = ["didnt_have_keyword"]
+
+[boundary]
+excludes = [
+    "Enchanted-object keyword ability grants.",
+    "Enchanted-object keyword-removal effects.",
+    "Enchanted-object evasion restrictions.",
+    "Enchanted-object attack requirements.",
+]
+includes = [
+    "Enchanted creature can attack as though it had haste.",
+    "Enchanted creature can attack as though it had flying.",
+]
+
+[concept]
+name = "static_enchanted_attack_as_though_keyword"
+pest_rules = ["static_enchanted_can_attack_as_though_it_had"]
+rules_queries = [
+    "lex: can attack as though it had haste",
+    "lex: enchanted creature can attack as though it had flying",
+]
+rules_terms = [
+    "static",
+    "continuous",
+    "permission",
+    "attack",
+    "as though",
+    "keyword ability",
+    "enchanted",
+]
+
+[[counterexample]]
+reason = "Keyword ability grant, not an attack permission evaluated as though the enchanted object had a keyword."
+text = "Enchanted creature has flying."
+
+[[counterexample]]
+reason = "Keyword ability removal, not an attack permission evaluated as though the enchanted object had a keyword."
+text = "Enchanted creature loses flying."
+
+[[counterexample]]
+reason = "Evasion restriction, not an attack permission."
+text = "Enchanted creature can't be blocked except by Walls."
+
+[[counterexample]]
+reason = "Attack requirement, not an as-though attack permission."
+text = "Enchanted creature can attack each combat if able."
+
+[[example]]
+text = "Enchanted creature can attack as though it had haste."
+
+[[example]]
+text = "Enchanted creature can attack as though it had flying."
+
+[grammar_query]
+candidate_rules = ["static_enchanted_can_attack_as_though_it_had"]
+selected_rule = "static_enchanted_can_attack_as_though_it_had"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

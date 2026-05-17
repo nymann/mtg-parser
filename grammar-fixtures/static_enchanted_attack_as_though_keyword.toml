@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_enchanted_attack_as_though_keyword"
+rule = "static_enchanted_can_attack_as_though_it_had"
+
+[[example]]
+text = "Enchanted creature can attack as though it had haste."
+reason = "Static attack permission evaluated as though the enchanted creature had haste."
+
+[[example]]
+text = "Enchanted creature can attack as though it had flying."
+reason = "Static attack permission evaluated as though the enchanted creature had flying."
+
+[[counterexample]]
+text = "Enchanted creature has flying."
+reason = "Keyword ability grant, not an attack permission evaluated as though the enchanted object had a keyword."
+
+[[counterexample]]
+text = "Enchanted creature loses flying."
+reason = "Keyword ability removal, not an attack permission evaluated as though the enchanted object had a keyword."
+
+[[counterexample]]
+text = "Enchanted creature can't be blocked except by Walls."
+reason = "Evasion restriction, not an attack permission."
+
+[[counterexample]]
+text = "Enchanted creature can attack each combat if able."
+reason = "Attack requirement, not an as-though attack permission."
+
+[[counterexample]]
+text = "Enchanted creature can attack as though it had haste. trailing"
+reason = "Exact-consumption guard."
