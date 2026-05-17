@@ -1,0 +1,57 @@
+[fixture]
+concept = "static_enchanted_attack_as_though_keyword_state"
+rule = "static_enchanted_can_attack_as_though_it_didnt_have"
+
+[[example]]
+text = "Enchanted creature can attack as though it didn't have defender."
+reason = "Static attack permission evaluated as though the enchanted creature did not have defender."
+
+[[example]]
+rule = "static_enchanted_can_attack_as_though_it_had"
+text = "Enchanted creature can attack as though it had flying."
+reason = "Static attack permission evaluated as though the enchanted creature had flying."
+
+[[counterexample]]
+text = "Enchanted creature has flying."
+reason = "Keyword ability grant, not an attack permission evaluated through the didn't-have as-though state."
+
+[[counterexample]]
+rule = "static_enchanted_can_attack_as_though_it_had"
+text = "Enchanted creature has flying."
+reason = "Keyword ability grant, not an attack permission evaluated through the had as-though state."
+
+[[counterexample]]
+text = "Enchanted creature loses flying."
+reason = "Keyword ability removal, not an attack permission evaluated through the didn't-have as-though state."
+
+[[counterexample]]
+rule = "static_enchanted_can_attack_as_though_it_had"
+text = "Enchanted creature loses flying."
+reason = "Keyword ability removal, not an attack permission evaluated through the had as-though state."
+
+[[counterexample]]
+text = "Enchanted creature can't be blocked except by Walls."
+reason = "Evasion restriction, not an as-though attack permission evaluated through the didn't-have state."
+
+[[counterexample]]
+rule = "static_enchanted_can_attack_as_though_it_had"
+text = "Enchanted creature can't be blocked except by Walls."
+reason = "Evasion restriction, not an as-though attack permission evaluated through the had state."
+
+[[counterexample]]
+text = "All creatures able to block enchanted creature do so."
+reason = "Block requirement, not an as-though attack permission evaluated through the didn't-have state."
+
+[[counterexample]]
+rule = "static_enchanted_can_attack_as_though_it_had"
+text = "All creatures able to block enchanted creature do so."
+reason = "Block requirement, not an as-though attack permission evaluated through the had state."
+
+[[counterexample]]
+text = "Enchanted creature can attack as though it didn't have defender. trailing"
+reason = "Exact-consumption guard for the didn't-have state."
+
+[[counterexample]]
+rule = "static_enchanted_can_attack_as_though_it_had"
+text = "Enchanted creature can attack as though it had flying. trailing"
+reason = "Exact-consumption guard for the had state."

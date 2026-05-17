@@ -1,0 +1,87 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_attack_permission"]
+
+[[axis]]
+name = "add_affected_object"
+values = ["enchanted_permanent"]
+
+[[axis]]
+name = "add_combat_action"
+values = ["attack"]
+
+[[axis]]
+name = "add_as_though_keyword_state"
+values = [
+    "had",
+    "didnt_have",
+]
+
+[[axis]]
+name = "add_referenced_keyword"
+values = ["keyword"]
+
+[boundary]
+excludes = [
+    "Enchanted-object keyword ability grants.",
+    "Enchanted-object keyword-removal effects.",
+    "Enchanted-object evasion restrictions.",
+    "Enchanted-object block requirements.",
+]
+includes = [
+    "Enchanted creature can attack as though it didn't have defender.",
+    "Enchanted creature can attack as though it had flying.",
+]
+
+[concept]
+name = "static_enchanted_attack_as_though_keyword_state"
+pest_rules = [
+    "static_enchanted_can_attack_as_though_it_had",
+    "static_enchanted_can_attack_as_though_it_didnt_have",
+]
+rules_queries = [
+    "lex: enchanted creature can attack as though it didn't have defender",
+    "lex: enchanted creature can attack as though it had flying",
+]
+rules_terms = [
+    "static",
+    "continuous",
+    "permission",
+    "attack",
+    "as though",
+    "keyword ability",
+    "enchanted",
+]
+
+[[counterexample]]
+reason = "Keyword ability grant, not an attack permission evaluated as though the enchanted object had or did not have a keyword."
+text = "Enchanted creature has flying."
+
+[[counterexample]]
+reason = "Keyword ability removal, not an attack permission evaluated as though the enchanted object had or did not have a keyword."
+text = "Enchanted creature loses flying."
+
+[[counterexample]]
+reason = "Evasion restriction, not an as-though attack permission."
+text = "Enchanted creature can't be blocked except by Walls."
+
+[[counterexample]]
+reason = "Block requirement, not an as-though attack permission."
+text = "All creatures able to block enchanted creature do so."
+
+[[example]]
+text = "Enchanted creature can attack as though it didn't have defender."
+
+[[example]]
+text = "Enchanted creature can attack as though it had flying."
+
+[grammar_query]
+candidate_rules = [
+    "static_enchanted_can_attack_as_though_it_had",
+    "static_enchanted_can_attack_as_though_it_didnt_have",
+]
+selected_rule = "static_enchanted_can_attack_as_though_it_didnt_have"
+
+[maturity]
+blockers = []
+pest_grammar = "bounded"
