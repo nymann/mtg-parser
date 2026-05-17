@@ -6451,6 +6451,7 @@ Hard constraints:
 - Prefer widening existing PEST rules over adding one-rule-per-card rules.
 - If the target wording is a real axis of `{concept}`, encode it as concept data and grammar fixture coverage, not as a nearby reject.
 - Keep edits scoped to `crates/mtg-grammar/src/grammar.pest`, `grammar-concepts/`, and `grammar-fixtures/` unless xtask concept tooling itself is clearly wrong.
+- Do not create planning documents, markdown roadmaps, or future-phase design files. If future work matters, mention it only in your final response.
 - The orchestrator owns validation, maturity, and commit.
 
 Expected files:
@@ -6491,7 +6492,7 @@ fn build_repair_prompt(gap: &ConceptGap, failure: &ConceptGrindGateFailure) -> R
     Ok(format!(
         r#"You are the GRAMMAR_FIXTURE_REPAIR agent for mtg-parser's grammar-first concept workflow.
 
-Repair the failed grammar-first gate. Do not run add-card. Do not edit generated tests. Do not try to make cards pass.
+Repair the failed grammar-first gate. Do not run add-card. Do not edit generated tests. Do not try to make cards pass. Do not create planning documents, markdown roadmaps, or future-phase design files.
 
 Do not weaken, remove, skip, or narrow the failed gate. If `cargo test -p mtg-grammar`
 fails on `tests/prop.rs::round_trip`, treat it as canonical AST drift exposed by
@@ -7611,7 +7612,9 @@ fn commit_concept_grind_iteration(gap: &ConceptGap, iteration: u32) -> Result<bo
 }
 
 fn cleanup_concept_grind_transient_artifacts() -> Result<()> {
-    restore_tracked_file_from_head("crates/mtg-grammar/tests/prop.proptest-regressions")
+    restore_tracked_file_from_head("crates/mtg-grammar/tests/prop.proptest-regressions")?;
+    remove_untracked_transient_artifact("SEMANTIC_LOWERING_PLAN.md")?;
+    Ok(())
 }
 
 fn push_pipeline_commit_if_enabled() -> Result<()> {
@@ -7643,6 +7646,24 @@ fn restore_tracked_file_from_head(path: &str) -> Result<()> {
     }
     fs::write(repo_root().join(path), output.stdout)
         .with_context(|| format!("restore transient artifact {path}"))?;
+    Ok(())
+}
+
+fn remove_untracked_transient_artifact(path: &str) -> Result<()> {
+    let pathbuf = repo_root().join(path);
+    if !pathbuf.exists() {
+        return Ok(());
+    }
+    let tracked = Command::new("git")
+        .args(["ls-files", "--error-unmatch", path])
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("git ls-files --error-unmatch {path}"))?;
+    if tracked.status.success() {
+        return Ok(());
+    }
+    fs::remove_file(&pathbuf)
+        .with_context(|| format!("remove transient artifact {}", pathbuf.display()))?;
     Ok(())
 }
 
