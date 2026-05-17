@@ -1,0 +1,117 @@
+[[axis]]
+name = "action"
+values = ["return"]
+
+[[axis]]
+name = "target_selector"
+values = ["target"]
+
+[[axis]]
+name = "target_kind"
+values = [
+    "card",
+    "permanent_type",
+    "permanent_type_card",
+]
+
+[[axis]]
+name = "source_zone"
+values = [
+    "omitted",
+    "your_graveyard",
+    "your_hand",
+]
+
+[[axis]]
+name = "destination_zone"
+values = [
+    "your_graveyard",
+    "your_hand",
+    "the_battlefield",
+    "its_owners_graveyard",
+    "its_owners_hand",
+]
+
+[boundary]
+excludes = [
+    "Zone changes using actions other than return.",
+    "Return effects that do not use a target object selector.",
+    "Return effects targeting spells or other non-card stack objects.",
+    "Return effects from zones not owned by you.",
+    "Return effects with additional destination modifiers outside the bare destination zone.",
+]
+includes = [
+    "Imperative return effects for target cards, permanent-type objects, or permanent-type cards.",
+    "Optional source-zone wording limited to from your graveyard or from your hand.",
+    "Destination zones expressed as your graveyard, your hand, the battlefield, its owner's graveyard, or its owner's hand.",
+]
+
+[concept]
+name = "return_target_card_from_your_zone_to_zone"
+pest_rules = [
+    "return_target_card_from_your_zone_to_zone",
+    "return_target_card_kind",
+    "return_destination_zone",
+]
+rules_queries = [
+    "lex: return target card from your graveyard to your hand",
+    "lex: return target creature card from your graveyard to the battlefield",
+    "lex: return target card to its owner's hand",
+]
+rules_terms = [
+    "battlefield",
+    "card",
+    "graveyard",
+    "hand",
+    "return",
+    "target",
+    "zone",
+]
+
+[[counterexample]]
+reason = "Put is a different zone-change action from return."
+text = "Put target card from your graveyard into your hand."
+
+[[counterexample]]
+reason = "The concept requires target-object wording."
+text = "Return a card from your graveyard to your hand."
+
+[[counterexample]]
+reason = "The target kind is a stack spell, not a card or permanent-type card."
+text = "Return target spell to its owner's hand."
+
+[[counterexample]]
+reason = "The source-zone axis is limited to zones owned by you."
+text = "Return target card from a graveyard to your hand."
+
+[[counterexample]]
+reason = "Tapped is an additional destination modifier outside the bare destination-zone boundary."
+text = "Return target creature card from your graveyard to the battlefield tapped."
+
+[[example]]
+text = "Return target card to your hand."
+
+[[example]]
+text = "Return target card from your graveyard to your hand."
+
+[[example]]
+text = "Return target creature card from your graveyard to the battlefield."
+
+[[example]]
+text = "Return target artifact from your hand to its owner's hand."
+
+[[example]]
+text = "Return target enchantment card from your graveyard to its owner's graveyard."
+
+[grammar_query]
+candidate_rules = [
+    "return_target_card_from_your_zone_to_zone",
+    "return_target_card_kind",
+    "return_destination_zone",
+    "owned_zone",
+]
+selected_rule = "return_target_card_from_your_zone_to_zone"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

@@ -1,0 +1,42 @@
+[fixture]
+concept = "return_target_card_from_your_zone_to_zone"
+rule = "return_target_card_from_your_zone_to_zone"
+
+[[example]]
+text = "Return target card to your hand."
+
+[[example]]
+text = "Return target card from your graveyard to your hand."
+
+[[example]]
+text = "Return target creature card from your graveyard to the battlefield."
+
+[[example]]
+text = "Return target artifact from your hand to its owner's hand."
+
+[[example]]
+text = "Return target enchantment card from your graveyard to its owner's graveyard."
+
+[[counterexample]]
+text = "Put target card from your graveyard into your hand."
+reason = "Put is a different zone-change action from return."
+
+[[counterexample]]
+text = "Return a card from your graveyard to your hand."
+reason = "The concept requires target-object wording."
+
+[[counterexample]]
+text = "Return target spell to its owner's hand."
+reason = "The target kind is a stack spell, not a card or permanent-type card."
+
+[[counterexample]]
+text = "Return target card from a graveyard to your hand."
+reason = "The source-zone axis is limited to zones owned by you."
+
+[[counterexample]]
+text = "Return target creature card from your graveyard to the battlefield tapped."
+reason = "Tapped is an additional destination modifier outside the bare destination-zone boundary."
+
+[[counterexample]]
+text = "Return target card from your graveyard to your hand. trailing"
+reason = "Exact-consumption guard."
