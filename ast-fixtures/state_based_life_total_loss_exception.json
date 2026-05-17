@@ -1,0 +1,14 @@
+{
+  "concept": "state_based_life_total_loss_exception",
+  "fixture_path": "grammar-fixtures/state_based_life_total_loss_exception.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_dont_lose_game_for_having_zero_or_less_life",
+      "text": "You don't lose the game for having 0 or less life.",
+      "ast": {
+        "StaticAbility": "YouDontLoseGameForHavingZeroOrLessLife"
+      }
+    }
+  ]
+}
