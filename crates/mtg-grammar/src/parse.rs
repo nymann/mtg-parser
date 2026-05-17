@@ -352,6 +352,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::you_may_remove_named_counter_from_source => Ok(Statement::TriggerEffect(
             you_may_remove_named_counter_from_source_from_pair(pair)?,
         )),
+        Rule::source_gains_static_ability => Ok(Statement::TriggerEffect(
+            source_gains_static_ability_from_pair(pair)?,
+        )),
         Rule::remove_pt_counter_from_it => Ok(Statement::TriggerEffect(
             remove_pt_counter_from_it_from_pair(pair)?,
         )),

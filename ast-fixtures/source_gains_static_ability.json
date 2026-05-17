@@ -1,0 +1,48 @@
+{
+  "concept": "source_gains_static_ability",
+  "fixture_path": "grammar-fixtures/source_gains_static_ability.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "source_gains_static_ability",
+      "text": "This creature gains \"enchanted creature loses flying.\"",
+      "ast": {
+        "TriggerEffect": {
+          "SourceGainsStaticAbility": {
+            "ability": {
+              "EnchantedLosesKeyword": {
+                "keyword": "Flying",
+                "object": {
+                  "Permanent": "Creature"
+                }
+              }
+            },
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "source_gains_static_ability",
+      "text": "CARDNAME gains \"enchanted creature loses flying.\"",
+      "ast": {
+        "TriggerEffect": {
+          "SourceGainsStaticAbility": {
+            "ability": {
+              "EnchantedLosesKeyword": {
+                "keyword": "Flying",
+                "object": {
+                  "Permanent": "Creature"
+                }
+              }
+            },
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    }
+  ]
+}
