@@ -1,0 +1,39 @@
+[fixture]
+concept = "this_turn_defending_players_make_random_blocking_piles"
+rule = "this_turn_defending_players_make_random_blocking_piles"
+
+[[example]]
+text = "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+reason = "Canonical standalone this-turn replacement effect for defending players making random blocking piles."
+
+[[example]]
+text = "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into an number of piles equal to the number of attacking creatures for whom that player is the defending player."
+reason = "Accepted article-axis variant exposed by the existing article dependency."
+
+[[example]]
+text = "this turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+reason = "Case-insensitive opening words for the same replacement-effect sentence."
+
+[[counterexample]]
+text = "Creatures the active player controls attack this turn if able."
+reason = "This is an attack requirement, not a replacement effect for declaring blockers."
+
+[[counterexample]]
+text = "Assign each pile to a different one of those attacking creatures at random."
+reason = "This is a later random blocking-pile procedure sentence, not the defending-player pile-making replacement effect."
+
+[[counterexample]]
+text = "Creatures those players control that can block additional creatures may likewise be put into additional piles."
+reason = "This allows additional blockers to be put into piles, not the initial defending-player pile division."
+
+[[counterexample]]
+text = "Each defending player divides all creatures without flying they control into a left pile and a right pile."
+reason = "This is a keyword-conditioned labeled-pile division trigger effect, not a this-turn declaring-blockers replacement effect."
+
+[[counterexample]]
+text = "This turn, instead of declaring attackers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+reason = "The concept is scoped to replacing declaring blockers, not declaring attackers."
+
+[[counterexample]]
+text = "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player. trailing"
+reason = "Exact-consumption guard."

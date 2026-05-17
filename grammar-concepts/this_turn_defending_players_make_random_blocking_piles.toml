@@ -1,0 +1,100 @@
+[[axis]]
+name = "duration"
+values = ["this_turn"]
+
+[[axis]]
+name = "replaced_event"
+values = ["declaring_blockers"]
+
+[[axis]]
+name = "affected_player"
+values = ["each_defending_player"]
+
+[[axis]]
+name = "chosen_objects"
+values = ["any_number_of_creatures_they_control"]
+
+[[axis]]
+name = "pile_count"
+values = [
+    "a_number_equal_to_attacking_creatures_for_whom_that_player_is_defending_player",
+    "an_number_equal_to_attacking_creatures_for_whom_that_player_is_defending_player",
+]
+
+[[axis]]
+name = "effect_kind"
+values = ["replacement_effect"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "Attack requirements and blocking requirements that do not replace declaring blockers.",
+    "Other random blocking-pile procedure sentences such as assigning piles or putting additional blockers into piles.",
+    "Pile division effects with different subjects, chosen objects, or pile-count criteria.",
+    "Defending-player division trigger effects based on keyword absence and labeled piles.",
+]
+includes = [
+    "This-turn replacement effects where each defending player chooses any number of creatures they control and divides them into a number of piles equal to the relevant attacking creatures.",
+    "The same replacement-effect sentence with either accepted indefinite article spelling at the pile-count phrase.",
+]
+
+[concept]
+name = "this_turn_defending_players_make_random_blocking_piles"
+pest_rules = ["this_turn_defending_players_make_random_blocking_piles"]
+rules_queries = ["lex: this turn instead of declaring blockers defending player divides creatures into piles"]
+rules_terms = [
+    "replacement effect",
+    "instead",
+    "declaring blockers",
+    "defending player",
+    "attacking creatures",
+    "piles",
+]
+
+[[counterexample]]
+reason = "This is an attack requirement, not a replacement effect for declaring blockers."
+text = "Creatures the active player controls attack this turn if able."
+
+[[counterexample]]
+reason = "This is a later random blocking-pile procedure sentence, not the defending-player pile-making replacement effect."
+text = "Assign each pile to a different one of those attacking creatures at random."
+
+[[counterexample]]
+reason = "This allows additional blockers to be put into piles, not the initial defending-player pile division."
+text = "Creatures those players control that can block additional creatures may likewise be put into additional piles."
+
+[[counterexample]]
+reason = "This is a keyword-conditioned labeled-pile division trigger effect, not a this-turn declaring-blockers replacement effect."
+text = "Each defending player divides all creatures without flying they control into a left pile and a right pile."
+
+[[counterexample]]
+reason = "The concept is scoped to replacing declaring blockers, not declaring attackers."
+text = "This turn, instead of declaring attackers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+
+[[example]]
+text = "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+
+[[example]]
+text = "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into an number of piles equal to the number of attacking creatures for whom that player is the defending player."
+
+[[example]]
+text = "this turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+
+[grammar_query]
+candidate_rules = [
+    "this_turn_defending_players_make_random_blocking_piles",
+    "additional_blockers_may_be_put_into_additional_piles",
+    "assign_each_pile_to_attacking_creature_at_random",
+    "creatures_in_assigned_pile_block_if_able",
+    "defending_player_divides_creatures_without_keyword_into_labeled_piles",
+    "creatures_attack_this_turn_if_able",
+    "it_blocks_each_attacking_creature_if_able",
+]
+selected_rule = "this_turn_defending_players_make_random_blocking_piles"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
