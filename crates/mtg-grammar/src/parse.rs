@@ -2760,6 +2760,7 @@ fn trigger_event_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError>
         Rule::you_play_permanent => you_play_permanent_from_pair(event_pair),
         Rule::enchanted_permanent_dies => enchanted_permanent_dies_from_pair(event_pair),
         Rule::source_dies => source_dies_from_pair(event_pair),
+        Rule::source_attacks => source_attacks_from_pair(event_pair),
         Rule::enchanted_object_becomes_status => {
             enchanted_object_becomes_status_from_pair(event_pair)
         }
@@ -2806,6 +2807,13 @@ fn colored_creature_attacks_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, 
     let color_pair = only_inner(pair, "colored creature attacks missing color")?;
     Ok(TriggerEvent::ColoredCreatureAttacks {
         color: color_from_pair(color_pair)?,
+    })
+}
+
+fn source_attacks_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
+    let source_pair = only_inner(pair, "source attacks missing source")?;
+    Ok(TriggerEvent::SourceAttacks {
+        source: source_object_from_pair(source_pair)?,
     })
 }
 

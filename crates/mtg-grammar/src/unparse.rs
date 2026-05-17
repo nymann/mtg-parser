@@ -2561,6 +2561,7 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::YouAreDealtDamage
         | TriggerEvent::SourceIsDealtDamage { .. }
         | TriggerEvent::SourceDealsDamageToAnOpponent { .. }
+        | TriggerEvent::SourceAttacks { .. }
         | TriggerEvent::ObjectBecomesStatus { .. }
         | TriggerEvent::SourceBlocksOrBecomesBlockedByNonCreatureTypeCreature { .. }
         | TriggerEvent::ColoredCreatureAttacks { .. } => "Whenever ",
@@ -2716,6 +2717,10 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::SourceDies { source } => {
             write_source_object(out, source);
             out.push_str(" dies");
+        }
+        TriggerEvent::SourceAttacks { source } => {
+            write_source_object(out, source);
+            out.push_str(" attacks");
         }
         TriggerEvent::ObjectBecomesStatus { object, status } => {
             write_object_status_subject(out, object);

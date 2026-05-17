@@ -1,0 +1,64 @@
+{
+  "concept": "static_enchanted_triggered_ability_grant",
+  "fixture_path": "grammar-fixtures/static_enchanted_triggered_ability_grant.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_enchanted_has_triggered_ability",
+      "text": "Enchanted creature has \"Whenever this creature attacks, draw a card.\"",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedHasTriggeredAbility": {
+            "ability": {
+              "effects": [
+                {
+                  "DrawCards": {
+                    "count": {
+                      "Number": 1
+                    }
+                  }
+                }
+              ],
+              "event": {
+                "SourceAttacks": {
+                  "source": {
+                    "This": "Creature"
+                  }
+                }
+              },
+              "intervening_if": null
+            },
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_enchanted_has_triggered_ability",
+      "text": "Enchanted artifact has \"At the beginning of your upkeep, you gain 1 life.\"",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedHasTriggeredAbility": {
+            "ability": {
+              "effects": [
+                {
+                  "YouGainLife": {
+                    "amount": 1
+                  }
+                }
+              ],
+              "event": "BeginningOfYourUpkeep",
+              "intervening_if": null
+            },
+            "object": {
+              "Permanent": "Artifact"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

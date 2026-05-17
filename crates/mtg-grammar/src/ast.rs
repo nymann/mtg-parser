@@ -1149,6 +1149,8 @@ pub enum TriggerEvent {
     EnchantedPermanentDies { permanent_type: PermanentType },
     /// "this <source> dies"
     SourceDies { source: SourceObject },
+    /// "this <source> attacks"
+    SourceAttacks { source: SourceObject },
     /// "<object> becomes <status>"
     ObjectBecomesStatus {
         object: ObjectStatusSubject,
