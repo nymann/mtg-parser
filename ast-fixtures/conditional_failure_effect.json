@@ -1,0 +1,32 @@
+{
+  "concept": "conditional_failure_effect",
+  "fixture_path": "grammar-fixtures/conditional_failure_effect.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "if_you_cant_source_deals_damage_to_you",
+      "text": "If you can't, CARDNAME deals 3 damage to you.",
+      "ast": {
+        "IfYouCantSourceDealsDamageToYou": {
+          "amount": {
+            "Number": 3
+          },
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "if_you_cant_source_deals_damage_to_you",
+      "text": "If you can't, it deals X damage to you.",
+      "ast": {
+        "IfYouCantSourceDealsDamageToYou": {
+          "amount": {
+            "Variable": "X"
+          },
+          "source": "It"
+        }
+      }
+    }
+  ]
+}

@@ -2390,13 +2390,19 @@ fn damage_kind_from_pair(pair: Pair<Rule>) -> Result<DamageKind, ParseError> {
 
 fn damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
     match pair.as_rule() {
-        Rule::unsigned_number | Rule::damage_amount => {
+        Rule::unsigned_number => {
             let amount = pair
                 .as_str()
                 .parse::<u32>()
                 .map_err(|_| ParseError::Internal("damage amount"))?;
             Ok(DamageAmount::Number(amount))
         }
+        Rule::damage_amount => pair
+            .as_str()
+            .parse::<u32>()
+            .map(DamageAmount::Number)
+            .or_else(|_| variable_from_str(pair.as_str()).map(DamageAmount::Variable))
+            .map_err(|_| ParseError::Internal("damage amount")),
         Rule::variable_name => Ok(DamageAmount::Variable(variable_from_str(pair.as_str())?)),
         Rule::damage_dealt_to_you_this_turn => Ok(DamageAmount::DamageDealtToYouThisTurn),
         _ => Err(ParseError::Internal("damage amount")),
