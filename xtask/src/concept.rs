@@ -177,6 +177,14 @@ Phase 2 stop signal fires, it writes a summary and hands off to
 concept-grind-loop for Phase 1 concept work.
 ";
 
+const PHASE_STATUS_USAGE: &str = "\
+cargo xtask concept-phase-status [--json]
+
+Prints a quick continue/inspect/stopped verdict for the latest phase-loop run
+using Phase 2 map metrics, latest batch summary, stop reasons, and whether a
+phase loop/grind process is still running.
+";
+
 pub fn discover(args: &[String]) -> ExitCode {
     match parse_discover_options(args).and_then(run_discover) {
         Ok(report) => {
@@ -357,6 +365,29 @@ pub fn phase_loop(args: &[String]) -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("concept-phase-loop: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn phase_status(args: &[String]) -> ExitCode {
+    match parse_phase_status_options(args).and_then(run_phase_status) {
+        Ok(report) => {
+            if report.json {
+                match serde_json::to_string_pretty(&report) {
+                    Ok(json) => println!("{json}"),
+                    Err(e) => {
+                        eprintln!("error: {e:#}");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                print_phase_status_report(&report);
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("concept-phase-status: {e:#}");
             ExitCode::FAILURE
         }
     }
@@ -613,7 +644,7 @@ struct ConceptPhaseLoopOptions {
     dry_run: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct PhaseLoopBatchSummary {
     batch: u32,
     before: PhaseLoopMapSummary,
@@ -622,7 +653,7 @@ struct PhaseLoopBatchSummary {
     stop_reasons: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PhaseLoopMapSummary {
     parse_green_concepts: usize,
     ast_green_concepts: usize,
@@ -631,12 +662,48 @@ struct PhaseLoopMapSummary {
     grammar_green_concepts: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct PhaseLoopCommitSummary {
     sha: String,
     concept: Option<String>,
     subject: String,
     added_statement_variants: Vec<String>,
+}
+
+#[derive(Debug)]
+struct PhaseStatusOptions {
+    json: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct PhaseStatusReport {
+    verdict: PhaseStatusVerdict,
+    reasons: Vec<String>,
+    running_processes: Vec<String>,
+    current: PhaseLoopMapSummary,
+    latest_phase_loop_dir: Option<PathBuf>,
+    latest_batch_summary_path: Option<PathBuf>,
+    latest_batch: Option<PhaseStatusBatchReport>,
+    json: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum PhaseStatusVerdict {
+    Continue,
+    Inspect,
+    Stopped,
+}
+
+#[derive(Debug, Serialize)]
+struct PhaseStatusBatchReport {
+    batch: u32,
+    ast_green_delta: i64,
+    parse_green_delta: i64,
+    commits: usize,
+    concepts: Vec<String>,
+    added_statement_variants: Vec<String>,
+    stop_reasons: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -1977,6 +2044,18 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
         phase1_max_batches,
         dry_run,
     })
+}
+
+fn parse_phase_status_options(args: &[String]) -> Result<PhaseStatusOptions> {
+    let mut json = false;
+    for arg in args {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{PHASE_STATUS_USAGE}"),
+            "--json" => json = true,
+            other => bail!("unknown argument: {other}\n\n{PHASE_STATUS_USAGE}"),
+        }
+    }
+    Ok(PhaseStatusOptions { json })
 }
 
 fn parse_next_u32(iter: &mut std::slice::Iter<'_, String>, flag: &str) -> Result<u32> {
@@ -3757,6 +3836,68 @@ fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
     Ok(())
 }
 
+fn run_phase_status(options: PhaseStatusOptions) -> Result<PhaseStatusReport> {
+    let current = PhaseLoopMapSummary::from_report(&run_phase2_map_fresh()?);
+    let latest = latest_phase_loop_batch_summary()?;
+    let running_processes = phase_loop_running_processes();
+    let latest_batch = latest
+        .as_ref()
+        .map(|(_, _, summary)| PhaseStatusBatchReport::from_summary(summary));
+
+    let mut reasons = Vec::new();
+    if running_processes.is_empty() {
+        reasons.push("no phase loop/grind process is running".to_string());
+    }
+    if current.ast_failed_concepts > 0
+        && current.ast_failed_concepts >= current.parse_failed_concepts
+    {
+        reasons.push(format!(
+            "AST failures dominate remaining non-green concepts: ast_failed={} parse_failed={}",
+            current.ast_failed_concepts, current.parse_failed_concepts
+        ));
+    }
+    if let Some(batch) = &latest_batch {
+        if batch.ast_green_delta <= 0 {
+            reasons.push(format!(
+                "latest batch did not increase AST-green concepts: delta={}",
+                batch.ast_green_delta
+            ));
+        }
+        if !batch.added_statement_variants.is_empty() {
+            reasons.push(format!(
+                "latest batch added top-level Statement variant(s): {}",
+                batch.added_statement_variants.join(", ")
+            ));
+        }
+        reasons.extend(batch.stop_reasons.iter().cloned());
+    }
+
+    let verdict = if running_processes.is_empty() {
+        PhaseStatusVerdict::Stopped
+    } else if reasons.iter().any(|reason| {
+        !reason.starts_with("no phase loop/grind process")
+            && !reason.starts_with("latest batch did not increase")
+    }) || latest_batch
+        .as_ref()
+        .is_some_and(|batch| batch.ast_green_delta <= 0 && batch.commits > 0)
+    {
+        PhaseStatusVerdict::Inspect
+    } else {
+        PhaseStatusVerdict::Continue
+    };
+
+    Ok(PhaseStatusReport {
+        verdict,
+        reasons,
+        running_processes,
+        current,
+        latest_phase_loop_dir: latest.as_ref().map(|(dir, _, _)| dir.clone()),
+        latest_batch_summary_path: latest.as_ref().map(|(_, path, _)| path.clone()),
+        latest_batch,
+        json: options.json,
+    })
+}
+
 impl PhaseLoopMapSummary {
     fn from_report(report: &Phase2MapReport) -> Self {
         Self {
@@ -3765,6 +3906,34 @@ impl PhaseLoopMapSummary {
             parse_failed_concepts: report.parse_failed_concepts,
             ast_failed_concepts: report.ast_failed_concepts,
             grammar_green_concepts: report.grammar_green_concepts,
+        }
+    }
+}
+
+impl PhaseStatusBatchReport {
+    fn from_summary(summary: &PhaseLoopBatchSummary) -> Self {
+        let mut concepts = Vec::new();
+        let mut added_statement_variants = Vec::new();
+        for commit in &summary.commits {
+            if let Some(concept) = &commit.concept {
+                concepts.push(concept.clone());
+            }
+            added_statement_variants.extend(commit.added_statement_variants.iter().cloned());
+        }
+        concepts.sort();
+        concepts.dedup();
+        added_statement_variants.sort();
+        added_statement_variants.dedup();
+        Self {
+            batch: summary.batch,
+            ast_green_delta: summary.after.ast_green_concepts as i64
+                - summary.before.ast_green_concepts as i64,
+            parse_green_delta: summary.after.parse_green_concepts as i64
+                - summary.before.parse_green_concepts as i64,
+            commits: summary.commits.len(),
+            concepts,
+            added_statement_variants,
+            stop_reasons: summary.stop_reasons.clone(),
         }
     }
 }
@@ -3884,6 +4053,100 @@ fn run_phase_loop_phase1(options: &ConceptPhaseLoopOptions, loop_dir: &Path) -> 
         bail!("concept-grind-loop failed\n{text}");
     }
     Ok(())
+}
+
+fn latest_phase_loop_batch_summary() -> Result<Option<(PathBuf, PathBuf, PhaseLoopBatchSummary)>> {
+    let Some(loop_dir) = latest_phase_loop_dir()? else {
+        return Ok(None);
+    };
+    let mut newest: Option<(u32, PathBuf)> = None;
+    for entry in fs::read_dir(&loop_dir).with_context(|| format!("read {}", loop_dir.display()))? {
+        let entry = entry?;
+        if !entry.file_type()?.is_dir() {
+            continue;
+        }
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        let Some(batch) = name
+            .strip_prefix("phase2-batch-")
+            .and_then(|suffix| suffix.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        let summary_path = entry.path().join("summary.json");
+        if !summary_path.exists() {
+            continue;
+        }
+        if newest
+            .as_ref()
+            .is_none_or(|(current_batch, _)| batch > *current_batch)
+        {
+            newest = Some((batch, summary_path));
+        }
+    }
+    let Some((_, summary_path)) = newest else {
+        return Ok(None);
+    };
+    let summary: PhaseLoopBatchSummary = serde_json::from_str(
+        &fs::read_to_string(&summary_path)
+            .with_context(|| format!("read {}", summary_path.display()))?,
+    )
+    .with_context(|| format!("parse {}", summary_path.display()))?;
+    Ok(Some((loop_dir, summary_path, summary)))
+}
+
+fn latest_phase_loop_dir() -> Result<Option<PathBuf>> {
+    let root = grammar_concept_log_root();
+    if !root.exists() {
+        return Ok(None);
+    }
+    let mut newest: Option<(SystemTime, PathBuf)> = None;
+    for entry in fs::read_dir(&root).with_context(|| format!("read {}", root.display()))? {
+        let entry = entry?;
+        if !entry.file_type()?.is_dir() {
+            continue;
+        }
+        let name = entry.file_name();
+        if !name.to_string_lossy().starts_with("phase-loop-") {
+            continue;
+        }
+        let modified = entry
+            .metadata()
+            .and_then(|metadata| metadata.modified())
+            .unwrap_or(UNIX_EPOCH);
+        if newest
+            .as_ref()
+            .is_none_or(|(current, _)| modified > *current)
+        {
+            newest = Some((modified, entry.path()));
+        }
+    }
+    Ok(newest.map(|(_, path)| path))
+}
+
+fn phase_loop_running_processes() -> Vec<String> {
+    let Ok(output) = Command::new("ps")
+        .args(["-axo", "pid,etime,command"])
+        .output()
+    else {
+        return Vec::new();
+    };
+    if !output.status.success() {
+        return Vec::new();
+    }
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| {
+            (line.contains("concept-phase-loop")
+                || line.contains("concept-phase2-grind")
+                || line.contains("concept-grind-loop")
+                || line.contains("codex exec"))
+                && !line.contains("concept-phase-status")
+        })
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect()
 }
 
 fn phase_loop_commits_between(
@@ -7980,6 +8243,53 @@ fn print_phase2_map_report(report: &Phase2MapReport) {
         );
         if let Some(error) = &status.first_error {
             println!("    first error: {error}");
+        }
+    }
+}
+
+fn print_phase_status_report(report: &PhaseStatusReport) {
+    println!("verdict: {:?}", report.verdict);
+    println!(
+        "phase2: ast green {}/{}, parse green {}/{}, ast failed {}, parse failed {}",
+        report.current.ast_green_concepts,
+        report.current.grammar_green_concepts,
+        report.current.parse_green_concepts,
+        report.current.grammar_green_concepts,
+        report.current.ast_failed_concepts,
+        report.current.parse_failed_concepts
+    );
+    if report.running_processes.is_empty() {
+        println!("running: no");
+    } else {
+        println!("running: yes");
+        for process in &report.running_processes {
+            println!("  {process}");
+        }
+    }
+    if let Some(path) = &report.latest_batch_summary_path {
+        println!("latest batch: {}", path.display());
+    }
+    if let Some(batch) = &report.latest_batch {
+        println!(
+            "batch {}: ast {:+}, parse {:+}, commits {}",
+            batch.batch, batch.ast_green_delta, batch.parse_green_delta, batch.commits
+        );
+        if !batch.concepts.is_empty() {
+            println!("concepts: {}", batch.concepts.join(", "));
+        }
+        if !batch.added_statement_variants.is_empty() {
+            println!(
+                "new Statement variants: {}",
+                batch.added_statement_variants.join(", ")
+            );
+        }
+    }
+    if report.reasons.is_empty() {
+        println!("reasons: none");
+    } else {
+        println!("reasons:");
+        for reason in &report.reasons {
+            println!("  - {reason}");
         }
     }
 }
