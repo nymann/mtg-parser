@@ -1,0 +1,87 @@
+[[axis]]
+name = "actor"
+values = ["controlled_player"]
+
+[[axis]]
+name = "action"
+values = ["activate"]
+
+[[axis]]
+name = "ability_kind"
+values = ["mana_ability"]
+
+[[axis]]
+name = "permission_polarity"
+values = ["can_only_if"]
+
+[[axis]]
+name = "context"
+values = ["while_doing_so"]
+
+[[axis]]
+name = "source_scope"
+values = ["lands_controlled_by_that_player"]
+
+[[axis]]
+name = "spending_limit"
+values = ["mana_spent_to_activate_other_mana_abilities_or_play_referenced_card"]
+
+[boundary]
+excludes = [
+    "Standalone instructions that make target player activate a mana ability.",
+    "Timing windows for optional payments that mention mana abilities but do not restrict mana ability activation.",
+    "Activated-ability cost modifications that are not permission restrictions on activating mana abilities.",
+]
+includes = [
+    "Conditional permission text restricting when the controlled player can activate mana abilities while doing so.",
+    "Source-scope restrictions requiring the mana abilities to be from lands that player controls.",
+    "Produced-mana spending restrictions requiring that mana to be spent on other mana abilities of controlled lands and/or playing the referenced card.",
+]
+
+[concept]
+name = "mana_ability_activation_restriction"
+pest_rules = [
+    "mana_ability_activation_limit",
+    "activation_limit_context",
+    "mana_ability_source_limit",
+    "produced_mana_spending_limit",
+    "mana_spending_purpose",
+]
+rules_queries = [
+    "lex: while doing so can activate mana abilities only if",
+    "lex: mana they produce is spent to activate other mana abilities",
+]
+rules_terms = [
+    "activate",
+    "mana ability",
+    "mana",
+    "play",
+]
+
+[[counterexample]]
+reason = "Standalone target-player activation instruction, not a conditional permission restriction."
+text = "Target player activates a mana ability of each land they control."
+
+[[counterexample]]
+reason = "Timing permission for a payment, not a restriction on activating mana abilities."
+text = "Until end of turn, any time you could activate a mana ability, you may pay 1 life."
+
+[[counterexample]]
+reason = "Activated ability cost modification, not a mana ability activation permission restriction."
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[example]]
+text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
+
+[grammar_query]
+candidate_rules = [
+    "mana_ability_activation_limit",
+    "target_player_activates_mana_ability_of_each_permanent_they_control",
+    "until_eot_you_may_pay_cost_at_timing",
+    "activated_abilities_cost_more_to_activate",
+]
+selected_rule = "mana_ability_activation_limit"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

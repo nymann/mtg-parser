@@ -56,10 +56,6 @@ rules_terms = [
 ]
 
 [[counterexample]]
-reason = "Conditional permission and spending restriction text, not a standalone target-player activation instruction."
-text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
-
-[[counterexample]]
 reason = "Timing permission for a payment, not an instruction to activate a mana ability."
 text = "Until end of turn, any time you could activate a mana ability, you may pay 1 life."
 

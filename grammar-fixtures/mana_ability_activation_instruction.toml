@@ -23,10 +23,6 @@ text = "Target player activates a mana ability of each planeswalker they control
 reason = "Standalone target-player instruction with singular mana ability and planeswalker source type."
 
 [[counterexample]]
-text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
-reason = "Conditional permission and spending restriction text, not a standalone target-player activation instruction."
-
-[[counterexample]]
 text = "Until end of turn, any time you could activate a mana ability, you may pay 1 life."
 reason = "Timing permission for a payment, not an instruction to activate a mana ability."
 

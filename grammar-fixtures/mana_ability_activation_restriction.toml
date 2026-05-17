@@ -1,0 +1,48 @@
+[fixture]
+concept = "mana_ability_activation_restriction"
+rule = "mana_ability_activation_limit"
+
+[[example]]
+text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
+reason = "Conditional permission restriction with controlled-player actor, land-source scope, and produced-mana spending limit."
+
+[[example]]
+rule = "activation_limit_context"
+text = "While doing so"
+reason = "Context axis for the activation restriction."
+
+[[example]]
+rule = "mana_ability_source_limit"
+text = "they're from lands that player controls"
+reason = "Source-scope axis requiring mana abilities from lands controlled by that player."
+
+[[example]]
+rule = "produced_mana_spending_limit"
+text = "mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card"
+reason = "Spending-limit axis with both permitted spending purposes."
+
+[[example]]
+rule = "mana_spending_purpose"
+text = "activate other mana abilities of lands the player controls"
+reason = "Spending purpose for activating other mana abilities of controlled lands."
+
+[[example]]
+rule = "mana_spending_purpose"
+text = "play that card"
+reason = "Spending purpose for playing the referenced card."
+
+[[counterexample]]
+text = "Target player activates a mana ability of each land they control."
+reason = "Standalone target-player activation instruction, not a conditional permission restriction."
+
+[[counterexample]]
+text = "Until end of turn, any time you could activate a mana ability, you may pay 1 life."
+reason = "Timing permission for a payment, not a restriction on activating mana abilities."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Activated ability cost modification, not a mana ability activation permission restriction."
+
+[[counterexample]]
+text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card. trailing"
+reason = "Exact-consumption guard."
