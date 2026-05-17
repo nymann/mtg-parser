@@ -327,7 +327,6 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::static_enchanted_gets_with_definitions
         | Rule::static_enchanted_gets
         | Rule::static_enchanted_has_triggered_ability
-        | Rule::static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
         | Rule::static_enchanted_has_keyword
         | Rule::static_enchanted_loses_keyword
         | Rule::static_enchanted_loses_keyword_fragment
@@ -3314,6 +3313,8 @@ fn named_keyword_ability_from_str(text: &str) -> Result<NamedKeywordAbility, Par
         "indestructible" => Ok(NamedKeywordAbility::Indestructible),
         "fear" => Ok(NamedKeywordAbility::Fear),
         "vigilance" => Ok(NamedKeywordAbility::Vigilance),
+        "shroud" => Ok(NamedKeywordAbility::Shroud),
+        "hexproof" => Ok(NamedKeywordAbility::Hexproof),
         _ => Err(ParseError::Internal("keyword ability name")),
     }
 }
@@ -4558,10 +4559,18 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
             let keyword_pair = inner
                 .next()
                 .expect("static_enchanted_has_keyword names granted keyword");
-            Ok(StaticAbility::EnchantedHasKeyword {
-                object: enchanted_object_from_pair(object_pair)?,
-                keyword: keyword_from_inner_pair(keyword_pair)?,
-            })
+            let object = enchanted_object_from_pair(object_pair)?;
+            let keyword = keyword_from_inner_pair(keyword_pair)?;
+            if inner.next().is_some() {
+                Ok(
+                    StaticAbility::EnchantedHasKeywordAndCantBeEnchantedByOtherAuras {
+                        object,
+                        keyword,
+                    },
+                )
+            } else {
+                Ok(StaticAbility::EnchantedHasKeyword { object, keyword })
+            }
         }
         Rule::static_enchanted_has_triggered_ability => {
             let mut inner = pair.into_inner();
@@ -4601,21 +4610,6 @@ fn static_ability_from_pair(pair: Pair<Rule>) -> Result<StaticAbility, ParseErro
                 object: enchanted_object_from_pair(object_pair)?,
                 land_type: basic_land_type_reference_from_pair(land_type_pair)?,
             })
-        }
-        Rule::static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras => {
-            let mut inner = pair.into_inner();
-            let object_pair = inner.next().expect(
-                "static_enchanted_has_keyword_and_cant_be_enchanted begins with enchanted object",
-            );
-            let keyword_pair = inner.next().expect(
-                "static_enchanted_has_keyword_and_cant_be_enchanted names granted keyword",
-            );
-            Ok(
-                StaticAbility::EnchantedHasKeywordAndCantBeEnchantedByOtherAuras {
-                    object: enchanted_object_from_pair(object_pair)?,
-                    keyword: keyword_from_inner_pair(keyword_pair)?,
-                },
-            )
         }
         Rule::static_enchanted_can_attack_as_though_it_had => {
             let mut inner = pair.into_inner();
@@ -5616,6 +5610,7 @@ fn physical_action_from_pair(pair: Pair<Rule>) -> Result<PhysicalAction, ParseEr
 
 fn enchanted_object_from_pair(pair: Pair<Rule>) -> Result<EnchantedObject, ParseError> {
     match pair.as_rule() {
+        Rule::permanent_object => Ok(EnchantedObject::AnyPermanent),
         Rule::permanent_type => Ok(EnchantedObject::Permanent(permanent_type_from_pair(pair)?)),
         Rule::creature_type => Ok(EnchantedObject::CreatureType(creature_type_from_pair(
             pair,

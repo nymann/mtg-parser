@@ -46,6 +46,7 @@ sentence_statement = _{
   | tap_target_permanent_choice
   | counter_target_spell
   | as_additional_cost_to_cast_this_spell
+  | destroy_referenced_creature_at_beginning_of_next_end_step
   | destroy
   | exile
   | that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice
@@ -105,7 +106,6 @@ sentence_statement = _{
   | creatures_attack_this_turn_if_able
   | target_creature_defending_player_controls_can_block_any_number
   | it_blocks_each_attacking_creature_if_able
-  | destroy_referenced_creature_at_beginning_of_next_end_step
   | ignore_this_effect_for_each_creature_player_didnt_control_continuously
   | this_turn_defending_players_make_random_blocking_piles
   | additional_blockers_may_be_put_into_additional_piles
@@ -125,7 +125,6 @@ sentence_statement = _{
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
   | static_enchanted_has_triggered_ability
-  | static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
   | static_enchanted_has_keyword
   | static_enchanted_loses_keyword
   | static_enchanted_is_basic_land_type
@@ -375,8 +374,8 @@ prevention_recipient = _{ any_target_prevention_recipient | that_permanent_or_pl
 any_target_prevention_recipient = { ^"any" ~ ^"target" }
 that_permanent_or_player_prevention_recipient = { ^"that" ~ ^"permanent" ~ ^"or" ~ ^"player" }
 damage_recipient = {
-    target_permanent_damage_recipient
-  | target_creature_you_control_damage_recipient
+    target_creature_you_control_damage_recipient
+  | target_permanent_damage_recipient
   | each_creature_with_keyword
   | each_creature_without_keyword
   | each_creature_damage_recipient
@@ -813,7 +812,7 @@ keyword_ability = { keyword }
 keyword_ability_list = { keyword ~ ("," ~ keyword)+ }
 semicolon_keyword_ability_list = { keyword ~ (";" ~ keyword)+ }
 keyword              = _{ enchant | protection | landwalk | keyword_ability_name }
-keyword_ability_name = @{ ^"first" ~ " " ~ ^"strike" | ^"flying" | ^"reach" | ^"haste" | ^"defender" | ^"banding" | ^"trample" | ^"indestructible" | ^"fear" | ^"vigilance" | ^"shroud" }
+keyword_ability_name = @{ ^"first" ~ " " ~ ^"strike" | ^"flying" | ^"reach" | ^"haste" | ^"defender" | ^"banding" | ^"trample" | ^"indestructible" | ^"fear" | ^"vigilance" | ^"shroud" | ^"hexproof" }
 label_phrase = { label_word }
 label_word = @{ ^"left" | ^"right" }
 quoted_label = { "\"" ~ label_word ~ "\"" }
@@ -900,11 +899,9 @@ creature_type_plural = @{ ^"djinns" | ^"elves" | ^"goblins" | ^"golems" | ^"inse
 //     modifier on the enchanted permanent (e.g. Animate Dead).
 //   - "Enchanted <type> gets <variable_pt_modifier>, where ..." — a
 //     variable P/T modifier with printed definitions for those variables.
-//   - "Enchanted <object> has <keyword>." — keyword-granting effect on
-//     the enchanted object.
-//   - "Enchanted <object> has <keyword> and can't be enchanted by other
-//     Auras." — keyword-granting effect plus an Aura attachment
-//     restriction on the enchanted object.
+//   - "Enchanted <object> has <keyword> [and can't be enchanted by other
+//     Auras]." — keyword-granting effect on the enchanted object,
+//     optionally with an Aura attachment restriction.
 //   - "Enchanted <object> can attack as though it had/didn't have
 //     <keyword>." — permission effect that changes attack eligibility.
 //   - "Enchanted <object> can't be blocked except by <creature_type>s."
@@ -929,7 +926,6 @@ static_ability = _{
   | static_enchanted_gets
   | static_enchanted_gets_with_definitions
   | static_enchanted_has_triggered_ability
-  | static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras
   | static_enchanted_has_keyword
   | static_enchanted_loses_keyword
   | static_enchanted_is_basic_land_type
@@ -1020,7 +1016,13 @@ static_enchanted_gets_with_definitions = {
 }
 
 static_enchanted_has_keyword = {
-    ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword ~ "."
+    ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword
+  ~ aura_attachment_restriction?
+  ~ "."
+}
+
+aura_attachment_restriction = {
+    ^"and" ~ ^"can't" ~ ^"be" ~ ^"enchanted" ~ ^"by" ~ ^"other" ~ ^"auras"
 }
 
 static_enchanted_has_triggered_ability = {
@@ -1040,11 +1042,6 @@ static_enchanted_is_basic_land_type = {
 basic_land_type_reference = _{ specific_basic_land_type | chosen_basic_land_type }
 specific_basic_land_type = { article ~ basic_land_type }
 chosen_basic_land_type = { ^"the" ~ ^"chosen" ~ ^"type" }
-
-static_enchanted_has_keyword_and_cant_be_enchanted_by_other_auras = {
-    ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword ~ ^"and" ~ ^"can't"
-  ~ ^"be" ~ ^"enchanted" ~ ^"by" ~ ^"other" ~ ^"auras" ~ "."
-}
 
 static_enchanted_can_attack_as_though_it_had = {
     ^"enchanted" ~ enchanted_object ~ ^"can" ~ ^"attack"
@@ -1296,7 +1293,7 @@ then_for_each_attacking_creature_choose_label_blocking_restriction = {
   ~ ^"label" ~ "."
 }
 
-enchanted_object = _{ permanent_type | creature_type }
+enchanted_object = _{ permanent_object | permanent_type | creature_type }
 
 // Activated abilities have a printed cost before the colon and one or
 // more effects after it. The cost pieces are kept explicit because tap

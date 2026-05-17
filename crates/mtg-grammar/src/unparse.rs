@@ -3549,6 +3549,8 @@ fn keyword_ability_title_name(keyword: NamedKeywordAbility) -> &'static str {
         NamedKeywordAbility::Indestructible => "Indestructible",
         NamedKeywordAbility::Fear => "Fear",
         NamedKeywordAbility::Vigilance => "Vigilance",
+        NamedKeywordAbility::Shroud => "Shroud",
+        NamedKeywordAbility::Hexproof => "Hexproof",
     }
 }
 
@@ -3564,6 +3566,8 @@ fn keyword_ability_name(keyword: NamedKeywordAbility) -> &'static str {
         NamedKeywordAbility::Indestructible => "indestructible",
         NamedKeywordAbility::Fear => "fear",
         NamedKeywordAbility::Vigilance => "vigilance",
+        NamedKeywordAbility::Shroud => "shroud",
+        NamedKeywordAbility::Hexproof => "hexproof",
     }
 }
 
@@ -3578,6 +3582,7 @@ fn write_keyword_and_or_list(out: &mut String, keywords: &[Keyword]) {
 
 fn write_enchanted_object(out: &mut String, object: EnchantedObject) {
     match object {
+        EnchantedObject::AnyPermanent => out.push_str("permanent"),
         EnchantedObject::Permanent(pt) => out.push_str(permanent_type_name(pt)),
         EnchantedObject::CreatureType(ct) => out.push_str(creature_type_name(ct)),
     }

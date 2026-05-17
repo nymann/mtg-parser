@@ -10,17 +10,26 @@ values = ["enchanted_permanent"]
 name = "add_granted_ability"
 values = ["keyword"]
 
+[[axis]]
+name = "add_attachment_restriction"
+values = ["cant_be_enchanted_by_other_auras"]
+
 [boundary]
 excludes = [
     "Enchanted-object power/toughness modifications.",
     "Enchanted-object power/toughness modifications with optional keyword grants.",
     "Enchanted-object keyword-removal effects.",
     "Enchanted-object grants of quoted triggered abilities.",
+    "Attachment restrictions without a keyword grant.",
+    "Keyword grants with unrelated restrictions.",
+    "Keyword-removal effects with attachment restrictions.",
 ]
 includes = [
     "Enchanted creature has flying.",
     "Enchanted artifact has indestructible.",
     "Enchanted land has shroud.",
+    "Enchanted creature has shroud and can't be enchanted by other Auras.",
+    "Enchanted permanent has hexproof and can't be enchanted by other Auras.",
 ]
 
 [concept]
@@ -29,12 +38,14 @@ pest_rules = ["static_enchanted_has_keyword"]
 rules_queries = [
     "lex: enchanted permanent has keyword ability",
     "lex: enchanted creature has flying",
+    "lex: enchanted permanent can't be enchanted by other Auras",
 ]
 rules_terms = [
     "static",
     "continuous",
     "enchanted",
     "keyword ability",
+    "Aura",
 ]
 
 [[counterexample]]
@@ -53,6 +64,18 @@ text = "Enchanted creature loses flying."
 reason = "Quoted triggered ability grant, not a keyword ability grant."
 text = 'Enchanted creature has "Whenever this creature attacks, draw a card."'
 
+[[counterexample]]
+reason = "Attachment restriction without a keyword grant."
+text = "Enchanted creature can't be enchanted by other Auras."
+
+[[counterexample]]
+reason = "Different restriction axis, not an Aura attachment restriction."
+text = "Enchanted creature has flying and can't be blocked."
+
+[[counterexample]]
+reason = "Keyword-removal effect, not a keyword grant."
+text = "Enchanted creature loses flying and can't be enchanted by other Auras."
+
 [[example]]
 text = "Enchanted creature has flying."
 
@@ -61,6 +84,12 @@ text = "Enchanted artifact has indestructible."
 
 [[example]]
 text = "Enchanted land has shroud."
+
+[[example]]
+text = "Enchanted creature has shroud and can't be enchanted by other Auras."
+
+[[example]]
+text = "Enchanted permanent has hexproof and can't be enchanted by other Auras."
 
 [grammar_query]
 candidate_rules = ["static_enchanted_has_keyword"]

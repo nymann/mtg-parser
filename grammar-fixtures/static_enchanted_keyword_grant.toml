@@ -14,6 +14,14 @@ reason = "Keyword-only grant to an enchanted artifact."
 text = "Enchanted land has shroud."
 reason = "Keyword-only grant to an enchanted land."
 
+[[example]]
+text = "Enchanted creature has shroud and can't be enchanted by other Auras."
+reason = "Keyword grant to an enchanted creature with an Aura attachment restriction."
+
+[[example]]
+text = "Enchanted permanent has hexproof and can't be enchanted by other Auras."
+reason = "Keyword grant to an enchanted permanent with an Aura attachment restriction."
+
 [[counterexample]]
 text = "Enchanted creature gets +1/+1."
 reason = "Enchanted-object P/T modification, not a keyword-only ability grant."
@@ -29,6 +37,18 @@ reason = "Keyword-removal effect, not a keyword grant."
 [[counterexample]]
 text = "Enchanted creature has \"Whenever this creature attacks, draw a card.\""
 reason = "Quoted triggered ability grant, not a keyword ability grant."
+
+[[counterexample]]
+text = "Enchanted creature can't be enchanted by other Auras."
+reason = "Attachment restriction without a keyword grant."
+
+[[counterexample]]
+text = "Enchanted creature has flying and can't be blocked."
+reason = "Different restriction axis, not an Aura attachment restriction."
+
+[[counterexample]]
+text = "Enchanted creature loses flying and can't be enchanted by other Auras."
+reason = "Keyword-removal effect, not a keyword grant."
 
 [[counterexample]]
 text = "Enchanted creature has flying. trailing"
