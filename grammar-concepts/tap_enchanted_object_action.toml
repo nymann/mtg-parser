@@ -1,0 +1,83 @@
+[[axis]]
+name = "action"
+values = ["tap"]
+
+[[axis]]
+name = "enchanted_object"
+values = [
+    "permanent_type",
+    "creature_type",
+]
+
+[[axis]]
+name = "context"
+values = ["trigger_effect"]
+
+[boundary]
+excludes = [
+    "Source-object tap actions such as tap CARDNAME, tap this creature, or tap that source; those belong to tap_source_action.",
+    "Targeted tap effects such as tap target creature; those belong to tap_target_permanent_choice or another target-tap concept.",
+    "Untap instructions for enchanted objects; those belong to untap_enchanted_object or related untap rules.",
+    "Static enchanted-object abilities, not imperative trigger effects.",
+]
+includes = [
+    "Imperative trigger effects that tap the object enchanted by the Aura.",
+    "Enchanted-object tap effects where the enchanted object is a permanent type.",
+    "Enchanted-object tap effects where the enchanted object is a creature type.",
+]
+
+[concept]
+name = "tap_enchanted_object_action"
+pest_rules = ["tap_enchanted_object"]
+rules_queries = [
+    "lex: tap enchanted creature",
+    "lex: tap enchanted land",
+]
+rules_terms = [
+    "enchanted",
+    "tap",
+]
+
+[[counterexample]]
+reason = "Source-object tap action, not an enchanted-object tap effect."
+text = "tap CARDNAME"
+
+[[counterexample]]
+reason = "Source-object tap action using this source object kind, not an enchanted-object tap effect."
+text = "tap this creature"
+
+[[counterexample]]
+reason = "Source-object tap action using that source, not an enchanted-object tap effect."
+text = "tap that source"
+
+[[counterexample]]
+reason = "Targeted tap effect, not an enchanted-object tap effect."
+text = "tap target creature."
+
+[[counterexample]]
+reason = "Untap instruction, not a tap action."
+text = "untap enchanted creature."
+
+[[example]]
+text = "tap enchanted creature."
+
+[[example]]
+text = "tap enchanted land."
+
+[[example]]
+text = "tap enchanted artifact."
+
+[grammar_query]
+candidate_rules = [
+    "tap_enchanted_object",
+    "enchanted_object",
+    "trigger_effect",
+    "tap_source_action",
+    "tap_target_permanent_choice",
+    "untap_enchanted_object",
+]
+selected_rule = "tap_enchanted_object"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
