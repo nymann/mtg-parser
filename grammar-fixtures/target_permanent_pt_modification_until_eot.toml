@@ -1,0 +1,35 @@
+[fixture]
+concept = "target_permanent_pt_modification_until_eot"
+rule = "target_permanent_gets_until_eot"
+
+[[example]]
+text = "Target creature gets +1/+1 until end of turn."
+reason = "Target permanent fixed P/T modifier until end of turn."
+
+[[example]]
+text = "Target creature gets +X/+0 until end of turn."
+reason = "Target permanent mixed variable and numeric P/T modifier until end of turn."
+
+[[example]]
+text = "Target attacking creature gets -1/-1 until end of turn."
+reason = "Target permanent combat-role selector with fixed negative P/T modifier until end of turn."
+
+[[counterexample]]
+text = "Target creature gains flying until end of turn."
+reason = "Keyword ability grant, not a P/T modifier."
+
+[[counterexample]]
+text = "Target creature gains flying and gets +1/+1 until end of turn, where X is the number of cards in your hand."
+reason = "Combined keyword grant and P/T modifier with variable definition, not a pure target-permanent P/T modification."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1 until end of turn."
+reason = "Enchanted-object recipient, not target-permanent recipient."
+
+[[counterexample]]
+text = "This gets +1/+1 until end of turn."
+reason = "Source-object recipient, not target-permanent recipient."
+
+[[counterexample]]
+text = "Target creature gets +1/+1 until end of turn. trailing"
+reason = "Exact-consumption guard."

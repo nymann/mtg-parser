@@ -1,0 +1,98 @@
+[[axis]]
+name = "effect_kind"
+values = ["continuous_pt_modification"]
+
+[[axis]]
+name = "recipient"
+values = ["target_permanent"]
+
+[[axis]]
+name = "target_selector"
+values = ["target_permanent_selector"]
+
+[[axis]]
+name = "duration"
+values = ["until_end_of_turn"]
+
+[[axis]]
+name = "modification"
+values = ["power_toughness_modification"]
+
+[[axis]]
+name = "modifier"
+values = ["mixed_pt_modifier"]
+
+[boundary]
+excludes = [
+    "Target-object keyword ability grants until end of turn.",
+    "Target-object combined keyword grants and P/T modifications with variable definitions.",
+    "Enchanted-object P/T modifications until end of turn.",
+    "Source-object P/T modifications until end of turn.",
+]
+includes = [
+    "Target permanent P/T modifications until end of turn.",
+    "Target creature P/T modifications with fixed signed modifiers until end of turn.",
+    "Target creature P/T modifications with mixed variable and numeric modifiers until end of turn.",
+    "Target creature P/T modifications with combat-role selectors until end of turn.",
+]
+
+[concept]
+name = "target_permanent_pt_modification_until_eot"
+pest_rules = [
+    "target_permanent_gets_until_eot",
+    "target_permanent_gets_eot_effect",
+]
+rules_queries = [
+    "lex: target creature gets +1/+1 until end of turn",
+    "lex: target creature gets +X/+0 until end of turn",
+    "lex: target attacking creature gets -1/-1 until end of turn",
+]
+rules_terms = [
+    "continuous effect",
+    "power",
+    "toughness",
+    "modify",
+    "target permanent",
+    "until end of turn",
+]
+
+[[counterexample]]
+reason = "Keyword ability grant, owned by target_permanent_keyword_ability_gain_until_eot."
+text = "Target creature gains flying until end of turn."
+
+[[counterexample]]
+reason = "Combined keyword grant and P/T modifier with a variable definition, not a pure target-permanent P/T modification."
+text = "Target creature gains flying and gets +1/+1 until end of turn, where X is the number of cards in your hand."
+
+[[counterexample]]
+reason = "Enchanted-object recipient, not target-permanent recipient."
+text = "Enchanted creature gets +1/+1 until end of turn."
+
+[[counterexample]]
+reason = "Source-object recipient, not target-permanent recipient."
+text = "This gets +1/+1 until end of turn."
+
+[[example]]
+text = "Target creature gets +1/+1 until end of turn."
+
+[[example]]
+text = "Target creature gets +X/+0 until end of turn."
+
+[[example]]
+text = "Target attacking creature gets -1/-1 until end of turn."
+
+[grammar_query]
+candidate_rules = [
+    "target_permanent_gets_until_eot",
+    "target_permanent_gets_eot_effect",
+    "target_permanent_until_eot",
+    "target_permanent_gains_keyword_until_eot",
+    "target_permanent_gains_keyword_and_gets_eot_effect",
+    "activated_enchanted_gets_until_eot",
+    "activated_source_gets_until_eot",
+]
+selected_rule = "target_permanent_gets_until_eot"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

@@ -1490,6 +1490,9 @@ target_creature_with_power_or_less_cant_be_blocked = {
 target_permanent_gains_keyword_until_eot = {
     ^"target" ~ target_permanent_selector ~ target_permanent_gains_keyword_eot_effect ~ "."
 }
+target_permanent_gets_until_eot = {
+    ^"target" ~ target_permanent_selector ~ target_permanent_gets_eot_effect ~ "."
+}
 activated_source_gets_until_eot = {
     source_object ~ ^"gets" ~ pt_modifier ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
 }
