@@ -1,0 +1,64 @@
+{
+  "concept": "permanent_enters",
+  "fixture_path": "grammar-fixtures/permanent_enters.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "permanent_enters",
+      "text": "a creature enters",
+      "ast": {
+        "TriggerEvent": {
+          "PermanentEnters": {
+            "object": {
+              "Article": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "permanent_enters",
+      "text": "an artifact enters",
+      "ast": {
+        "TriggerEvent": {
+          "PermanentEnters": {
+            "object": {
+              "Article": "Artifact"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "permanent_enters",
+      "text": "this creature enters",
+      "ast": {
+        "TriggerEvent": {
+          "PermanentEnters": {
+            "object": {
+              "Source": {
+                "This": "Creature"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "permanent_enters",
+      "text": "this permanent enters",
+      "ast": {
+        "TriggerEvent": {
+          "PermanentEnters": {
+            "object": {
+              "Source": "ThisPermanent"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

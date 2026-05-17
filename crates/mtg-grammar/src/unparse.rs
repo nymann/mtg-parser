@@ -21,12 +21,12 @@ use crate::ast::{
     ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
     NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
     ObjectStatus, ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PlayRestriction, PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter,
-    PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
-    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentEntersObject, PermanentType,
+    PhysicalAction, PlayRestriction, PlayRestrictionAction, PlayRestrictionAffected,
+    PlayRestrictionFilter, PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature,
+    RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
+    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
     StaticDamageRedirectionDestination, StaticDamageSource, StaticUntapRestriction,
     StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
     TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
@@ -2488,7 +2488,9 @@ fn write_triggered_ability(out: &mut String, ta: &TriggeredAbility) {
 
 fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
     out.push_str(match &condition.event {
-        TriggerEvent::PermanentEnters { .. }
+        TriggerEvent::PermanentEnters {
+            object: PermanentEntersObject::Article(_),
+        }
         | TriggerEvent::PermanentPutIntoGraveyardFromBattlefield { .. }
         | TriggerEvent::PermanentDealtDamageBySourceThisTurnDies { .. }
         | TriggerEvent::YouPlayPermanent { .. }
@@ -2517,6 +2519,9 @@ fn write_trigger_condition(out: &mut String, condition: TriggerCondition) {
         | TriggerEvent::EndOfCombat => "At ",
         TriggerEvent::ThisAuraEnters
         | TriggerEvent::ThisAuraLeavesTheBattlefield
+        | TriggerEvent::PermanentEnters {
+            object: PermanentEntersObject::Source(_),
+        }
         | TriggerEvent::SourcePutIntoGraveyardFromBattlefield { .. }
         | TriggerEvent::SourceDies { .. }
         | TriggerEvent::YouControlNoBasicLands { .. } => "When ",
@@ -2558,10 +2563,15 @@ fn write_trigger_event(out: &mut String, ev: TriggerEvent) {
         TriggerEvent::ThisAuraLeavesTheBattlefield => {
             out.push_str("this Aura leaves the battlefield");
         }
-        TriggerEvent::PermanentEnters { permanent_type } => {
-            out.push_str(indefinite_article(permanent_type));
-            out.push(' ');
-            out.push_str(permanent_type_name(permanent_type));
+        TriggerEvent::PermanentEnters { object } => {
+            match object {
+                PermanentEntersObject::Article(permanent_type) => {
+                    out.push_str(indefinite_article(permanent_type));
+                    out.push(' ');
+                    out.push_str(permanent_type_name(permanent_type));
+                }
+                PermanentEntersObject::Source(source) => write_source_object(out, source),
+            }
             out.push_str(" enters");
         }
         TriggerEvent::PlayerCastsColoredSpell { color } => {

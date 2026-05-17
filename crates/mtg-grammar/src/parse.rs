@@ -23,12 +23,12 @@ use crate::ast::{
     ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
     NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
     ObjectStatus, ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentType, PhysicalAction,
-    PlayRestriction, PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter,
-    PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
-    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
+    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentEntersObject, PermanentType,
+    PhysicalAction, PlayRestriction, PlayRestrictionAction, PlayRestrictionAffected,
+    PlayRestrictionFilter, PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature,
+    RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
+    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
     StaticDamageRedirectionDestination, StaticDamageSource, StaticUntapRestriction,
     StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
     TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
@@ -379,6 +379,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 permanent_dealt_damage_by_source_this_turn_dies_from_pair(pair)?,
             ))
         }
+        Rule::permanent_enters => Ok(Statement::TriggerEvent(permanent_enters_from_pair(pair)?)),
         Rule::if_source_on_battlefield_flip_onto_battlefield_from_height
         | Rule::if_source_turns_over_destroy_touched_nontoken_permanents
         | Rule::then_destroy_source => {
@@ -2949,25 +2950,14 @@ fn this_card_in_your_graveyard_with_cards_above_it_from_pair(
 
 fn permanent_enters_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
     let object_pair = only_inner(pair, "permanent_enters missing object")?;
-    let permanent_type = match object_pair.as_rule() {
-        Rule::permanent_type => permanent_type_from_pair(object_pair)?,
-        Rule::source_object => match source_object_from_pair(object_pair)? {
-            SourceObject::This(permanent_type) => permanent_type,
-            SourceObject::ThisPermanent => {
-                return Err(ParseError::Internal(
-                    "permanent_enters source missing permanent type",
-                ));
-            }
-            SourceObject::ThisAura => PermanentType::Enchantment,
-            SourceObject::ThatSource => {
-                return Err(ParseError::Internal(
-                    "permanent_enters source missing permanent type",
-                ));
-            }
-        },
+    let object = match object_pair.as_rule() {
+        Rule::permanent_type => {
+            PermanentEntersObject::Article(permanent_type_from_pair(object_pair)?)
+        }
+        Rule::source_object => PermanentEntersObject::Source(source_object_from_pair(object_pair)?),
         _ => return Err(ParseError::Internal("permanent_enters object")),
     };
-    Ok(TriggerEvent::PermanentEnters { permanent_type })
+    Ok(TriggerEvent::PermanentEnters { object })
 }
 
 fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {

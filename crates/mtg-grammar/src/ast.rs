@@ -1077,8 +1077,8 @@ pub enum TriggerEvent {
     ThisAuraEnters,
     /// "this Aura leaves the battlefield"
     ThisAuraLeavesTheBattlefield,
-    /// "a/an <permanent_type> enters"
-    PermanentEnters { permanent_type: PermanentType },
+    /// "<permanent-enters-object> enters"
+    PermanentEnters { object: PermanentEntersObject },
     /// "a player casts a/an <color> spell"
     PlayerCastsColoredSpell { color: Color },
     /// "<actor> casts/cast a/an <color or permanent_type> spell"
@@ -1166,6 +1166,14 @@ pub enum TriggerEvent {
     YouControlNoBasicLands { land_type: BasicLandType },
     /// "a/an <color> creature attacks"
     ColoredCreatureAttacks { color: Color },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PermanentEntersObject {
+    /// "a/an <permanent_type>"
+    Article(PermanentType),
+    /// "this <source_object>"
+    Source(SourceObject),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
