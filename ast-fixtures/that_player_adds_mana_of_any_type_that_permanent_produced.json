@@ -1,0 +1,32 @@
+{
+  "concept": "that_player_adds_mana_of_any_type_that_permanent_produced",
+  "fixture_path": "grammar-fixtures/that_player_adds_mana_of_any_type_that_permanent_produced.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "that_player_adds_mana_of_any_type_that_permanent_produced",
+      "text": "that player adds one mana of any type that land produced.",
+      "ast": {
+        "TriggerEffect": {
+          "ThatPlayerAddsManaOfAnyTypeThatPermanentProduced": {
+            "amount": 1,
+            "permanent_type": "Land"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "that_player_adds_mana_of_any_type_that_permanent_produced",
+      "text": "That player adds one mana of any type that land produced.",
+      "ast": {
+        "TriggerEffect": {
+          "ThatPlayerAddsManaOfAnyTypeThatPermanentProduced": {
+            "amount": 1,
+            "permanent_type": "Land"
+          }
+        }
+      }
+    }
+  ]
+}

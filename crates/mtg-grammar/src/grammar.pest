@@ -102,6 +102,7 @@ sentence_statement = _{
   | put_pt_counters_on_source
   | put_named_counter_on_target_non_basic_land
   | player_may_pay_mana
+  | that_player_adds_mana_of_any_type_that_permanent_produced
   | you_may_draw_cards
   | remove_pt_counter_from_it
   | that_creatures_controller_sacrifices_it
