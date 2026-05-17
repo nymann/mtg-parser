@@ -898,8 +898,8 @@ color_word = @{
 
 // Creature subtypes that appear as Aura targets, enchanted objects, or
 // creature-type selectors.
-creature_type = @{ ^"djinn" | ^"elf" | ^"goblin" | ^"golem" | ^"insect" | ^"merfolk" | ^"wall" | ^"zombie" }
-creature_type_plural = @{ ^"djinns" | ^"elves" | ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"walls" | ^"zombies" }
+creature_type = @{ ^"djinn" | ^"dragon" | ^"elf" | ^"goblin" | ^"golem" | ^"insect" | ^"merfolk" | ^"wall" | ^"zombie" }
+creature_type_plural = @{ ^"djinns" | ^"dragons" | ^"elves" | ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"walls" | ^"zombies" }
 
 // Static abilities. Five surface shapes today:
 //   - "As long as <cond>, <effect>." — conditional continuous effect.

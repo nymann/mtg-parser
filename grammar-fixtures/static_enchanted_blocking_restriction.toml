@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_enchanted_blocking_restriction"
+rule = "static_enchanted_cant_be_blocked_except_by_creature_type"
+
+[[example]]
+text = "Enchanted creature can't be blocked except by Walls."
+reason = "Blocking restriction for an enchanted creature with a creature-type exception."
+
+[[example]]
+text = "Enchanted creature can't be blocked except by Dragons."
+reason = "Same restriction axis with a different creature-type exception."
+
+[[counterexample]]
+text = "Enchanted creature has flying."
+reason = "Keyword ability grant, owned by static_enchanted_keyword_grant."
+
+[[counterexample]]
+text = "Enchanted creature can't be blocked."
+reason = "Unblockable restriction without an exception, not this except-by-creature-type concept."
+
+[[counterexample]]
+text = "Enchanted creature can't be enchanted by other Auras."
+reason = "Aura attachment restriction, not a blocking restriction."
+
+[[counterexample]]
+text = "This creature can't be blocked by Walls."
+reason = "Source-object blocking restriction, not an enchanted-permanent restriction."
+
+[[counterexample]]
+text = "Enchanted creature can't be blocked except by Walls. trailing"
+reason = "Exact-consumption guard."

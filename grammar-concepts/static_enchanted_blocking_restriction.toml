@@ -1,0 +1,72 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_effect"]
+
+[[axis]]
+name = "add_affected_object"
+values = ["enchanted_permanent"]
+
+[[axis]]
+name = "add_restriction_kind"
+values = ["blocking_restriction"]
+
+[[axis]]
+name = "add_exception"
+values = ["except_by_creature_type"]
+
+[boundary]
+excludes = [
+    "Enchanted-object keyword ability grants.",
+    "Enchanted-object unblockable restrictions without an exception.",
+    "Enchanted-object Aura attachment restrictions.",
+    "Source-object blocking restrictions that do not affect an enchanted permanent.",
+]
+includes = [
+    "Enchanted creature can't be blocked except by Walls.",
+    "Enchanted creature can't be blocked except by Dragons.",
+]
+
+[concept]
+name = "static_enchanted_blocking_restriction"
+pest_rules = ["static_enchanted_cant_be_blocked_except_by_creature_type"]
+rules_queries = [
+    "lex: enchanted creature can't be blocked except by creature type",
+    "lex: can't be blocked except by Walls",
+]
+rules_terms = [
+    "static",
+    "continuous",
+    "enchanted",
+    "blocking restriction",
+    "creature type",
+]
+
+[[counterexample]]
+reason = "Keyword ability grant, owned by static_enchanted_keyword_grant."
+text = "Enchanted creature has flying."
+
+[[counterexample]]
+reason = "Unblockable restriction without an exception, not an exception-by-creature-type restriction."
+text = "Enchanted creature can't be blocked."
+
+[[counterexample]]
+reason = "Aura attachment restriction, not a blocking restriction."
+text = "Enchanted creature can't be enchanted by other Auras."
+
+[[counterexample]]
+reason = "Source-object blocking restriction, not an enchanted-permanent restriction."
+text = "This creature can't be blocked by Walls."
+
+[[example]]
+text = "Enchanted creature can't be blocked except by Walls."
+
+[[example]]
+text = "Enchanted creature can't be blocked except by Dragons."
+
+[grammar_query]
+candidate_rules = ["static_enchanted_cant_be_blocked_except_by_creature_type"]
+selected_rule = "static_enchanted_cant_be_blocked_except_by_creature_type"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
