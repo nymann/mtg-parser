@@ -1,0 +1,50 @@
+{
+  "concept": "delayed_remove_all_named_counters_from_linked_land",
+  "fixture_path": "grammar-fixtures/delayed_remove_all_named_counters_from_linked_land.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "delayed_remove_all_named_counters_from_linked_land",
+      "text": "At the beginning of each of your upkeeps for the rest of the game, remove all mire counters from a land that a mire counter was put onto with CARDNAME but that a mire counter has not been removed from with CARDNAME.",
+      "ast": {
+        "TriggerEffect": {
+          "DelayedRemoveAllNamedCountersFromLinkedPermanent": {
+            "counter_name": "mire",
+            "permanent_type": "Land",
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "delayed_remove_all_named_counters_from_linked_land",
+      "text": "At the beginning of each of your upkeeps for the rest of the game, remove all flood counters from an artifact that a flood counter was put onto with it but that a flood counter has not been removed from with it.",
+      "ast": {
+        "TriggerEffect": {
+          "DelayedRemoveAllNamedCountersFromLinkedPermanent": {
+            "counter_name": "flood",
+            "permanent_type": "Artifact",
+            "source": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "delayed_remove_all_named_counters_from_linked_land",
+      "text": "At the beginning of each of your upkeeps for the rest of the game, remove all charge counters from a creature that a charge counter was put onto with this artifact but that a charge counter has not been removed from with this artifact.",
+      "ast": {
+        "TriggerEffect": {
+          "DelayedRemoveAllNamedCountersFromLinkedPermanent": {
+            "counter_name": "charge",
+            "permanent_type": "Creature",
+            "source": {
+              "This": "Artifact"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

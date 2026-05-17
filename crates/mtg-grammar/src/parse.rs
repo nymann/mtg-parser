@@ -360,6 +360,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::you_may_remove_named_counter_from_source => Ok(Statement::TriggerEffect(
             you_may_remove_named_counter_from_source_from_pair(pair)?,
         )),
+        Rule::delayed_remove_all_named_counters_from_linked_land => Ok(Statement::TriggerEffect(
+            delayed_remove_all_named_counters_from_linked_land_from_pair(pair)?,
+        )),
         Rule::source_gains_static_ability => Ok(Statement::TriggerEffect(
             source_gains_static_ability_from_pair(pair)?,
         )),
