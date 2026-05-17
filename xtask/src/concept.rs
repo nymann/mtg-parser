@@ -3677,12 +3677,12 @@ fn parse_boundary_decision(response: &str) -> Result<BoundaryDecision> {
 fn parse_boundary_owner(owner: &str) -> Result<BoundaryOwner> {
     let owner = owner.trim();
     if let Some(concept) = owner.strip_prefix("existing:") {
-        let concept = concept.trim();
+        let concept = boundary_owner_concept_token(concept);
         validate_concept_name(concept)?;
         return Ok(BoundaryOwner::Existing(concept.to_string()));
     }
     if let Some(concept) = owner.strip_prefix("new:") {
-        let concept = concept.trim();
+        let concept = boundary_owner_concept_token(concept);
         validate_concept_name(concept)?;
         return Ok(BoundaryOwner::New(concept.to_string()));
     }
@@ -3694,6 +3694,15 @@ fn parse_boundary_owner(owner: &str) -> Result<BoundaryOwner> {
         return Ok(BoundaryOwner::Blocked(reason.to_string()));
     }
     bail!("OWNER must be existing:<concept>, new:<concept>, or blocked:<reason>; got {owner:?}");
+}
+
+fn boundary_owner_concept_token(owner_suffix: &str) -> &str {
+    owner_suffix
+        .trim()
+        .split(|ch: char| ch.is_ascii_whitespace() || matches!(ch, ',' | ';' | ')' | '('))
+        .next()
+        .unwrap_or_default()
+        .trim()
 }
 
 fn apply_boundary_decision(gap: ConceptGap, decision: &BoundaryDecision) -> Result<ConceptGap> {
@@ -5826,6 +5835,24 @@ mod tests {
             BoundaryOwner::Existing(concept) if concept == "counter_target_spell"
         ));
         assert!(decision.pest_patch_intent.contains("widen"));
+    }
+
+    #[test]
+    fn parses_boundary_owner_with_inline_contrast() {
+        let decision = parse_boundary_decision(
+            "CONCEPT_BOUNDARY_DECISION:\n\
+             OWNER: existing:static_colored_permanents_pt_modification, not existing:static_cost_increase\n\
+             AXES: affected_object=status_creatures\n\
+             EXAMPLES_TO_ACCEPT: Attacking creatures get +1/+0.\n\
+             COUNTEREXAMPLES_TO_REJECT: White spells cost {3} more to cast.\n\
+             PEST_PATCH_INTENT: none\n",
+        )
+        .expect("decision parses");
+        assert!(matches!(
+            &decision.owner,
+            BoundaryOwner::Existing(concept)
+                if concept == "static_colored_permanents_pt_modification"
+        ));
     }
 
     #[test]
