@@ -1,0 +1,132 @@
+{
+  "concept": "player_discards_cards",
+  "fixture_path": "grammar-fixtures/player_discards_cards.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "player_discards_cards",
+      "text": "Target player discards a card at random.",
+      "ast": {
+        "PlayerDiscardsCards": {
+          "actor": "TargetPlayer",
+          "at_random": true,
+          "count": {
+            "Number": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "player_discards_cards",
+      "text": "Target player discards two cards at random.",
+      "ast": {
+        "PlayerDiscardsCards": {
+          "actor": "TargetPlayer",
+          "at_random": true,
+          "count": {
+            "Number": 2
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "player_discards_cards",
+      "text": "Target player discards a card.",
+      "ast": {
+        "PlayerDiscardsCards": {
+          "actor": "TargetPlayer",
+          "at_random": false,
+          "count": {
+            "Number": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "player_discards_cards",
+      "text": "That player discards a card at random.",
+      "ast": {
+        "PlayerDiscardsCards": {
+          "actor": "ThatPlayer",
+          "at_random": true,
+          "count": {
+            "Number": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "player_discards_cards",
+      "text": "Each player discards two cards.",
+      "ast": {
+        "PlayerDiscardsCards": {
+          "actor": "EachPlayer",
+          "at_random": false,
+          "count": {
+            "Number": 2
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "player_discards_cards",
+      "text": "You discard a card.",
+      "ast": {
+        "PlayerDiscardsCards": {
+          "actor": "You",
+          "at_random": false,
+          "count": {
+            "Number": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 7,
+      "rule": "target_player_discards_cards_at_random",
+      "text": "Target player discards a card at random.",
+      "ast": {
+        "PlayerDiscardsCards": {
+          "actor": "TargetPlayer",
+          "at_random": true,
+          "count": {
+            "Number": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 8,
+      "rule": "target_player_discards_cards",
+      "text": "Target player discards a card.",
+      "ast": {
+        "PlayerDiscardsCards": {
+          "actor": "TargetPlayer",
+          "at_random": false,
+          "count": {
+            "Number": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 9,
+      "rule": "that_player_discards_card_at_random",
+      "text": "That player discards a card at random.",
+      "ast": {
+        "PlayerDiscardsCards": {
+          "actor": "ThatPlayer",
+          "at_random": true,
+          "count": {
+            "Number": 1
+          }
+        }
+      }
+    }
+  ]
+}

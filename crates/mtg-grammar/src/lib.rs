@@ -13,11 +13,11 @@ pub use ast::{
     EnchantObject, EnchantedObject, ImperativeAction, InterveningIf, Keyword, LifeAmount, ManaCost,
     ManaSymbol, MixedPtModifier, ModalMode, ObjectStatus, OptionalCost, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentType, PhysicalAction, PlayRestriction,
-    PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter, PreventionRecipient,
-    PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable,
-    SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
-    Step, TapAllPermanentsActor, TargetPermanentSelector, TextChangeReplacementTerm, TriggerEffect,
-    TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
+    PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter, PlayerDiscardActor,
+    PreventionRecipient, PtModifier, Rounding, Sign, SignedNumber, SignedPtComponent,
+    SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost, SpellType, Statement,
+    StaticAbility, Step, TapAllPermanentsActor, TargetPermanentSelector, TextChangeReplacementTerm,
+    TriggerEffect, TriggerEvent, TriggeredAbility, ValueExpression, Variable, VariableDefinition,
     VariablePtModifier, Zone,
 };
 pub use parse::{parse, ParseError};

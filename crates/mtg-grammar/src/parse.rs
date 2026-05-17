@@ -25,13 +25,13 @@ use crate::ast::{
     ObjectStatus, ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentEntersObject, PermanentType,
     PhysicalAction, PlayRestriction, PlayRestrictionAction, PlayRestrictionAffected,
-    PlayRestrictionFilter, PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature,
-    RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
-    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
-    StaticDamageRedirectionDestination, StaticDamageSource, StaticUntapRestriction,
-    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
-    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    PlayRestrictionFilter, PlayerDiscardActor, PreventionRecipient, PtModifier, ReferencedCard,
+    ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination,
+    Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
+    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
+    StaticDamagePreventionEffect, StaticDamageRedirectionDestination, StaticDamageSource,
+    StaticUntapRestriction, StatusCreatureController, StatusCreatureGetDuration, Step,
+    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -251,8 +251,8 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::draw_that_many_cards_replacement_result => {
             draw_that_many_cards_replacement_result_from_pair(pair)
         }
-        Rule::target_player_discards_cards_at_random => {
-            target_player_discards_cards_at_random_from_pair(pair)
+        Rule::player_discards_cards | Rule::target_player_discards_cards_at_random => {
+            player_discards_cards_from_pair(pair)
         }
         Rule::add_mana => add_mana_from_pair(pair),
         Rule::until_eot_you_may_pay_cost_at_timing => {
@@ -1583,12 +1583,32 @@ fn draw_that_many_cards_replacement_result_from_pair(
     })
 }
 
-fn target_player_discards_cards_at_random_from_pair(
-    pair: Pair<Rule>,
-) -> Result<Statement, ParseError> {
-    let count_pair = only_inner(pair, "target player discards at random missing count")?;
-    Ok(Statement::TargetPlayerDiscardsCardsAtRandom {
+fn player_discards_cards_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let text = pair.as_str().to_ascii_lowercase();
+    let actor = if text.starts_with("target player ") {
+        PlayerDiscardActor::TargetPlayer
+    } else if text.starts_with("that player ") {
+        PlayerDiscardActor::ThatPlayer
+    } else if text.starts_with("each player ") {
+        PlayerDiscardActor::EachPlayer
+    } else if text.starts_with("you ") {
+        PlayerDiscardActor::You
+    } else {
+        return Err(ParseError::Internal("player discards actor"));
+    };
+    let count_pair = pair
+        .into_inner()
+        .find(|child| {
+            matches!(
+                child.as_rule(),
+                Rule::discard_one_card | Rule::discard_counted_cards
+            )
+        })
+        .ok_or(ParseError::Internal("player discards missing count"))?;
+    Ok(Statement::PlayerDiscardsCards {
+        actor,
         count: discard_count_from_pair(count_pair)?,
+        at_random: text.ends_with(" at random."),
     })
 }
 

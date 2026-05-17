@@ -17,10 +17,11 @@ use mtg_grammar::{
     DamagePreventionEffect, DamagePreventionEvent, DamageRecipient, DamageRecipients,
     DestroyTarget, EachPlayerAction, EnchantedObject, ImperativeAction, Keyword, LifeAmount,
     ManaCost, ManaSymbol, ModalMode, ObjectStatus, PayManaAmount, PayManaPlayer,
-    PaymentFailureEffect, PermanentType, PreventionRecipient, PtModifier, Sign, SignedNumber,
-    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
-    SpellType, Statement, StaticAbility, TapAllPermanentsActor, TargetPermanentSelector,
-    TextChangeReplacementTerm, TriggerEffect, TriggerEvent, TriggeredAbility, Variable, Zone,
+    PaymentFailureEffect, PermanentType, PlayerDiscardActor, PreventionRecipient, PtModifier, Sign,
+    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
+    SpellAdditionalCost, SpellType, Statement, StaticAbility, TapAllPermanentsActor,
+    TargetPermanentSelector, TextChangeReplacementTerm, TriggerEffect, TriggerEvent,
+    TriggeredAbility, Variable, Zone,
 };
 use mtg_semantic::{lower, CardEffect};
 use proptest::prelude::*;
@@ -467,7 +468,21 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl { permanent_type }
         }),
-        arb_card_count().prop_map(|count| Statement::TargetPlayerDiscardsCardsAtRandom { count }),
+        (
+            prop_oneof![
+                Just(PlayerDiscardActor::TargetPlayer),
+                Just(PlayerDiscardActor::ThatPlayer),
+                Just(PlayerDiscardActor::EachPlayer),
+                Just(PlayerDiscardActor::You),
+            ],
+            arb_card_count(),
+            any::<bool>(),
+        )
+            .prop_map(|(actor, count, at_random)| Statement::PlayerDiscardsCards {
+                actor,
+                count,
+                at_random,
+            }),
         arb_card_count().prop_map(|count| {
             Statement::LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder { count }
         }),

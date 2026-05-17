@@ -84,6 +84,7 @@ sentence_statement = _{
   | draw_cards
   | activated_draw_cards
   | you_may_draw_cards
+  | player_discards_cards
   | target_player_discards_cards_at_random
   | add_mana
   | if_you_flip_result_effect

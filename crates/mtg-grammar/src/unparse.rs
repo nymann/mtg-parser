@@ -23,13 +23,13 @@ use crate::ast::{
     ObjectStatus, ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount,
     PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentEntersObject, PermanentType,
     PhysicalAction, PlayRestriction, PlayRestrictionAction, PlayRestrictionAffected,
-    PlayRestrictionFilter, PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature,
-    RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign,
-    SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject,
-    SpellAdditionalCost, SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
-    StaticDamageRedirectionDestination, StaticDamageSource, StaticUntapRestriction,
-    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
-    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    PlayRestrictionFilter, PlayerDiscardActor, PreventionRecipient, PtModifier, ReferencedCard,
+    ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination,
+    Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
+    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
+    StaticDamagePreventionEffect, StaticDamageRedirectionDestination, StaticDamageSource,
+    StaticUntapRestriction, StatusCreatureController, StatusCreatureGetDuration, Step,
+    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -202,6 +202,23 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str("Target player discards ");
             write_discard_count(out, *count);
             out.push_str(" at random.");
+        }
+        Statement::PlayerDiscardsCards {
+            actor,
+            count,
+            at_random,
+        } => {
+            write_player_discard_actor(out, *actor);
+            out.push(' ');
+            match actor {
+                PlayerDiscardActor::You => out.push_str("discard "),
+                _ => out.push_str("discards "),
+            }
+            write_discard_count(out, *count);
+            if *at_random {
+                out.push_str(" at random");
+            }
+            out.push('.');
         }
         Statement::IfYouWouldEventYouMaySkipThatInstead { event } => {
             write_skip_replacement_effect(out, *event);
@@ -1954,6 +1971,15 @@ fn token_color_name(color: TokenColor) -> &'static str {
 
 fn write_discard_count(out: &mut String, count: CardCount) {
     write_card_count_object(out, count);
+}
+
+fn write_player_discard_actor(out: &mut String, actor: PlayerDiscardActor) {
+    match actor {
+        PlayerDiscardActor::TargetPlayer => out.push_str("Target player"),
+        PlayerDiscardActor::ThatPlayer => out.push_str("That player"),
+        PlayerDiscardActor::EachPlayer => out.push_str("Each player"),
+        PlayerDiscardActor::You => out.push_str("You"),
+    }
 }
 
 fn write_card_count_object(out: &mut String, count: CardCount) {

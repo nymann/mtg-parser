@@ -136,6 +136,13 @@ pub enum Statement {
     TargetPlayerDiscardsCardsAtRandom {
         count: CardCount,
     },
+    /// "<player> discards N cards [at random]." — CR 701.8 discard
+    /// keyword action with actor and randomness captured as axes.
+    PlayerDiscardsCards {
+        actor: PlayerDiscardActor,
+        count: CardCount,
+        at_random: bool,
+    },
     /// "If you would <event>, you may skip that <event> instead." —
     /// CR 614.10 skip replacement effect.
     IfYouWouldEventYouMaySkipThatInstead {
@@ -1020,6 +1027,14 @@ pub enum CardCount {
     Number(u32),
     Variable(Variable),
     ThatMany,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PlayerDiscardActor {
+    TargetPlayer,
+    ThatPlayer,
+    EachPlayer,
+    You,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
