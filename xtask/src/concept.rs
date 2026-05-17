@@ -9,7 +9,7 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail, Context, Result};
 use mtg_corpus::normalize_oracle_text;
-use mtg_grammar::parse_pest_rule;
+use mtg_grammar::{parse as parse_card_text, parse_pest_rule};
 use mtg_scryfall::ScryfallClient;
 use serde::{Deserialize, Serialize};
 
@@ -53,6 +53,25 @@ cargo xtask concept-grammar-test --fixture PATH [--json]
 
 Runs grammar-fixtures/<concept>.toml at PEST-rule level.
 This command does not require AST construction, unparse, lowering, or card tests.
+";
+
+const PARSE_USAGE: &str = "\
+cargo xtask concept-parse CONCEPT [--json]
+cargo xtask concept-parse --fixture PATH [--json]
+
+Runs Phase 2 parser/AST readiness checks for the accepted examples in a
+grammar fixture. This uses the full mtg_grammar::parse entrypoint, not only the
+PEST rule-level fixture gate. Counterexamples are not full-parser rejects; they
+remain Phase 1 concept-boundary evidence.
+";
+
+const AST_TEST_USAGE: &str = "\
+cargo xtask concept-ast-test CONCEPT [--update] [--json]
+cargo xtask concept-ast-test --fixture PATH [--update] [--json]
+
+Compares Phase 2 AST snapshots for accepted grammar fixture examples. With
+--update, writes ast-fixtures/<concept>.json from the current parser output.
+Without --update, fails if the snapshot is missing or differs.
 ";
 
 const GRAMMAR_QUERY_USAGE: &str = "\
@@ -174,6 +193,60 @@ pub fn grammar_test(args: &[String]) -> ExitCode {
         }
         Err(e) => {
             eprintln!("error: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn parse_concept(args: &[String]) -> ExitCode {
+    match parse_phase2_options(args, PARSE_USAGE).and_then(run_concept_parse) {
+        Ok(report) => {
+            if report.json {
+                match serde_json::to_string_pretty(&report) {
+                    Ok(json) => println!("{json}"),
+                    Err(e) => {
+                        eprintln!("error: {e:#}");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                print_parse_report(&report);
+            }
+            if report.passed {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
+        }
+        Err(e) => {
+            eprintln!("concept-parse: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn ast_test(args: &[String]) -> ExitCode {
+    match parse_phase2_options(args, AST_TEST_USAGE).and_then(run_ast_test) {
+        Ok(report) => {
+            if report.json {
+                match serde_json::to_string_pretty(&report) {
+                    Ok(json) => println!("{json}"),
+                    Err(e) => {
+                        eprintln!("error: {e:#}");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            } else {
+                print_ast_report(&report);
+            }
+            if report.passed {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
+        }
+        Err(e) => {
+            eprintln!("concept-ast-test: {e:#}");
             ExitCode::FAILURE
         }
     }
@@ -361,6 +434,81 @@ struct GrammarTestOptions {
 struct GrammarTestRun {
     result: FixtureRunResult,
     json: bool,
+}
+
+#[derive(Debug)]
+struct Phase2Options {
+    concept: Option<String>,
+    fixture: Option<PathBuf>,
+    update: bool,
+    json: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ParseReport {
+    concept: String,
+    fixture_path: PathBuf,
+    passed: bool,
+    total: usize,
+    failures: usize,
+    cases: Vec<ParseCaseResult>,
+    #[serde(skip)]
+    json: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+struct ParseCaseResult {
+    index: usize,
+    rule: String,
+    text: String,
+    parsed: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ast: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct AstTestReport {
+    concept: String,
+    fixture_path: PathBuf,
+    snapshot_path: PathBuf,
+    updated: bool,
+    passed: bool,
+    total: usize,
+    failures: usize,
+    cases: Vec<AstCaseResult>,
+    #[serde(skip)]
+    json: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+struct AstCaseResult {
+    index: usize,
+    rule: String,
+    text: String,
+    matched: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    expected_ast: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    actual_ast: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+struct AstSnapshot {
+    concept: String,
+    fixture_path: PathBuf,
+    cases: Vec<AstSnapshotCase>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+struct AstSnapshotCase {
+    index: usize,
+    rule: String,
+    text: String,
+    ast: serde_json::Value,
 }
 
 #[derive(Debug)]
@@ -1284,6 +1432,245 @@ fn run_grammar_test(options: GrammarTestOptions) -> Result<GrammarTestRun> {
         result,
         json: options.json,
     })
+}
+
+fn parse_phase2_options(args: &[String], usage: &str) -> Result<Phase2Options> {
+    let mut concept = None;
+    let mut fixture = None;
+    let mut update = false;
+    let mut json = false;
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{usage}"),
+            "--json" => json = true,
+            "--update" => update = true,
+            "--fixture" => {
+                fixture = Some(PathBuf::from(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--fixture requires a value"))?,
+                ));
+            }
+            s if s.starts_with("--fixture=") => {
+                fixture = Some(PathBuf::from(&s["--fixture=".len()..]));
+            }
+            other if other.starts_with('-') => bail!("unknown argument: {other}\n\n{usage}"),
+            positional => {
+                if concept.replace(positional.to_string()).is_some() {
+                    bail!("only one concept may be provided\n\n{usage}");
+                }
+            }
+        }
+    }
+    if concept.is_none() && fixture.is_none() {
+        bail!("concept or --fixture is required\n\n{usage}");
+    }
+    Ok(Phase2Options {
+        concept,
+        fixture,
+        update,
+        json,
+    })
+}
+
+fn phase2_fixture_path(options: &Phase2Options) -> PathBuf {
+    match &options.fixture {
+        Some(path) => path.clone(),
+        None => grammar_fixtures_dir().join(format!(
+            "{}.toml",
+            options.concept.as_ref().expect("checked by parser")
+        )),
+    }
+}
+
+fn ast_fixture_path(concept: &str) -> PathBuf {
+    repo_root()
+        .join("ast-fixtures")
+        .join(format!("{concept}.json"))
+}
+
+fn repo_relative_path(path: &Path) -> PathBuf {
+    path.strip_prefix(repo_root()).unwrap_or(path).to_path_buf()
+}
+
+fn run_concept_parse(options: Phase2Options) -> Result<ParseReport> {
+    let fixture_path = phase2_fixture_path(&options);
+    let doc = read_fixture_document(&fixture_path)?;
+    let mut cases = Vec::new();
+    for (index, case) in doc.example.iter().enumerate() {
+        let rule = case
+            .rule
+            .as_deref()
+            .unwrap_or(&doc.fixture.rule)
+            .to_string();
+        let parsed = parse_card_text(&case.text);
+        match parsed {
+            Ok(ast) => cases.push(ParseCaseResult {
+                index: index + 1,
+                rule,
+                text: case.text.clone(),
+                parsed: true,
+                ast: Some(serde_json::to_value(ast).context("serialize AST")?),
+                error: None,
+            }),
+            Err(error) => cases.push(ParseCaseResult {
+                index: index + 1,
+                rule,
+                text: case.text.clone(),
+                parsed: false,
+                ast: None,
+                error: Some(error.to_string()),
+            }),
+        }
+    }
+    let failures = cases.iter().filter(|case| !case.parsed).count();
+    Ok(ParseReport {
+        concept: doc.fixture.concept,
+        fixture_path,
+        passed: failures == 0,
+        total: cases.len(),
+        failures,
+        cases,
+        json: options.json,
+    })
+}
+
+fn run_ast_test(options: Phase2Options) -> Result<AstTestReport> {
+    let parse_report = run_concept_parse(Phase2Options {
+        concept: options.concept.clone(),
+        fixture: options.fixture.clone(),
+        update: false,
+        json: false,
+    })?;
+    let snapshot_path = ast_fixture_path(&parse_report.concept);
+    let actual_snapshot = AstSnapshot {
+        concept: parse_report.concept.clone(),
+        fixture_path: repo_relative_path(&parse_report.fixture_path),
+        cases: parse_report
+            .cases
+            .iter()
+            .filter_map(|case| {
+                Some(AstSnapshotCase {
+                    index: case.index,
+                    rule: case.rule.clone(),
+                    text: case.text.clone(),
+                    ast: case.ast.clone()?,
+                })
+            })
+            .collect(),
+    };
+
+    if options.update {
+        if !parse_report.passed {
+            bail!(
+                "cannot update AST snapshot because {} accepted example(s) failed full parse",
+                parse_report.failures
+            );
+        }
+        if let Some(parent) = snapshot_path.parent() {
+            fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
+        }
+        write_json(snapshot_path.clone(), &actual_snapshot)?;
+        let total = actual_snapshot.cases.len();
+        return Ok(AstTestReport {
+            concept: parse_report.concept,
+            fixture_path: parse_report.fixture_path,
+            snapshot_path,
+            updated: true,
+            passed: true,
+            total,
+            failures: 0,
+            cases: actual_snapshot
+                .cases
+                .into_iter()
+                .map(|case| AstCaseResult {
+                    index: case.index,
+                    rule: case.rule,
+                    text: case.text,
+                    matched: true,
+                    expected_ast: Some(case.ast.clone()),
+                    actual_ast: Some(case.ast),
+                    error: None,
+                })
+                .collect(),
+            json: options.json,
+        });
+    }
+
+    if !snapshot_path.exists() {
+        bail!(
+            "missing AST snapshot {}; run concept-ast-test --update first",
+            snapshot_path.display()
+        );
+    }
+    let expected: AstSnapshot = serde_json::from_str(
+        &fs::read_to_string(&snapshot_path)
+            .with_context(|| format!("read {}", snapshot_path.display()))?,
+    )
+    .with_context(|| format!("parse {}", snapshot_path.display()))?;
+    let mut expected_by_index = BTreeMap::new();
+    for case in expected.cases {
+        expected_by_index.insert(case.index, case);
+    }
+    let mut cases = Vec::new();
+    let mut actual_indices = BTreeSet::new();
+    for actual in &parse_report.cases {
+        actual_indices.insert(actual.index);
+        let expected = expected_by_index.get(&actual.index);
+        let matched = actual.parsed
+            && expected.is_some_and(|expected| {
+                expected.text == actual.text
+                    && expected.rule == actual.rule
+                    && Some(&expected.ast) == actual.ast.as_ref()
+            });
+        cases.push(AstCaseResult {
+            index: actual.index,
+            rule: actual.rule.clone(),
+            text: actual.text.clone(),
+            matched,
+            expected_ast: expected.map(|case| case.ast.clone()),
+            actual_ast: actual.ast.clone(),
+            error: if matched {
+                None
+            } else if !actual.parsed {
+                actual.error.clone()
+            } else {
+                Some("AST snapshot mismatch".to_string())
+            },
+        });
+    }
+    for (index, expected) in expected_by_index {
+        if actual_indices.contains(&index) {
+            continue;
+        }
+        cases.push(AstCaseResult {
+            index,
+            rule: expected.rule,
+            text: expected.text,
+            matched: false,
+            expected_ast: Some(expected.ast),
+            actual_ast: None,
+            error: Some("AST snapshot case missing from fixture".to_string()),
+        });
+    }
+    cases.sort_by_key(|case| case.index);
+    let failures = cases.iter().filter(|case| !case.matched).count();
+    Ok(AstTestReport {
+        concept: parse_report.concept,
+        fixture_path: parse_report.fixture_path,
+        snapshot_path,
+        updated: false,
+        passed: failures == 0,
+        total: cases.len(),
+        failures,
+        cases,
+        json: options.json,
+    })
+}
+
+fn read_fixture_document(path: &Path) -> Result<FixtureDocument> {
+    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+    toml::from_str(&text).with_context(|| format!("parse {}", path.display()))
 }
 
 fn parse_maturity_options(args: &[String]) -> Result<MaturityOptions> {
@@ -5418,9 +5805,7 @@ fn build_corpus_cluster(
 }
 
 fn run_fixture_file(path: &Path) -> Result<FixtureRunResult> {
-    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    let doc: FixtureDocument =
-        toml::from_str(&text).with_context(|| format!("parse {}", path.display()))?;
+    let doc = read_fixture_document(path)?;
     let mut cases = Vec::new();
 
     for case in &doc.example {
@@ -5504,6 +5889,62 @@ fn print_fixture_report(result: &FixtureRunResult) {
             case.kind, case.rule, case.expected, case.matched, case.text
         );
         if !case.passed {
+            if let Some(error) = &case.error {
+                println!("    error: {error}");
+            }
+        }
+    }
+}
+
+fn print_parse_report(report: &ParseReport) {
+    println!("concept: {}", report.concept);
+    println!("fixture: {}", report.fixture_path.display());
+    println!(
+        "phase2 parse: {} ({} accepted example(s), {} failure(s))",
+        if report.passed { "pass" } else { "fail" },
+        report.total,
+        report.failures
+    );
+    for case in &report.cases {
+        if case.parsed {
+            println!(
+                "  ok example #{} rule={} text={:?}",
+                case.index, case.rule, case.text
+            );
+        } else {
+            println!(
+                "  FAIL example #{} rule={} text={:?}",
+                case.index, case.rule, case.text
+            );
+            if let Some(error) = &case.error {
+                println!("    error: {error}");
+            }
+        }
+    }
+}
+
+fn print_ast_report(report: &AstTestReport) {
+    println!("concept: {}", report.concept);
+    println!("fixture: {}", report.fixture_path.display());
+    println!("snapshot: {}", report.snapshot_path.display());
+    println!(
+        "phase2 ast: {}{} ({} case(s), {} failure(s))",
+        if report.passed { "pass" } else { "fail" },
+        if report.updated { " [updated]" } else { "" },
+        report.total,
+        report.failures
+    );
+    for case in &report.cases {
+        if case.matched {
+            println!(
+                "  ok example #{} rule={} text={:?}",
+                case.index, case.rule, case.text
+            );
+        } else {
+            println!(
+                "  FAIL example #{} rule={} text={:?}",
+                case.index, case.rule, case.text
+            );
             if let Some(error) = &case.error {
                 println!("    error: {error}");
             }

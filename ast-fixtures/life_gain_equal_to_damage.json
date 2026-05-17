@@ -1,0 +1,61 @@
+{
+  "concept": "life_gain_equal_to_damage",
+  "fixture_path": "grammar-fixtures/life_gain_equal_to_damage.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_gain_life_equal_damage",
+      "text": "You gain life equal to the damage dealt, but not more life than the player's life total before the damage was dealt or the creature's toughness.",
+      "ast": {
+        "YouGainLifeEqualToDamage": {
+          "reference": {
+            "DamageDealtCapped": {
+              "caps": [
+                "PlayerLifeTotalBeforeDamageDealt",
+                "CreatureToughness"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "you_gain_life_equal_damage",
+      "text": "You gain life equal to the damage dealt, but not more life than the player's life total before the damage was dealt, the planeswalker's loyalty before the damage was dealt, or the creature's toughness.",
+      "ast": {
+        "YouGainLifeEqualToDamage": {
+          "reference": {
+            "DamageDealtCapped": {
+              "caps": [
+                "PlayerLifeTotalBeforeDamageDealt",
+                "PlaneswalkerLoyaltyBeforeDamageDealt",
+                "CreatureToughness"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "you_gain_life_equal_damage",
+      "text": "You gain life equal to the damage prevented this way.",
+      "ast": {
+        "YouGainLifeEqualToDamage": {
+          "reference": "DamagePreventedThisWay"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "you_gain_life_equal_damage",
+      "text": "You gain life equal to the damage dealt to you this turn.",
+      "ast": {
+        "YouGainLifeEqualToDamage": {
+          "reference": "DamageDealtToYouThisTurn"
+        }
+      }
+    }
+  ]
+}
