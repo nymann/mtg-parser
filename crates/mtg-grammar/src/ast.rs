@@ -175,6 +175,11 @@ pub enum Statement {
     YouMayDrawCards {
         count: CardCount,
     },
+    /// "You may choose a creature card in your hand whose mana cost could
+    /// be paid by some amount of, or all of, the mana you spent on {X}."
+    ChooseCreatureCardInHandPayableByManaSpentOnVariable {
+        variable: Variable,
+    },
     /// "<player> may pay <mana_cost/any amount of mana>."
     PlayerMayPayMana {
         player: PayManaPlayer,

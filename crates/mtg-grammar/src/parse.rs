@@ -339,6 +339,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::draw_cards => draw_cards_from_pair(pair),
         Rule::draw_cards_action | Rule::activated_draw_cards => draw_cards_statement_from_pair(pair),
         Rule::you_may_draw_cards => you_may_draw_cards_statement_from_pair(pair),
+        Rule::choose_creature_card_in_hand_payable_by_mana_spent_on_variable => {
+            choose_creature_card_in_hand_payable_by_mana_spent_on_variable_statement_from_pair(pair)
+        }
         Rule::draw_that_many_cards_replacement_result => {
             draw_that_many_cards_replacement_result_from_pair(pair)
         }
@@ -1789,6 +1792,17 @@ fn you_may_draw_cards_statement_from_pair(pair: Pair<Rule>) -> Result<Statement,
     let draw_pair = only_inner(pair, "you_may_draw_cards missing draw effect")?;
     let count = draw_cards_trigger_count_from_pair(draw_pair, "you_may_draw_cards counted draw")?;
     Ok(Statement::YouMayDrawCards { count })
+}
+
+fn choose_creature_card_in_hand_payable_by_mana_spent_on_variable_statement_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let variable_pair = only_inner(pair, "choose creature card missing variable")?;
+    Ok(
+        Statement::ChooseCreatureCardInHandPayableByManaSpentOnVariable {
+            variable: variable_from_mana_symbol_pair(variable_pair)?,
+        },
+    )
 }
 
 fn player_may_pay_mana_statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {

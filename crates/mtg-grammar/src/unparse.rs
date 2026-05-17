@@ -221,6 +221,10 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_card_count_object(out, *count);
             out.push('.');
         }
+        Statement::ChooseCreatureCardInHandPayableByManaSpentOnVariable { variable } => {
+            out.push_str("You may choose a creature card in your hand whose mana cost could be paid by some amount of, or all of, the mana you spent on ");
+            write!(out, "{{{}}}.", variable_name(*variable)).expect("write to String never fails");
+        }
         Statement::PlayerMayPayMana { player, amount } => {
             write_pay_mana_player(out, *player);
             if let Some(first) = out.get_mut(0..1) {

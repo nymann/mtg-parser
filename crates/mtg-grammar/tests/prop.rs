@@ -236,10 +236,9 @@ fn arb_each_player_action() -> impl Strategy<Value = EachPlayerAction> {
     prop_oneof![
         Just(EachPlayerAction::AnteTopCardOfTheirLibrary),
         Just(EachPlayerAction::ShuffleTheirHandAndGraveyardIntoTheirLibrary),
-        arb_permanent_type()
-            .prop_map(|permanent_type| EachPlayerAction::EqualizeControlledPermanents {
-                permanent_type
-            }),
+        arb_permanent_type().prop_map(|permanent_type| {
+            EachPlayerAction::EqualizeControlledPermanents { permanent_type }
+        }),
         arb_card_count().prop_map(|count| EachPlayerAction::DrawCards { count }),
     ]
 }
