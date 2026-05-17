@@ -2454,12 +2454,20 @@ fn run_concept_parse_fresh(concept: &str) -> Result<ParseReport> {
         .current_dir(repo_root())
         .output()
         .with_context(|| format!("cargo xtask concept-parse {concept} --json"))?;
+    parse_fresh_concept_parse_output(concept, &output)
+}
+
+fn parse_fresh_concept_parse_output(
+    concept: &str,
+    output: &std::process::Output,
+) -> Result<ParseReport> {
     let text = command_output_text(&output);
-    if !output.status.success() {
-        bail!("fresh concept-parse failed for {concept}\n{text}");
+    match serde_json::from_slice::<ParseReport>(&output.stdout) {
+        Ok(report) => Ok(report),
+        Err(error) if output.status.success() => Err(error)
+            .with_context(|| format!("parse fresh concept-parse JSON for {concept}\n{text}")),
+        Err(error) => bail!("fresh concept-parse failed for {concept}: {error}\n{text}"),
     }
-    serde_json::from_slice::<ParseReport>(&output.stdout)
-        .with_context(|| format!("parse fresh concept-parse JSON for {concept}\n{text}"))
 }
 
 fn select_phase2_grind_candidate<'a>(
@@ -8336,6 +8344,39 @@ unrelated_rule = { "unrelated" }
                 "--fixture",
                 "grammar-fixtures/counter_target_spell.toml",
             ]
+        );
+    }
+
+    #[test]
+    fn phase2_fresh_parse_accepts_failure_json() {
+        use std::os::unix::process::ExitStatusExt;
+
+        let output = std::process::Output {
+            status: std::process::ExitStatus::from_raw(1),
+            stdout: br#"{
+                "concept": "copy_permanent_enter_as",
+                "fixture_path": "grammar-fixtures/copy_permanent_enter_as.toml",
+                "passed": false,
+                "total": 1,
+                "failures": 1,
+                "cases": [{
+                    "index": 1,
+                    "rule": "static_you_may_have_source_enter_as_copy",
+                    "text": "You may have CARDNAME enter as a copy of any creature.",
+                    "parsed": false,
+                    "error": "internal grammar/AST mismatch: unexpected rule permanent_type"
+                }]
+            }"#
+            .to_vec(),
+            stderr: Vec::new(),
+        };
+
+        let report = parse_fresh_concept_parse_output("copy_permanent_enter_as", &output).unwrap();
+        assert!(!report.passed);
+        assert_eq!(report.failures, 1);
+        assert_eq!(
+            report.cases[0].rule,
+            "static_you_may_have_source_enter_as_copy"
         );
     }
 
