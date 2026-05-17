@@ -152,9 +152,10 @@ cargo xtask concept-grind-loop --resume PATH
 Runs concept-grind in fixed-size batches. After each batch, an agent reviews
 metrics and quality artifacts, decides whether the previous optimization
 experiment passed or failed, reverts failed experiment commits, proposes the
-next experiment, applies it, compiles, and repeats. When an experiment commit
-is created, the loop re-execs itself through --resume before the next batch so
-wrapper changes take effect.
+next experiment, applies it, compiles, and repeats. By default it keeps
+running until interrupted; --max-batches is an optional fuse. When an
+experiment commit is created, the loop re-execs itself through --resume before
+the next batch so wrapper changes take effect.
 ";
 
 const PHASE_LOOP_USAGE: &str = "\
@@ -167,12 +168,13 @@ cargo xtask concept-phase-loop [--agent codex|claude]
                                [--phase1-max-batches N]
                                [--dry-run]
 
-Runs Phase 2 in small committed batches while it is producing clean
-AST-green progress. After each batch it reviews objective stop signals:
-no AST-green progress, repeated commits for the same concept, new top-level
-Statement enum variants, Phase 2 commit budget, or AST failures becoming the
-majority of remaining non-green concepts. When a stop signal fires, it writes
-a summary and hands off to concept-grind-loop for Phase 1 concept work.
+Runs Phase 2 in small committed batches until objective quality stop signals
+fire: no AST-green progress, repeated commits for the same concept, new
+top-level Statement enum variants, AST failures becoming the majority of
+remaining non-green concepts, or all Phase 2 concepts going green. Optional
+max flags are fuses for scheduled/manual runs, not normal stop goals. When a
+Phase 2 stop signal fires, it writes a summary and hands off to
+concept-grind-loop for Phase 1 concept work.
 ";
 
 pub fn discover(args: &[String]) -> ExitCode {
@@ -603,11 +605,11 @@ pub(crate) struct Phase2GrindOptions {
 struct ConceptPhaseLoopOptions {
     agent: AgentProvider,
     phase2_batch_size: u32,
-    phase2_max_batches: u32,
-    phase2_max_commits: u32,
+    phase2_max_batches: Option<u32>,
+    phase2_max_commits: Option<u32>,
     repeat_stop_after: u32,
     phase1_batch_size: u32,
-    phase1_max_batches: u32,
+    phase1_max_batches: Option<u32>,
     dry_run: bool,
 }
 
@@ -872,7 +874,7 @@ pub(crate) struct ConceptGrindOptions {
 struct ConceptGrindLoopOptions {
     agent: AgentProvider,
     batch_size: u32,
-    max_batches: u32,
+    max_batches: Option<u32>,
     dry_run: bool,
     #[serde(skip)]
     resume: Option<PathBuf>,
@@ -1891,11 +1893,11 @@ pub(crate) fn parse_phase2_grind_options(args: &[String]) -> Result<Phase2GrindO
 fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> {
     let mut agent = AgentProvider::Codex;
     let mut phase2_batch_size = 5u32;
-    let mut phase2_max_batches = 10u32;
-    let mut phase2_max_commits = 15u32;
+    let mut phase2_max_batches = None::<u32>;
+    let mut phase2_max_commits = None::<u32>;
     let mut repeat_stop_after = 2u32;
     let mut phase1_batch_size = 5u32;
-    let mut phase1_max_batches = 99u32;
+    let mut phase1_max_batches = None::<u32>;
     let mut dry_run = false;
 
     let mut iter = args.iter();
@@ -1918,16 +1920,16 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
                 phase2_batch_size = parse_u32_flag_value("--phase2-batch-size", s)?;
             }
             "--phase2-max-batches" => {
-                phase2_max_batches = parse_next_u32(&mut iter, "--phase2-max-batches")?;
+                phase2_max_batches = Some(parse_next_u32(&mut iter, "--phase2-max-batches")?);
             }
             s if s.starts_with("--phase2-max-batches=") => {
-                phase2_max_batches = parse_u32_flag_value("--phase2-max-batches", s)?;
+                phase2_max_batches = Some(parse_u32_flag_value("--phase2-max-batches", s)?);
             }
             "--phase2-max-commits" => {
-                phase2_max_commits = parse_next_u32(&mut iter, "--phase2-max-commits")?;
+                phase2_max_commits = Some(parse_next_u32(&mut iter, "--phase2-max-commits")?);
             }
             s if s.starts_with("--phase2-max-commits=") => {
-                phase2_max_commits = parse_u32_flag_value("--phase2-max-commits", s)?;
+                phase2_max_commits = Some(parse_u32_flag_value("--phase2-max-commits", s)?);
             }
             "--repeat-stop-after" => {
                 repeat_stop_after = parse_next_u32(&mut iter, "--repeat-stop-after")?;
@@ -1942,10 +1944,10 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
                 phase1_batch_size = parse_u32_flag_value("--phase1-batch-size", s)?;
             }
             "--phase1-max-batches" => {
-                phase1_max_batches = parse_next_u32(&mut iter, "--phase1-max-batches")?;
+                phase1_max_batches = Some(parse_next_u32(&mut iter, "--phase1-max-batches")?);
             }
             s if s.starts_with("--phase1-max-batches=") => {
-                phase1_max_batches = parse_u32_flag_value("--phase1-max-batches", s)?;
+                phase1_max_batches = Some(parse_u32_flag_value("--phase1-max-batches", s)?);
             }
             "--dry-run" => dry_run = true,
             other => bail!("unknown argument: {other}\n\n{PHASE_LOOP_USAGE}"),
@@ -1953,14 +1955,14 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
     }
 
     for (name, value) in [
-        ("--phase2-batch-size", phase2_batch_size),
+        ("--phase2-batch-size", Some(phase2_batch_size)),
         ("--phase2-max-batches", phase2_max_batches),
         ("--phase2-max-commits", phase2_max_commits),
-        ("--repeat-stop-after", repeat_stop_after),
-        ("--phase1-batch-size", phase1_batch_size),
+        ("--repeat-stop-after", Some(repeat_stop_after)),
+        ("--phase1-batch-size", Some(phase1_batch_size)),
         ("--phase1-max-batches", phase1_max_batches),
     ] {
-        if value == 0 {
+        if value == Some(0) {
             bail!("{name} must be greater than zero");
         }
     }
@@ -2569,12 +2571,12 @@ fn run_phase2_grind(options: Phase2GrindOptions, sink: &mut dyn FlowSink) -> Res
                     total: 4,
                     label: "write AST snapshot".to_string(),
                 });
-                run_ast_test(Phase2Options {
-                    concept: Some(concept.clone()),
-                    fixture: None,
-                    update: true,
-                    json: false,
-                })?;
+                run_phase2_gate_command(
+                    "concept-ast-test-update",
+                    "cargo",
+                    &["xtask", "concept-ast-test", &concept, "--update"],
+                    &iteration_dir,
+                )?;
                 sink.emit(FlowEvent::StepFinished {
                     index: 1,
                     ok: true,
@@ -3393,7 +3395,7 @@ pub(crate) fn parse_grind_options(args: &[String]) -> Result<ConceptGrindOptions
 fn parse_grind_loop_options(args: &[String]) -> Result<ConceptGrindLoopOptions> {
     let mut agent = AgentProvider::Codex;
     let mut batch_size = 5u32;
-    let mut max_batches = 1u32;
+    let mut max_batches = None::<u32>;
     let mut dry_run = false;
     let mut resume = None::<PathBuf>;
 
@@ -3427,14 +3429,18 @@ fn parse_grind_loop_options(args: &[String]) -> Result<ConceptGrindLoopOptions> 
                 let value = iter
                     .next()
                     .ok_or_else(|| anyhow!("--max-batches requires a value"))?;
-                max_batches = value
-                    .parse()
-                    .with_context(|| format!("--max-batches value: {value:?}"))?;
+                max_batches = Some(
+                    value
+                        .parse()
+                        .with_context(|| format!("--max-batches value: {value:?}"))?,
+                );
             }
             s if s.starts_with("--max-batches=") => {
-                max_batches = s["--max-batches=".len()..]
-                    .parse()
-                    .with_context(|| format!("--max-batches value: {s:?}"))?;
+                max_batches = Some(
+                    s["--max-batches=".len()..]
+                        .parse()
+                        .with_context(|| format!("--max-batches value: {s:?}"))?,
+                );
             }
             "--resume" => {
                 resume = Some(PathBuf::from(
@@ -3453,7 +3459,7 @@ fn parse_grind_loop_options(args: &[String]) -> Result<ConceptGrindLoopOptions> 
     if batch_size == 0 {
         bail!("--batch-size must be greater than zero");
     }
-    if max_batches == 0 {
+    if max_batches == Some(0) {
         bail!("--max-batches must be greater than zero");
     }
 
@@ -3509,7 +3515,11 @@ fn run_grind_loop(options: ConceptGrindLoopOptions) -> Result<()> {
     let mut sink = ConsoleSink::new();
     let mut active_experiment = state.active_experiment.take();
 
-    for batch in state.next_batch..=options.max_batches {
+    loop {
+        let batch = state.next_batch;
+        if options.max_batches.is_some_and(|max| batch > max) {
+            break;
+        }
         state.next_batch = batch;
         state.active_experiment = active_experiment.clone();
         write_grind_loop_state(&loop_dir, &state)?;
@@ -3570,7 +3580,7 @@ fn run_grind_loop(options: ConceptGrindLoopOptions) -> Result<()> {
                     if let Some(commit) = &previous.commit {
                         git_revert_commit(commit)?;
                         run_loop_validation(&batch_dir)?;
-                        should_reexec = batch < options.max_batches;
+                        should_reexec = options.max_batches.is_none_or(|max| batch < max);
                     }
                 }
             }
@@ -3594,7 +3604,8 @@ fn run_grind_loop(options: ConceptGrindLoopOptions) -> Result<()> {
                 next.commit = Some(commit);
             }
             write_json(experiment_dir.join("experiment_applied.json"), &next)?;
-            should_reexec = should_reexec || next.commit.is_some() && batch < options.max_batches;
+            should_reexec = should_reexec
+                || next.commit.is_some() && options.max_batches.is_none_or(|max| batch < max);
             active_experiment = Some(next);
         }
 
@@ -3627,7 +3638,15 @@ fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
     let mut concept_commit_counts: BTreeMap<String, u32> = BTreeMap::new();
     let mut stop_reasons = Vec::new();
 
-    for batch in 1..=options.phase2_max_batches {
+    let mut batch = 1u32;
+    loop {
+        if options.phase2_max_batches.is_some_and(|max| batch > max) {
+            stop_reasons.push(format!(
+                "Phase 2 max batches reached: {}",
+                options.phase2_max_batches.expect("checked some")
+            ));
+            break;
+        }
         let batch_dir = loop_dir.join(format!("phase2-batch-{batch:03}"));
         fs::create_dir_all(&batch_dir)
             .with_context(|| format!("create {}", batch_dir.display()))?;
@@ -3692,10 +3711,13 @@ fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
             }
         }
 
-        if phase2_commits >= options.phase2_max_commits {
+        if options
+            .phase2_max_commits
+            .is_some_and(|max| phase2_commits >= max)
+        {
             batch_stop_reasons.push(format!(
                 "Phase 2 commit budget reached: {phase2_commits}/{}",
-                options.phase2_max_commits
+                options.phase2_max_commits.expect("checked some")
             ));
         }
         if after.ast_green_concepts == after.grammar_green_concepts {
@@ -3723,13 +3745,7 @@ fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
             stop_reasons = batch_stop_reasons;
             break;
         }
-    }
-
-    if stop_reasons.is_empty() {
-        stop_reasons.push(format!(
-            "Phase 2 max batches reached: {}",
-            options.phase2_max_batches
-        ));
+        batch += 1;
     }
     write_json(loop_dir.join("phase2_stop_reasons.json"), &stop_reasons)?;
     println!("phase2 stop:");
@@ -3840,17 +3856,20 @@ fn run_phase_loop_phase2_batch(options: &ConceptPhaseLoopOptions, batch_dir: &Pa
 fn run_phase_loop_phase1(options: &ConceptPhaseLoopOptions, loop_dir: &Path) -> Result<()> {
     let phase1_dir = loop_dir.join("phase1");
     fs::create_dir_all(&phase1_dir).with_context(|| format!("create {}", phase1_dir.display()))?;
+    let mut args = vec![
+        "xtask".to_string(),
+        "concept-grind-loop".to_string(),
+        "--agent".to_string(),
+        options.agent.label().to_string(),
+        "--batch-size".to_string(),
+        options.phase1_batch_size.to_string(),
+    ];
+    if let Some(max_batches) = options.phase1_max_batches {
+        args.push("--max-batches".to_string());
+        args.push(max_batches.to_string());
+    }
     let output = Command::new("cargo")
-        .args([
-            "xtask",
-            "concept-grind-loop",
-            "--agent",
-            options.agent.label(),
-            "--batch-size",
-            &options.phase1_batch_size.to_string(),
-            "--max-batches",
-            &options.phase1_max_batches.to_string(),
-        ])
+        .args(&args)
         .current_dir(repo_root())
         .output()
         .context("cargo xtask concept-grind-loop")?;
@@ -8350,11 +8369,11 @@ mod tests {
         ])
         .expect("phase loop options parse");
         assert_eq!(options.phase2_batch_size, 3);
-        assert_eq!(options.phase2_max_batches, 4);
-        assert_eq!(options.phase2_max_commits, 9);
+        assert_eq!(options.phase2_max_batches, Some(4));
+        assert_eq!(options.phase2_max_commits, Some(9));
         assert_eq!(options.repeat_stop_after, 3);
         assert_eq!(options.phase1_batch_size, 6);
-        assert_eq!(options.phase1_max_batches, 7);
+        assert_eq!(options.phase1_max_batches, Some(7));
         assert!(options.dry_run);
     }
 
@@ -8712,7 +8731,7 @@ pub enum Other {
             options: ConceptGrindLoopOptions {
                 agent: AgentProvider::Codex,
                 batch_size: 3,
-                max_batches: 10,
+                max_batches: Some(10),
                 dry_run: false,
                 resume: None,
             },
