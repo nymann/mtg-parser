@@ -3909,7 +3909,8 @@ fn send_imessage_notification(buddy: &str, title: &str, body: &str) -> Result<()
     let script = r#"
 on run argv
   tell application "Messages"
-    send (item 2 of argv) to buddy (item 1 of argv)
+    set imessageService to 1st service whose service type = iMessage
+    send (item 2 of argv) to buddy (item 1 of argv) of imessageService
   end tell
 end run
 "#;
