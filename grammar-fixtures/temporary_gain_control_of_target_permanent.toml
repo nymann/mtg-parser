@@ -1,0 +1,31 @@
+[fixture]
+concept = "temporary_gain_control_of_target_permanent"
+rule = "gain_control_of_target_permanent_for_as_long_as_you_control_source"
+
+[[example]]
+text = "Gain control of target artifact for as long as you control this creature."
+reason = "Activated-effect control change for a target artifact, lasting while you control the source creature."
+
+[[example]]
+text = "Gain control of target creature for as long as you control this artifact."
+reason = "Activated-effect control change for a target creature, lasting while you control the source artifact."
+
+[[counterexample]]
+text = "You gain 1 life."
+reason = "Fixed-amount life gain, not control of a target permanent."
+
+[[counterexample]]
+text = "You control enchanted creature."
+reason = "Static Aura control-changing effect, not a temporary activated-effect instruction."
+
+[[counterexample]]
+text = "You control that player until Word of Command finishes resolving."
+reason = "Control-player duration effect, not control of a target permanent."
+
+[[counterexample]]
+text = "Target creature gains flying until end of turn."
+reason = "Temporary keyword gain, not control-changing."
+
+[[counterexample]]
+text = "Gain control of target artifact for as long as you control this creature. trailing"
+reason = "Exact-consumption guard."

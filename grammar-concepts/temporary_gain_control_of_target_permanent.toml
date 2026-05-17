@@ -1,0 +1,87 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "action"
+values = ["gain_control"]
+
+[[axis]]
+name = "object"
+values = ["target_permanent_type"]
+
+[[axis]]
+name = "target"
+values = ["target"]
+
+[[axis]]
+name = "duration"
+values = ["for_as_long_as_you_control_source"]
+
+[[axis]]
+name = "source"
+values = ["source_object"]
+
+[[axis]]
+name = "sentence_form"
+values = ["activated_effect"]
+
+[boundary]
+excludes = [
+    "Fixed-amount life gain owned by gain_life.",
+    "Static Aura control-changing effects owned by static_control_enchanted.",
+    "Control-player effects with resolution-duration anchors owned by control_player_resolution_duration.",
+    "Temporary keyword gains owned by keyword-grant concepts.",
+]
+includes = ["Activated-effect sentences where you gain control of a target permanent type for as long as you control the source object."]
+
+[concept]
+name = "temporary_gain_control_of_target_permanent"
+pest_rules = ["gain_control_of_target_permanent_for_as_long_as_you_control_source"]
+rules_queries = [
+    "lex: gain control of target artifact for as long as you control this creature",
+    "lex: gain control of target creature for as long as you control this artifact",
+]
+rules_terms = [
+    "control",
+    "permanent",
+    "target",
+    "duration",
+]
+
+[[counterexample]]
+reason = "Fixed-amount life gain, not control of a target permanent."
+text = "You gain 1 life."
+
+[[counterexample]]
+reason = "Static Aura control-changing effect, not a temporary activated-effect instruction."
+text = "You control enchanted creature."
+
+[[counterexample]]
+reason = "Control-player duration effect, not control of a target permanent."
+text = "You control that player until Word of Command finishes resolving."
+
+[[counterexample]]
+reason = "Temporary keyword gain, not control-changing."
+text = "Target creature gains flying until end of turn."
+
+[[example]]
+text = "Gain control of target artifact for as long as you control this creature."
+
+[[example]]
+text = "Gain control of target creature for as long as you control this artifact."
+
+[grammar_query]
+candidate_rules = [
+    "gain_control_of_target_permanent_for_as_long_as_you_control_source",
+    "gain_life_effect",
+    "you_gain_life",
+    "static_you_control_enchanted",
+    "control_player_effect",
+    "target_permanent_gains_keyword_until_eot",
+]
+selected_rule = "gain_control_of_target_permanent_for_as_long_as_you_control_source"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
