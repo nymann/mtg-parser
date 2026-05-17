@@ -1,0 +1,56 @@
+{
+  "concept": "mana_ability_activation_instruction",
+  "fixture_path": "grammar-fixtures/mana_ability_activation_instruction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "target_player_activates_mana_ability_of_each_permanent_they_control",
+      "text": "Target player activates a mana ability of each land they control.",
+      "ast": {
+        "TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl": {
+          "permanent_type": "Land"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "target_player_activates_mana_ability_of_each_permanent_they_control",
+      "text": "Target player activates a mana ability of each artifact they control.",
+      "ast": {
+        "TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl": {
+          "permanent_type": "Artifact"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "target_player_activates_mana_ability_of_each_permanent_they_control",
+      "text": "Target player activates a mana ability of each creature they control.",
+      "ast": {
+        "TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl": {
+          "permanent_type": "Creature"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "target_player_activates_mana_ability_of_each_permanent_they_control",
+      "text": "Target player activates a mana ability of each enchantment they control.",
+      "ast": {
+        "TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl": {
+          "permanent_type": "Enchantment"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "target_player_activates_mana_ability_of_each_permanent_they_control",
+      "text": "Target player activates a mana ability of each planeswalker they control.",
+      "ast": {
+        "TargetPlayerActivatesManaAbilityOfEachPermanentTheyControl": {
+          "permanent_type": "Planeswalker"
+        }
+      }
+    }
+  ]
+}
