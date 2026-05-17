@@ -1,0 +1,66 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_pt_modification"]
+
+[[axis]]
+name = "add_affected_object"
+values = ["creatures"]
+
+[[axis]]
+name = "add_filter"
+values = ["creature_status"]
+
+[[axis]]
+name = "add_controller"
+values = ["optional_controller_filter"]
+
+[[axis]]
+name = "add_delta"
+values = ["pt_modifier"]
+
+[[axis]]
+name = "add_duration"
+values = ["optional_until_end_of_turn"]
+
+[boundary]
+excludes = [
+    "Boundary negative: White spells cost {3} more to cast.",
+    "Boundary negative: Activated abilities of white enchantments cost {3} more to activate.",
+]
+includes = [
+    "Accepted no-PEST fixture wording: Tapped creatures you control get +1/+1.",
+    "Accepted no-PEST fixture wording: Untapped creatures get +0/+1 until end of turn.",
+]
+
+[concept]
+name = "static_power_toughness_modification"
+pest_rules = ["static_status_creatures_you_control_get"]
+rules_queries = ["lex: static power toughness modification"]
+rules_terms = [
+    "static",
+    "power",
+    "toughness",
+    "modification",
+]
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "White spells cost {3} more to cast."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[example]]
+text = "Tapped creatures you control get +1/+1."
+
+[[example]]
+text = "Untapped creatures get +0/+1 until end of turn."
+
+[grammar_query]
+candidate_rules = ["static_status_creatures_you_control_get"]
+selected_rule = "static_status_creatures_you_control_get"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

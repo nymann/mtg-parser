@@ -1,0 +1,23 @@
+[fixture]
+concept = "static_power_toughness_modification"
+rule = "static_status_creatures_you_control_get"
+
+[[example]]
+text = "Tapped creatures you control get +1/+1."
+reason = "Accepted no-PEST boundary example."
+
+[[example]]
+text = "Untapped creatures get +0/+1 until end of turn."
+reason = "Accepted no-PEST boundary example."
+
+[[counterexample]]
+text = "White spells cost {3} more to cast."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "Tapped creatures you control get +1/+1. trailing"
+reason = "Exact-consumption guard."
