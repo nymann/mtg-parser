@@ -225,6 +225,15 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str("You may choose a creature card in your hand whose mana cost could be paid by some amount of, or all of, the mana you spent on ");
             write!(out, "{{{}}}.", variable_name(*variable)).expect("write to String never fails");
         }
+        Statement::ChooseTargetNonCreatureTypeCreatureActivePlayerControlledContinuouslySinceBeginningOfTurn {
+            excluded_type,
+        } => {
+            out.push_str("Choose target non-");
+            write_creature_type(out, *excluded_type);
+            out.push_str(
+                " creature the active player has controlled continuously since the beginning of the turn.",
+            );
+        }
         Statement::PlayerMayPayMana { player, amount } => {
             write_pay_mana_player(out, *player);
             if let Some(first) = out.get_mut(0..1) {

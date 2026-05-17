@@ -1,0 +1,26 @@
+{
+  "concept": "choose_target_non_creature_type_creature_active_player_controlled_continuously",
+  "fixture_path": "grammar-fixtures/choose_target_non_creature_type_creature_active_player_controlled_continuously.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "choose_target_non_creature_type_creature_active_player_controlled_continuously",
+      "text": "Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn.",
+      "ast": {
+        "ChooseTargetNonCreatureTypeCreatureActivePlayerControlledContinuouslySinceBeginningOfTurn": {
+          "excluded_type": "Wall"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "choose_target_non_creature_type_creature_active_player_controlled_continuously",
+      "text": "Choose target non-Goblin creature the active player has controlled continuously since the beginning of the turn.",
+      "ast": {
+        "ChooseTargetNonCreatureTypeCreatureActivePlayerControlledContinuouslySinceBeginningOfTurn": {
+          "excluded_type": "Goblin"
+        }
+      }
+    }
+  ]
+}

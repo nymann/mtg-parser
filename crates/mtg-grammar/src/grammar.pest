@@ -96,6 +96,7 @@ sentence_statement = _{
   | draw_cards
   | activated_draw_cards
   | choose_creature_card_in_hand_payable_by_mana_spent_on_variable
+  | choose_target_non_creature_type_creature_active_player_controlled_continuously
   | player_may_pay_mana
   | you_may_draw_cards
   | remove_pt_counter_from_it

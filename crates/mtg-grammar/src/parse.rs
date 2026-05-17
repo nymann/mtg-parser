@@ -342,6 +342,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::choose_creature_card_in_hand_payable_by_mana_spent_on_variable => {
             choose_creature_card_in_hand_payable_by_mana_spent_on_variable_statement_from_pair(pair)
         }
+        Rule::choose_target_non_creature_type_creature_active_player_controlled_continuously => {
+            choose_target_non_creature_type_creature_active_player_controlled_continuously_statement_from_pair(pair)
+        }
         Rule::draw_that_many_cards_replacement_result => {
             draw_that_many_cards_replacement_result_from_pair(pair)
         }
@@ -1801,6 +1804,20 @@ fn choose_creature_card_in_hand_payable_by_mana_spent_on_variable_statement_from
     Ok(
         Statement::ChooseCreatureCardInHandPayableByManaSpentOnVariable {
             variable: variable_from_mana_symbol_pair(variable_pair)?,
+        },
+    )
+}
+
+fn choose_target_non_creature_type_creature_active_player_controlled_continuously_statement_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let excluded_pair = only_inner(
+        pair,
+        "choose target non creature type missing creature_type",
+    )?;
+    Ok(
+        Statement::ChooseTargetNonCreatureTypeCreatureActivePlayerControlledContinuouslySinceBeginningOfTurn {
+            excluded_type: creature_type_from_pair(excluded_pair)?,
         },
     )
 }

@@ -180,6 +180,11 @@ pub enum Statement {
     ChooseCreatureCardInHandPayableByManaSpentOnVariable {
         variable: Variable,
     },
+    /// "Choose target non-<creature_type> creature the active player has
+    /// controlled continuously since the beginning of the turn."
+    ChooseTargetNonCreatureTypeCreatureActivePlayerControlledContinuouslySinceBeginningOfTurn {
+        excluded_type: CreatureType,
+    },
     /// "<player> may pay <mana_cost/any amount of mana>."
     PlayerMayPayMana {
         player: PayManaPlayer,
