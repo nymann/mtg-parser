@@ -1,0 +1,86 @@
+[[axis]]
+name = "action"
+values = ["choose"]
+
+[[axis]]
+name = "optionality"
+values = ["may"]
+
+[[axis]]
+name = "chooser"
+values = ["you"]
+
+[[axis]]
+name = "object"
+values = ["creature_card"]
+
+[[axis]]
+name = "zone"
+values = ["hand"]
+
+[[axis]]
+name = "zone_owner"
+values = ["you"]
+
+[[axis]]
+name = "constraint"
+values = ["mana_cost_payable_by_some_or_all_mana_spent_on_variable"]
+
+[[axis]]
+name = "variable"
+values = ["variable_mana_symbol"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "Target-choice instructions for non-creature-type creatures controlled continuously by the active player.",
+    "Optional hand choice for noncreature cards rather than creature cards.",
+    "Optional creature-card choice from a graveyard rather than your hand.",
+    "Optional creature-card choice without the mana-payment constraint.",
+]
+includes = ["You may choose a creature card in your hand whose mana cost could be paid by some amount of, or all of, the mana you spent on a variable mana symbol."]
+
+[concept]
+name = "choose_creature_card_in_hand_payable_by_mana_spent_on_variable"
+pest_rules = ["choose_creature_card_in_hand_payable_by_mana_spent_on_variable"]
+rules_queries = ["lex: choose creature card in your hand whose mana cost could be paid by some amount of or all of the mana you spent on X"]
+rules_terms = [
+    "choose",
+    "creature card",
+    "hand",
+    "mana cost",
+    "mana spent",
+]
+
+[[counterexample]]
+reason = "Different choose concept: targeted non-creature-type creature controlled continuously by the active player."
+text = "Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn."
+
+[[counterexample]]
+reason = "Object axis is noncreature card, not creature card."
+text = "you may choose a noncreature card in your hand whose mana cost could be paid by some amount of, or all of, the mana you spent on {X}."
+
+[[counterexample]]
+reason = "Zone axis is graveyard, not hand."
+text = "you may choose a creature card in your graveyard whose mana cost could be paid by some amount of, or all of, the mana you spent on {X}."
+
+[[counterexample]]
+reason = "Missing mana-cost payable-by-mana-spent constraint."
+text = "you may choose a creature card in your hand."
+
+[[example]]
+text = "you may choose a creature card in your hand whose mana cost could be paid by some amount of, or all of, the mana you spent on {X}."
+
+[[example]]
+text = "you may choose a creature card in your hand whose mana cost could be paid by some amount of, or all of, the mana you spent on {Y}."
+
+[grammar_query]
+candidate_rules = ["choose_creature_card_in_hand_payable_by_mana_spent_on_variable"]
+selected_rule = "choose_creature_card_in_hand_payable_by_mana_spent_on_variable"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
