@@ -1,0 +1,54 @@
+{
+  "concept": "static_power_toughness_modification",
+  "fixture_path": "grammar-fixtures/static_power_toughness_modification.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_status_creatures_you_control_get",
+      "text": "Tapped creatures you control get +1/+1.",
+      "ast": {
+        "StaticAbility": {
+          "StatusCreaturesYouControlGet": {
+            "controller": "You",
+            "duration": "Continuous",
+            "modifier": {
+              "power": {
+                "magnitude": 1,
+                "sign": "Plus"
+              },
+              "toughness": {
+                "magnitude": 1,
+                "sign": "Plus"
+              }
+            },
+            "status": "Tapped"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_status_creatures_you_control_get",
+      "text": "Untapped creatures get +0/+1 until end of turn.",
+      "ast": {
+        "StaticAbility": {
+          "StatusCreaturesYouControlGet": {
+            "controller": "Any",
+            "duration": "UntilEndOfTurn",
+            "modifier": {
+              "power": {
+                "magnitude": 0,
+                "sign": "Plus"
+              },
+              "toughness": {
+                "magnitude": 1,
+                "sign": "Plus"
+              }
+            },
+            "status": "Untapped"
+          }
+        }
+      }
+    }
+  ]
+}
