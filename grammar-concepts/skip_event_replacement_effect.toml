@@ -1,0 +1,115 @@
+[[axis]]
+name = "affected_player"
+values = ["you"]
+
+[[axis]]
+name = "replaced_event"
+values = [
+    "draw_card_during_your_draw_step",
+    "begin_your_turn_while_source_is_status",
+]
+
+[[axis]]
+name = "source_object"
+values = [
+    "this_artifact",
+    "source_object",
+]
+
+[[axis]]
+name = "source_status"
+values = [
+    "tapped",
+    "object_status",
+]
+
+[[axis]]
+name = "skip_reference"
+values = [
+    "draw",
+    "turn",
+]
+
+[[axis]]
+name = "result_optionality"
+values = ["may"]
+
+[[axis]]
+name = "replacement_marker"
+values = ["instead"]
+
+[[axis]]
+name = "marker_position"
+values = [
+    "prefix",
+    "suffix",
+]
+
+[boundary]
+excludes = [
+    "Life-gain replacement effects where the replacement event draws cards.",
+    "Life-total floor replacement effects owned by life_total_floor_replacement.",
+    "Damage prevention effects owned by damage_prevention_effect.",
+    "Direct skip-turn instructions that are not replacing a would-event.",
+]
+includes = [
+    "Static replacement effects where if you would draw a card during your draw step, you may skip that draw instead.",
+    "Static replacement effects where if you would begin your turn while the source object is tapped, you may skip that turn instead.",
+    "Both prefix and suffix instead-marker positions for the optional skip result.",
+]
+
+[concept]
+name = "skip_event_replacement_effect"
+pest_rules = ["if_you_would_event_you_may_skip_that_instead"]
+rules_queries = [
+    "lex: if you would draw a card during your draw step instead you may skip that draw",
+    "lex: if you would begin your turn while this artifact is tapped you may skip that turn instead",
+    "lex: replacement effect skip that draw skip that turn instead",
+]
+rules_terms = [
+    "replacement effect",
+    "draw step",
+    "skip",
+    "turn",
+]
+
+[[counterexample]]
+reason = "Life-gain replacement effect, owned by life_gain_replacement_effect."
+text = "If you would gain life, draw that many cards instead."
+
+[[counterexample]]
+reason = "Life-total floor replacement effect, owned by life_total_floor_replacement."
+text = "Damage that would reduce your life total to less than 1 reduces it to 1 instead."
+
+[[counterexample]]
+reason = "Damage prevention effect, owned by damage_prevention_effect."
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+
+[[counterexample]]
+reason = "Direct skip-turn instruction, not a replacement effect."
+text = "Skip your next turn."
+
+[[example]]
+text = "If you would draw a card during your draw step, instead you may skip that draw."
+
+[[example]]
+text = "If you would begin your turn while this artifact is tapped, you may skip that turn instead."
+
+[grammar_query]
+candidate_rules = [
+    "if_you_would_event_you_may_skip_that_instead",
+    "if_you_would_skip_event",
+    "draw_card_during_your_draw_step",
+    "begin_your_turn_while_source_is_status",
+    "skip_event_instead_prefix",
+    "skip_event_instead_suffix",
+    "skip_event_reference",
+    "life_gain_replacement_effect",
+    "static_life_total_floor_replacement",
+    "damage_prevention_effect_this_turn",
+]
+selected_rule = "if_you_would_event_you_may_skip_that_instead"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

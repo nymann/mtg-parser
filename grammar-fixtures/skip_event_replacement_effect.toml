@@ -1,0 +1,31 @@
+[fixture]
+concept = "skip_event_replacement_effect"
+rule = "if_you_would_event_you_may_skip_that_instead"
+
+[[example]]
+text = "If you would draw a card during your draw step, instead you may skip that draw."
+reason = "Draw-step watched event with prefix instead marker and optional skip-that-draw result."
+
+[[example]]
+text = "If you would begin your turn while this artifact is tapped, you may skip that turn instead."
+reason = "Begin-turn watched event with source status condition, suffix instead marker, and optional skip-that-turn result."
+
+[[counterexample]]
+text = "If you would gain life, draw that many cards instead."
+reason = "Life-gain replacement effect, owned by life_gain_replacement_effect."
+
+[[counterexample]]
+text = "Damage that would reduce your life total to less than 1 reduces it to 1 instead."
+reason = "Life-total floor replacement effect, owned by life_total_floor_replacement."
+
+[[counterexample]]
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+reason = "Damage prevention effect, owned by damage_prevention_effect."
+
+[[counterexample]]
+text = "Skip your next turn."
+reason = "Direct skip-turn instruction, not a replacement effect."
+
+[[counterexample]]
+text = "If you would draw a card during your draw step, instead you may skip that draw. trailing"
+reason = "Exact-consumption guard."
