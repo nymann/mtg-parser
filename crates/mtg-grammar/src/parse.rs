@@ -1683,14 +1683,21 @@ fn damage_event_assignments_from_pair(
 fn damage_event_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
     let inner = only_inner(pair, "damage event amount missing inner rule")?;
     match inner.as_rule() {
-        Rule::damage_event_equal_to_amount => {
-            let land_type_pair =
-                only_inner(inner, "damage event equal-to amount missing land type")?;
+        Rule::damage_event_equal_to_amount => damage_equal_to_amount_from_pair(inner),
+        _ => damage_amount_from_pair(inner),
+    }
+}
+
+fn damage_equal_to_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
+    let inner = only_inner(pair, "damage equal-to amount missing inner rule")?;
+    match inner.as_rule() {
+        Rule::that_permanents_toughness => that_permanents_toughness_from_pair(inner),
+        Rule::basic_land_type_plural => {
             Ok(DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(
-                basic_land_type_from_plural_pair(land_type_pair)?,
+                basic_land_type_from_plural_pair(inner)?,
             ))
         }
-        _ => damage_amount_from_pair(inner),
+        _ => Err(ParseError::Internal("damage equal-to amount")),
     }
 }
 
@@ -4052,6 +4059,7 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
             ));
         }
         (DamageAmount::DamageDealtToYouThisTurn, Some(_))
+        | (DamageAmount::ThatPermanentToughness, Some(_))
         | (DamageAmount::ThatPermanentsToughness(_), Some(_))
         | (DamageAmount::NumberOfBasicLandsTheyControl(_), Some(_))
         | (DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(_), Some(_)) => {
@@ -4060,6 +4068,7 @@ fn source_deals_damage_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, Pars
             ));
         }
         (DamageAmount::DamageDealtToYouThisTurn, None)
+        | (DamageAmount::ThatPermanentToughness, None)
         | (DamageAmount::ThatPermanentsToughness(_), None)
         | (DamageAmount::NumberOfBasicLandsTheyControl(_), None)
         | (DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(_), None) => Vec::new(),
@@ -4127,13 +4136,22 @@ fn trigger_damage_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, Par
 fn trigger_damage_equal_to_amount_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
     let inner = only_inner(pair, "trigger damage equal amount missing inner rule")?;
     match inner.as_rule() {
-        Rule::that_permanents_toughness => Ok(DamageAmount::ThatPermanentsToughness(
-            permanent_type_from_inner_pair(inner)?,
-        )),
+        Rule::that_permanents_toughness => that_permanents_toughness_from_pair(inner),
         Rule::basic_land_type_plural => Ok(DamageAmount::NumberOfBasicLandsTheyControl(
             basic_land_type_from_plural_pair(inner)?,
         )),
         _ => Err(ParseError::Internal("trigger damage equal amount")),
+    }
+}
+
+fn that_permanents_toughness_from_pair(pair: Pair<Rule>) -> Result<DamageAmount, ParseError> {
+    let inner = only_inner(pair, "that permanent toughness missing object")?;
+    match inner.as_rule() {
+        Rule::permanent_object => Ok(DamageAmount::ThatPermanentToughness),
+        Rule::permanent_type => Ok(DamageAmount::ThatPermanentsToughness(
+            permanent_type_from_pair(inner)?,
+        )),
+        _ => Err(ParseError::Internal("that permanent toughness object")),
     }
 }
 
@@ -4142,6 +4160,9 @@ fn validate_trigger_damage_amount_recipient(
     recipient: TriggerDamageRecipient,
 ) -> Result<(), ParseError> {
     match (amount, recipient) {
+        (DamageAmount::ThatPermanentToughness, _) => Err(ParseError::Internal(
+            "generic permanent toughness damage is not a trigger damage amount",
+        )),
         (
             DamageAmount::ThatPermanentsToughness(amount_type),
             TriggerDamageRecipient::ThatPermanentController(recipient_type),
@@ -4768,14 +4789,6 @@ fn the_permanents_controller_from_pair(pair: Pair<Rule>) -> Result<PermanentType
         return Err(ParseError::Internal("the_permanents_controller"));
     }
     let pt = only_inner(pair, "the_permanents_controller missing permanent_type")?;
-    permanent_type_from_pair(pt)
-}
-
-fn permanent_type_from_inner_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseError> {
-    let pt = pair
-        .into_inner()
-        .next()
-        .ok_or(ParseError::Internal("wrapper missing permanent_type"))?;
     permanent_type_from_pair(pt)
 }
 

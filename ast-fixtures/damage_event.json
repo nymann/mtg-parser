@@ -175,6 +175,56 @@
           "source": "Volcanic Eruption"
         }
       }
+    },
+    {
+      "index": 10,
+      "rule": "source_deals_damage",
+      "text": "CARDNAME deals 1 damage to you.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": {
+            "Number": 1
+          },
+          "recipient": {
+            "List": [
+              "You"
+            ]
+          },
+          "source": "CARDNAME"
+        }
+      }
+    },
+    {
+      "index": 11,
+      "rule": "source_deals_damage",
+      "text": "CARDNAME deals damage equal to that permanent's toughness to you.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": "ThatPermanentToughness",
+          "recipient": {
+            "List": [
+              "You"
+            ]
+          },
+          "source": "CARDNAME"
+        }
+      }
+    },
+    {
+      "index": 12,
+      "rule": "source_deals_damage",
+      "text": "CARDNAME deals damage to you equal to that permanent's toughness.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": "ThatPermanentToughness",
+          "recipient": {
+            "List": [
+              "You"
+            ]
+          },
+          "source": "CARDNAME"
+        }
+      }
     }
   ]
 }

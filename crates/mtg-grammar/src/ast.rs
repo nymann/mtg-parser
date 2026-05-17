@@ -919,6 +919,7 @@ pub enum DamageAmount {
     Number(u32),
     Variable(Variable),
     DamageDealtToYouThisTurn,
+    ThatPermanentToughness,
     ThatPermanentsToughness(PermanentType),
     NumberOfBasicLandsTheyControl(BasicLandType),
     NumberOfBasicLandsPutIntoGraveyardThisWay(BasicLandType),

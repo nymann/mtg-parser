@@ -1098,18 +1098,19 @@ fn write_named_damage_event(out: &mut String, event: &NamedDamageEvent) {
         out.push('.');
         return;
     }
-    if event.amount == DamageAmount::DamageDealtToYouThisTurn {
+    if matches!(
+        event.amount,
+        DamageAmount::DamageDealtToYouThisTurn
+            | DamageAmount::ThatPermanentToughness
+            | DamageAmount::ThatPermanentsToughness(_)
+            | DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(_)
+    ) {
         out.push_str("damage");
         write_damage_event_recipients(out, &event.recipient);
-        out.push_str(" equal to the ");
-        write_damage_amount(out, event.amount);
-        out.push('.');
-        return;
-    }
-    if let DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(_) = event.amount {
-        out.push_str("damage");
-        write_damage_event_recipients(out, &event.recipient);
-        out.push_str(" equal to the ");
+        out.push_str(" equal to ");
+        if event.amount == DamageAmount::DamageDealtToYouThisTurn {
+            out.push_str("the ");
+        }
         write_damage_amount(out, event.amount);
         out.push('.');
         return;
@@ -1690,18 +1691,21 @@ fn write_damage_amount(out: &mut String, amount: DamageAmount) {
         DamageAmount::Number(n) => write!(out, "{n}").expect("write to String never fails"),
         DamageAmount::Variable(variable) => out.push_str(variable_name(variable)),
         DamageAmount::DamageDealtToYouThisTurn => out.push_str("damage dealt to you this turn"),
+        DamageAmount::ThatPermanentToughness => {
+            out.push_str("that permanent's toughness");
+        }
         DamageAmount::ThatPermanentsToughness(permanent_type) => {
-            out.push_str("equal to that ");
+            out.push_str("that ");
             out.push_str(permanent_type_name(permanent_type));
             out.push_str("'s toughness");
         }
         DamageAmount::NumberOfBasicLandsTheyControl(basic_land_type) => {
-            out.push_str("equal to the number of ");
+            out.push_str("the number of ");
             out.push_str(basic_land_type_plural_name(basic_land_type));
             out.push_str(" they control");
         }
         DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(basic_land_type) => {
-            out.push_str("number of ");
+            out.push_str("the number of ");
             out.push_str(basic_land_type_plural_name(basic_land_type));
             out.push_str(" put into a graveyard this way");
         }
@@ -3494,6 +3498,12 @@ fn write_triggered_damage(
             out.push_str(" equal to ");
             write_damage_amount(out, damage.event.amount);
         }
+        DamageAmount::ThatPermanentToughness => {
+            out.push_str("damage equal to ");
+            write_damage_amount(out, damage.event.amount);
+            out.push_str(" to ");
+            write_trigger_damage_recipient(out, damage.event.recipient);
+        }
         DamageAmount::ThatPermanentsToughness(permanent_type) => {
             out.push_str("damage equal to that ");
             out.push_str(permanent_type_name(permanent_type));
@@ -3531,6 +3541,7 @@ fn write_triggered_damage(
         }
         DamageAmount::Number(_)
         | DamageAmount::DamageDealtToYouThisTurn
+        | DamageAmount::ThatPermanentToughness
         | DamageAmount::ThatPermanentsToughness(_)
         | DamageAmount::NumberOfBasicLandsTheyControl(_)
         | DamageAmount::NumberOfBasicLandsPutIntoGraveyardThisWay(_) => {

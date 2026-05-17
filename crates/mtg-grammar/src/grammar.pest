@@ -345,14 +345,18 @@ damage_event_statement = {
   ~ (
       damage_event_assignment_list
     | (damage_event_amount ~ ^"damage" ~ damage_event_recipients)
-    | (^"damage" ~ damage_event_recipients ~ ^"equal" ~ ^"to" ~ ^"the" ~ damage_event_amount)
+    | (^"damage" ~ ^"equal" ~ ^"to" ~ damage_event_amount ~ damage_event_recipients)
+    | (^"damage" ~ damage_event_recipients ~ ^"equal" ~ ^"to" ~ damage_event_amount)
     )
   ~ "."
 }
 damage_event_amount = { damage_event_equal_to_amount | damage_amount_expression }
 damage_event_equal_to_amount = {
-    ^"number" ~ ^"of" ~ basic_land_type_plural ~ ^"put" ~ ^"into"
-  ~ article ~ ^"graveyard" ~ ^"this" ~ ^"way"
+    ^"the"? ~ (
+      that_permanents_toughness
+    | ^"number" ~ ^"of" ~ basic_land_type_plural ~ ^"put" ~ ^"into"
+      ~ article ~ ^"graveyard" ~ ^"this" ~ ^"way"
+    )
 }
 damage_event_recipients = {
     damage_event_any_target_of_opponents_choice
