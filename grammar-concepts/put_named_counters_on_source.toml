@@ -1,0 +1,68 @@
+[[axis]]
+name = "preserve_action"
+values = [
+    "put_counter",
+    "counter_ref=named_counter",
+]
+
+[[axis]]
+name = "add_ability_context"
+values = [
+    "trigger_effect",
+    "recipient=source_object",
+    "counter_quantity=[article",
+    "that_many",
+    "one_for_each_permanent_died_this_turn",
+]
+
+[boundary]
+excludes = [
+    "Boundary negative: Put a flood counter on target non-Island land.",
+    "Boundary negative: Put a +1/+1 counter on it.",
+    "Boundary negative: Remove a spore counter from it.",
+]
+includes = [
+    "Accepted no-PEST fixture wording: Put a spore counter on it.",
+    "Accepted no-PEST fixture wording: Put that many spore counters on it.",
+    "Accepted no-PEST fixture wording: Put a corpse counter on it for each creature that died this turn.",
+]
+
+[concept]
+name = "put_named_counters_on_source"
+pest_rules = ["put_named_counters_on_source"]
+rules_queries = ["lex: put named counters on source"]
+rules_terms = [
+    "put",
+    "named",
+    "counters",
+    "source",
+]
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "Put a flood counter on target non-Island land."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "Put a +1/+1 counter on it."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "Remove a spore counter from it."
+
+[[example]]
+text = "Put a spore counter on it."
+
+[[example]]
+text = "Put that many spore counters on it."
+
+[[example]]
+text = "Put a corpse counter on it for each creature that died this turn."
+
+[grammar_query]
+candidate_rules = ["put_named_counters_on_source"]
+selected_rule = "put_named_counters_on_source"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

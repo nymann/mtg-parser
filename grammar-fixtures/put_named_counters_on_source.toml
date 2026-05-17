@@ -1,0 +1,31 @@
+[fixture]
+concept = "put_named_counters_on_source"
+rule = "put_named_counters_on_source"
+
+[[example]]
+text = "Put a spore counter on it."
+reason = "Accepted no-PEST boundary example."
+
+[[example]]
+text = "Put that many spore counters on it."
+reason = "Accepted no-PEST boundary example."
+
+[[example]]
+text = "Put a corpse counter on it for each creature that died this turn."
+reason = "Accepted no-PEST boundary example."
+
+[[counterexample]]
+text = "Put a flood counter on target non-Island land."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "Put a +1/+1 counter on it."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "Remove a spore counter from it."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "Put a spore counter on it. trailing"
+reason = "Exact-consumption guard."
