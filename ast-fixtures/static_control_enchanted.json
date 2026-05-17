@@ -1,0 +1,46 @@
+{
+  "concept": "static_control_enchanted",
+  "fixture_path": "grammar-fixtures/static_control_enchanted.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_you_control_enchanted",
+      "text": "You control enchanted creature.",
+      "ast": {
+        "StaticAbility": {
+          "YouControlEnchanted": {
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_you_control_enchanted",
+      "text": "You control enchanted artifact.",
+      "ast": {
+        "StaticAbility": {
+          "YouControlEnchanted": {
+            "object": {
+              "Permanent": "Artifact"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "static_you_control_enchanted",
+      "text": "You control enchanted permanent.",
+      "ast": {
+        "StaticAbility": {
+          "YouControlEnchanted": {
+            "object": "AnyPermanent"
+          }
+        }
+      }
+    }
+  ]
+}
