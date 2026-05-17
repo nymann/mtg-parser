@@ -157,6 +157,24 @@ is created, the loop re-execs itself through --resume before the next batch so
 wrapper changes take effect.
 ";
 
+const PHASE_LOOP_USAGE: &str = "\
+cargo xtask concept-phase-loop [--agent codex|claude]
+                               [--phase2-batch-size N]
+                               [--phase2-max-batches N]
+                               [--phase2-max-commits N]
+                               [--repeat-stop-after N]
+                               [--phase1-batch-size N]
+                               [--phase1-max-batches N]
+                               [--dry-run]
+
+Runs Phase 2 in small committed batches while it is producing clean
+AST-green progress. After each batch it reviews objective stop signals:
+no AST-green progress, repeated commits for the same concept, new top-level
+Statement enum variants, Phase 2 commit budget, or AST failures becoming the
+majority of remaining non-green concepts. When a stop signal fires, it writes
+a summary and hands off to concept-grind-loop for Phase 1 concept work.
+";
+
 pub fn discover(args: &[String]) -> ExitCode {
     match parse_discover_options(args).and_then(run_discover) {
         Ok(report) => {
@@ -324,6 +342,20 @@ pub fn phase2_grind(args: &[String]) -> ExitCode {
         Err(e) => {
             eprintln!("{e}");
             ExitCode::from(2)
+        }
+    }
+}
+
+pub fn phase_loop(args: &[String]) -> ExitCode {
+    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
+        print!("{PHASE_LOOP_USAGE}");
+        return ExitCode::SUCCESS;
+    }
+    match parse_phase_loop_options(args).and_then(run_phase_loop) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("concept-phase-loop: {e:#}");
+            ExitCode::FAILURE
         }
     }
 }
@@ -565,6 +597,44 @@ pub(crate) struct Phase2GrindOptions {
     dry_run: bool,
     allow_dirty: bool,
     no_commit: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ConceptPhaseLoopOptions {
+    agent: AgentProvider,
+    phase2_batch_size: u32,
+    phase2_max_batches: u32,
+    phase2_max_commits: u32,
+    repeat_stop_after: u32,
+    phase1_batch_size: u32,
+    phase1_max_batches: u32,
+    dry_run: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct PhaseLoopBatchSummary {
+    batch: u32,
+    before: PhaseLoopMapSummary,
+    after: PhaseLoopMapSummary,
+    commits: Vec<PhaseLoopCommitSummary>,
+    stop_reasons: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct PhaseLoopMapSummary {
+    parse_green_concepts: usize,
+    ast_green_concepts: usize,
+    parse_failed_concepts: usize,
+    ast_failed_concepts: usize,
+    grammar_green_concepts: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct PhaseLoopCommitSummary {
+    sha: String,
+    concept: Option<String>,
+    subject: String,
+    added_statement_variants: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -1816,6 +1886,111 @@ pub(crate) fn parse_phase2_grind_options(args: &[String]) -> Result<Phase2GrindO
         allow_dirty,
         no_commit,
     })
+}
+
+fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> {
+    let mut agent = AgentProvider::Codex;
+    let mut phase2_batch_size = 5u32;
+    let mut phase2_max_batches = 10u32;
+    let mut phase2_max_commits = 15u32;
+    let mut repeat_stop_after = 2u32;
+    let mut phase1_batch_size = 5u32;
+    let mut phase1_max_batches = 99u32;
+    let mut dry_run = false;
+
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{PHASE_LOOP_USAGE}"),
+            "--agent" => {
+                let value = iter
+                    .next()
+                    .ok_or_else(|| anyhow!("--agent requires a value"))?;
+                agent = parse_agent_provider(value)?;
+            }
+            s if s.starts_with("--agent=") => {
+                agent = parse_agent_provider(&s["--agent=".len()..])?;
+            }
+            "--phase2-batch-size" => {
+                phase2_batch_size = parse_next_u32(&mut iter, "--phase2-batch-size")?;
+            }
+            s if s.starts_with("--phase2-batch-size=") => {
+                phase2_batch_size = parse_u32_flag_value("--phase2-batch-size", s)?;
+            }
+            "--phase2-max-batches" => {
+                phase2_max_batches = parse_next_u32(&mut iter, "--phase2-max-batches")?;
+            }
+            s if s.starts_with("--phase2-max-batches=") => {
+                phase2_max_batches = parse_u32_flag_value("--phase2-max-batches", s)?;
+            }
+            "--phase2-max-commits" => {
+                phase2_max_commits = parse_next_u32(&mut iter, "--phase2-max-commits")?;
+            }
+            s if s.starts_with("--phase2-max-commits=") => {
+                phase2_max_commits = parse_u32_flag_value("--phase2-max-commits", s)?;
+            }
+            "--repeat-stop-after" => {
+                repeat_stop_after = parse_next_u32(&mut iter, "--repeat-stop-after")?;
+            }
+            s if s.starts_with("--repeat-stop-after=") => {
+                repeat_stop_after = parse_u32_flag_value("--repeat-stop-after", s)?;
+            }
+            "--phase1-batch-size" => {
+                phase1_batch_size = parse_next_u32(&mut iter, "--phase1-batch-size")?;
+            }
+            s if s.starts_with("--phase1-batch-size=") => {
+                phase1_batch_size = parse_u32_flag_value("--phase1-batch-size", s)?;
+            }
+            "--phase1-max-batches" => {
+                phase1_max_batches = parse_next_u32(&mut iter, "--phase1-max-batches")?;
+            }
+            s if s.starts_with("--phase1-max-batches=") => {
+                phase1_max_batches = parse_u32_flag_value("--phase1-max-batches", s)?;
+            }
+            "--dry-run" => dry_run = true,
+            other => bail!("unknown argument: {other}\n\n{PHASE_LOOP_USAGE}"),
+        }
+    }
+
+    for (name, value) in [
+        ("--phase2-batch-size", phase2_batch_size),
+        ("--phase2-max-batches", phase2_max_batches),
+        ("--phase2-max-commits", phase2_max_commits),
+        ("--repeat-stop-after", repeat_stop_after),
+        ("--phase1-batch-size", phase1_batch_size),
+        ("--phase1-max-batches", phase1_max_batches),
+    ] {
+        if value == 0 {
+            bail!("{name} must be greater than zero");
+        }
+    }
+
+    Ok(ConceptPhaseLoopOptions {
+        agent,
+        phase2_batch_size,
+        phase2_max_batches,
+        phase2_max_commits,
+        repeat_stop_after,
+        phase1_batch_size,
+        phase1_max_batches,
+        dry_run,
+    })
+}
+
+fn parse_next_u32(iter: &mut std::slice::Iter<'_, String>, flag: &str) -> Result<u32> {
+    let value = iter
+        .next()
+        .ok_or_else(|| anyhow!("{flag} requires a value"))?;
+    value
+        .parse()
+        .with_context(|| format!("{flag} value: {value:?}"))
+}
+
+fn parse_u32_flag_value(flag: &str, arg: &str) -> Result<u32> {
+    let prefix = format!("{flag}=");
+    arg[prefix.len()..]
+        .parse()
+        .with_context(|| format!("{flag} value: {arg:?}"))
 }
 
 fn parse_roadmap_options(args: &[String]) -> Result<RoadmapOptions> {
@@ -3434,6 +3609,150 @@ fn run_grind_loop(options: ConceptGrindLoopOptions) -> Result<()> {
     Ok(())
 }
 
+fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
+    if !options.dry_run {
+        ensure_clean_working_tree().context("concept-phase-loop requires a clean working tree")?;
+    }
+    let loop_dir = grammar_concept_log_root().join(format!("phase-loop-{}", unix_timestamp()));
+    fs::create_dir_all(&loop_dir).with_context(|| format!("create {}", loop_dir.display()))?;
+    write_json(loop_dir.join("options.json"), &options)?;
+    println!("concept-phase-loop log: {}", loop_dir.display());
+
+    if options.dry_run {
+        println!("dry-run: would run Phase 2 batches, then concept-grind-loop on stop");
+        return Ok(());
+    }
+
+    let mut phase2_commits = 0u32;
+    let mut concept_commit_counts: BTreeMap<String, u32> = BTreeMap::new();
+    let mut stop_reasons = Vec::new();
+
+    for batch in 1..=options.phase2_max_batches {
+        let batch_dir = loop_dir.join(format!("phase2-batch-{batch:03}"));
+        fs::create_dir_all(&batch_dir)
+            .with_context(|| format!("create {}", batch_dir.display()))?;
+
+        let before = run_phase2_map_fresh()?;
+        write_json(batch_dir.join("phase2_map_before.json"), &before)?;
+        let before_head = current_head()?;
+        let before_statement_variants = statement_variants_at_ref("HEAD")?;
+
+        run_phase_loop_phase2_batch(&options, &batch_dir)?;
+
+        let after_head = current_head()?;
+        let after = run_phase2_map_fresh()?;
+        write_json(batch_dir.join("phase2_map_after.json"), &after)?;
+        let after_statement_variants = statement_variants_at_ref("HEAD")?;
+
+        let commits = phase_loop_commits_between(&before_head, &after_head)?;
+        let mut batch_stop_reasons = Vec::new();
+        if commits.is_empty() {
+            batch_stop_reasons.push("Phase 2 batch created no commits".to_string());
+        }
+        if after.ast_green_concepts <= before.ast_green_concepts {
+            batch_stop_reasons.push(format!(
+                "Phase 2 AST-green did not improve: {} -> {}",
+                before.ast_green_concepts, after.ast_green_concepts
+            ));
+        }
+        if after.ast_failed_concepts > 0 && after.ast_failed_concepts >= after.parse_failed_concepts
+        {
+            batch_stop_reasons.push(format!(
+                "AST failures are now the majority of remaining non-green concepts: ast_failed={} parse_failed={}",
+                after.ast_failed_concepts, after.parse_failed_concepts
+            ));
+        }
+
+        let mut commit_summaries = Vec::new();
+        for commit in commits {
+            phase2_commits += 1;
+            if let Some(concept) = &commit.concept {
+                let count = concept_commit_counts.entry(concept.clone()).or_default();
+                *count += 1;
+                if *count >= options.repeat_stop_after {
+                    batch_stop_reasons.push(format!(
+                        "concept {concept:?} was committed {count} time(s) in this Phase 2 cycle"
+                    ));
+                }
+            }
+            commit_summaries.push(commit);
+        }
+
+        let added_statement_variants: Vec<String> = after_statement_variants
+            .difference(&before_statement_variants)
+            .cloned()
+            .collect();
+        if !added_statement_variants.is_empty() {
+            batch_stop_reasons.push(format!(
+                "Phase 2 added top-level Statement variant(s): {}",
+                added_statement_variants.join(", ")
+            ));
+            if let Some(last) = commit_summaries.last_mut() {
+                last.added_statement_variants = added_statement_variants;
+            }
+        }
+
+        if phase2_commits >= options.phase2_max_commits {
+            batch_stop_reasons.push(format!(
+                "Phase 2 commit budget reached: {phase2_commits}/{}",
+                options.phase2_max_commits
+            ));
+        }
+        if after.ast_green_concepts == after.grammar_green_concepts {
+            batch_stop_reasons.push("all grammar-green concepts are Phase 2 AST-green".to_string());
+        }
+
+        let summary = PhaseLoopBatchSummary {
+            batch,
+            before: PhaseLoopMapSummary::from_report(&before),
+            after: PhaseLoopMapSummary::from_report(&after),
+            commits: commit_summaries,
+            stop_reasons: batch_stop_reasons.clone(),
+        };
+        write_json(batch_dir.join("summary.json"), &summary)?;
+        println!(
+            "phase2 batch {batch}: ast_green {} -> {}, parse_green {} -> {}, commits {}",
+            summary.before.ast_green_concepts,
+            summary.after.ast_green_concepts,
+            summary.before.parse_green_concepts,
+            summary.after.parse_green_concepts,
+            summary.commits.len()
+        );
+
+        if !batch_stop_reasons.is_empty() {
+            stop_reasons = batch_stop_reasons;
+            break;
+        }
+    }
+
+    if stop_reasons.is_empty() {
+        stop_reasons.push(format!(
+            "Phase 2 max batches reached: {}",
+            options.phase2_max_batches
+        ));
+    }
+    write_json(loop_dir.join("phase2_stop_reasons.json"), &stop_reasons)?;
+    println!("phase2 stop:");
+    for reason in &stop_reasons {
+        println!("  - {reason}");
+    }
+
+    run_phase_loop_phase1(&options, &loop_dir)?;
+    Ok(())
+}
+
+impl PhaseLoopMapSummary {
+    fn from_report(report: &Phase2MapReport) -> Self {
+        Self {
+            parse_green_concepts: report.parse_green_concepts,
+            ast_green_concepts: report.ast_green_concepts,
+            parse_failed_concepts: report.parse_failed_concepts,
+            ast_failed_concepts: report.ast_failed_concepts,
+            grammar_green_concepts: report.grammar_green_concepts,
+        }
+    }
+}
+
 fn grind_loop_state_path(loop_dir: &Path) -> PathBuf {
     loop_dir.join("loop_state.json")
 }
@@ -3494,6 +3813,150 @@ fn run_grind_loop_batch(options: &ConceptGrindLoopOptions, batch_dir: &Path) -> 
         bail!("concept-grind batch failed\n{text}");
     }
     Ok(())
+}
+
+fn run_phase_loop_phase2_batch(options: &ConceptPhaseLoopOptions, batch_dir: &Path) -> Result<()> {
+    let output = Command::new("cargo")
+        .args([
+            "xtask",
+            "concept-phase2-grind",
+            "--agent",
+            options.agent.label(),
+            "--max-iterations",
+            &options.phase2_batch_size.to_string(),
+        ])
+        .current_dir(repo_root())
+        .output()
+        .context("cargo xtask concept-phase2-grind batch")?;
+    let text = command_output_text(&output);
+    fs::write(batch_dir.join("phase2_output.txt"), &text)
+        .with_context(|| format!("write {}", batch_dir.join("phase2_output.txt").display()))?;
+    if !output.status.success() {
+        bail!("concept-phase2-grind batch failed\n{text}");
+    }
+    Ok(())
+}
+
+fn run_phase_loop_phase1(options: &ConceptPhaseLoopOptions, loop_dir: &Path) -> Result<()> {
+    let phase1_dir = loop_dir.join("phase1");
+    fs::create_dir_all(&phase1_dir).with_context(|| format!("create {}", phase1_dir.display()))?;
+    let output = Command::new("cargo")
+        .args([
+            "xtask",
+            "concept-grind-loop",
+            "--agent",
+            options.agent.label(),
+            "--batch-size",
+            &options.phase1_batch_size.to_string(),
+            "--max-batches",
+            &options.phase1_max_batches.to_string(),
+        ])
+        .current_dir(repo_root())
+        .output()
+        .context("cargo xtask concept-grind-loop")?;
+    let text = command_output_text(&output);
+    fs::write(phase1_dir.join("concept_grind_loop_output.txt"), &text).with_context(|| {
+        format!(
+            "write {}",
+            phase1_dir.join("concept_grind_loop_output.txt").display()
+        )
+    })?;
+    if !output.status.success() {
+        bail!("concept-grind-loop failed\n{text}");
+    }
+    Ok(())
+}
+
+fn phase_loop_commits_between(
+    before_head: &str,
+    after_head: &str,
+) -> Result<Vec<PhaseLoopCommitSummary>> {
+    if before_head == after_head {
+        return Ok(Vec::new());
+    }
+    let output = Command::new("git")
+        .args([
+            "log",
+            "--reverse",
+            "--format=%H%x00%s",
+            &format!("{before_head}..{after_head}"),
+        ])
+        .current_dir(repo_root())
+        .output()
+        .context("git log phase loop commits")?;
+    if !output.status.success() {
+        bail!("git log failed\n{}", command_output_text(&output));
+    }
+    let text = String::from_utf8_lossy(&output.stdout);
+    let mut commits = Vec::new();
+    for line in text.lines() {
+        let Some((sha, subject)) = line.split_once('\0') else {
+            continue;
+        };
+        let concept = subject
+            .strip_prefix("Advance Phase 2 concept ")
+            .map(str::to_string);
+        commits.push(PhaseLoopCommitSummary {
+            sha: sha.to_string(),
+            concept,
+            subject: subject.to_string(),
+            added_statement_variants: Vec::new(),
+        });
+    }
+    Ok(commits)
+}
+
+fn statement_variants_at_ref(rev: &str) -> Result<BTreeSet<String>> {
+    let output = Command::new("git")
+        .args(["show", &format!("{rev}:crates/mtg-grammar/src/ast.rs")])
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("git show {rev}:crates/mtg-grammar/src/ast.rs"))?;
+    if !output.status.success() {
+        bail!(
+            "git show {rev}:ast.rs failed\n{}",
+            command_output_text(&output)
+        );
+    }
+    Ok(extract_statement_variants(&String::from_utf8_lossy(
+        &output.stdout,
+    )))
+}
+
+fn extract_statement_variants(text: &str) -> BTreeSet<String> {
+    let mut variants = BTreeSet::new();
+    let mut in_statement = false;
+    let mut depth = 0i32;
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if !in_statement {
+            if trimmed == "pub enum Statement {" {
+                in_statement = true;
+                depth = 1;
+            }
+            continue;
+        }
+        if depth == 1
+            && trimmed
+                .chars()
+                .next()
+                .is_some_and(|ch| ch.is_ascii_uppercase())
+        {
+            if let Some(name) = trimmed
+                .split(|ch: char| ch == '{' || ch == '(' || ch == ',' || ch.is_whitespace())
+                .next()
+                .filter(|name| !name.is_empty())
+            {
+                variants.insert(name.to_string());
+            }
+        }
+        depth += trimmed.matches('{').count() as i32;
+        depth -= trimmed.matches('}').count() as i32;
+        if depth <= 0 {
+            break;
+        }
+    }
+    variants
 }
 
 fn newest_grind_run_since(since: SystemTime) -> Result<Option<PathBuf>> {
@@ -7870,6 +8333,55 @@ mod tests {
         assert_eq!(
             skeletonize_clause("prevent the next 1 damage."),
             "prevent the next N damage"
+        );
+    }
+
+    #[test]
+    fn phase_loop_options_parse_thresholds() {
+        let options = parse_phase_loop_options(&[
+            "--phase2-batch-size=3".to_string(),
+            "--phase2-max-batches".to_string(),
+            "4".to_string(),
+            "--phase2-max-commits=9".to_string(),
+            "--repeat-stop-after=3".to_string(),
+            "--phase1-batch-size=6".to_string(),
+            "--phase1-max-batches=7".to_string(),
+            "--dry-run".to_string(),
+        ])
+        .expect("phase loop options parse");
+        assert_eq!(options.phase2_batch_size, 3);
+        assert_eq!(options.phase2_max_batches, 4);
+        assert_eq!(options.phase2_max_commits, 9);
+        assert_eq!(options.repeat_stop_after, 3);
+        assert_eq!(options.phase1_batch_size, 6);
+        assert_eq!(options.phase1_max_batches, 7);
+        assert!(options.dry_run);
+    }
+
+    #[test]
+    fn extracts_top_level_statement_variants_only() {
+        let variants = extract_statement_variants(
+            r#"
+#[derive(Debug)]
+pub enum Statement {
+    ManaCost(ManaCost),
+    CounterTargetSpell {
+        condition: Option<CounterTargetSpellCondition>,
+    },
+    DamageEffect(ActivatedDamageEffect),
+}
+
+pub enum Other {
+    NotAStatement,
+}
+"#,
+        );
+        assert_eq!(
+            variants,
+            ["CounterTargetSpell", "DamageEffect", "ManaCost"]
+                .into_iter()
+                .map(str::to_string)
+                .collect()
         );
     }
 

@@ -74,6 +74,8 @@ Commands:
                               parse and AST snapshot gates.
   concept-phase2-grind        Autonomous Phase 2 parser/AST loop over
                               grammar-green concepts. Use --ui tui for a live view.
+  concept-phase-loop          Run Phase 2 in reviewed batches, then hand off
+                              to Phase 1 concept-grind-loop when stop rules fire.
   concept-roadmap             Inventory rulebook-derived concept candidates
                               and annotate concept/corpus coverage.
   concept-grammar-query --query TEXT
@@ -187,6 +189,7 @@ fn main() -> ExitCode {
         Some("concept-parse") => concept::parse_concept(&args[1..]),
         Some("concept-ast-test") => concept::ast_test(&args[1..]),
         Some("concept-phase2-map") => concept::phase2_map(&args[1..]),
+        Some("concept-phase-loop") => concept::phase_loop(&args[1..]),
         Some("concept-phase2-grind") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => concept::phase2_grind(&args[1..]),
             Ok(Ui::Tui) => {
