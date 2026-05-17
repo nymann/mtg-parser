@@ -1,0 +1,31 @@
+[fixture]
+concept = "target_spell_or_permanent_color_change"
+rule = "target_spell_or_permanent_becomes_color"
+
+[[example]]
+text = "Target spell or permanent becomes red."
+reason = "Target spell or permanent continuous color characteristic change to red."
+
+[[example]]
+text = "Target spell or permanent becomes blue."
+reason = "Target spell or permanent continuous color characteristic change to blue."
+
+[[counterexample]]
+text = "Target creature gains flying until end of turn."
+reason = "Target permanent keyword ability grant until end of turn, not a color-changing effect."
+
+[[counterexample]]
+text = "Target artifact becomes an Island until CARDNAME leaves the battlefield."
+reason = "Target permanent type-changing effect with a source-linked duration, not a color-changing effect."
+
+[[counterexample]]
+text = "Copy target instant spell, except that the copy is red."
+reason = "Spell-copy effect whose copy is red, not a target spell or permanent becoming a color."
+
+[[counterexample]]
+text = "Change the text of target spell or permanent by replacing all instances of one color word with another."
+reason = "Text-changing effect over color words, not an object color change."
+
+[[counterexample]]
+text = "Target spell or permanent becomes red. trailing"
+reason = "Exact-consumption guard."

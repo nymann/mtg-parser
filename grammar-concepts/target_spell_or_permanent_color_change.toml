@@ -1,0 +1,86 @@
+[[axis]]
+name = "effect_kind"
+values = ["continuous_characteristic_change"]
+
+[[axis]]
+name = "recipient"
+values = ["target_spell_or_permanent"]
+
+[[axis]]
+name = "target_selector"
+values = ["target_spell_or_permanent_selector"]
+
+[[axis]]
+name = "modification"
+values = ["color_change"]
+
+[[axis]]
+name = "characteristic"
+values = ["color"]
+
+[[axis]]
+name = "duration"
+values = ["none"]
+
+[boundary]
+excludes = [
+    "Target permanent keyword ability grants until end of turn.",
+    "Target permanent type-changing effects with source-linked durations.",
+    "Spell-copy effects whose copy has a color characteristic.",
+    "Text-changing effects that replace color words.",
+]
+includes = [
+    "Target spell or permanent becomes red.",
+    "Target spell or permanent becomes blue.",
+]
+
+[concept]
+name = "target_spell_or_permanent_color_change"
+pest_rules = ["target_spell_or_permanent_becomes_color"]
+rules_queries = [
+    "lex: target spell or permanent becomes a color",
+    "lex: continuous effect changes the color of target spell or permanent",
+]
+rules_terms = [
+    "continuous effect",
+    "characteristic-changing effect",
+    "color",
+    "target spell",
+    "target permanent",
+]
+
+[[counterexample]]
+reason = "Target permanent keyword ability grant until end of turn, not a color-changing effect."
+text = "Target creature gains flying until end of turn."
+
+[[counterexample]]
+reason = "Target permanent type-changing effect with a source-linked duration, not a color-changing effect."
+text = "Target artifact becomes an Island until CARDNAME leaves the battlefield."
+
+[[counterexample]]
+reason = "Spell-copy effect whose copy is red, not a target spell or permanent becoming a color."
+text = "Copy target instant spell, except that the copy is red."
+
+[[counterexample]]
+reason = "Text-changing effect over color words, not an object color change."
+text = "Change the text of target spell or permanent by replacing all instances of one color word with another."
+
+[[example]]
+text = "Target spell or permanent becomes red."
+
+[[example]]
+text = "Target spell or permanent becomes blue."
+
+[grammar_query]
+candidate_rules = [
+    "target_spell_or_permanent_becomes_color",
+    "target_permanent_gains_keyword_until_eot",
+    "target_permanent_becomes_basic_land_type_until_source_leaves",
+    "copy_target_spell_except_copy_is_color",
+    "change_text_of_target_spell_or_permanent_replacing_basic_land_type",
+]
+selected_rule = "target_spell_or_permanent_becomes_color"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
