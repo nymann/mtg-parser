@@ -1,0 +1,75 @@
+[[axis]]
+name = "action"
+values = ["activate"]
+
+[[axis]]
+name = "permission_polarity"
+values = ["only"]
+
+[[axis]]
+name = "timing_window"
+values = ["as_sorcery"]
+
+[[axis]]
+name = "activation_frequency"
+values = ["none"]
+
+[boundary]
+excludes = [
+    "Activation timing permissions for your turn, upkeep, combat, or an opponent's turn before attackers are declared.",
+    "Activation timing permissions with an activation-frequency limit.",
+    "Activation permissions about who may activate an ability.",
+]
+includes = ["Standalone activation permission sentences restricting activation to sorcery timing."]
+
+[concept]
+name = "activate_only_as_sorcery"
+pest_rules = ["activate_only_as_sorcery"]
+rules_queries = ["lex: activate only as a sorcery"]
+rules_terms = [
+    "activate",
+    "activated ability",
+    "sorcery",
+]
+
+[[counterexample]]
+reason = "Your-turn timing permission is a sibling timing-window concept, not sorcery timing."
+text = "Activate only during your turn."
+
+[[counterexample]]
+reason = "Your-turn timing permission with an activation frequency is outside sorcery timing and does not preserve activation_frequency=none."
+text = "Activate only during your turn and only once each turn."
+
+[[counterexample]]
+reason = "Upkeep timing permission is a sibling timing-window concept, not sorcery timing."
+text = "Activate only during your upkeep."
+
+[[counterexample]]
+reason = "Combat timing permission is a sibling timing-window concept, not sorcery timing."
+text = "Activate only during combat."
+
+[[counterexample]]
+reason = "Opponent-turn timing permission with an additional before-attackers condition is outside sorcery timing."
+text = "Activate only during an opponent's turn, before attackers are declared."
+
+[[counterexample]]
+reason = "Permission about who may activate the ability, not when it may be activated."
+text = "Only this ability's source's owner may activate this ability."
+
+[[example]]
+text = "Activate only as a sorcery."
+
+[grammar_query]
+candidate_rules = [
+    "activate_only_as_sorcery",
+    "activate_only_during_your_turn",
+    "activate_only_during_your_turn_and_only_once_each_turn",
+    "activate_only_during_your_upkeep",
+    "activate_only_during_combat",
+    "activate_only_during_opponents_turn_before_attackers_declared",
+]
+selected_rule = "activate_only_as_sorcery"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

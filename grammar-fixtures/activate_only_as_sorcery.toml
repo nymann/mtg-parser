@@ -1,0 +1,39 @@
+[fixture]
+concept = "activate_only_as_sorcery"
+rule = "activate_only_as_sorcery"
+
+[[example]]
+text = "Activate only as a sorcery."
+reason = "Activation permission sentence restricted to sorcery timing with no activation-frequency limit."
+
+[[example]]
+text = "activate only as a sorcery."
+reason = "Same activation permission shape in lowercase; the grammar literals are case-insensitive."
+
+[[counterexample]]
+text = "Activate only during your turn."
+reason = "Your-turn timing permission is a sibling timing-window concept, not sorcery timing."
+
+[[counterexample]]
+text = "Activate only during your turn and only once each turn."
+reason = "Your-turn timing permission with an activation frequency is outside sorcery timing and does not preserve activation_frequency=none."
+
+[[counterexample]]
+text = "Activate only during your upkeep."
+reason = "Upkeep timing permission is a sibling timing-window concept, not sorcery timing."
+
+[[counterexample]]
+text = "Activate only during combat."
+reason = "Combat timing permission is a sibling timing-window concept, not sorcery timing."
+
+[[counterexample]]
+text = "Activate only during an opponent's turn, before attackers are declared."
+reason = "Opponent-turn timing permission with an additional before-attackers condition is outside sorcery timing."
+
+[[counterexample]]
+text = "Only this ability's source's owner may activate this ability."
+reason = "Permission about who may activate the ability, not when it may be activated."
+
+[[counterexample]]
+text = "Activate only as a sorcery. trailing"
+reason = "Exact-consumption guard."
