@@ -1,0 +1,35 @@
+[fixture]
+concept = "this_card_in_your_graveyard_with_cards_above_it"
+rule = "this_card_in_your_graveyard_with_cards_above_it"
+
+[[example]]
+text = "this card is in your graveyard with three or more creature cards above it"
+reason = "Canonical intervening-if graveyard condition with a creature-card threshold above this card."
+
+[[example]]
+text = "this card is in your graveyard with two or more artifact cards above it"
+reason = "Same condition with an artifact-card threshold above this card."
+
+[[example]]
+text = "this card is in your graveyard with four or more land cards above it"
+reason = "Same condition with a land-card threshold above this card."
+
+[[counterexample]]
+text = "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+reason = "Blocking-pile replacement effect, not a graveyard cards-above-this-card condition."
+
+[[counterexample]]
+text = "this card is in your graveyard"
+reason = "Bare graveyard location statement without the cards-above-it threshold."
+
+[[counterexample]]
+text = "there are three or more creature cards in your graveyard"
+reason = "General graveyard threshold condition, not this-card-relative cards above it."
+
+[[counterexample]]
+text = "this card is in your graveyard with three or more creature cards below it"
+reason = "Uses the opposite relative position; this concept is scoped to cards above it."
+
+[[counterexample]]
+text = "this card is in your graveyard with three or more creature cards above it trailing"
+reason = "Exact-consumption guard."

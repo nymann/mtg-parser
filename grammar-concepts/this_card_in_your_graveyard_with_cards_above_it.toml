@@ -1,0 +1,79 @@
+[[axis]]
+name = "subject"
+values = ["this_card"]
+
+[[axis]]
+name = "zone"
+values = ["your_graveyard"]
+
+[[axis]]
+name = "threshold"
+values = ["number_word_or_more"]
+
+[[axis]]
+name = "object_kind"
+values = ["permanent_type_cards"]
+
+[[axis]]
+name = "relative_position"
+values = ["above_it"]
+
+[[axis]]
+name = "clause_role"
+values = ["intervening_if_condition"]
+
+[boundary]
+excludes = [
+    "Blocking-pile replacement effects.",
+    "Bare statements that this card is in your graveyard without the cards-above-it threshold.",
+    "Graveyard threshold conditions that do not position cards above this card.",
+    "Cards-below-it conditions.",
+]
+includes = ["Intervening-if conditions where this card is in your graveyard with a number-word-or-more threshold of permanent-type cards above it."]
+
+[concept]
+name = "this_card_in_your_graveyard_with_cards_above_it"
+pest_rules = ["this_card_in_your_graveyard_with_cards_above_it"]
+rules_queries = ["lex: this card is in your graveyard with three or more creature cards above it"]
+rules_terms = [
+    "intervening if",
+    "graveyard",
+    "card",
+    "permanent type",
+]
+
+[[counterexample]]
+reason = "Blocking-pile replacement effect, not a graveyard cards-above-this-card condition."
+text = "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+
+[[counterexample]]
+reason = "Bare graveyard location statement without the cards-above-it threshold."
+text = "this card is in your graveyard"
+
+[[counterexample]]
+reason = "General graveyard threshold condition, not this-card-relative cards above it."
+text = "there are three or more creature cards in your graveyard"
+
+[[counterexample]]
+reason = "Uses the opposite relative position; this concept is scoped to cards above it."
+text = "this card is in your graveyard with three or more creature cards below it"
+
+[[example]]
+text = "this card is in your graveyard with three or more creature cards above it"
+
+[[example]]
+text = "this card is in your graveyard with two or more artifact cards above it"
+
+[[example]]
+text = "this card is in your graveyard with four or more land cards above it"
+
+[grammar_query]
+candidate_rules = [
+    "this_card_in_your_graveyard_with_cards_above_it",
+    "this_turn_defending_players_make_random_blocking_piles",
+]
+selected_rule = "this_card_in_your_graveyard_with_cards_above_it"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
