@@ -104,6 +104,8 @@ sentence_statement = _{
   | you_may_draw_cards
   | remove_pt_counter_from_it
   | sacrifice_permanent_other_than_source
+  | sacrifice_source_effect
+  | sacrifice_source_unless_you_pay
   | you_may_remove_named_counter_from_source
   | you_may_have_source_become_copy_of_target
   | you_may_put_this_card_onto_the_battlefield
@@ -216,6 +218,7 @@ phrase_statement = _{
   | label_phrase
   | ante_top_card_of_your_library_action
   | tap_source_action
+  | sacrifice_source
   | draw_cards_action
   | draw_that_many_cards_replacement_result
   | activation_limit_context

@@ -1,0 +1,196 @@
+{
+  "concept": "sacrifice_source",
+  "fixture_path": "grammar-fixtures/sacrifice_source.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "sacrifice_source",
+      "text": "sacrifice CARDNAME",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSource": {
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "sacrifice_source",
+      "text": "sacrifice it",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSource": {
+            "source": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "sacrifice_source",
+      "text": "sacrifice this",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSource": {
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "sacrifice_source",
+      "text": "sacrifice this creature",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSource": {
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "sacrifice_source",
+      "text": "sacrifice that source",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSource": {
+            "source": "ThatSource"
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "sacrifice_source_effect",
+      "text": "sacrifice CARDNAME.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSource": {
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 7,
+      "rule": "sacrifice_source_effect",
+      "text": "sacrifice it.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSource": {
+            "source": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 8,
+      "rule": "sacrifice_source_effect",
+      "text": "sacrifice this.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSource": {
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 9,
+      "rule": "sacrifice_source_effect",
+      "text": "sacrifice this creature.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSource": {
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 10,
+      "rule": "sacrifice_source_effect",
+      "text": "sacrifice that source.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSource": {
+            "source": "ThatSource"
+          }
+        }
+      }
+    },
+    {
+      "index": 11,
+      "rule": "sacrifice_source_unless_you_pay",
+      "text": "sacrifice CARDNAME unless you pay {1}.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSourceUnlessYouPay": {
+            "cost": {
+              "Mana": {
+                "symbols": [
+                  {
+                    "Generic": 1
+                  }
+                ]
+              }
+            },
+            "prefixed_by_then": false,
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 12,
+      "rule": "sacrifice_source_unless_you_pay",
+      "text": "sacrifice it unless you pay {2}.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSourceUnlessYouPay": {
+            "cost": {
+              "Mana": {
+                "symbols": [
+                  {
+                    "Generic": 2
+                  }
+                ]
+              }
+            },
+            "prefixed_by_then": false,
+            "source": "It"
+          }
+        }
+      }
+    },
+    {
+      "index": 13,
+      "rule": "sacrifice_source_unless_you_pay",
+      "text": "then sacrifice this creature unless you pay {G}.",
+      "ast": {
+        "TriggerEffect": {
+          "SacrificeSourceUnlessYouPay": {
+            "cost": {
+              "Mana": {
+                "symbols": [
+                  "Green"
+                ]
+              }
+            },
+            "prefixed_by_then": true,
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

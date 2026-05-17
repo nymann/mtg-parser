@@ -162,6 +162,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::tap_source_action => Ok(Statement::ImperativeActionSequence {
             actions: vec![imperative_action_from_pair(pair)?],
         }),
+        Rule::sacrifice_source => {
+            let source_pair = only_inner(pair, "sacrifice_source missing source_object")?;
+            Ok(Statement::TriggerEffect(TriggerEffect::SacrificeSource {
+                source: source_object_from_pair(source_pair)?,
+            }))
+        }
         Rule::unless_you_pay_mana_do_actions => Ok(Statement::TriggerEffect(
             unless_you_pay_mana_do_actions_from_pair(pair)?,
         )),
@@ -329,6 +335,12 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         )),
         Rule::sacrifice_permanent_other_than_source => Ok(Statement::TriggerEffect(
             sacrifice_permanent_other_than_source_from_pair(pair)?,
+        )),
+        Rule::sacrifice_source_effect => {
+            Ok(Statement::TriggerEffect(sacrifice_source_effect_from_pair(pair)?))
+        }
+        Rule::sacrifice_source_unless_you_pay => Ok(Statement::TriggerEffect(
+            sacrifice_source_unless_you_pay_from_pair(pair)?,
         )),
         Rule::you_may_remove_named_counter_from_source => Ok(Statement::TriggerEffect(
             you_may_remove_named_counter_from_source_from_pair(pair)?,
