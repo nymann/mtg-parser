@@ -1,0 +1,55 @@
+{
+  "concept": "static_enchanted_basic_land_type_setting",
+  "fixture_path": "grammar-fixtures/static_enchanted_basic_land_type_setting.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_enchanted_is_basic_land_type",
+      "text": "Enchanted land is a Plains.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedIsBasicLandType": {
+            "land_type": {
+              "Specific": "Plains"
+            },
+            "object": {
+              "Permanent": "Land"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_enchanted_is_basic_land_type",
+      "text": "Enchanted land is an Island.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedIsBasicLandType": {
+            "land_type": {
+              "Specific": "Island"
+            },
+            "object": {
+              "Permanent": "Land"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "static_enchanted_is_basic_land_type",
+      "text": "Enchanted land is the chosen type.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedIsBasicLandType": {
+            "land_type": "ChosenType",
+            "object": {
+              "Permanent": "Land"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
