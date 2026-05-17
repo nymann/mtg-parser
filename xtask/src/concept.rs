@@ -1173,6 +1173,7 @@ struct ConceptGrindIterationSummary {
     concept: String,
     query: String,
     target_rule: String,
+    iteration_path: String,
     fixture_passed: bool,
     maturity_state: String,
     mapped_rule_count_before: usize,
@@ -5955,6 +5956,13 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             concept: gap.concept.clone(),
             query: gap.query.clone(),
             target_rule: gap.target_rule.clone(),
+            iteration_path: if fastpath_skipped_patch {
+                "fast_path".to_string()
+            } else if fastpath.fastpath_attempted {
+                "fallback".to_string()
+            } else {
+                "patch_agent".to_string()
+            },
             fixture_passed: final_contract.fixture_result.passed,
             maturity_state: final_maturity.state.clone(),
             mapped_rule_count_before: before.mapped_rule_count,
@@ -6594,9 +6602,8 @@ fn attempt_no_pest_concept_fastpath(
         return Ok(report);
     }
 
-    let Some(resolution) = resolve_no_pest_example_rule(&rules, gap, &examples) else {
-        report.fallback_reason =
-            Some("accepted examples did not resolve to a unique target/root rule".into());
+    let Some(resolution) = resolve_catalog_only_example_rule(gap, &examples) else {
+        report.fallback_reason = Some("accepted examples did not all match the target rule".into());
         return Ok(report);
     };
     report.eligible_shape = true;
@@ -6619,8 +6626,15 @@ fn attempt_no_pest_concept_fastpath(
             rule: resolution.example_rule.clone(),
         })
         .collect::<Vec<_>>();
-    let grammar_before = fs::read_to_string(grammar_pest_path())
-        .with_context(|| format!("read {}", grammar_pest_path().display()))?;
+    let snapshots = if write_files {
+        Some(FastpathSnapshots::capture([
+            report.concept_path.as_path(),
+            report.fixture_path.as_path(),
+            grammar_pest_path().as_path(),
+        ])?)
+    } else {
+        None
+    };
     let concept_doc = build_no_pest_fastpath_concept_document(
         gap,
         &resolution.mapped_pest_rules,
@@ -6636,10 +6650,23 @@ fn attempt_no_pest_concept_fastpath(
         &counterexamples,
     );
     if write_files {
-        fs::write(&report.concept_path, concept_doc)
-            .with_context(|| format!("write {}", report.concept_path.display()))?;
-        fs::write(&report.fixture_path, fixture_doc)
-            .with_context(|| format!("write {}", report.fixture_path.display()))?;
+        if let Err(error) = fs::write(&report.concept_path, concept_doc)
+            .with_context(|| format!("write {}", report.concept_path.display()))
+            .and_then(|_| {
+                fs::write(&report.fixture_path, fixture_doc)
+                    .with_context(|| format!("write {}", report.fixture_path.display()))
+            })
+        {
+            if let Some(snapshots) = &snapshots {
+                snapshots.restore()?;
+            }
+            report.fastpath_result = "fallback".to_string();
+            report.fallback_reason = Some(format!(
+                "fast-path artifact generation failed; falling back to patch agent: {error:#}"
+            ));
+            report.patch_agent_started = true;
+            return Ok(report);
+        }
         report.generated_concept = true;
         report.generated_fixture = true;
     }
@@ -6647,20 +6674,23 @@ fn attempt_no_pest_concept_fastpath(
     let quality_contract = match run_quality_contract(gap) {
         Ok(report) => report,
         Err(error) => {
+            report.grammar_pest_changed = snapshots
+                .as_ref()
+                .is_some_and(|snapshots| snapshots.path_changed(&grammar_pest_path()));
+            if let Some(snapshots) = &snapshots {
+                snapshots.restore()?;
+            }
             report.fastpath_result = "fallback".to_string();
             report.fallback_reason = Some(format!(
                 "fast-path quality contract errored; falling back to patch agent: {error:#}"
             ));
             report.patch_agent_started = true;
-            report.grammar_pest_changed = fs::read_to_string(grammar_pest_path())
-                .with_context(|| format!("read {}", grammar_pest_path().display()))?
-                != grammar_before;
             return Ok(report);
         }
     };
-    report.grammar_pest_changed = fs::read_to_string(grammar_pest_path())
-        .with_context(|| format!("read {}", grammar_pest_path().display()))?
-        != grammar_before;
+    report.grammar_pest_changed = snapshots
+        .as_ref()
+        .is_some_and(|snapshots| snapshots.path_changed(&grammar_pest_path()));
     let passed = quality_contract.passed
         && quality_contract.maturity_result.state == "grammar_fixture_green"
         && !report.grammar_pest_changed;
@@ -6670,6 +6700,9 @@ fn attempt_no_pest_concept_fastpath(
         report.fallback_reason = None;
         report.patch_agent_started = false;
     } else {
+        if let Some(snapshots) = &snapshots {
+            snapshots.restore()?;
+        }
         report.fastpath_result = "fallback".to_string();
         report.fallback_reason =
             Some("fast-path quality contract failed; falling back to patch agent".to_string());
@@ -6685,8 +6718,7 @@ struct NoPestRuleResolution {
     mapped_pest_rules: Vec<String>,
 }
 
-fn resolve_no_pest_example_rule(
-    rules: &[grammar_query_engine::GrammarRuleDefinition],
+fn resolve_catalog_only_example_rule(
     gap: &ConceptGap,
     examples: &[String],
 ) -> Option<NoPestRuleResolution> {
@@ -6700,55 +6732,68 @@ fn resolve_no_pest_example_rule(
             mapped_pest_rules: vec![gap.target_rule.clone()],
         });
     }
-
-    if examples
-        .iter()
-        .any(|text| parse_pest_rule(&gap.target_rule, text).is_ok())
-    {
-        return None;
-    }
-
-    let mut candidates = rule_ancestors(rules, &gap.target_rule)
-        .into_iter()
-        .filter(|rule| semantic_owner_candidate(rule, gap))
-        .filter(|rule| {
-            examples
-                .iter()
-                .all(|text| parse_pest_rule(rule, text).is_ok())
-        })
-        .collect::<Vec<_>>();
-    candidates.sort();
-    candidates.dedup();
-    if candidates.len() != 1 {
-        return None;
-    }
-    let example_rule = candidates.remove(0);
-    Some(NoPestRuleResolution {
-        example_rule: example_rule.clone(),
-        resolution_reason: "single_semantic_ancestor_accepts_all_examples".to_string(),
-        mapped_pest_rules: vec![example_rule, gap.target_rule.clone()],
-    })
+    None
 }
 
-fn rule_ancestors(
-    rules: &[grammar_query_engine::GrammarRuleDefinition],
-    target_rule: &str,
-) -> Vec<String> {
-    let mut ancestors = Vec::new();
-    let mut seen = BTreeSet::new();
-    let mut stack = grammar_query_engine::reverse_dependencies(rules, target_rule);
-    while let Some(rule) = stack.pop() {
-        if !seen.insert(rule.clone()) {
-            continue;
+#[derive(Debug, Clone)]
+struct FastpathSnapshots {
+    files: Vec<FastpathSnapshot>,
+}
+
+#[derive(Debug, Clone)]
+struct FastpathSnapshot {
+    path: PathBuf,
+    contents: Option<Vec<u8>>,
+}
+
+impl FastpathSnapshots {
+    fn capture<'a>(paths: impl IntoIterator<Item = &'a Path>) -> Result<Self> {
+        let mut files = Vec::new();
+        for path in paths {
+            let contents = match fs::read(path) {
+                Ok(contents) => Some(contents),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+                Err(error) => {
+                    return Err(error).with_context(|| format!("read {}", path.display()));
+                }
+            };
+            files.push(FastpathSnapshot {
+                path: path.to_path_buf(),
+                contents,
+            });
         }
-        ancestors.push(rule.clone());
-        stack.extend(grammar_query_engine::reverse_dependencies(rules, &rule));
+        Ok(Self { files })
     }
-    ancestors
-}
 
-fn semantic_owner_candidate(rule: &str, gap: &ConceptGap) -> bool {
-    rule == gap.concept || rule.starts_with(&format!("{}_", gap.concept))
+    fn restore(&self) -> Result<()> {
+        for file in &self.files {
+            match &file.contents {
+                Some(contents) => fs::write(&file.path, contents)
+                    .with_context(|| format!("restore {}", file.path.display()))?,
+                None => match fs::remove_file(&file.path) {
+                    Ok(()) => {}
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(error) => {
+                        return Err(error)
+                            .with_context(|| format!("remove {}", file.path.display()));
+                    }
+                },
+            }
+        }
+        Ok(())
+    }
+
+    fn path_changed(&self, path: &Path) -> bool {
+        let current = match fs::read(path) {
+            Ok(contents) => Some(contents),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+            Err(_) => return true,
+        };
+        self.files
+            .iter()
+            .find(|file| file.path == path)
+            .is_some_and(|file| file.contents != current)
+    }
 }
 
 fn build_no_pest_fastpath_concept_document(
@@ -8991,7 +9036,7 @@ pub enum Other {
     }
 
     #[test]
-    fn batch_13_fragment_target_resolves_no_pest_fastpath_to_semantic_root() {
+    fn catalog_only_fastpath_rejects_fragment_target_that_needs_semantic_root() {
         let grammar_before = fs::read_to_string(grammar_pest_path()).expect("read grammar.pest");
         let response = "CONCEPT_BOUNDARY_DECISION:\n\
              OWNER: new:static_play_restriction\n\
@@ -9022,28 +9067,19 @@ pub enum Other {
         let report =
             attempt_no_pest_concept_fastpath(&gap, &decision, false).expect("run fastpath");
 
-        assert!(report.fastpath_attempted);
-        assert_eq!(report.fastpath_result, "success");
-        assert!(!report.patch_agent_started);
+        assert!(!report.fastpath_attempted);
+        assert_eq!(report.fastpath_result, "not_eligible");
+        assert!(report.patch_agent_started);
         assert_eq!(report.original_target_rule, "play_restriction_action");
+        assert_eq!(report.example_rule.as_deref(), None);
+        assert_eq!(report.resolution_reason.as_deref(), None);
+        assert!(report.mapped_pest_rules.is_empty());
         assert_eq!(
-            report.example_rule.as_deref(),
-            Some("static_play_restriction")
+            report.fallback_reason.as_deref(),
+            Some("accepted examples did not all match the target rule")
         );
-        assert_eq!(
-            report.resolution_reason.as_deref(),
-            Some("single_semantic_ancestor_accepts_all_examples")
-        );
-        assert!(report
-            .mapped_pest_rules
-            .contains(&"play_restriction_action".to_string()));
-        assert!(report
-            .mapped_pest_rules
-            .contains(&"static_play_restriction".to_string()));
         assert!(!report.grammar_pest_changed);
-        let quality = report.quality_contract.expect("quality contract");
-        assert!(quality.fixture_result.passed);
-        assert_eq!(quality.maturity_result.state, "grammar_fixture_green");
+        assert!(report.quality_contract.is_none());
         let grammar_after = fs::read_to_string(grammar_pest_path()).expect("read grammar.pest");
         assert_eq!(
             grammar_after, grammar_before,
@@ -9602,6 +9638,30 @@ unrelated_rule = { "unrelated" }
                 "--update",
             ]
         );
+    }
+
+    #[test]
+    fn fastpath_snapshots_restore_created_and_existing_files() {
+        let dir = unique_test_dir("fastpath-snapshots");
+        fs::create_dir_all(&dir).expect("create temp dir");
+        let existing = dir.join("existing.toml");
+        let created = dir.join("created.toml");
+        fs::write(&existing, "before").expect("write existing");
+
+        let snapshots =
+            FastpathSnapshots::capture([existing.as_path(), created.as_path()]).expect("snapshot");
+        fs::write(&existing, "after").expect("mutate existing");
+        fs::write(&created, "new").expect("create new");
+
+        snapshots.restore().expect("restore snapshots");
+
+        assert_eq!(
+            fs::read_to_string(&existing).expect("read restored"),
+            "before"
+        );
+        assert!(!created.exists());
+
+        let _ = fs::remove_dir_all(&dir);
     }
 
     fn auto_grind_options_for_test() -> ConceptGrindOptions {
