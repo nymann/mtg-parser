@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_cost_increase"
+rule = "static_colored_spells_cost_mana_more_to_cast"
+
+[[example]]
+text = "White spells cost {3} more to cast."
+reason = "Accepted no-PEST boundary example."
+
+[[example]]
+text = "Black spells cost {1} more to cast."
+reason = "Accepted no-PEST boundary example."
+
+[[example]]
+text = "Red spells cost {1} more to cast."
+reason = "Accepted no-PEST boundary example."
+
+[[counterexample]]
+text = "Players can't cast spells with a name originally printed in the Alpha expansion."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "This spell costs {1} more to cast for each target beyond the first."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "White spells cost {3} more to cast. trailing"
+reason = "Exact-consumption guard."
