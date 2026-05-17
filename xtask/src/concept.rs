@@ -4818,6 +4818,9 @@ fn run_notify_command(command: &str, title: &str, body: &str) -> Result<()> {
 fn run_phase_watch(options: PhaseWatchOptions) -> Result<()> {
     let mut was_running = None::<bool>;
     let mut sent_messages = 0u32;
+    let mut last_metrics_sent = None::<Instant>;
+    let metrics_interval = Duration::from_secs(options.interval_minutes.saturating_mul(60));
+    let poll_interval = Duration::from_secs(30);
 
     loop {
         let status = run_phase_status(PhaseStatusOptions { json: false })?;
@@ -4826,20 +4829,26 @@ fn run_phase_watch(options: PhaseWatchOptions) -> Result<()> {
             kind: RoadmapKindFilter::All,
         })?;
         let running = !status.running_processes.is_empty();
-        let metrics = render_phase_watch_metrics(&status, &roadmap);
         let stopped_transition = !running && was_running.unwrap_or(true);
-        let title = if stopped_transition {
-            "mtg-parser: phase loop stopped"
-        } else {
-            "mtg-parser: phase metrics"
-        };
-        let body = metrics;
+        let should_send_metrics = last_metrics_sent.is_none_or(|sent_at| {
+            sent_at.elapsed() >= metrics_interval
+        });
+        if stopped_transition || should_send_metrics {
+            let metrics = render_phase_watch_metrics(&status, &roadmap);
+            let title = if stopped_transition {
+                "mtg-parser: phase loop stopped"
+            } else {
+                "mtg-parser: phase metrics"
+            };
+            let body = metrics;
 
-        println!("{title}\n{body}");
-        if options.notify_imessage.is_some() || options.notify_command.is_some() {
-            notify_phase_watch(&options, title, &body);
+            println!("{title}\n{body}");
+            if options.notify_imessage.is_some() || options.notify_command.is_some() {
+                notify_phase_watch(&options, title, &body);
+            }
+            sent_messages += 1;
+            last_metrics_sent = Some(Instant::now());
         }
-        sent_messages += 1;
         was_running = Some(running);
 
         if options.once
@@ -4848,9 +4857,7 @@ fn run_phase_watch(options: PhaseWatchOptions) -> Result<()> {
         {
             break;
         }
-        thread::sleep(Duration::from_secs(
-            options.interval_minutes.saturating_mul(60),
-        ));
+        thread::sleep(poll_interval);
     }
 
     Ok(())
@@ -8817,6 +8824,7 @@ fn run_phase2_gate_command(
 }
 
 fn commit_phase2_grind_iteration(concept: &str, iteration: u32) -> Result<bool> {
+    cleanup_phase2_grind_transient_artifacts()?;
     validate_phase2_grind_changed_paths()?;
     let add = Command::new("git")
         .arg("add")
@@ -8849,6 +8857,11 @@ fn commit_phase2_grind_iteration(concept: &str, iteration: u32) -> Result<bool> 
     }
     push_pipeline_commit_if_enabled()?;
     Ok(true)
+}
+
+fn cleanup_phase2_grind_transient_artifacts() -> Result<()> {
+    restore_tracked_file_from_head("xtask/src/concept.rs")?;
+    Ok(())
 }
 
 fn validate_phase2_grind_changed_paths() -> Result<()> {
