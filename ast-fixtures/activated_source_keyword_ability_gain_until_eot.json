@@ -1,0 +1,41 @@
+{
+  "concept": "activated_source_keyword_ability_gain_until_eot",
+  "fixture_path": "grammar-fixtures/activated_source_keyword_ability_gain_until_eot.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "activated_source_gains_keyword_until_eot",
+      "text": "This gains flying until end of turn.",
+      "ast": {
+        "SourceGainsKeywordUntilEndOfTurn": {
+          "keyword": "Flying",
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "activated_source_gains_keyword_until_eot",
+      "text": "CARDNAME gains first strike until end of turn.",
+      "ast": {
+        "SourceGainsKeywordUntilEndOfTurn": {
+          "keyword": "FirstStrike",
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "activated_source_gains_keyword_until_eot",
+      "text": "This gains protection from black until end of turn.",
+      "ast": {
+        "SourceGainsKeywordUntilEndOfTurn": {
+          "keyword": {
+            "Protection": "Black"
+          },
+          "source": "ThisPermanent"
+        }
+      }
+    }
+  ]
+}

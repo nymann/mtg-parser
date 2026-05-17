@@ -374,6 +374,11 @@ pub enum Statement {
         target: TargetPermanentSelector,
         keyword: Keyword,
     },
+    /// "This <source> gains <keyword> until end of turn."
+    SourceGainsKeywordUntilEndOfTurn {
+        source: SourceObject,
+        keyword: Keyword,
+    },
     /// "Target <selector> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
     TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {

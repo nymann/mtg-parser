@@ -539,6 +539,13 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 &TargetPermanentEndOfTurnEffect::GainsKeyword(*keyword),
             );
         }
+        Statement::SourceGainsKeywordUntilEndOfTurn { source, keyword } => {
+            write_until_end_of_turn_sentence(
+                out,
+                |out| write_source_object_capitalized(out, *source),
+                |out| write_gains_keyword_clause(out, *keyword),
+            );
+        }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             target,
             keyword,

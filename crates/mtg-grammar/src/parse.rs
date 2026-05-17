@@ -340,6 +340,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             target_spell_or_permanent_becomes_color_from_pair(pair)
         }
         Rule::target_permanent_until_eot => target_permanent_until_eot_from_pair(pair),
+        Rule::activated_source_gains_keyword_until_eot => {
+            activated_source_gains_keyword_until_eot_statement_from_pair(pair)
+        }
         Rule::each_player_performs_action => each_player_performs_action_from_pair(pair),
         Rule::each_player_equalizes_controlled_permanents => {
             each_player_equalizes_controlled_permanents_from_pair(pair)
@@ -871,6 +874,22 @@ fn target_permanent_gains_keyword_until_eot_from_pair(
     )?;
     Ok(ActivatedEffect::TargetPermanentGainsKeywordUntilEndOfTurn {
         target: target_permanent_selector_from_pair(target_pair)?,
+        keyword: keyword_from_inner_pair(keyword_pair)?,
+    })
+}
+
+fn activated_source_gains_keyword_until_eot_statement_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "activated source gains missing source",
+    ))?;
+    let keyword_pair = inner.next().ok_or(ParseError::Internal(
+        "activated source gains missing keyword",
+    ))?;
+    Ok(Statement::SourceGainsKeywordUntilEndOfTurn {
+        source: source_object_from_pair(source_pair)?,
         keyword: keyword_from_inner_pair(keyword_pair)?,
     })
 }
@@ -4324,16 +4343,17 @@ fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError>
     if pair.as_rule() != Rule::source_object {
         return Err(ParseError::Internal("source_object"));
     }
-    if pair.as_str() == "CARDNAME" {
+    let source_text = pair.as_str().trim_end();
+    if source_text == "CARDNAME" {
         return Ok(SourceObject::ThisPermanent);
     }
-    if pair.as_str().eq_ignore_ascii_case("this") {
+    if source_text.eq_ignore_ascii_case("this") {
         return Ok(SourceObject::ThisPermanent);
     }
-    if pair.as_str().eq_ignore_ascii_case("it") {
+    if source_text.eq_ignore_ascii_case("it") {
         return Ok(SourceObject::It);
     }
-    if pair.as_str().eq_ignore_ascii_case("that source") {
+    if source_text.eq_ignore_ascii_case("that source") {
         return Ok(SourceObject::ThatSource);
     }
     let kind = only_inner(pair, "source_object missing kind")?;
