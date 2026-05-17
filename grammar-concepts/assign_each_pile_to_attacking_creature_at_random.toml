@@ -1,0 +1,90 @@
+[[axis]]
+name = "action"
+values = ["assign"]
+
+[[axis]]
+name = "subject"
+values = ["each_pile"]
+
+[[axis]]
+name = "recipient"
+values = ["different_one_of_those_attacking_creatures"]
+
+[[axis]]
+name = "article"
+values = ["a"]
+
+[[axis]]
+name = "selection_method"
+values = ["at_random"]
+
+[[axis]]
+name = "procedure_context"
+values = ["random_blocking_piles"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "The earlier declaring-blockers replacement sentence where defending players divide creatures into piles.",
+    "Permissions to put additional blockers into additional piles.",
+    "Blocking requirements for creatures in an assigned pile.",
+    "Pile assignments that omit the random selection method.",
+    "Pile assignments to targets other than different ones of those attacking creatures.",
+]
+includes = [
+    "Assign each pile to a different one of those attacking creatures at random.",
+    "The same sentence with case-insensitive literal words.",
+]
+
+[concept]
+name = "assign_each_pile_to_attacking_creature_at_random"
+pest_rules = ["assign_each_pile_to_attacking_creature_at_random"]
+rules_queries = ["lex: assign each pile to a different one of those attacking creatures at random"]
+rules_terms = [
+    "assign",
+    "attacking creature",
+    "pile",
+    "random",
+]
+
+[[counterexample]]
+reason = "This creates the random blocking piles before assignment; it does not assign each pile to an attacking creature."
+text = "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player."
+
+[[counterexample]]
+reason = "This is an additional-blocker placement permission, not a random assignment of each pile."
+text = "Creatures those players control that can block additional creatures may likewise be put into additional piles."
+
+[[counterexample]]
+reason = "This is the follow-up blocking requirement for assigned piles, not the pile-assignment instruction itself."
+text = "Each creature in a pile that can block the creature that pile is assigned to does so."
+
+[[counterexample]]
+reason = "The concept requires random assignment."
+text = "Assign each pile to a different one of those attacking creatures."
+
+[[counterexample]]
+reason = "The concept is scoped to assigning each pile to a different one of those attacking creatures, not to a defending player."
+text = "Assign each pile to a defending player at random."
+
+[[example]]
+text = "Assign each pile to a different one of those attacking creatures at random."
+
+[[example]]
+text = "assign each pile to a different one of those attacking creatures at random."
+
+[grammar_query]
+candidate_rules = [
+    "assign_each_pile_to_attacking_creature_at_random",
+    "this_turn_defending_players_make_random_blocking_piles",
+    "additional_blockers_may_be_put_into_additional_piles",
+    "creatures_in_assigned_pile_block_if_able",
+]
+selected_rule = "assign_each_pile_to_attacking_creature_at_random"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
