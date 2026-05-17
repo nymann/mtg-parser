@@ -1,0 +1,79 @@
+{
+  "concept": "source_enters_with_pt_counters",
+  "fixture_path": "grammar-fixtures/source_enters_with_pt_counters.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "source_enters_with_pt_counters",
+      "text": "This creature enters with seven +1/+0 counters on it.",
+      "ast": {
+        "ThisPermanentEntersWithCounters": {
+          "amount": {
+            "Number": 7
+          },
+          "counter": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 0,
+              "sign": "Plus"
+            }
+          },
+          "source": {
+            "This": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "source_enters_with_pt_counters",
+      "text": "This creature enters with X +1/+1 counters on it.",
+      "ast": {
+        "ThisPermanentEntersWithCounters": {
+          "amount": {
+            "Variable": "X"
+          },
+          "counter": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Plus"
+            }
+          },
+          "source": {
+            "This": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "source_enters_with_pt_counters",
+      "text": "CARDNAME enters with two -1/-1 counters on it.",
+      "ast": {
+        "ThisPermanentEntersWithCounters": {
+          "amount": {
+            "Number": 2
+          },
+          "counter": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Minus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Minus"
+            }
+          },
+          "source": "ThisPermanent"
+        }
+      }
+    }
+  ]
+}
