@@ -16,7 +16,7 @@
 
 WHITESPACE = _{ " " }
 
-card_text = { SOI ~ (modal_choice | abilities) ~ EOI }
+card_text = { SOI ~ (modal_choice | phrase_statement | abilities) ~ EOI }
 
 // Card text is a list of printed lines (paragraphs) separated by '\n'.
 // Each line is either a single "phrase" ability (no terminating period,
