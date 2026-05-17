@@ -114,6 +114,7 @@ sentence_statement = _{
   | target_spell_or_permanent_becomes_color
   | target_permanent_until_eot
   | activated_enchanted_gets_until_eot
+  | activated_source_becomes_pt_creature_until_end_of_combat
   | activated_source_gets_until_eot
   | activated_source_gains_keyword_until_eot
   | each_player_performs_action
@@ -921,7 +922,7 @@ color_word = @{
 // Creature subtypes that appear as Aura targets, enchanted objects, or
 // creature-type selectors.
 creature_type = @{ ^"assembly-worker" | ^"djinn" | ^"dragon" | ^"elf" | ^"goblin" | ^"golem" | ^"insect" | ^"merfolk" | ^"wall" | ^"zombie" }
-creature_type_plural = @{ ^"djinns" | ^"dragons" | ^"elves" | ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"walls" | ^"zombies" }
+creature_type_plural = @{ ^"assembly-workers" | ^"djinns" | ^"dragons" | ^"elves" | ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"walls" | ^"zombies" }
 
 // Static abilities. Five surface shapes today:
 //   - "As long as <cond>, <effect>." — conditional continuous effect.
@@ -1492,7 +1493,7 @@ activated_source_gains_keyword_until_eot = {
     source_object ~ ^"gains" ~ keyword ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"turn" ~ "."
 }
 activated_source_becomes_pt_creature_until_end_of_combat = {
-    source_object ~ ^"becomes" ~ article ~ unsigned_number ~ "/" ~ unsigned_number
+    source_object ~ &(^"becomes") ~ ^"becomes" ~ article ~ unsigned_number ~ "/" ~ unsigned_number
   ~ creature_type ~ permanent_type+ ~ ^"until" ~ ^"end" ~ ^"of" ~ ^"combat" ~ "."
 }
 activated_enchanted_gets_until_eot = {

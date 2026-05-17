@@ -349,6 +349,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::activated_source_gains_keyword_until_eot => {
             activated_source_gains_keyword_until_eot_statement_from_pair(pair)
         }
+        Rule::activated_source_becomes_pt_creature_until_end_of_combat => {
+            activated_source_becomes_pt_creature_until_end_of_combat_statement_from_pair(pair)
+        }
         Rule::each_player_performs_action => each_player_performs_action_from_pair(pair),
         Rule::each_player_equalizes_controlled_permanents => {
             each_player_equalizes_controlled_permanents_from_pair(pair)
@@ -913,6 +916,45 @@ fn activated_source_gets_until_eot_statement_from_pair(
     Ok(Statement::SourceGetsUntilEndOfTurn {
         source: source_object_from_pair(source_pair)?,
         modifier: pt_modifier_from_pair(modifier_pair)?,
+    })
+}
+
+fn activated_source_becomes_pt_creature_until_end_of_combat_statement_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner.next().ok_or(ParseError::Internal(
+        "activated source becomes missing source",
+    ))?;
+    let power_pair = inner.next().ok_or(ParseError::Internal(
+        "activated source becomes missing power",
+    ))?;
+    let toughness_pair = inner.next().ok_or(ParseError::Internal(
+        "activated source becomes missing toughness",
+    ))?;
+    let creature_type_pair = inner.next().ok_or(ParseError::Internal(
+        "activated source becomes missing creature_type",
+    ))?;
+    let permanent_types = inner
+        .map(permanent_type_from_pair)
+        .collect::<Result<Vec<_>, _>>()?;
+    if permanent_types.is_empty() {
+        return Err(ParseError::Internal(
+            "activated source becomes missing permanent types",
+        ));
+    }
+    Ok(Statement::SourceBecomesCreatureUntilEndOfCombat {
+        source: source_object_from_pair(source_pair)?,
+        power: power_pair
+            .as_str()
+            .parse::<u32>()
+            .map_err(|_| ParseError::Internal("activated source becomes power"))?,
+        toughness: toughness_pair
+            .as_str()
+            .parse::<u32>()
+            .map_err(|_| ParseError::Internal("activated source becomes toughness"))?,
+        creature_type: creature_type_from_pair(creature_type_pair)?,
+        permanent_types,
     })
 }
 
@@ -6215,8 +6257,10 @@ fn condition_from_pair(pair: Pair<Rule>) -> Result<Condition, ParseError> {
             })
         }
         Rule::you_control_no_basic_lands => {
-            let land_type_pair =
-                only_inner(pair, "you_control_no_basic_lands missing basic_land_type_plural")?;
+            let land_type_pair = only_inner(
+                pair,
+                "you_control_no_basic_lands missing basic_land_type_plural",
+            )?;
             Ok(Condition::YouControlNoBasicLands {
                 land_type: basic_land_type_from_plural_pair(land_type_pair)?,
             })
@@ -6552,6 +6596,7 @@ fn creature_type_from_pair(pair: Pair<Rule>) -> Result<CreatureType, ParseError>
         return Err(ParseError::Internal("creature_type"));
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
+        "assembly-worker" => Ok(CreatureType::AssemblyWorker),
         "djinn" => Ok(CreatureType::Djinn),
         "dragon" => Ok(CreatureType::Dragon),
         "elf" => Ok(CreatureType::Elf),
@@ -6570,6 +6615,7 @@ fn creature_type_from_plural_pair(pair: Pair<Rule>) -> Result<CreatureType, Pars
         return Err(ParseError::Internal("creature_type_plural"));
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
+        "assembly-workers" => Ok(CreatureType::AssemblyWorker),
         "djinns" => Ok(CreatureType::Djinn),
         "dragons" => Ok(CreatureType::Dragon),
         "elves" => Ok(CreatureType::Elf),

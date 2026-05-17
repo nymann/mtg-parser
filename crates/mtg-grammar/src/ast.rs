@@ -389,6 +389,15 @@ pub enum Statement {
         source: SourceObject,
         keyword: Keyword,
     },
+    /// "This <source> becomes a N/N <creature_type> <permanent_type>+
+    /// until end of combat."
+    SourceBecomesCreatureUntilEndOfCombat {
+        source: SourceObject,
+        power: u32,
+        toughness: u32,
+        creature_type: CreatureType,
+        permanent_types: Vec<PermanentType>,
+    },
     /// "Target <selector> gains <keyword> and gets <modifier> until end of
     /// turn, where ..."
     TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
@@ -2173,6 +2182,7 @@ pub enum SpellType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CreatureType {
+    AssemblyWorker,
     Djinn,
     Dragon,
     Elf,

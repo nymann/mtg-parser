@@ -553,6 +553,22 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 |out| write_gets_pt_modifier_clause(out, *modifier),
             );
         }
+        Statement::SourceBecomesCreatureUntilEndOfCombat {
+            source,
+            power,
+            toughness,
+            creature_type,
+            permanent_types,
+        } => {
+            write_source_becomes_creature_until_end_of_combat(
+                out,
+                *source,
+                *power,
+                *toughness,
+                *creature_type,
+                permanent_types,
+            );
+        }
         Statement::EnchantedGetsUntilEndOfTurn {
             permanent_type,
             modifier,
@@ -1777,6 +1793,24 @@ fn write_activated_ability(out: &mut String, aa: &ActivatedAbility) {
     write_activated_effect(out, &aa.effect);
 }
 
+fn write_source_becomes_creature_until_end_of_combat(
+    out: &mut String,
+    source: SourceObject,
+    power: u32,
+    toughness: u32,
+    creature_type: CreatureType,
+    permanent_types: &[PermanentType],
+) {
+    write_source_object_capitalized(out, source);
+    write!(out, " becomes a {power}/{toughness} ").expect("writing to String cannot fail");
+    write_creature_type(out, creature_type);
+    for permanent_type in permanent_types {
+        out.push(' ');
+        out.push_str(permanent_type_name(*permanent_type));
+    }
+    out.push_str(" until end of combat.");
+}
+
 fn write_granted_ability(out: &mut String, ability: &GrantedAbility) {
     match ability {
         GrantedAbility::Keyword(keyword) => {
@@ -1968,14 +2002,14 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             creature_type,
             permanent_types,
         } => {
-            write_source_object_capitalized(out, *source);
-            write!(out, " becomes a {power}/{toughness} ").expect("writing to String cannot fail");
-            write_creature_type(out, *creature_type);
-            for permanent_type in permanent_types {
-                out.push(' ');
-                out.push_str(permanent_type_name(*permanent_type));
-            }
-            out.push_str(" until end of combat.");
+            write_source_becomes_creature_until_end_of_combat(
+                out,
+                *source,
+                *power,
+                *toughness,
+                *creature_type,
+                permanent_types,
+            );
         }
         ActivatedEffect::DamageEffect(effect) => write_activated_damage_effect(out, effect),
         ActivatedEffect::PutCountersOnSource {
@@ -4453,6 +4487,7 @@ fn write_permanent_controller(out: &mut String, controller: PermanentController)
 
 fn creature_type_name(ct: CreatureType) -> &'static str {
     match ct {
+        CreatureType::AssemblyWorker => "Assembly-Worker",
         CreatureType::Djinn => "Djinn",
         CreatureType::Dragon => "Dragon",
         CreatureType::Elf => "Elf",
@@ -4467,6 +4502,7 @@ fn creature_type_name(ct: CreatureType) -> &'static str {
 
 fn creature_type_plural_name(ct: CreatureType) -> &'static str {
     match ct {
+        CreatureType::AssemblyWorker => "Assembly-Workers",
         CreatureType::Djinn => "Djinns",
         CreatureType::Dragon => "Dragons",
         CreatureType::Elf => "Elves",

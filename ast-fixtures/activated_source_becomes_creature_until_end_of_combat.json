@@ -1,0 +1,42 @@
+{
+  "concept": "activated_source_becomes_creature_until_end_of_combat",
+  "fixture_path": "grammar-fixtures/activated_source_becomes_creature_until_end_of_combat.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "activated_source_becomes_pt_creature_until_end_of_combat",
+      "text": "This artifact becomes a 3/6 Golem artifact creature until end of combat.",
+      "ast": {
+        "SourceBecomesCreatureUntilEndOfCombat": {
+          "creature_type": "Golem",
+          "permanent_types": [
+            "Artifact",
+            "Creature"
+          ],
+          "power": 3,
+          "source": {
+            "This": "Artifact"
+          },
+          "toughness": 6
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "activated_source_becomes_pt_creature_until_end_of_combat",
+      "text": "CARDNAME becomes a 2/2 Assembly-Worker artifact creature until end of combat.",
+      "ast": {
+        "SourceBecomesCreatureUntilEndOfCombat": {
+          "creature_type": "AssemblyWorker",
+          "permanent_types": [
+            "Artifact",
+            "Creature"
+          ],
+          "power": 2,
+          "source": "ThisPermanent",
+          "toughness": 2
+        }
+      }
+    }
+  ]
+}
