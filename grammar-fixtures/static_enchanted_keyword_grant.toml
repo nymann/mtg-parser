@@ -1,0 +1,35 @@
+[fixture]
+concept = "static_enchanted_keyword_grant"
+rule = "static_enchanted_has_keyword"
+
+[[example]]
+text = "Enchanted creature has flying."
+reason = "Keyword-only grant to an enchanted creature."
+
+[[example]]
+text = "Enchanted artifact has indestructible."
+reason = "Keyword-only grant to an enchanted artifact."
+
+[[example]]
+text = "Enchanted land has shroud."
+reason = "Keyword-only grant to an enchanted land."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1."
+reason = "Enchanted-object P/T modification, not a keyword-only ability grant."
+
+[[counterexample]]
+text = "Enchanted creature gets +0/+2 and has reach."
+reason = "Enchanted-object P/T modification with optional keyword grant, not a keyword-only ability grant."
+
+[[counterexample]]
+text = "Enchanted creature loses flying."
+reason = "Keyword-removal effect, not a keyword grant."
+
+[[counterexample]]
+text = "Enchanted creature has \"Whenever this creature attacks, draw a card.\""
+reason = "Quoted triggered ability grant, not a keyword ability grant."
+
+[[counterexample]]
+text = "Enchanted creature has flying. trailing"
+reason = "Exact-consumption guard."

@@ -1,0 +1,71 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_ability_grant"]
+
+[[axis]]
+name = "add_affected_object"
+values = ["enchanted_permanent"]
+
+[[axis]]
+name = "add_granted_ability"
+values = ["keyword"]
+
+[boundary]
+excludes = [
+    "Enchanted-object power/toughness modifications.",
+    "Enchanted-object power/toughness modifications with optional keyword grants.",
+    "Enchanted-object keyword-removal effects.",
+    "Enchanted-object grants of quoted triggered abilities.",
+]
+includes = [
+    "Enchanted creature has flying.",
+    "Enchanted artifact has indestructible.",
+    "Enchanted land has shroud.",
+]
+
+[concept]
+name = "static_enchanted_keyword_grant"
+pest_rules = ["static_enchanted_has_keyword"]
+rules_queries = [
+    "lex: enchanted permanent has keyword ability",
+    "lex: enchanted creature has flying",
+]
+rules_terms = [
+    "static",
+    "continuous",
+    "enchanted",
+    "keyword ability",
+]
+
+[[counterexample]]
+reason = "Enchanted-object P/T modification, not a keyword-only ability grant."
+text = "Enchanted creature gets +1/+1."
+
+[[counterexample]]
+reason = "Enchanted-object P/T modification with optional keyword grant, not a keyword-only ability grant."
+text = "Enchanted creature gets +0/+2 and has reach."
+
+[[counterexample]]
+reason = "Keyword-removal effect, not a keyword grant."
+text = "Enchanted creature loses flying."
+
+[[counterexample]]
+reason = "Quoted triggered ability grant, not a keyword ability grant."
+text = 'Enchanted creature has "Whenever this creature attacks, draw a card."'
+
+[[example]]
+text = "Enchanted creature has flying."
+
+[[example]]
+text = "Enchanted artifact has indestructible."
+
+[[example]]
+text = "Enchanted land has shroud."
+
+[grammar_query]
+candidate_rules = ["static_enchanted_has_keyword"]
+selected_rule = "static_enchanted_has_keyword"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
