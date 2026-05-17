@@ -232,6 +232,11 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way => {
             Ok(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay)
         }
+        Rule::player_loses_life => {
+            let (player, amount) = player_loses_life_parts_from_pair(pair)?;
+            Ok(Statement::PlayerLosesLife { player, amount })
+        }
+        Rule::life_loss_player => Ok(Statement::LifeLossPlayer(life_loss_player_from_pair(pair)?)),
         Rule::target_player_gains_life => target_player_gains_life_from_pair(pair),
         Rule::its_controller_gains_life => its_controller_gains_life_from_pair(pair),
         Rule::take_extra_turn_after_this_one => Ok(Statement::TakeExtraTurnAfterThisOne),
@@ -2488,13 +2493,28 @@ fn you_gain_life_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError
     })
 }
 
-fn player_loses_life_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+fn life_loss_player_from_pair(pair: Pair<Rule>) -> Result<LifeLossPlayer, ParseError> {
+    match pair.as_rule() {
+        Rule::life_loss_player => {
+            let inner = only_inner(pair, "life loss player missing inner")?;
+            life_loss_player_from_pair(inner)
+        }
+        Rule::its_owner_life_loss_player => Ok(LifeLossPlayer::ItsOwner),
+        _ => Err(ParseError::Internal("life loss player")),
+    }
+}
+
+fn player_loses_life_parts_from_pair(
+    pair: Pair<Rule>,
+) -> Result<(LifeLossPlayer, LifeLossAmount), ParseError> {
     let mut player = None;
     let mut amount = None;
     let mut rounding = None;
     for child in pair.into_inner() {
         match child.as_rule() {
-            Rule::its_owner_life_loss_player => player = Some(LifeLossPlayer::ItsOwner),
+            Rule::life_loss_player | Rule::its_owner_life_loss_player => {
+                player = Some(life_loss_player_from_pair(child)?);
+            }
             Rule::half_their_life_loss_amount => {
                 amount = Some(LifeLossAmount::HalfTheirLife {
                     rounding: Rounding::Down,
@@ -2522,10 +2542,15 @@ fn player_loses_life_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseE
         }
         (None, _) => return Err(ParseError::Internal("player loses life missing amount")),
     };
-    Ok(TriggerEffect::PlayerLosesLife {
-        player: player.ok_or(ParseError::Internal("player loses life missing player"))?,
+    Ok((
+        player.ok_or(ParseError::Internal("player loses life missing player"))?,
         amount,
-    })
+    ))
+}
+
+fn player_loses_life_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let (player, amount) = player_loses_life_parts_from_pair(pair)?;
+    Ok(TriggerEffect::PlayerLosesLife { player, amount })
 }
 
 fn action_timing_from_pair(pair: Pair<Rule>) -> Result<ActionTiming, ParseError> {

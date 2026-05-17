@@ -244,6 +244,15 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_life_amount(out, *amount);
             out.push('.');
         }
+        Statement::PlayerLosesLife { player, amount } => {
+            write_life_loss_player_sentence(out, *player, *amount, SentenceCase::Upper);
+        }
+        Statement::LifeLossPlayer(player) => {
+            write_life_loss_player(out, *player);
+            if let Some(first) = out.get_mut(0..1) {
+                first.make_ascii_uppercase();
+            }
+        }
         Statement::TakeExtraTurnAfterThisOne => {
             out.push_str("Take an extra turn after this one.");
         }
@@ -3074,15 +3083,7 @@ fn write_trigger_effect(
             write_you_gain_life(out, *amount, SentenceCase::Lower);
         }
         TriggerEffect::PlayerLosesLife { player, amount } => {
-            write_life_loss_player(out, *player);
-            out.push_str(" loses ");
-            write_life_loss_amount(out, *amount);
-            out.push_str(" life");
-            if let LifeLossAmount::HalfTheirLife { rounding } = *amount {
-                out.push_str(", rounded ");
-                out.push_str(rounding_name(rounding));
-            }
-            out.push('.');
+            write_life_loss_player_sentence(out, *player, *amount, SentenceCase::Lower);
         }
         TriggerEffect::YouMayPayMana { player, amount } => {
             write_pay_mana_player(out, *player);
@@ -3286,6 +3287,28 @@ fn write_life_loss_player(out: &mut String, player: LifeLossPlayer) {
     match player {
         LifeLossPlayer::ItsOwner => out.push_str("its owner"),
     }
+}
+
+fn write_life_loss_player_sentence(
+    out: &mut String,
+    player: LifeLossPlayer,
+    amount: LifeLossAmount,
+    case: SentenceCase,
+) {
+    write_life_loss_player(out, player);
+    if case == SentenceCase::Upper {
+        if let Some(first) = out.get_mut(0..1) {
+            first.make_ascii_uppercase();
+        }
+    }
+    out.push_str(" loses ");
+    write_life_loss_amount(out, amount);
+    out.push_str(" life");
+    if let LifeLossAmount::HalfTheirLife { rounding } = amount {
+        out.push_str(", rounded ");
+        out.push_str(rounding_name(rounding));
+    }
+    out.push('.');
 }
 
 fn write_life_loss_amount(out: &mut String, amount: LifeLossAmount) {

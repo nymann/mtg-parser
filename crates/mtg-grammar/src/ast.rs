@@ -168,6 +168,13 @@ pub enum Statement {
     ItsControllerGainsLife {
         amount: LifeAmount,
     },
+    /// "<player> loses <amount> life."
+    PlayerLosesLife {
+        player: LifeLossPlayer,
+        amount: LifeLossAmount,
+    },
+    /// The affected player slot for direct life-loss instructions.
+    LifeLossPlayer(LifeLossPlayer),
     /// "Take an extra turn after this one." — CR 500.7 extra turn effect.
     TakeExtraTurnAfterThisOne,
     /// "Tap all <permanent_type>s <actor> controls and <actor> loses all

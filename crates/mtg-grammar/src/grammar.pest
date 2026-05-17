@@ -75,6 +75,7 @@ sentence_statement = _{
   | mana_ability_activation_limit
   | conditional_control_player_effect
   | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
+  | player_loses_life
   | target_player_gains_life
   | its_controller_gains_life
   | take_extra_turn_after_this_one
@@ -186,6 +187,7 @@ phrase_statement = _{
   | keyword_ability_list
   | keyword_ability
   | triggered_ability_fragment
+  | life_loss_player
   | player_taps_permanent_for_mana
   | player_casts_colored_spell
   | you_cast_spell_actor
@@ -2222,7 +2224,7 @@ player_loses_life = {
     life_loss_player ~ ^"loses" ~ life_loss_amount ~ ^"life"
   ~ ("," ~ rounding)? ~ "."
 }
-life_loss_player = _{ its_owner_life_loss_player }
+life_loss_player = { its_owner_life_loss_player }
 its_owner_life_loss_player = { ^"its" ~ ^"owner" }
 life_loss_amount = _{ half_their_life_loss_amount | unsigned_number }
 half_their_life_loss_amount = { ^"half" ~ ^"their" }

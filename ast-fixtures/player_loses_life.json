@@ -1,0 +1,42 @@
+{
+  "concept": "player_loses_life",
+  "fixture_path": "grammar-fixtures/player_loses_life.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "player_loses_life",
+      "text": "Its owner loses 3 life.",
+      "ast": {
+        "PlayerLosesLife": {
+          "amount": {
+            "Number": 3
+          },
+          "player": "ItsOwner"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "player_loses_life",
+      "text": "Its owner loses half their life, rounded up.",
+      "ast": {
+        "PlayerLosesLife": {
+          "amount": {
+            "HalfTheirLife": {
+              "rounding": "Up"
+            }
+          },
+          "player": "ItsOwner"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "life_loss_player",
+      "text": "Its owner",
+      "ast": {
+        "LifeLossPlayer": "ItsOwner"
+      }
+    }
+  ]
+}
