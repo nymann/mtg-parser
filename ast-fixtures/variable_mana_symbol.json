@@ -1,0 +1,34 @@
+{
+  "concept": "variable_mana_symbol",
+  "fixture_path": "grammar-fixtures/variable_mana_symbol.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "variable_mana_symbol",
+      "text": "{X}",
+      "ast": {
+        "ManaCost": {
+          "symbols": [
+            {
+              "Variable": "X"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "variable_mana_symbol",
+      "text": "{Y}",
+      "ast": {
+        "ManaCost": {
+          "symbols": [
+            {
+              "Variable": "Y"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
