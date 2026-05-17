@@ -1,0 +1,49 @@
+[fixture]
+concept = "tap_source_action"
+rule = "tap_source_action"
+
+[[example]]
+text = "tap CARDNAME"
+reason = "Source-object axis variant for the card source itself."
+
+[[example]]
+text = "tap this creature"
+reason = "Source-object axis variant for this source object kind."
+
+[[example]]
+text = "tap that source"
+reason = "Source-object axis variant for that source."
+
+[[example]]
+rule = "imperative_action_sequence"
+text = "tap CARDNAME, then draw two cards."
+reason = "Context axis variant where the tap-source action appears inside an imperative action sequence."
+
+[[example]]
+rule = "unless_you_pay_mana_do_actions"
+text = "unless you pay {1}, tap CARDNAME."
+reason = "Context axis variant where the tap-source action appears as an unless-you-pay consequence."
+
+[[counterexample]]
+text = "Tap all lands target player controls and that player loses all unspent mana."
+reason = "Tap-all-controlled-permanents instruction, not a source-object tap action."
+
+[[counterexample]]
+text = "tap all lands target player controls."
+reason = "Tap-all-controlled-permanents instruction without mana loss, not a source-object tap action."
+
+[[counterexample]]
+text = "untap CARDNAME."
+reason = "Untap instruction, not a tap action."
+
+[[counterexample]]
+text = "CARDNAME enters tapped."
+reason = "Tapped-entry static text, not an imperative tap action."
+
+[[counterexample]]
+text = "tap target creature."
+reason = "Targeted tap effect, not a source-object tap action."
+
+[[counterexample]]
+text = "tap CARDNAME trailing"
+reason = "Exact-consumption guard."

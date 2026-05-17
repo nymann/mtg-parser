@@ -1,0 +1,86 @@
+[[axis]]
+name = "source_object"
+values = [
+    "CARDNAME",
+    "this_source_object_kind",
+    "that_source",
+]
+
+[[axis]]
+name = "context"
+values = [
+    "imperative_action_sequence",
+    "unless_you_pay_mana_do_actions",
+]
+
+[boundary]
+excludes = [
+    "Tap-all-controlled-permanents instructions, owned by tap_all_controlled_permanents_and_lose_unspent_mana or a future tap-all concept.",
+    "Untap instructions, owned by untap_source and related untap rules.",
+    "Static tapped-entry text, owned by permanent_enters.",
+    "Targeted tap effects, owned by activated tap-target rules or future target-tap concepts.",
+]
+includes = [
+    "Imperative tap actions where the object is the card source itself.",
+    "Imperative tap actions where the object is this source object kind.",
+    "Imperative tap actions where the object is that source.",
+    "Tap-source actions embedded in imperative action sequences and unless-you-pay consequence clauses.",
+]
+
+[concept]
+name = "tap_source_action"
+pest_rules = ["tap_source_action"]
+rules_queries = [
+    "lex: tap this source",
+    "lex: tap that source",
+]
+rules_terms = [
+    "source",
+    "tap",
+]
+
+[[counterexample]]
+reason = "Tap-all-controlled-permanents instruction, not a source-object tap action."
+text = "Tap all lands target player controls and that player loses all unspent mana."
+
+[[counterexample]]
+reason = "Tap-all-controlled-permanents instruction without mana loss, not a source-object tap action."
+text = "tap all lands target player controls."
+
+[[counterexample]]
+reason = "Untap instruction, not a tap action."
+text = "untap CARDNAME."
+
+[[counterexample]]
+reason = "Tapped-entry static text, not an imperative tap action."
+text = "CARDNAME enters tapped."
+
+[[counterexample]]
+reason = "Targeted tap effect, not a source-object tap action."
+text = "tap target creature."
+
+[[example]]
+text = "tap CARDNAME"
+
+[[example]]
+text = "tap this creature"
+
+[[example]]
+text = "tap that source"
+
+[grammar_query]
+candidate_rules = [
+    "tap_source_action",
+    "source_object",
+    "imperative_action_sequence",
+    "unless_you_pay_mana_do_actions",
+    "tap_all_permanents_then_mana_loss",
+    "tap_target_permanent_choice",
+    "untap_source",
+    "permanent_enters",
+]
+selected_rule = "tap_source_action"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
