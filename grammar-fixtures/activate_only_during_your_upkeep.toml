@@ -10,9 +10,10 @@ reason = "Activation permission sentence restricted to the controller's upkeep."
 text = "activate only during your upkeep."
 reason = "Same activation permission shape in lowercase; the grammar literals are case-insensitive."
 
-[[counterexample]]
+[[example]]
 text = "Activate only during combat."
-reason = "Combat timing permission is a sibling concept, not the upkeep timing window."
+rule = "activate_only_during_combat"
+reason = "Activation permission sentence restricted to combat, with no subject-player phrase."
 
 [[counterexample]]
 text = "Activate only during your turn."
@@ -25,6 +26,10 @@ reason = "Sorcery timing permission does not use the during-your-upkeep timing w
 [[counterexample]]
 text = "Activate only during an opponent's turn, before attackers are declared."
 reason = "Opponent-turn timing permission with an additional condition is outside this concept."
+
+[[counterexample]]
+text = "Only this ability's source's owner may activate this ability."
+reason = "Permission about who may activate the ability, not when it may be activated."
 
 [[counterexample]]
 text = "Activate only during your upkeep. trailing"

@@ -8,34 +8,43 @@ values = ["only"]
 
 [[axis]]
 name = "timing_window"
-values = ["during_your_upkeep"]
+values = [
+    "during_your_upkeep",
+    "during_combat",
+]
 
 [[axis]]
 name = "subject_player"
-values = ["you"]
+values = [
+    "you",
+    "none",
+]
 
 [boundary]
 excludes = [
-    "Activation timing permissions for combat.",
     "Activation timing permissions for your turn.",
     "Activation timing permissions using sorcery timing.",
     "Activation timing permissions for an opponent's turn before attackers are declared.",
+    "Activation permissions about who may activate an ability.",
 ]
-includes = ["Standalone activation permission sentence restricting activation to during your upkeep."]
+includes = ["Standalone activation permission sentences restricting activation to during your upkeep or during combat."]
 
 [concept]
 name = "activate_only_during_your_upkeep"
-pest_rules = ["activate_only_during_your_upkeep"]
-rules_queries = ["lex: activate only during your upkeep"]
+pest_rules = [
+    "activate_only_during_your_upkeep",
+    "activate_only_during_combat",
+]
+rules_queries = [
+    "lex: activate only during your upkeep",
+    "lex: activate only during combat",
+]
 rules_terms = [
     "activate",
     "activated ability",
+    "combat",
     "upkeep",
 ]
-
-[[counterexample]]
-reason = "Combat timing permission, owned by the combat activation timing rule."
-text = "Activate only during combat."
 
 [[counterexample]]
 reason = "Your-turn timing permission, owned by the your-turn activation timing rule."
@@ -49,8 +58,15 @@ text = "Activate only as a sorcery."
 reason = "Opponent-turn timing permission with an additional before-attackers condition."
 text = "Activate only during an opponent's turn, before attackers are declared."
 
+[[counterexample]]
+reason = "Permission about who may activate the ability, not the activation timing window."
+text = "Only this ability's source's owner may activate this ability."
+
 [[example]]
 text = "Activate only during your upkeep."
+
+[[example]]
+text = "Activate only during combat."
 
 [grammar_query]
 candidate_rules = [
