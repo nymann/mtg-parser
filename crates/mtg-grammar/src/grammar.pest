@@ -905,6 +905,7 @@ owned_zone = @{ ^"graveyard" | ^"hand" }
 // Atomic so each alternative is matched as a single word.
 permanent_type = @{
     ^"artifact"
+  | ^"battle"
   | ^"creature"
   | ^"enchantment"
   | ^"land"

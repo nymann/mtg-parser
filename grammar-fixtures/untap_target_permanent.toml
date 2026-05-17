@@ -1,0 +1,52 @@
+[fixture]
+concept = "untap_target_permanent"
+rule = "untap_target_permanent"
+
+[[example]]
+text = "Untap target artifact."
+reason = "Untap-only targeted instruction for an artifact permanent type."
+
+[[example]]
+text = "Untap target battle."
+reason = "Untap-only targeted instruction for the battle permanent type."
+
+[[example]]
+text = "Untap target creature."
+reason = "Untap-only targeted instruction for a creature permanent type."
+
+[[example]]
+text = "Untap target enchantment."
+reason = "Untap-only targeted instruction for an enchantment permanent type."
+
+[[example]]
+text = "Untap target land."
+reason = "Untap-only targeted instruction for a land permanent type."
+
+[[example]]
+text = "Untap target planeswalker."
+reason = "Untap-only targeted instruction for a planeswalker permanent type."
+
+[[example]]
+rule = "activated_effect"
+text = "Untap target creature."
+reason = "Activated-effect context for the targeted untap instruction."
+
+[[counterexample]]
+text = "Tap target creature."
+reason = "Targeted tap effect, not an untap-only instruction."
+
+[[counterexample]]
+text = "Untap the creature."
+reason = "Referenced-permanent untap instruction using 'the', not a targeted untap instruction."
+
+[[counterexample]]
+text = "Untap CARDNAME."
+reason = "Source-object untap instruction, not a target permanent instruction."
+
+[[counterexample]]
+text = "Untap target player."
+reason = "Targets a player rather than a permanent type."
+
+[[counterexample]]
+text = "Untap target creature. trailing"
+reason = "Exact-consumption guard."

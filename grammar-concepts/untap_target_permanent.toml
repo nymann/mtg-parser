@@ -1,0 +1,99 @@
+[[axis]]
+name = "action"
+values = ["untap"]
+
+[[axis]]
+name = "targeting"
+values = ["target"]
+
+[[axis]]
+name = "target_kind"
+values = ["permanent_type"]
+
+[[axis]]
+name = "permanent_type"
+values = [
+    "artifact",
+    "battle",
+    "creature",
+    "enchantment",
+    "land",
+    "planeswalker",
+]
+
+[[axis]]
+name = "context"
+values = ["activated_effect"]
+
+[boundary]
+excludes = [
+    "Targeted tap or tap-or-untap choice effects, owned by tap_target_permanent_choice.",
+    "Untap instructions for the referenced permanent using 'the', owned by untap_referenced_permanent.",
+    "Source-object untap instructions such as untap CARDNAME or untap this creature, owned by untap_source or related source-object rules.",
+    "Instructions targeting nonpermanent objects or players.",
+]
+includes = ["Activated-effect instructions that untap target artifact, battle, creature, enchantment, land, or planeswalker."]
+
+[concept]
+name = "untap_target_permanent"
+pest_rules = ["untap_target_permanent"]
+rules_queries = [
+    "lex: untap target permanent",
+    "lex: untap target artifact",
+    "lex: tap and untap permanent",
+]
+rules_terms = [
+    "permanent",
+    "target",
+    "tap and untap",
+    "untap",
+]
+
+[[counterexample]]
+reason = "Targeted tap effect, not an untap-only instruction."
+text = "Tap target creature."
+
+[[counterexample]]
+reason = "Referenced-permanent untap instruction using 'the', not a targeted untap instruction."
+text = "Untap the creature."
+
+[[counterexample]]
+reason = "Source-object untap instruction, not a target permanent instruction."
+text = "Untap CARDNAME."
+
+[[counterexample]]
+reason = "Targets a player rather than a permanent type."
+text = "Untap target player."
+
+[[example]]
+text = "Untap target artifact."
+
+[[example]]
+text = "Untap target battle."
+
+[[example]]
+text = "Untap target creature."
+
+[[example]]
+text = "Untap target enchantment."
+
+[[example]]
+text = "Untap target land."
+
+[[example]]
+text = "Untap target planeswalker."
+
+[grammar_query]
+candidate_rules = [
+    "untap_target_permanent",
+    "tap_target_permanent_choice",
+    "untap_referenced_permanent",
+    "untap_source",
+    "untap_enchanted_object",
+    "activated_effect",
+]
+selected_rule = "untap_target_permanent"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
