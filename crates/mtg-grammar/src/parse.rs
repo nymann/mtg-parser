@@ -340,6 +340,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             target_spell_or_permanent_becomes_color_from_pair(pair)
         }
         Rule::target_permanent_until_eot => target_permanent_until_eot_from_pair(pair),
+        Rule::activated_source_gets_until_eot => {
+            activated_source_gets_until_eot_statement_from_pair(pair)
+        }
         Rule::activated_source_gains_keyword_until_eot => {
             activated_source_gains_keyword_until_eot_statement_from_pair(pair)
         }
@@ -891,6 +894,22 @@ fn activated_source_gains_keyword_until_eot_statement_from_pair(
     Ok(Statement::SourceGainsKeywordUntilEndOfTurn {
         source: source_object_from_pair(source_pair)?,
         keyword: keyword_from_inner_pair(keyword_pair)?,
+    })
+}
+
+fn activated_source_gets_until_eot_statement_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let mut inner = pair.into_inner();
+    let source_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("activated source gets missing source"))?;
+    let modifier_pair = inner.next().ok_or(ParseError::Internal(
+        "activated source gets missing modifier",
+    ))?;
+    Ok(Statement::SourceGetsUntilEndOfTurn {
+        source: source_object_from_pair(source_pair)?,
+        modifier: pt_modifier_from_pair(modifier_pair)?,
     })
 }
 

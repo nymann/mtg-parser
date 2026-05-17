@@ -1,0 +1,46 @@
+{
+  "concept": "activated_source_pt_modifier_until_eot",
+  "fixture_path": "grammar-fixtures/activated_source_pt_modifier_until_eot.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "activated_source_gets_until_eot",
+      "text": "This gets +1/+1 until end of turn.",
+      "ast": {
+        "SourceGetsUntilEndOfTurn": {
+          "modifier": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Plus"
+            }
+          },
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "activated_source_gets_until_eot",
+      "text": "CARDNAME gets +2/+0 until end of turn.",
+      "ast": {
+        "SourceGetsUntilEndOfTurn": {
+          "modifier": {
+            "power": {
+              "magnitude": 2,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 0,
+              "sign": "Plus"
+            }
+          },
+          "source": "ThisPermanent"
+        }
+      }
+    }
+  ]
+}

@@ -546,6 +546,13 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 |out| write_gains_keyword_clause(out, *keyword),
             );
         }
+        Statement::SourceGetsUntilEndOfTurn { source, modifier } => {
+            write_until_end_of_turn_sentence(
+                out,
+                |out| write_source_object_capitalized(out, *source),
+                |out| write_gets_pt_modifier_clause(out, *modifier),
+            );
+        }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             target,
             keyword,
