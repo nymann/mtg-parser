@@ -1,0 +1,140 @@
+{
+  "concept": "counter_target_spell",
+  "fixture_path": "grammar-fixtures/counter_target_spell.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "counter_target_spell",
+      "text": "Counter target spell unless its controller pays {X}.",
+      "ast": {
+        "CounterTargetSpell": {
+          "condition": {
+            "ItsControllerPays": {
+              "symbols": [
+                {
+                  "Variable": "X"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "counter_target_spell",
+      "text": "Counter target spell with mana value X.",
+      "ast": {
+        "CounterTargetSpell": {
+          "condition": {
+            "WithManaValue": "X"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "counter_target_spell",
+      "text": "Counter target spell.",
+      "ast": {
+        "CounterTargetSpell": {
+          "condition": null
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "counter_target_spell",
+      "text": "Counter target red spell.",
+      "ast": {
+        "CounterTargetColoredSpell": {
+          "color": "Red"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "counter_target_spell",
+      "text": "Counter target blue spell.",
+      "ast": {
+        "CounterTargetColoredSpell": {
+          "color": "Blue"
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "counter_target_spell",
+      "text": "Counter target white spell.",
+      "ast": {
+        "CounterTargetColoredSpell": {
+          "color": "White"
+        }
+      }
+    },
+    {
+      "index": 7,
+      "rule": "activated_ability",
+      "text": "{B}{B}: Counter target green spell.",
+      "ast": {
+        "ActivatedAbility": {
+          "costs": [
+            {
+              "Mana": {
+                "symbols": [
+                  "Black",
+                  "Black"
+                ]
+              }
+            }
+          ],
+          "effect": {
+            "CounterTargetColoredSpell": {
+              "color": "Green"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 8,
+      "rule": "activated_ability",
+      "text": "{G}{G}: Counter target black spell.",
+      "ast": {
+        "ActivatedAbility": {
+          "costs": [
+            {
+              "Mana": {
+                "symbols": [
+                  "Green",
+                  "Green"
+                ]
+              }
+            }
+          ],
+          "effect": {
+            "CounterTargetColoredSpell": {
+              "color": "Black"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 9,
+      "rule": "modal_mode",
+      "text": "• Counter target red spell.",
+      "ast": {
+        "ModalChoice": {
+          "modes": [
+            {
+              "CounterTargetColoredSpell": {
+                "color": "Red"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

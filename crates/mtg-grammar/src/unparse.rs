@@ -56,6 +56,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             }
             out.push('.');
         }
+        Statement::CounterTargetColoredSpell { color } => {
+            write_colored_target_effect(out, ColoredTargetEffect::CounterSpell { color: *color });
+        }
         Statement::AsAdditionalCostToCastThisSpell { cost } => {
             out.push_str("As an additional cost to cast this spell, ");
             write_spell_additional_cost(out, *cost);

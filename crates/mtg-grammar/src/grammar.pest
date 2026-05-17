@@ -16,7 +16,7 @@
 
 WHITESPACE = _{ " " }
 
-card_text = { SOI ~ (modal_choice | phrase_statement | abilities) ~ EOI }
+card_text = { SOI ~ (modal_choice | abilities | phrase_statement) ~ EOI }
 
 // Card text is a list of printed lines (paragraphs) separated by '\n'.
 // Each line is either a single "phrase" ability (no terminating period,
@@ -239,7 +239,7 @@ permanent_type_plural_list = {
     permanent_type_plural ~ (("," ~ permanent_type_plural)* ~ ","? ~ ^"and" ~ permanent_type_plural)?
 }
 counter_target_spell = {
-    ^"counter" ~ ^"target" ~ color_word? ~ ^"spell" ~ counter_unless_cost? ~ "."
+    ^"counter" ~ ^"target" ~ ((color_word ~ ^"spell") | (^"spell" ~ counter_unless_cost?)) ~ "."
 }
 counter_unless_cost = {
     ^"unless" ~ ^"its" ~ ^"controller" ~ ^"pays" ~ mana_cost

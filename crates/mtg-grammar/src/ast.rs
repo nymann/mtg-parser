@@ -12,6 +12,10 @@ pub enum Statement {
     CounterTargetSpell {
         condition: Option<CounterTargetSpellCondition>,
     },
+    /// "Counter target <color> spell."
+    CounterTargetColoredSpell {
+        color: Color,
+    },
     /// "As an additional cost to cast this spell, <cost>."
     AsAdditionalCostToCastThisSpell {
         cost: SpellAdditionalCost,

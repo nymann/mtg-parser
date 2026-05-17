@@ -1467,11 +1467,18 @@ fn life_gain_amount_from_pair(pair: Pair<Rule>) -> Result<LifeAmount, ParseError
 }
 
 fn counter_target_spell_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
-    let condition = pair
-        .into_inner()
-        .next()
-        .map(counter_unless_cost_from_pair)
-        .transpose()?;
+    let mut color = None;
+    let mut condition = None;
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::color_word => color = Some(color_from_pair(child)?),
+            Rule::counter_unless_cost => condition = Some(counter_unless_cost_from_pair(child)?),
+            _ => return Err(ParseError::Internal("counter target spell component")),
+        }
+    }
+    if let Some(color) = color {
+        return Ok(Statement::CounterTargetColoredSpell { color });
+    }
     Ok(Statement::CounterTargetSpell { condition })
 }
 
