@@ -15,8 +15,15 @@ else
   text="$title"
 fi
 
+curl_config="$(mktemp)"
+trap 'rm -f "$curl_config"' EXIT
+{
+  printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$TELEGRAM_BOT_TOKEN"
+  printf 'request = "POST"\n'
+} >"$curl_config"
+
 curl --fail --silent --show-error \
-  --request POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+  --config "$curl_config" \
   --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
   --data-urlencode "text=${text}" \
   --data "disable_web_page_preview=true" \
