@@ -1,0 +1,66 @@
+{
+  "concept": "conditional_regeneration_restriction_and_death_exile_replacement",
+  "fixture_path": "grammar-fixtures/conditional_regeneration_restriction_and_death_exile_replacement.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn",
+      "text": "If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead.",
+      "ast": {
+        "IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn": {
+          "permanent_type": "Creature"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn",
+      "text": "If it's an artifact, it can't be regenerated this turn, and if it would die this turn, exile it instead.",
+      "ast": {
+        "IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn": {
+          "permanent_type": "Artifact"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn",
+      "text": "If it's an enchantment, it can't be regenerated this turn, and if it would die this turn, exile it instead.",
+      "ast": {
+        "IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn": {
+          "permanent_type": "Enchantment"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn",
+      "text": "If it's a land, it can't be regenerated this turn, and if it would die this turn, exile it instead.",
+      "ast": {
+        "IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn": {
+          "permanent_type": "Land"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn",
+      "text": "If it's a planeswalker, it can't be regenerated this turn, and if it would die this turn, exile it instead.",
+      "ast": {
+        "IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn": {
+          "permanent_type": "Planeswalker"
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "sentence_statement",
+      "text": "If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead.",
+      "ast": {
+        "IfItsPermanentCantBeRegeneratedAndWouldDieExileInsteadThisTurn": {
+          "permanent_type": "Creature"
+        }
+      }
+    }
+  ]
+}
