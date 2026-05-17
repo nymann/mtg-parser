@@ -1,0 +1,27 @@
+[fixture]
+concept = "you_may_put_this_card_onto_the_battlefield"
+rule = "you_may_put_this_card_onto_the_battlefield"
+
+[[example]]
+text = "you may put this card onto the battlefield."
+reason = "Triggered-effect statement where you may put this card onto the battlefield."
+
+[[counterexample]]
+text = "You may have it block an attacking creature of your choice."
+reason = "Optional blocking permission, not this card moving onto the battlefield."
+
+[[counterexample]]
+text = "put that card into your hand"
+reason = "Referenced-card hand movement, not this card onto the battlefield."
+
+[[counterexample]]
+text = "return enchanted creature card to the battlefield under your control and attach this Aura to it."
+reason = "Return-and-attach effect for an enchanted creature card, not this card onto the battlefield."
+
+[[counterexample]]
+text = "if an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard."
+reason = "Discard replacement effect to a library, not this card onto the battlefield."
+
+[[counterexample]]
+text = "you may put this card onto the battlefield. trailing"
+reason = "Exact-consumption guard."

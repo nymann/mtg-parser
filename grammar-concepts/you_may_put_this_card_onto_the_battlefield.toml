@@ -1,0 +1,69 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "modality"
+values = ["may"]
+
+[[axis]]
+name = "action"
+values = ["put"]
+
+[[axis]]
+name = "object"
+values = ["this_card"]
+
+[[axis]]
+name = "destination_zone"
+values = ["battlefield"]
+
+[[axis]]
+name = "sentence_form"
+values = ["trigger_effect"]
+
+[boundary]
+excludes = [
+    "Optional blocking permission where you may have it block an attacking creature of your choice.",
+    "Zone-change instructions that put a referenced card into your hand.",
+    "Return-and-attach effects for enchanted creature cards.",
+    "Discard replacement effects that optionally put a discarded card on top of a library instead of into a graveyard.",
+]
+includes = ["Triggered-effect statements where you may put this card onto the battlefield."]
+
+[concept]
+name = "you_may_put_this_card_onto_the_battlefield"
+pest_rules = ["you_may_put_this_card_onto_the_battlefield"]
+rules_queries = ["lex: you may put this card onto the battlefield"]
+rules_terms = [
+    "battlefield",
+    "card",
+    "put",
+]
+
+[[counterexample]]
+reason = "Optional blocking permission, not this card moving onto the battlefield."
+text = "You may have it block an attacking creature of your choice."
+
+[[counterexample]]
+reason = "Referenced-card hand movement, not this card onto the battlefield."
+text = "put that card into your hand"
+
+[[counterexample]]
+reason = "Return-and-attach effect for an enchanted creature card, not this card onto the battlefield."
+text = "return enchanted creature card to the battlefield under your control and attach this Aura to it."
+
+[[counterexample]]
+reason = "Discard replacement effect to a library, not this card onto the battlefield."
+text = "if an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard."
+
+[[example]]
+text = "you may put this card onto the battlefield."
+
+[grammar_query]
+candidate_rules = ["you_may_put_this_card_onto_the_battlefield"]
+selected_rule = "you_may_put_this_card_onto_the_battlefield"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
