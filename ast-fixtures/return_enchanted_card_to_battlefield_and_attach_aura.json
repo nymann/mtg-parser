@@ -1,0 +1,30 @@
+{
+  "concept": "return_enchanted_card_to_battlefield_and_attach_aura",
+  "fixture_path": "grammar-fixtures/return_enchanted_card_to_battlefield_and_attach_aura.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "return_enchanted_card_and_attach",
+      "text": "Return enchanted creature card to the battlefield under your control and attach this Aura to it.",
+      "ast": {
+        "TriggerEffect": {
+          "ReturnEnchantedCardAndAttach": {
+            "card_type": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "return_enchanted_card_and_attach",
+      "text": "Return enchanted artifact card to the battlefield under your control and attach this Aura to it.",
+      "ast": {
+        "TriggerEffect": {
+          "ReturnEnchantedCardAndAttach": {
+            "card_type": "Artifact"
+          }
+        }
+      }
+    }
+  ]
+}

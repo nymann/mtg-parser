@@ -140,6 +140,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::return_target_card_from_your_zone_to_zone => {
             return_target_card_from_your_zone_to_zone_from_pair(pair)
         }
+        Rule::return_enchanted_card_and_attach => Ok(Statement::TriggerEffect(
+            return_enchanted_card_and_attach_from_pair(pair)?,
+        )),
         Rule::exchange_that_card_with_top_card_of_your_library => {
             Ok(Statement::ExchangeThatCardWithTopCardOfYourLibrary)
         }
