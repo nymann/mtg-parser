@@ -1,0 +1,112 @@
+[[axis]]
+name = "affected_player"
+values = [
+    "target_player",
+    "you",
+    "each_player",
+]
+
+[[axis]]
+name = "quantity"
+values = [
+    "draw_count",
+    "article_one",
+    "that_many",
+]
+
+[[axis]]
+name = "modality"
+values = [
+    "mandatory",
+    "may",
+]
+
+[[axis]]
+name = "context"
+values = [
+    "standalone_sentence",
+    "imperative_action",
+    "activated_effect",
+    "replacement_result",
+]
+
+[boundary]
+excludes = [
+    "Draw-step timing references are not card-draw instructions.",
+    "Library inspection effects are not card-draw instructions.",
+    "Discard instructions are not card-draw instructions.",
+]
+includes = [
+    "Instructions for a target player to draw a counted number of cards.",
+    "Imperative draw-card actions with counted-card quantities.",
+    "Optional instructions where you may draw a card or counted cards.",
+    "Draw-that-many-cards replacement results as a quantity-reference axis of card draw.",
+]
+
+[concept]
+name = "draw_cards"
+pest_rules = [
+    "draw_cards",
+    "draw_cards_action",
+    "activated_draw_cards",
+    "you_may_draw_cards",
+    "draw_that_many_cards_replacement_result",
+]
+rules_queries = [
+    "lex: target player draws two cards",
+    "lex: draw two cards",
+    "lex: each player draws X cards",
+    "lex: you may draw a card",
+    "lex: draw that many cards instead",
+]
+rules_terms = [
+    "draw",
+    "card",
+    "replacement effect",
+]
+
+[[counterexample]]
+reason = "Draw-step timing reference, not a card-draw instruction."
+text = "Draw step"
+
+[[counterexample]]
+reason = "Replacement-effect condition and timing reference, not a direct card-draw instruction."
+text = "If you would draw a card during your draw step"
+
+[[counterexample]]
+reason = "Library inspection effect, not card draw."
+text = "Look at the top two cards of your library"
+
+[[counterexample]]
+reason = "Discard instruction, not card draw."
+text = "Discard two cards"
+
+[[example]]
+text = "Target player draws two cards."
+
+[[example]]
+text = "Draw two cards"
+
+[[example]]
+text = "Each player draws X cards."
+
+[[example]]
+text = "You may draw a card."
+
+[[example]]
+text = "If you would gain life, draw that many cards instead."
+
+[grammar_query]
+candidate_rules = [
+    "draw_cards",
+    "draw_cards_action",
+    "activated_draw_cards",
+    "you_may_draw_cards",
+    "each_player_performs_action",
+    "draw_that_many_cards_replacement_result",
+]
+selected_rule = "draw_cards"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

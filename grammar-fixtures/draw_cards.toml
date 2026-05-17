@@ -1,0 +1,66 @@
+[fixture]
+concept = "draw_cards"
+rule = "draw_cards"
+
+[[example]]
+text = "Target player draws two cards."
+reason = "Standalone sentence with target-player affected player and counted quantity."
+
+[[example]]
+text = "Target player draws X cards."
+reason = "Standalone sentence with target-player affected player and variable counted quantity."
+
+[[example]]
+rule = "draw_cards_action"
+text = "Draw two cards"
+reason = "Imperative action with counted quantity."
+
+[[example]]
+rule = "draw_cards_action"
+text = "Draw X cards"
+reason = "Imperative action with variable counted quantity."
+
+[[example]]
+rule = "each_player_performs_action"
+text = "Each player draws X cards."
+reason = "Each-player affected-player axis through the current action wrapper."
+
+[[example]]
+rule = "activated_draw_cards"
+text = "Draw a card."
+reason = "Activated-effect context with article-one quantity."
+
+[[example]]
+rule = "you_may_draw_cards"
+text = "You may draw a card."
+reason = "Optional modality with you affected player and article-one quantity."
+
+[[example]]
+rule = "you_may_draw_cards"
+text = "You may draw two cards."
+reason = "Optional modality with you affected player and counted quantity."
+
+[[example]]
+rule = "draw_that_many_cards_replacement_result"
+text = "draw that many cards"
+reason = "Replacement-result context with that-many quantity reference."
+
+[[counterexample]]
+text = "Draw step"
+reason = "Draw-step timing reference, not a card-draw instruction."
+
+[[counterexample]]
+text = "If you would draw a card during your draw step"
+reason = "Replacement-effect condition and timing reference, not a direct card-draw instruction."
+
+[[counterexample]]
+text = "Look at the top two cards of your library"
+reason = "Library inspection effect, not card draw."
+
+[[counterexample]]
+text = "Discard two cards"
+reason = "Discard instruction, not card draw."
+
+[[counterexample]]
+text = "Target player draws two cards. trailing"
+reason = "Exact-consumption guard."
