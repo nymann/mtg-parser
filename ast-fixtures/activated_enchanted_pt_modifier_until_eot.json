@@ -1,0 +1,46 @@
+{
+  "concept": "activated_enchanted_pt_modifier_until_eot",
+  "fixture_path": "grammar-fixtures/activated_enchanted_pt_modifier_until_eot.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "activated_enchanted_gets_until_eot",
+      "text": "Enchanted creature gets +1/+1 until end of turn.",
+      "ast": {
+        "EnchantedGetsUntilEndOfTurn": {
+          "modifier": {
+            "power": {
+              "magnitude": 1,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 1,
+              "sign": "Plus"
+            }
+          },
+          "permanent_type": "Creature"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "activated_enchanted_gets_until_eot",
+      "text": "Enchanted artifact gets +0/+2 until end of turn.",
+      "ast": {
+        "EnchantedGetsUntilEndOfTurn": {
+          "modifier": {
+            "power": {
+              "magnitude": 0,
+              "sign": "Plus"
+            },
+            "toughness": {
+              "magnitude": 2,
+              "sign": "Plus"
+            }
+          },
+          "permanent_type": "Artifact"
+        }
+      }
+    }
+  ]
+}

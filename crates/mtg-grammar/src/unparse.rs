@@ -553,6 +553,19 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 |out| write_gets_pt_modifier_clause(out, *modifier),
             );
         }
+        Statement::EnchantedGetsUntilEndOfTurn {
+            permanent_type,
+            modifier,
+        } => {
+            write_until_end_of_turn_sentence(
+                out,
+                |out| {
+                    out.push_str("Enchanted ");
+                    out.push_str(permanent_type_name(*permanent_type));
+                },
+                |out| write_gets_pt_modifier_clause(out, *modifier),
+            );
+        }
         Statement::TargetPermanentGainsKeywordAndGetsUntilEndOfTurn {
             target,
             keyword,

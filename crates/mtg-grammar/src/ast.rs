@@ -379,6 +379,11 @@ pub enum Statement {
         source: SourceObject,
         modifier: PtModifier,
     },
+    /// "Enchanted <type> gets <modifier> until end of turn."
+    EnchantedGetsUntilEndOfTurn {
+        permanent_type: PermanentType,
+        modifier: PtModifier,
+    },
     /// "This <source> gains <keyword> until end of turn."
     SourceGainsKeywordUntilEndOfTurn {
         source: SourceObject,
