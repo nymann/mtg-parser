@@ -77,6 +77,8 @@ Commands:
   concept-phase-loop          Run Phase 2 in reviewed batches, then hand off
                               to Phase 1 concept-grind-loop when stop rules fire.
   concept-phase-status        Quick status verdict for the latest phase-loop run.
+  concept-phase-watch         Watch phase-loop liveness and send compact metrics
+                              notifications without requiring a clean tree.
   concept-roadmap             Inventory rulebook-derived concept candidates
                               and annotate concept/corpus coverage.
   concept-grammar-query --query TEXT
@@ -192,6 +194,7 @@ fn main() -> ExitCode {
         Some("concept-phase2-map") => concept::phase2_map(&args[1..]),
         Some("concept-phase-loop") => concept::phase_loop(&args[1..]),
         Some("concept-phase-status") => concept::phase_status(&args[1..]),
+        Some("concept-phase-watch") => concept::phase_watch(&args[1..]),
         Some("concept-phase2-grind") => match parse_ui(&args[1..]) {
             Ok(Ui::Console) => concept::phase2_grind(&args[1..]),
             Ok(Ui::Tui) => {

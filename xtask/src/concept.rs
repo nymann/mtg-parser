@@ -5,7 +5,8 @@ use std::fs;
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::thread;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, bail, Context, Result};
 use mtg_corpus::normalize_oracle_text;
@@ -188,6 +189,19 @@ cargo xtask concept-phase-status [--json]
 Prints a quick continue/inspect/stopped verdict for the latest phase-loop run
 using Phase 2 map metrics, latest batch summary, stop reasons, and whether a
 phase loop/grind process is still running.
+";
+
+const PHASE_WATCH_USAGE: &str = "\
+cargo xtask concept-phase-watch [--interval-minutes N]
+                                [--notify-imessage BUDDY]
+                                [--notify-command SHELL]
+                                [--once]
+                                [--max-messages N]
+
+Watches the autonomous concept phase loop without requiring a clean working
+tree. Sends a compact metrics update every interval and alerts when the phase
+loop/grind process disappears. Notification hooks may also be provided through
+PHASE_NOTIFY_IMESSAGE or PHASE_NOTIFY_COMMAND.
 ";
 
 pub fn discover(args: &[String]) -> ExitCode {
@@ -393,6 +407,20 @@ pub fn phase_status(args: &[String]) -> ExitCode {
         }
         Err(e) => {
             eprintln!("concept-phase-status: {e:#}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+pub fn phase_watch(args: &[String]) -> ExitCode {
+    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
+        print!("{PHASE_WATCH_USAGE}");
+        return ExitCode::SUCCESS;
+    }
+    match parse_phase_watch_options(args).and_then(run_phase_watch) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("concept-phase-watch: {e:#}");
             ExitCode::FAILURE
         }
     }
@@ -699,6 +727,15 @@ struct PhaseStatusOptions {
     json: bool,
 }
 
+#[derive(Debug)]
+struct PhaseWatchOptions {
+    interval_minutes: u64,
+    notify_imessage: Option<String>,
+    notify_command: Option<String>,
+    once: bool,
+    max_messages: Option<u32>,
+}
+
 #[derive(Debug, Serialize)]
 struct PhaseStatusReport {
     verdict: PhaseStatusVerdict,
@@ -711,7 +748,7 @@ struct PhaseStatusReport {
     json: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum PhaseStatusVerdict {
     Continue,
@@ -2220,6 +2257,75 @@ fn parse_phase_status_options(args: &[String]) -> Result<PhaseStatusOptions> {
     Ok(PhaseStatusOptions { json })
 }
 
+fn parse_phase_watch_options(args: &[String]) -> Result<PhaseWatchOptions> {
+    let mut interval_minutes = env_nonempty("PHASE_WATCH_INTERVAL_MINUTES")
+        .map(|value| {
+            value
+                .parse()
+                .with_context(|| format!("PHASE_WATCH_INTERVAL_MINUTES value: {value:?}"))
+        })
+        .transpose()?
+        .unwrap_or(30);
+    let mut notify_imessage = env_nonempty("PHASE_NOTIFY_IMESSAGE");
+    let mut notify_command = env_nonempty("PHASE_NOTIFY_COMMAND");
+    let mut once = false;
+    let mut max_messages = None::<u32>;
+
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-h" | "--help" => bail!("{PHASE_WATCH_USAGE}"),
+            "--interval-minutes" => {
+                interval_minutes = parse_next_u64(&mut iter, "--interval-minutes")?;
+            }
+            s if s.starts_with("--interval-minutes=") => {
+                interval_minutes = parse_u64_flag_value("--interval-minutes", s)?;
+            }
+            "--notify-imessage" => {
+                notify_imessage = Some(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--notify-imessage requires a value"))?
+                        .to_string(),
+                );
+            }
+            s if s.starts_with("--notify-imessage=") => {
+                notify_imessage = Some(s["--notify-imessage=".len()..].to_string());
+            }
+            "--notify-command" => {
+                notify_command = Some(
+                    iter.next()
+                        .ok_or_else(|| anyhow!("--notify-command requires a value"))?
+                        .to_string(),
+                );
+            }
+            s if s.starts_with("--notify-command=") => {
+                notify_command = Some(s["--notify-command=".len()..].to_string());
+            }
+            "--once" => once = true,
+            "--max-messages" => max_messages = Some(parse_next_u32(&mut iter, "--max-messages")?),
+            s if s.starts_with("--max-messages=") => {
+                max_messages = Some(parse_u32_flag_value("--max-messages", s)?);
+            }
+            other => bail!("unknown argument: {other}\n\n{PHASE_WATCH_USAGE}"),
+        }
+    }
+
+    if interval_minutes == 0 {
+        bail!("--interval-minutes must be greater than zero");
+    }
+    if max_messages == Some(0) {
+        bail!("--max-messages must be greater than zero");
+    }
+
+    Ok(PhaseWatchOptions {
+        interval_minutes,
+        notify_imessage,
+        notify_command,
+        once,
+        max_messages,
+    })
+}
+
 fn parse_next_u32(iter: &mut std::slice::Iter<'_, String>, flag: &str) -> Result<u32> {
     let value = iter
         .next()
@@ -2229,7 +2335,23 @@ fn parse_next_u32(iter: &mut std::slice::Iter<'_, String>, flag: &str) -> Result
         .with_context(|| format!("{flag} value: {value:?}"))
 }
 
+fn parse_next_u64(iter: &mut std::slice::Iter<'_, String>, flag: &str) -> Result<u64> {
+    let value = iter
+        .next()
+        .ok_or_else(|| anyhow!("{flag} requires a value"))?;
+    value
+        .parse()
+        .with_context(|| format!("{flag} value: {value:?}"))
+}
+
 fn parse_u32_flag_value(flag: &str, arg: &str) -> Result<u32> {
+    let prefix = format!("{flag}=");
+    arg[prefix.len()..]
+        .parse()
+        .with_context(|| format!("{flag} value: {arg:?}"))
+}
+
+fn parse_u64_flag_value(flag: &str, arg: &str) -> Result<u64> {
     let prefix = format!("{flag}=");
     arg[prefix.len()..]
         .parse()
@@ -4569,13 +4691,39 @@ fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
 }
 
 fn notify_phase_loop(options: &ConceptPhaseLoopOptions, title: &str, body: &str, loop_dir: &Path) {
+    notify_external(
+        options.notify_imessage.as_deref(),
+        options.notify_command.as_deref(),
+        title,
+        body,
+        loop_dir.join("notify_errors.txt"),
+    );
+}
+
+fn notify_phase_watch(options: &PhaseWatchOptions, title: &str, body: &str) {
+    notify_external(
+        options.notify_imessage.as_deref(),
+        options.notify_command.as_deref(),
+        title,
+        body,
+        grammar_concept_log_root().join("phase_watch_notify_errors.txt"),
+    );
+}
+
+fn notify_external(
+    notify_imessage: Option<&str>,
+    notify_command: Option<&str>,
+    title: &str,
+    body: &str,
+    error_path: PathBuf,
+) {
     let mut errors = Vec::new();
-    if let Some(buddy) = &options.notify_imessage {
+    if let Some(buddy) = notify_imessage {
         if let Err(error) = send_imessage_notification(buddy, title, body) {
             errors.push(format!("iMessage notification failed: {error:#}"));
         }
     }
-    if let Some(command) = &options.notify_command {
+    if let Some(command) = notify_command {
         if let Err(error) = run_notify_command(command, title, body) {
             errors.push(format!("notify command failed: {error:#}"));
         }
@@ -4583,7 +4731,7 @@ fn notify_phase_loop(options: &ConceptPhaseLoopOptions, title: &str, body: &str,
     if !errors.is_empty() {
         let text = errors.join("\n");
         eprintln!("{text}");
-        let _ = fs::write(loop_dir.join("notify_errors.txt"), text);
+        let _ = fs::write(error_path, text);
     }
 }
 
@@ -4618,6 +4766,82 @@ fn run_notify_command(command: &str, title: &str, body: &str) -> Result<()> {
         bail!("notify command failed\n{}", command_output_text(&output));
     }
     Ok(())
+}
+
+fn run_phase_watch(options: PhaseWatchOptions) -> Result<()> {
+    let mut was_running = None::<bool>;
+    let mut sent_messages = 0u32;
+
+    loop {
+        let status = run_phase_status(PhaseStatusOptions { json: false })?;
+        let roadmap = run_roadmap(RoadmapOptions {
+            json: false,
+            kind: RoadmapKindFilter::All,
+        })?;
+        let running = !status.running_processes.is_empty();
+        let metrics = render_phase_watch_metrics(&status, &roadmap);
+        let stopped_transition = !running && was_running.unwrap_or(true);
+        let title = if stopped_transition {
+            "mtg-parser: phase loop stopped"
+        } else {
+            "mtg-parser: phase metrics"
+        };
+        let body = if stopped_transition {
+            format!("Loop is not running. {metrics}")
+        } else {
+            metrics
+        };
+
+        println!("{title}\n{body}");
+        if options.notify_imessage.is_some() || options.notify_command.is_some() {
+            notify_phase_watch(&options, title, &body);
+        }
+        sent_messages += 1;
+        was_running = Some(running);
+
+        if options.once || options.max_messages.is_some_and(|max| sent_messages >= max) {
+            break;
+        }
+        thread::sleep(Duration::from_secs(
+            options.interval_minutes.saturating_mul(60),
+        ));
+    }
+
+    Ok(())
+}
+
+fn render_phase_watch_metrics(status: &PhaseStatusReport, roadmap: &RoadmapReport) -> String {
+    let running = if status.running_processes.is_empty() {
+        "stopped"
+    } else {
+        "running"
+    };
+    let mut parts = vec![
+        format!("loop {running}"),
+        format!(
+            "Phase2 AST {}/{}, parse {}/{}, AST fail {}",
+            status.current.ast_green_concepts,
+            status.current.grammar_green_concepts,
+            status.current.parse_green_concepts,
+            status.current.grammar_green_concepts,
+            status.current.ast_failed_concepts
+        ),
+        format!(
+            "roadmap AST {}/{}; exact {}, mentioned {}, missing {}",
+            roadmap.ast_green_candidates,
+            roadmap.total_candidates,
+            roadmap.exact_concept_matches,
+            roadmap.mentioned_by_concept,
+            roadmap.missing_candidates
+        ),
+    ];
+    if let Some(batch) = &status.latest_batch {
+        parts.push(format!(
+            "latest batch #{} AST {:+}, commits {}",
+            batch.batch, batch.ast_green_delta, batch.commits
+        ));
+    }
+    parts.join(". ")
 }
 
 fn run_phase_status(options: PhaseStatusOptions) -> Result<PhaseStatusReport> {
@@ -10016,6 +10240,27 @@ mod tests {
         );
         assert!(!options.git_push);
         assert!(options.dry_run);
+    }
+
+    #[test]
+    fn phase_watch_options_parse_notifications() {
+        let options = parse_phase_watch_options(&[
+            "--interval-minutes=15".to_string(),
+            "--notify-imessage=me@example.com".to_string(),
+            "--notify-command".to_string(),
+            "printf '%s\\n' \"$PHASE_NOTIFY_BODY\"".to_string(),
+            "--once".to_string(),
+            "--max-messages=2".to_string(),
+        ])
+        .expect("phase watch options parse");
+        assert_eq!(options.interval_minutes, 15);
+        assert_eq!(options.notify_imessage.as_deref(), Some("me@example.com"));
+        assert_eq!(
+            options.notify_command.as_deref(),
+            Some("printf '%s\\n' \"$PHASE_NOTIFY_BODY\"")
+        );
+        assert!(options.once);
+        assert_eq!(options.max_messages, Some(2));
     }
 
     #[test]
