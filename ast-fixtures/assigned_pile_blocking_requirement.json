@@ -1,0 +1,22 @@
+{
+  "concept": "assigned_pile_blocking_requirement",
+  "fixture_path": "grammar-fixtures/assigned_pile_blocking_requirement.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "creatures_in_assigned_pile_block_if_able",
+      "text": "Each creature in a pile that can block the creature that pile is assigned to does so.",
+      "ast": {
+        "StaticAbility": "CreaturesInAssignedPileBlockIfAble"
+      }
+    },
+    {
+      "index": 2,
+      "rule": "creatures_in_assigned_pile_block_if_able",
+      "text": "Each creature in the pile that can block the creature that pile is assigned to does so.",
+      "ast": {
+        "StaticAbility": "CreaturesInAssignedPileBlockIfAble"
+      }
+    }
+  ]
+}
