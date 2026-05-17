@@ -1,0 +1,67 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_continuous_ability_removal"]
+
+[[axis]]
+name = "add_affected_object"
+values = ["enchanted_permanent"]
+
+[[axis]]
+name = "add_removed_ability"
+values = ["keyword"]
+
+[boundary]
+excludes = [
+    "Enchanted-object keyword ability grants.",
+    "Enchanted-object power/toughness modifications.",
+    "Enchanted-object grants of quoted triggered abilities.",
+]
+includes = [
+    "Enchanted creature loses flying.",
+    "Enchanted artifact loses indestructible.",
+    "Enchanted land loses shroud.",
+]
+
+[concept]
+name = "static_enchanted_keyword_removal"
+pest_rules = ["static_enchanted_loses_keyword"]
+rules_queries = [
+    "lex: enchanted permanent loses keyword ability",
+    "lex: enchanted creature loses flying",
+]
+rules_terms = [
+    "static",
+    "continuous",
+    "enchanted",
+    "keyword ability",
+    "remove abilities",
+]
+
+[[counterexample]]
+reason = "Keyword ability grant, owned by static_enchanted_keyword_grant."
+text = "Enchanted creature has flying."
+
+[[counterexample]]
+reason = "Enchanted-object P/T modification, not a keyword ability removal effect."
+text = "Enchanted creature gets +1/+1."
+
+[[counterexample]]
+reason = "Quoted triggered ability grant, not a keyword ability removal effect."
+text = 'Enchanted creature has "Whenever this creature attacks, draw a card."'
+
+[[example]]
+text = "Enchanted creature loses flying."
+
+[[example]]
+text = "Enchanted artifact loses indestructible."
+
+[[example]]
+text = "Enchanted land loses shroud."
+
+[grammar_query]
+candidate_rules = ["static_enchanted_loses_keyword"]
+selected_rule = "static_enchanted_loses_keyword"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
