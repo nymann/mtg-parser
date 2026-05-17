@@ -1,0 +1,39 @@
+[fixture]
+concept = "target_permanent_keyword_ability_gain_until_eot"
+rule = "target_permanent_gains_keyword_until_eot"
+
+[[example]]
+text = "Target creature gains flying until end of turn."
+reason = "Target creature evergreen keyword ability grant until end of turn."
+
+[[example]]
+text = "Target attacking creature gains first strike until end of turn."
+reason = "Target permanent combat-role selector with multiword keyword ability grant until end of turn."
+
+[[example]]
+text = "Target creature you control with toughness less than CARDNAME's power gains flying until end of turn."
+reason = "Target permanent controlled-creature selector with source power comparison and keyword ability grant until end of turn."
+
+[[counterexample]]
+text = "This gains flying until end of turn."
+reason = "Source-object recipient, covered by activated_source_keyword_ability_gain_until_eot."
+
+[[counterexample]]
+text = "Target creature gets +1/+1 until end of turn."
+reason = "Target-object P/T modifier, not a keyword ability grant."
+
+[[counterexample]]
+text = "Target creature gains flying and gets +1/+1 until end of turn, where X is the number of cards in your hand."
+reason = "Combined keyword grant and P/T modifier, not keyword-only grant."
+
+[[counterexample]]
+text = "Target artifact becomes an Island until CARDNAME leaves the battlefield."
+reason = "Type-changing effect with source-linked duration, not an until-end-of-turn keyword ability grant."
+
+[[counterexample]]
+text = "Enchanted creature gains flying until end of turn."
+reason = "Enchanted-object recipient, not target-permanent recipient."
+
+[[counterexample]]
+text = "Target creature gains flying until end of turn. trailing"
+reason = "Exact-consumption guard."
