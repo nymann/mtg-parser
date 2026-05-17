@@ -187,6 +187,17 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             for_each_damage_prevented_by_removing_pt_counter_from_pair(pair)
         }
         Rule::spend_only_color_mana_on_variable => spend_only_color_mana_on_variable_from_pair(pair),
+        Rule::variable_definition => Ok(Statement::VariableDefinition(
+            variable_definition_from_pair(pair)?,
+        )),
+        Rule::variable_name => Ok(Statement::VariableName(variable_from_str(pair.as_str())?)),
+        Rule::unsigned_number
+        | Rule::half_number_of_basic_lands_you_control
+        | Rule::number_of_permanents_you_control
+        | Rule::number_of_status_permanents_they_controlled_at_beginning_of_this_turn
+        | Rule::number_of_cards_in_their_hand_minus
+        | Rule::amount_of_mana_that_player_paid_this_way
+        | Rule::its_power => Ok(Statement::ValueExpression(value_expression_from_pair(pair)?)),
         Rule::if_you_pay_source_deals_damage => if_you_pay_source_deals_damage_from_pair(pair),
         Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
             as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(pair)
@@ -5906,6 +5917,13 @@ fn variable_definition_from_pair(pair: Pair<Rule>) -> Result<VariableDefinition,
 
 fn value_expression_from_pair(pair: Pair<Rule>) -> Result<ValueExpression, ParseError> {
     match pair.as_rule() {
+        Rule::unsigned_number => {
+            let amount = pair
+                .as_str()
+                .parse::<u32>()
+                .map_err(|_| ParseError::Internal("value expression unsigned number"))?;
+            Ok(ValueExpression::UnsignedNumber(amount))
+        }
         Rule::half_number_of_basic_lands_you_control => {
             let mut inner = pair.into_inner();
             let land_type_pair = inner
@@ -5920,6 +5938,15 @@ fn value_expression_from_pair(pair: Pair<Rule>) -> Result<ValueExpression, Parse
             })
         }
         Rule::its_power => Ok(ValueExpression::ItsPower),
+        Rule::number_of_permanents_you_control => {
+            let permanent_type_pair = only_inner(
+                pair,
+                "number-of-permanents expression missing permanent type",
+            )?;
+            Ok(ValueExpression::NumberOfPermanentsYouControl {
+                permanent_type: permanent_type_from_plural_pair(permanent_type_pair)?,
+            })
+        }
         Rule::number_of_cards_in_their_hand_minus => {
             let amount_pair = only_inner(
                 pair,

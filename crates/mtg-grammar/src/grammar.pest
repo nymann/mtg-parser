@@ -207,6 +207,9 @@ phrase_statement = _{
   | static_enchanted_loses_keyword_fragment
   | static_damage_prevention_effect
   | damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead
+  | variable_definition
+  | variable_name
+  | value_expression
 }
 
 // Modal spells print a choice header followed by bullet-pointed modes.

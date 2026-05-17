@@ -108,6 +108,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(variable_name(*variable));
             out.push('.');
         }
+        Statement::VariableDefinition(definition) => write_variable_definition(out, definition),
+        Statement::VariableName(variable) => out.push_str(variable_name(*variable)),
+        Statement::ValueExpression(expression) => write_value_expression(out, expression),
         Statement::IfYouPaySourceDealsDamage {
             source,
             counter_name,
@@ -3758,6 +3761,9 @@ fn write_variable_definition(out: &mut String, definition: &VariableDefinition) 
 
 fn write_value_expression(out: &mut String, expression: &ValueExpression) {
     match expression {
+        ValueExpression::UnsignedNumber(amount) => {
+            write!(out, "{amount}").expect("write to String never fails");
+        }
         ValueExpression::HalfNumberOfBasicLandsYouControl {
             basic_land_type,
             rounding,
@@ -3768,6 +3774,11 @@ fn write_value_expression(out: &mut String, expression: &ValueExpression) {
             out.push_str(rounding_name(*rounding));
         }
         ValueExpression::ItsPower => out.push_str("its power"),
+        ValueExpression::NumberOfPermanentsYouControl { permanent_type } => {
+            out.push_str("the number of ");
+            out.push_str(permanent_type_plural_name(*permanent_type));
+            out.push_str(" you control");
+        }
         ValueExpression::NumberOfCardsInTheirHandMinus { amount } => {
             write!(out, "the number of cards in their hand minus {amount}")
                 .expect("write to String never fails");

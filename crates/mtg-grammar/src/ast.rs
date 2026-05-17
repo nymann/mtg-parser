@@ -60,6 +60,13 @@ pub enum Statement {
         color: Color,
         variable: Variable,
     },
+    /// "X is <value expression>" - variable definition fragments shared by
+    /// where clauses and concept-level parsing.
+    VariableDefinition(VariableDefinition),
+    /// "X" / "Y" variable-name fragments used by concept-level parsing.
+    VariableName(Variable),
+    /// Standalone value-expression fragments used by concept-level parsing.
+    ValueExpression(ValueExpression),
     /// "If you pay, this <source> deals damage equal to the number of
     /// <counter> counters on it to <recipient>[ and <recipient>]."
     IfYouPaySourceDealsDamage {
@@ -2696,6 +2703,8 @@ pub struct VariableDefinition {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ValueExpression {
+    /// "<N>"
+    UnsignedNumber(u32),
     /// "half the number of <basic_land_type>s you control, rounded <...>"
     HalfNumberOfBasicLandsYouControl {
         basic_land_type: BasicLandType,
@@ -2703,6 +2712,8 @@ pub enum ValueExpression {
     },
     /// "its power"
     ItsPower,
+    /// "the number of <permanent_type>s you control"
+    NumberOfPermanentsYouControl { permanent_type: PermanentType },
     /// "the number of cards in their hand minus <N>"
     NumberOfCardsInTheirHandMinus { amount: u32 },
     /// "the number of <status> <permanent_type>s they controlled at the

@@ -1,0 +1,75 @@
+{
+  "concept": "variable_definition",
+  "fixture_path": "grammar-fixtures/variable_definition.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "variable_definition",
+      "text": "X is 1",
+      "ast": {
+        "VariableDefinition": {
+          "value": {
+            "UnsignedNumber": 1
+          },
+          "variable": "X"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "variable_definition",
+      "text": "Y is the number of creatures you control",
+      "ast": {
+        "VariableDefinition": {
+          "value": {
+            "NumberOfPermanentsYouControl": {
+              "permanent_type": "Creature"
+            }
+          },
+          "variable": "Y"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "variable_definition",
+      "text": "X is its power",
+      "ast": {
+        "VariableDefinition": {
+          "value": "ItsPower",
+          "variable": "X"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "variable_name",
+      "text": "Y",
+      "ast": {
+        "VariableName": "Y"
+      }
+    },
+    {
+      "index": 5,
+      "rule": "value_expression",
+      "text": "the number of creatures you control",
+      "ast": {
+        "ValueExpression": {
+          "NumberOfPermanentsYouControl": {
+            "permanent_type": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "value_expression",
+      "text": "1",
+      "ast": {
+        "ValueExpression": {
+          "UnsignedNumber": 1
+        }
+      }
+    }
+  ]
+}
