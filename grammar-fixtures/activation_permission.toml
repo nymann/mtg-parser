@@ -1,0 +1,47 @@
+[fixture]
+concept = "activation_permission"
+rule = "activation_permission"
+
+[[example]]
+text = "Only this ability's source's owner may activate this ability."
+reason = "Activation permission limiting this ability to the ability source's owner."
+
+[[example]]
+text = "Only this permanent's owner may activate this ability."
+reason = "Activation permission limiting this ability to the source permanent's owner."
+
+[[example]]
+text = "only this permanent's owner may activate this ability."
+reason = "Same source-owner activation permission shape in lowercase; the grammar literals are case-insensitive."
+
+[[example]]
+text = "Activate only during your upkeep."
+reason = "Activation permission limiting this ability to the controller's upkeep."
+
+[[example]]
+text = "activate only during your upkeep."
+reason = "Same upkeep activation permission shape in lowercase; the grammar literals are case-insensitive."
+
+[[counterexample]]
+text = "Activate only as a sorcery."
+reason = "Sibling timing permission, not currently accepted by the activation_permission wrapper."
+
+[[counterexample]]
+text = "Activate only during your turn."
+reason = "Sibling timing permission, not currently accepted by the activation_permission wrapper."
+
+[[counterexample]]
+text = "Activate only during your turn and only once each turn."
+reason = "Timing plus frequency limit, not part of the current activation_permission wrapper."
+
+[[counterexample]]
+text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
+reason = "Conditional mana ability activation restriction with source-scope and spending-limit clauses."
+
+[[counterexample]]
+text = "Target player activates a mana ability of each land they control."
+reason = "Instruction to activate abilities, not permission text limiting this ability."
+
+[[counterexample]]
+text = "Activate only during your upkeep. trailing"
+reason = "Exact-consumption guard."

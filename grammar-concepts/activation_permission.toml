@@ -1,0 +1,101 @@
+[[axis]]
+name = "permission_kind"
+values = [
+    "source_owner_actor",
+    "activation_timing_window",
+]
+
+[[axis]]
+name = "action"
+values = ["activate"]
+
+[[axis]]
+name = "activated_object"
+values = ["this_ability"]
+
+[[axis]]
+name = "actor_restriction"
+values = [
+    "source_owner",
+    "none",
+]
+
+[[axis]]
+name = "timing_window"
+values = [
+    "during_your_upkeep",
+    "none",
+]
+
+[boundary]
+excludes = [
+    "Other activation timing windows that are sibling standalone rules but are not currently part of activation_permission.",
+    "Activation frequency limits.",
+    "Mana ability activation restrictions with source-scope and spending-limit clauses.",
+    "Instructions that cause a player to activate an ability rather than permission text for this ability.",
+]
+includes = [
+    "Standalone activation permission sentences currently accepted by the activation_permission wrapper.",
+    "Permissions limiting this ability to the source object's owner.",
+    "Permissions limiting activation to during your upkeep.",
+]
+
+[concept]
+name = "activation_permission"
+pest_rules = ["activation_permission"]
+rules_queries = [
+    "lex: activate only during your upkeep",
+    "lex: only this ability's source's owner may activate this ability",
+    "lex: activated ability activation permission",
+]
+rules_terms = [
+    "activate",
+    "activated ability",
+    "activation permission",
+    "owner",
+    "upkeep",
+]
+
+[[counterexample]]
+reason = "Sibling timing permission, not currently accepted by the activation_permission wrapper."
+text = "Activate only as a sorcery."
+
+[[counterexample]]
+reason = "Sibling timing permission, not currently accepted by the activation_permission wrapper."
+text = "Activate only during your turn."
+
+[[counterexample]]
+reason = "Timing plus frequency limit, not part of the current activation_permission wrapper."
+text = "Activate only during your turn and only once each turn."
+
+[[counterexample]]
+reason = "Instruction to activate abilities, not permission text limiting this ability."
+text = "Target player activates a mana ability of each land they control."
+
+[[example]]
+text = "Only this ability's source's owner may activate this ability."
+
+[[example]]
+text = "Only this permanent's owner may activate this ability."
+
+[[example]]
+text = "Activate only during your upkeep."
+
+[grammar_query]
+candidate_rules = [
+    "activation_permission",
+    "activated_ability_with_activation_permission",
+    "only_sources_owner_may_activate_this_ability",
+    "activate_only_during_your_upkeep",
+    "activate_only_during_combat",
+    "activate_only_during_your_turn",
+    "activate_only_during_your_turn_and_only_once_each_turn",
+    "activate_only_during_opponents_turn_before_attackers_declared",
+    "activate_only_as_sorcery",
+    "mana_ability_activation_limit",
+]
+selected_rule = "activation_permission"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
