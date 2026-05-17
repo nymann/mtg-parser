@@ -2567,21 +2567,65 @@ fn top_level_variant(value: &serde_json::Value) -> Option<String> {
     }
 }
 
-fn collect_ast_failures(report: &AstTestReport) -> Vec<AstFailureSummary> {
+fn collect_forbidden_actual_owners(
+    value: &serde_json::Value,
+    contract: Option<&FixtureAstShapeContract>,
+) -> Vec<String> {
+    let Some(contract) = contract else {
+        return Vec::new();
+    };
+    if contract.forbid.is_empty() {
+        return Vec::new();
+    }
+    let mut variants = BTreeSet::new();
+    collect_ast_variant_keys(value, &mut variants);
+    contract
+        .forbid
+        .iter()
+        .filter(|variant| variants.contains(*variant))
+        .cloned()
+        .collect()
+}
+
+fn collect_ast_failures(
+    report: &AstTestReport,
+    contract: Option<&FixtureAstShapeContract>,
+) -> Vec<AstFailureSummary> {
     report
         .cases
         .iter()
         .filter(|case| !case.matched)
         .map(|case| {
-            let expected_owner = case.expected_ast.as_ref().and_then(top_level_variant);
-            let actual_owner = case.actual_ast.as_ref().and_then(top_level_variant);
+            let contract_failure = case.error.as_deref().is_some_and(|error| {
+                error.contains("expected AST owner")
+                    || error.contains("forbidden legacy AST variant")
+            });
+            let expected_owner = if contract_failure {
+                contract.and_then(|contract| contract.owner.clone())
+            } else {
+                case.expected_ast.as_ref().and_then(top_level_variant)
+            };
+            let forbidden_actuals = case
+                .actual_ast
+                .as_ref()
+                .map(|ast| collect_forbidden_actual_owners(ast, contract))
+                .unwrap_or_default();
+            let actual_owners = if forbidden_actuals.is_empty() {
+                case.actual_ast
+                    .as_ref()
+                    .and_then(top_level_variant)
+                    .into_iter()
+                    .collect()
+            } else {
+                forbidden_actuals
+            };
             AstFailureSummary {
                 index: case.index,
                 rule: case.rule.clone(),
                 text: case.text.clone(),
                 error: case.error.clone(),
                 expected_owner,
-                actual_owners: actual_owner.into_iter().collect(),
+                actual_owners,
             }
         })
         .collect()
@@ -2701,7 +2745,12 @@ fn run_phase2_map(options: Phase2MapOptions) -> Result<Phase2MapReport> {
             .cases
             .iter()
             .find_map(|case| case.error.as_ref().cloned());
-        let ast_failures = collect_ast_failures(&ast_report);
+        let fixture_doc = read_fixture_document(&fixture_path).ok();
+        let ast_shape = fixture_doc
+            .as_ref()
+            .and_then(|doc| doc.phase2.as_ref())
+            .and_then(|phase2| phase2.ast_shape.as_ref());
+        let ast_failures = collect_ast_failures(&ast_report, ast_shape);
         concepts.push(Phase2ConceptStatus {
             concept,
             maturity,
@@ -3335,7 +3384,9 @@ fn render_ast_shape_section(fixture_path: &Path) -> String {
 
     let mut buf = String::from("\nFixture `[phase2.ast_shape]` contract:\n");
     if let Some(owner) = &contract.owner {
-        buf.push_str(&format!("  owner (required top-level Statement variant): `{owner}`\n"));
+        buf.push_str(&format!(
+            "  owner (required top-level Statement variant): `{owner}`\n"
+        ));
     }
     if !contract.forbid.is_empty() {
         buf.push_str(&format!(
@@ -3398,8 +3449,8 @@ fn find_ast_variant_definition(source: &str, variant_name: &str) -> Option<Strin
         }
         let after = &trimmed[needle_prefix.len()..];
         let first_char = after.chars().next();
-        let is_variant = matches!(first_char, Some(' ') | Some('{') | Some('(') | Some(','))
-            || after.is_empty();
+        let is_variant =
+            matches!(first_char, Some(' ') | Some('{') | Some('(') | Some(',')) || after.is_empty();
         if !is_variant {
             continue;
         }
@@ -3461,8 +3512,10 @@ fn render_ast_failures_section(failures: &[AstFailureSummary]) -> String {
         return String::new();
     }
 
-    let mut groups: BTreeMap<(Option<String>, Option<String>, Option<String>), Vec<&AstFailureSummary>> =
-        BTreeMap::new();
+    let mut groups: BTreeMap<
+        (Option<String>, Option<String>, Option<String>),
+        Vec<&AstFailureSummary>,
+    > = BTreeMap::new();
     for failure in failures {
         let actual = failure.actual_owners.first().cloned();
         let key = (
@@ -3475,12 +3528,20 @@ fn render_ast_failures_section(failures: &[AstFailureSummary]) -> String {
 
     let mut buf = String::from("\nLast concept-ast-test rejected this concept. Fix every group below before regenerating the same AST shapes:\n");
     for (group_idx, ((error, expected, actual), cases)) in groups.iter().enumerate() {
-        buf.push_str(&format!("\n[group {}] {} failing case(s)\n", group_idx + 1, cases.len()));
+        buf.push_str(&format!(
+            "\n[group {}] {} failing case(s)\n",
+            group_idx + 1,
+            cases.len()
+        ));
         if let Some(expected) = expected {
-            buf.push_str(&format!("  expected top-level Statement variant: `{expected}`\n"));
+            buf.push_str(&format!(
+                "  expected top-level Statement variant: `{expected}`\n"
+            ));
         }
         if let Some(actual) = actual {
-            buf.push_str(&format!("  actual top-level Statement variant:   `{actual}`\n"));
+            buf.push_str(&format!(
+                "  actual top-level Statement variant:   `{actual}`\n"
+            ));
         }
         if let Some(error) = error {
             buf.push_str(&format!("  rejection reason: {error}\n"));
@@ -10711,6 +10772,60 @@ unrelated_rule = { "unrelated" }
         });
 
         assert!(ast_shape_case_error(&ast, Some(&contract)).is_none());
+    }
+
+    #[test]
+    fn ast_failure_summary_prefers_shape_contract_owner() {
+        let contract = FixtureAstShapeContract {
+            owner: Some("CounterTargetSpell".to_string()),
+            forbid: vec!["CounterTargetColoredSpell".to_string()],
+            note: None,
+        };
+        let report = AstTestReport {
+            concept: "counter_target_spell".to_string(),
+            fixture_path: PathBuf::from("grammar-fixtures/counter_target_spell.toml"),
+            snapshot_path: PathBuf::from("ast-fixtures/counter_target_spell.json"),
+            updated: false,
+            passed: false,
+            total: 1,
+            failures: 1,
+            cases: vec![AstCaseResult {
+                index: 1,
+                rule: "activated_ability".to_string(),
+                text: "{B}{B}: Counter target green spell.".to_string(),
+                matched: false,
+                expected_ast: Some(serde_json::json!({
+                    "ActivatedAbility": {
+                        "effect": {
+                            "CounterTargetColoredSpell": { "color": "Green" }
+                        }
+                    }
+                })),
+                actual_ast: Some(serde_json::json!({
+                    "ActivatedAbility": {
+                        "effect": {
+                            "CounterTargetColoredSpell": { "color": "Green" }
+                        }
+                    }
+                })),
+                error: Some(
+                    "expected AST owner `CounterTargetSpell`; forbidden legacy AST variant `CounterTargetColoredSpell`"
+                        .to_string(),
+                ),
+            }],
+            json: false,
+        };
+
+        let failures = collect_ast_failures(&report, Some(&contract));
+        assert_eq!(failures.len(), 1);
+        assert_eq!(
+            failures[0].expected_owner.as_deref(),
+            Some("CounterTargetSpell")
+        );
+        assert_eq!(
+            failures[0].actual_owners,
+            vec!["CounterTargetColoredSpell".to_string()]
+        );
     }
 
     #[test]
