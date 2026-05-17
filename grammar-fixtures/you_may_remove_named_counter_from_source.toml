@@ -1,0 +1,27 @@
+[fixture]
+concept = "you_may_remove_named_counter_from_source"
+rule = "you_may_remove_named_counter_from_source"
+
+[[example]]
+text = "You may remove a spore counter from it."
+reason = "Triggered-effect standalone statement where you may remove one named spore counter from the source object."
+
+[[example]]
+text = "You may remove a charge counter from it."
+reason = "Named-counter axis variant using charge counter."
+
+[[counterexample]]
+text = "You may have it block an attacking creature of your choice."
+reason = "Optional blocking permission, not optional counter removal."
+
+[[counterexample]]
+text = "Remove a spore counter from it."
+reason = "Mandatory remove-counter instruction without you-may modality."
+
+[[counterexample]]
+text = "Put a spore counter on it."
+reason = "Put-counter instruction, not counter removal."
+
+[[counterexample]]
+text = "You may remove a spore counter from it. trailing"
+reason = "Exact-consumption guard."

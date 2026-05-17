@@ -1,0 +1,75 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "modality"
+values = ["may"]
+
+[[axis]]
+name = "action"
+values = ["remove"]
+
+[[axis]]
+name = "counter_ref"
+values = ["named_counter"]
+
+[[axis]]
+name = "counter_quantity"
+values = ["article"]
+
+[[axis]]
+name = "source"
+values = ["source_object"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[[axis]]
+name = "effect_context"
+values = ["trigger_effect"]
+
+[boundary]
+excludes = [
+    "Optional blocking permission where you may have it block an attacking creature of your choice.",
+    "Mandatory remove-counter instructions without you-may modality.",
+    "Put-counter instructions, not remove-counter instructions.",
+]
+includes = ["Triggered-effect standalone statements where you may remove one named counter from the source object."]
+
+[concept]
+name = "you_may_remove_named_counter_from_source"
+pest_rules = ["you_may_remove_named_counter_from_source"]
+rules_queries = ["lex: you may remove a spore counter from it"]
+rules_terms = [
+    "counter",
+    "remove",
+    "source",
+]
+
+[[counterexample]]
+reason = "Optional blocking permission, not optional counter removal."
+text = "You may have it block an attacking creature of your choice."
+
+[[counterexample]]
+reason = "Mandatory remove-counter instruction without you-may modality."
+text = "Remove a spore counter from it."
+
+[[counterexample]]
+reason = "Put-counter instruction, not counter removal."
+text = "Put a spore counter on it."
+
+[[example]]
+text = "You may remove a spore counter from it."
+
+[[example]]
+text = "You may remove a charge counter from it."
+
+[grammar_query]
+candidate_rules = ["you_may_remove_named_counter_from_source"]
+selected_rule = "you_may_remove_named_counter_from_source"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
