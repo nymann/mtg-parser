@@ -1,0 +1,18 @@
+{
+  "concept": "ignore_this_effect_for_each_creature_player_didnt_control_continuously",
+  "fixture_path": "grammar-fixtures/ignore_this_effect_for_each_creature_player_didnt_control_continuously.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "ignore_this_effect_for_each_creature_player_didnt_control_continuously",
+      "text": "Ignore this effect for each creature the player didn't control continuously since the beginning of the turn.",
+      "ast": "IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn"
+    },
+    {
+      "index": 2,
+      "rule": "sentence_statement",
+      "text": "Ignore this effect for each creature the player didn't control continuously since the beginning of the turn.",
+      "ast": "IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn"
+    }
+  ]
+}
