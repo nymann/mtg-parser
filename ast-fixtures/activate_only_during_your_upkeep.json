@@ -1,0 +1,24 @@
+{
+  "concept": "activate_only_during_your_upkeep",
+  "fixture_path": "grammar-fixtures/activate_only_during_your_upkeep.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "activate_only_during_your_upkeep",
+      "text": "Activate only during your upkeep.",
+      "ast": "ActivateOnlyDuringYourUpkeep"
+    },
+    {
+      "index": 2,
+      "rule": "activate_only_during_your_upkeep",
+      "text": "activate only during your upkeep.",
+      "ast": "ActivateOnlyDuringYourUpkeep"
+    },
+    {
+      "index": 3,
+      "rule": "activate_only_during_combat",
+      "text": "Activate only during combat.",
+      "ast": "ActivateOnlyDuringCombat"
+    }
+  ]
+}
