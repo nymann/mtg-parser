@@ -8,13 +8,10 @@ pub enum Statement {
     /// "Ignore this effect for each creature the player didn't control
     /// continuously since the beginning of the turn."
     IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn,
-    /// "Counter target spell[ <condition>]." — CR 701.5 counter keyword action.
+    /// "Counter target [<color>] spell[ <condition>]." — CR 701.5 counter keyword action.
     CounterTargetSpell {
+        color: Option<Color>,
         condition: Option<CounterTargetSpellCondition>,
-    },
-    /// "Counter target <color> spell."
-    CounterTargetColoredSpell {
-        color: Color,
     },
     /// "As an additional cost to cast this spell, <cost>."
     AsAdditionalCostToCastThisSpell {
@@ -750,10 +747,13 @@ pub(crate) enum ColoredTargetEffect {
     DestroyPermanent { color: Color },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ModalMode {
-    /// "Counter target <color> spell."
-    CounterTargetColoredSpell { color: Color },
+    /// "Counter target [<color>] spell[ <condition>]."
+    CounterTargetSpell {
+        color: Option<Color>,
+        condition: Option<CounterTargetSpellCondition>,
+    },
     /// "Destroy target <color> permanent."
     DestroyTargetColoredPermanent { color: Color },
     /// "Target player gains N life."
@@ -1653,8 +1653,9 @@ pub enum ActivatedEffect {
     /// "Regenerate <permanent>." — CR 701.15 regenerate keyword action.
     Regenerate(RegenerateRecipient),
     /// "Counter target <color> spell."
-    CounterTargetColoredSpell {
-        color: Color,
+    CounterTargetSpell {
+        color: Option<Color>,
+        condition: Option<CounterTargetSpellCondition>,
     },
     /// "Destroy target <color> permanent."
     DestroyTargetColoredPermanent {

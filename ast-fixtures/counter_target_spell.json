@@ -8,6 +8,7 @@
       "text": "Counter target spell unless its controller pays {X}.",
       "ast": {
         "CounterTargetSpell": {
+          "color": null,
           "condition": {
             "ItsControllerPays": {
               "symbols": [
@@ -26,6 +27,7 @@
       "text": "Counter target spell with mana value X.",
       "ast": {
         "CounterTargetSpell": {
+          "color": null,
           "condition": {
             "WithManaValue": "X"
           }
@@ -38,6 +40,7 @@
       "text": "Counter target spell.",
       "ast": {
         "CounterTargetSpell": {
+          "color": null,
           "condition": null
         }
       }
@@ -47,8 +50,9 @@
       "rule": "counter_target_spell",
       "text": "Counter target red spell.",
       "ast": {
-        "CounterTargetColoredSpell": {
-          "color": "Red"
+        "CounterTargetSpell": {
+          "color": "Red",
+          "condition": null
         }
       }
     },
@@ -57,8 +61,9 @@
       "rule": "counter_target_spell",
       "text": "Counter target blue spell.",
       "ast": {
-        "CounterTargetColoredSpell": {
-          "color": "Blue"
+        "CounterTargetSpell": {
+          "color": "Blue",
+          "condition": null
         }
       }
     },
@@ -67,8 +72,9 @@
       "rule": "counter_target_spell",
       "text": "Counter target white spell.",
       "ast": {
-        "CounterTargetColoredSpell": {
-          "color": "White"
+        "CounterTargetSpell": {
+          "color": "White",
+          "condition": null
         }
       }
     },
@@ -89,8 +95,9 @@
             }
           ],
           "effect": {
-            "CounterTargetColoredSpell": {
-              "color": "Green"
+            "CounterTargetSpell": {
+              "color": "Green",
+              "condition": null
             }
           }
         }
@@ -113,8 +120,9 @@
             }
           ],
           "effect": {
-            "CounterTargetColoredSpell": {
-              "color": "Black"
+            "CounterTargetSpell": {
+              "color": "Black",
+              "condition": null
             }
           }
         }
@@ -128,8 +136,9 @@
         "ModalChoice": {
           "modes": [
             {
-              "CounterTargetColoredSpell": {
-                "color": "Red"
+              "CounterTargetSpell": {
+                "color": "Red",
+                "condition": null
               }
             }
           ]

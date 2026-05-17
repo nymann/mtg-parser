@@ -488,9 +488,10 @@ fn modal_mode_from_pair(pair: Pair<Rule>) -> Result<ModalMode, ParseError> {
         .ok_or(ParseError::Internal("modal_mode missing effect"))?;
     match effect.as_rule() {
         Rule::colored_target_effect => match colored_target_effect_from_pair(effect)? {
-            ColoredTargetEffect::CounterSpell { color } => {
-                Ok(ModalMode::CounterTargetColoredSpell { color })
-            }
+            ColoredTargetEffect::CounterSpell { color } => Ok(ModalMode::CounterTargetSpell {
+                color: Some(color),
+                condition: None,
+            }),
             ColoredTargetEffect::DestroyPermanent { color } => {
                 Ok(ModalMode::DestroyTargetColoredPermanent { color })
             }
@@ -1744,10 +1745,7 @@ fn counter_target_spell_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseEr
             _ => return Err(ParseError::Internal("counter target spell component")),
         }
     }
-    if let Some(color) = color {
-        return Ok(Statement::CounterTargetColoredSpell { color });
-    }
-    Ok(Statement::CounterTargetSpell { condition })
+    Ok(Statement::CounterTargetSpell { color, condition })
 }
 
 fn counter_unless_cost_from_pair(
@@ -5394,7 +5392,10 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
         )?)),
         Rule::colored_target_effect => match colored_target_effect_from_pair(pair)? {
             ColoredTargetEffect::CounterSpell { color } => {
-                Ok(ActivatedEffect::CounterTargetColoredSpell { color })
+                Ok(ActivatedEffect::CounterTargetSpell {
+                    color: Some(color),
+                    condition: None,
+                })
             }
             ColoredTargetEffect::DestroyPermanent { color } => {
                 Ok(ActivatedEffect::DestroyTargetColoredPermanent { color })
@@ -5404,7 +5405,10 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             let action_pair = only_inner(pair, "counter colored spell missing action")?;
             match colored_target_action_from_pair(action_pair)? {
                 ColoredTargetEffect::CounterSpell { color } => {
-                    Ok(ActivatedEffect::CounterTargetColoredSpell { color })
+                    Ok(ActivatedEffect::CounterTargetSpell {
+                        color: Some(color),
+                        condition: None,
+                    })
                 }
                 ColoredTargetEffect::DestroyPermanent { .. } => {
                     Err(ParseError::Internal("activated colored target effect"))

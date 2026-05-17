@@ -189,7 +189,10 @@ fn arb_prevention_recipient() -> impl Strategy<Value = PreventionRecipient> {
 
 fn arb_modal_mode() -> impl Strategy<Value = ModalMode> {
     prop_oneof![
-        arb_color().prop_map(|color| ModalMode::CounterTargetColoredSpell { color }),
+        arb_color().prop_map(|color| ModalMode::CounterTargetSpell {
+            color: Some(color),
+            condition: None,
+        }),
         arb_color().prop_map(|color| ModalMode::DestroyTargetColoredPermanent { color }),
         arb_life_amount().prop_map(|amount| ModalMode::TargetPlayerGainsLife { amount }),
         (arb_damage_amount(), arb_prevention_recipient()).prop_map(|(amount, recipient)| {
@@ -316,7 +319,10 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
                 cost: SpellAdditionalCost::SacrificePermanent { permanent_type },
             }
         }),
-        Just(Statement::CounterTargetSpell { condition: None }),
+        Just(Statement::CounterTargetSpell {
+            color: None,
+            condition: None,
+        }),
         Just(Statement::Destroy {
             target: DestroyTarget::TargetPermanents(vec![PermanentType::Creature]),
         }),

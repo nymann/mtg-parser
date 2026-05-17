@@ -50,15 +50,8 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::IgnoreThisEffectForEachCreaturePlayerDidntControlContinuouslySinceBeginningOfTurn => {
             out.push_str("Ignore this effect for each creature the player didn't control continuously since the beginning of the turn.");
         }
-        Statement::CounterTargetSpell { condition } => {
-            out.push_str("Counter target spell");
-            if let Some(condition) = condition {
-                write_counter_target_spell_condition(out, condition);
-            }
-            out.push('.');
-        }
-        Statement::CounterTargetColoredSpell { color } => {
-            write_colored_target_effect(out, ColoredTargetEffect::CounterSpell { color: *color });
+        Statement::CounterTargetSpell { color, condition } => {
+            write_counter_target_spell(out, *color, condition.as_ref());
         }
         Statement::AsAdditionalCostToCastThisSpell { cost } => {
             out.push_str("As an additional cost to cast this spell, ");
@@ -843,23 +836,26 @@ fn write_modal_choice(out: &mut String, modes: &[ModalMode]) {
     out.push_str("Choose one —");
     for mode in modes {
         out.push_str("\n• ");
-        write_modal_mode(out, *mode);
+        write_modal_mode(out, mode);
     }
 }
 
-fn write_modal_mode(out: &mut String, mode: ModalMode) {
+fn write_modal_mode(out: &mut String, mode: &ModalMode) {
     match mode {
-        ModalMode::CounterTargetColoredSpell { color } => {
-            write_colored_target_effect(out, ColoredTargetEffect::CounterSpell { color });
+        ModalMode::CounterTargetSpell { color, condition } => {
+            write_counter_target_spell(out, *color, condition.as_ref());
         }
         ModalMode::DestroyTargetColoredPermanent { color } => {
-            write_colored_target_effect(out, ColoredTargetEffect::DestroyPermanent { color });
+            write_colored_target_effect(
+                out,
+                ColoredTargetEffect::DestroyPermanent { color: *color },
+            );
         }
         ModalMode::TargetPlayerGainsLife { amount } => {
-            write_target_player_gains_life(out, amount);
+            write_target_player_gains_life(out, *amount);
         }
         ModalMode::PreventDamageThisTurn { effect } => {
-            write_damage_prevention_effect(out, effect);
+            write_damage_prevention_effect(out, *effect);
         }
     }
 }
@@ -1597,6 +1593,23 @@ fn write_counter_target_spell_condition(out: &mut String, condition: &CounterTar
     }
 }
 
+fn write_counter_target_spell(
+    out: &mut String,
+    color: Option<Color>,
+    condition: Option<&CounterTargetSpellCondition>,
+) {
+    out.push_str("Counter target ");
+    if let Some(color) = color {
+        out.push_str(color_name(color));
+        out.push(' ');
+    }
+    out.push_str("spell");
+    if let Some(condition) = condition {
+        write_counter_target_spell_condition(out, condition);
+    }
+    out.push('.');
+}
+
 fn write_payment_failure_effect(out: &mut String, effect: &PaymentFailureEffect) {
     match effect {
         PaymentFailureEffect::TapAllPermanentsAndLoseUnspentMana {
@@ -1822,8 +1835,8 @@ fn write_activated_effect(out: &mut String, effect: &ActivatedEffect) {
             write_regenerate_recipient(out, *recipient);
             out.push('.');
         }
-        ActivatedEffect::CounterTargetColoredSpell { color } => {
-            write_colored_target_effect(out, ColoredTargetEffect::CounterSpell { color: *color });
+        ActivatedEffect::CounterTargetSpell { color, condition } => {
+            write_counter_target_spell(out, *color, condition.as_ref());
         }
         ActivatedEffect::DestroyTargetColoredPermanent { color } => {
             write_colored_target_effect(out, ColoredTargetEffect::DestroyPermanent {
