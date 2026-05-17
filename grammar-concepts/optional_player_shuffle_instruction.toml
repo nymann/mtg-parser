@@ -1,0 +1,72 @@
+[[axis]]
+name = "action"
+values = ["shuffle_keyword_action"]
+
+[[axis]]
+name = "modality"
+values = ["optional_may"]
+
+[[axis]]
+name = "instructor"
+values = ["you"]
+
+[[axis]]
+name = "actor_ref"
+values = ["that_player"]
+
+[[axis]]
+name = "object"
+values = ["implicit_library_or_referenced_library_context"]
+
+[boundary]
+excludes = [
+    "Bare imperative shuffle instructions with no optional player instruction.",
+    "Each-player shuffle instructions with explicit zones or objects.",
+    "You-may-have-that-player instructions for actions other than shuffle.",
+    "You-may shuffle instructions where you are the actor.",
+]
+includes = [
+    "Optional instructions where you may have that player perform the shuffle keyword action.",
+    "Complete sentence wording with the shuffled object supplied implicitly by referenced library context.",
+]
+
+[concept]
+name = "optional_player_shuffle_instruction"
+pest_rules = ["you_may_have_that_player_shuffle"]
+rules_queries = ["lex: you may have that player shuffle"]
+rules_terms = [
+    "shuffle",
+    "library",
+    "player",
+]
+
+[[counterexample]]
+reason = "Bare imperative shuffle instructions are lower-level imperative plumbing, not an optional player instruction."
+text = "Shuffle."
+
+[[counterexample]]
+reason = "Each-player explicit-zone shuffle instructions are outside this optional that-player boundary."
+text = "Each player shuffles their hand and graveyard into their library."
+
+[[counterexample]]
+reason = "The optional instruction has the same actor shape but a different action."
+text = "You may have that player draw a card."
+
+[[counterexample]]
+reason = "You are the actor, not the instructor causing that player to shuffle."
+text = "You may shuffle."
+
+[[example]]
+text = "You may have that player shuffle."
+
+[grammar_query]
+candidate_rules = [
+    "you_may_have_that_player_shuffle",
+    "shuffle_action",
+    "imperative_action_sequence",
+]
+selected_rule = "you_may_have_that_player_shuffle"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

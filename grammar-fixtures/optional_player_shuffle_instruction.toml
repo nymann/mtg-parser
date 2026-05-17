@@ -1,0 +1,29 @@
+[fixture]
+concept = "optional_player_shuffle_instruction"
+rule = "you_may_have_that_player_shuffle"
+
+[[example]]
+text = "You may have that player shuffle."
+
+[[example]]
+text = "you may have that player shuffle."
+
+[[counterexample]]
+text = "Shuffle."
+reason = "Bare imperative shuffle instructions are lower-level imperative plumbing, not an optional player instruction."
+
+[[counterexample]]
+text = "Each player shuffles their hand and graveyard into their library."
+reason = "Each-player explicit-zone shuffle instructions are outside this optional that-player boundary."
+
+[[counterexample]]
+text = "You may have that player draw a card."
+reason = "The optional instruction has the same actor shape but a different action."
+
+[[counterexample]]
+text = "You may shuffle."
+reason = "You are the actor, not the instructor causing that player to shuffle."
+
+[[counterexample]]
+text = "You may have that player shuffle. trailing"
+reason = "Exact-consumption guard."
