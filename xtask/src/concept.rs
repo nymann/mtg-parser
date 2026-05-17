@@ -7477,6 +7477,7 @@ fn is_phase2_grind_commit_path(path: &str) -> bool {
 }
 
 fn commit_concept_grind_iteration(gap: &ConceptGap, iteration: u32) -> Result<bool> {
+    cleanup_concept_grind_transient_artifacts()?;
     validate_concept_grind_changed_paths()?;
     let add = Command::new("git")
         .arg("add")
@@ -7509,6 +7510,27 @@ fn commit_concept_grind_iteration(gap: &ConceptGap, iteration: u32) -> Result<bo
         bail!("git commit failed\n{}", command_output_text(&commit));
     }
     Ok(true)
+}
+
+fn cleanup_concept_grind_transient_artifacts() -> Result<()> {
+    restore_tracked_file_from_head("crates/mtg-grammar/tests/prop.proptest-regressions")
+}
+
+fn restore_tracked_file_from_head(path: &str) -> Result<()> {
+    let output = Command::new("git")
+        .args(["show", &format!("HEAD:{path}")])
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("git show HEAD:{path}"))?;
+    if !output.status.success() {
+        bail!(
+            "failed to read HEAD version of {path}\n{}",
+            command_output_text(&output)
+        );
+    }
+    fs::write(repo_root().join(path), output.stdout)
+        .with_context(|| format!("restore transient artifact {path}"))?;
+    Ok(())
 }
 
 fn validate_concept_grind_changed_paths() -> Result<()> {
