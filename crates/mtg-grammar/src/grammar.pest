@@ -919,7 +919,7 @@ color_word = @{
 
 // Creature subtypes that appear as Aura targets, enchanted objects, or
 // creature-type selectors.
-creature_type = @{ ^"djinn" | ^"dragon" | ^"elf" | ^"goblin" | ^"golem" | ^"insect" | ^"merfolk" | ^"wall" | ^"zombie" }
+creature_type = @{ ^"assembly-worker" | ^"djinn" | ^"dragon" | ^"elf" | ^"goblin" | ^"golem" | ^"insect" | ^"merfolk" | ^"wall" | ^"zombie" }
 creature_type_plural = @{ ^"djinns" | ^"dragons" | ^"elves" | ^"goblins" | ^"golems" | ^"insects" | ^"merfolk" | ^"walls" | ^"zombies" }
 
 // Static abilities. Five surface shapes today:

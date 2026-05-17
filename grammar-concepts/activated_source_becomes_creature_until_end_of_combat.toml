@@ -1,0 +1,98 @@
+[[axis]]
+name = "ability_context"
+values = ["activated_effect"]
+
+[[axis]]
+name = "recipient"
+values = ["source_object"]
+
+[[axis]]
+name = "effect_kind"
+values = ["continuous_effect"]
+
+[[axis]]
+name = "transformation"
+values = ["becomes_creature"]
+
+[[axis]]
+name = "sets_power_toughness"
+values = ["unsigned_number/unsigned_number"]
+
+[[axis]]
+name = "adds_creature_type"
+values = ["creature_type"]
+
+[[axis]]
+name = "adds_permanent_types"
+values = ["permanent_type+"]
+
+[[axis]]
+name = "duration"
+values = ["until_end_of_combat"]
+
+[boundary]
+excludes = [
+    "Source P/T modifiers until end of turn, owned by activated_source_pt_modifier_until_eot.",
+    "Source keyword grants until end of turn.",
+    "Temporary target permanent type-changing effects with a leaves-the-battlefield duration.",
+    "Static land animation effects that set power/toughness and preserve land type.",
+]
+includes = [
+    "Activated ability effects where the source object becomes an N/N creature with a creature type and permanent type until end of combat.",
+    "Source-object wording using 'this' or CARDNAME.",
+    "Base power/toughness setting with unsigned numbers, not signed P/T modifiers.",
+]
+
+[concept]
+name = "activated_source_becomes_creature_until_end_of_combat"
+pest_rules = ["activated_source_becomes_pt_creature_until_end_of_combat"]
+rules_queries = [
+    "lex: this artifact becomes a 3/6 artifact creature until end of combat",
+    "lex: source becomes a 2/2 artifact creature until end of combat",
+]
+rules_terms = [
+    "activated ability",
+    "continuous effect",
+    "becomes",
+    "power",
+    "toughness",
+    "creature type",
+    "permanent type",
+    "until end of combat",
+]
+
+[[counterexample]]
+reason = "Source P/T modifier until end of turn, not a base power/toughness creature transformation until end of combat."
+text = "This gets +1/+1 until end of turn."
+
+[[counterexample]]
+reason = "Source keyword grant, not a source creature transformation."
+text = "This gains flying until end of turn."
+
+[[counterexample]]
+reason = "Target permanent type-changing effect with a leaves-the-battlefield duration, not a source-object until-end-of-combat creature transformation."
+text = "Target permanent becomes a Mountain until CARDNAME leaves the battlefield."
+
+[[counterexample]]
+reason = "Static land animation effect, not an activated source-object transformation until end of combat."
+text = "All Forests are 1/1 creatures that are still lands."
+
+[[example]]
+text = "This artifact becomes a 3/6 Golem artifact creature until end of combat."
+
+[[example]]
+text = "CARDNAME becomes a 2/2 Assembly-Worker artifact creature until end of combat."
+
+[grammar_query]
+candidate_rules = [
+    "activated_source_becomes_pt_creature_until_end_of_combat",
+    "activated_source_gets_until_eot",
+    "activated_source_gains_keyword_until_eot",
+    "target_land_becomes_basic_land_until_source_leaves_battlefield",
+    "static_basic_lands_are_pt_creatures_still_lands",
+]
+selected_rule = "activated_source_becomes_pt_creature_until_end_of_combat"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

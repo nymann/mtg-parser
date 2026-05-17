@@ -1,0 +1,31 @@
+[fixture]
+concept = "activated_source_becomes_creature_until_end_of_combat"
+rule = "activated_source_becomes_pt_creature_until_end_of_combat"
+
+[[example]]
+text = "This artifact becomes a 3/6 Golem artifact creature until end of combat."
+reason = "Activated source-object transformation that sets base P/T and adds creature and permanent types until end of combat."
+
+[[example]]
+text = "CARDNAME becomes a 2/2 Assembly-Worker artifact creature until end of combat."
+reason = "CARDNAME source-object transformation that sets base P/T and adds creature and permanent types until end of combat."
+
+[[counterexample]]
+text = "This gets +1/+1 until end of turn."
+reason = "Source P/T modifier until end of turn, not a base power/toughness creature transformation until end of combat."
+
+[[counterexample]]
+text = "This gains flying until end of turn."
+reason = "Source keyword grant, not a source creature transformation."
+
+[[counterexample]]
+text = "Target permanent becomes a Mountain until CARDNAME leaves the battlefield."
+reason = "Target permanent type-changing effect with a leaves-the-battlefield duration, not a source-object until-end-of-combat creature transformation."
+
+[[counterexample]]
+text = "All Forests are 1/1 creatures that are still lands."
+reason = "Static land animation effect, not an activated source-object transformation until end of combat."
+
+[[counterexample]]
+text = "This artifact becomes a 3/6 Golem artifact creature until end of combat. trailing"
+reason = "Exact-consumption guard."
