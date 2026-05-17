@@ -1,0 +1,39 @@
+[fixture]
+concept = "activate_only_during_opponents_turn_before_attackers_declared"
+rule = "activate_only_during_opponents_turn_before_attackers_declared"
+
+[[example]]
+text = "Activate only during an opponent's turn, before attackers are declared."
+reason = "Activation permission sentence restricted to an opponent's turn before attackers are declared."
+
+[[example]]
+text = "activate only during an opponent's turn, before attackers are declared."
+reason = "Same activation permission shape in lowercase; the grammar literals are case-insensitive."
+
+[[counterexample]]
+text = "Activate only during your turn."
+reason = "Your-turn timing permission is a sibling concept, not the opponent-turn before-attackers timing window."
+
+[[counterexample]]
+text = "Activate only during your upkeep."
+reason = "Upkeep timing permission is a sibling concept, not the opponent-turn before-attackers timing window."
+
+[[counterexample]]
+text = "Activate only during combat."
+reason = "Combat timing permission lacks the opponent-turn and before-attackers timing boundary."
+
+[[counterexample]]
+text = "Activate only as a sorcery."
+reason = "Sorcery timing permission does not use the opponent-turn before-attackers timing window."
+
+[[counterexample]]
+text = "Only this ability's source's owner may activate this ability."
+reason = "Permission about who may activate the ability, not when it may be activated."
+
+[[counterexample]]
+text = "Cast this spell only during an opponent's turn, before attackers are declared."
+reason = "Cast timing restriction uses the same timing phrase but a different action."
+
+[[counterexample]]
+text = "Activate only during an opponent's turn, before attackers are declared. trailing"
+reason = "Exact-consumption guard."
