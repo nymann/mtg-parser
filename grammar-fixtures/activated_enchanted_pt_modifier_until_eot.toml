@@ -1,0 +1,31 @@
+[fixture]
+concept = "activated_enchanted_pt_modifier_until_eot"
+rule = "activated_enchanted_gets_until_eot"
+
+[[example]]
+text = "Enchanted creature gets +1/+1 until end of turn."
+reason = "Activated enchanted-creature fixed P/T modifier until end of turn."
+
+[[example]]
+text = "Enchanted artifact gets +0/+2 until end of turn."
+reason = "Activated enchanted-artifact fixed P/T modifier until end of turn."
+
+[[counterexample]]
+text = "This gets +1/+1 until end of turn."
+reason = "Source-object recipient, owned by activated_source_pt_modifier_until_eot."
+
+[[counterexample]]
+text = "Target creature gets +1/+1 until end of turn."
+reason = "Target-object recipient, not enchanted-object recipient."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1."
+reason = "Static continuous effect without until-end-of-turn duration, owned by static_enchanted_power_toughness_modification."
+
+[[counterexample]]
+text = "Enchanted creature gains flying until end of turn."
+reason = "Keyword grant, not a P/T modifier."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1 until end of turn. trailing"
+reason = "Exact-consumption guard."

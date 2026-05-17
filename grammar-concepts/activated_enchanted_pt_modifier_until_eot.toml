@@ -1,0 +1,84 @@
+[[axis]]
+name = "ability_context"
+values = ["activated_effect"]
+
+[[axis]]
+name = "recipient"
+values = ["enchanted_object"]
+
+[[axis]]
+name = "filter"
+values = ["permanent_type"]
+
+[[axis]]
+name = "modification"
+values = ["pt_modifier"]
+
+[[axis]]
+name = "duration"
+values = ["until_end_of_turn"]
+
+[boundary]
+excludes = [
+    "Source-object P/T modifications until end of turn.",
+    "Target-object P/T modifications until end of turn.",
+    "Static enchanted-object P/T modifications without until-end-of-turn duration.",
+    "Enchanted-object keyword grants until end of turn.",
+]
+includes = [
+    "Activated ability effects where the enchanted object gets a P/T modifier until end of turn.",
+    "Enchanted-object recipients filtered by permanent type.",
+    "Fixed signed power/toughness modifiers with until-end-of-turn duration.",
+]
+
+[concept]
+name = "activated_enchanted_pt_modifier_until_eot"
+pest_rules = ["activated_enchanted_gets_until_eot"]
+rules_queries = [
+    "lex: enchanted creature gets +1/+1 until end of turn",
+    "lex: enchanted artifact gets +0/+2 until end of turn",
+]
+rules_terms = [
+    "activated ability",
+    "continuous effect",
+    "power",
+    "toughness",
+    "modifier",
+    "enchanted",
+    "until end of turn",
+]
+
+[[counterexample]]
+reason = "Source-object recipient, owned by activated_source_pt_modifier_until_eot."
+text = "This gets +1/+1 until end of turn."
+
+[[counterexample]]
+reason = "Target-object recipient, not enchanted-object recipient."
+text = "Target creature gets +1/+1 until end of turn."
+
+[[counterexample]]
+reason = "Static continuous effect without until-end-of-turn duration, owned by static_enchanted_power_toughness_modification."
+text = "Enchanted creature gets +1/+1."
+
+[[counterexample]]
+reason = "Keyword grant, not a P/T modifier."
+text = "Enchanted creature gains flying until end of turn."
+
+[[example]]
+text = "Enchanted creature gets +1/+1 until end of turn."
+
+[[example]]
+text = "Enchanted artifact gets +0/+2 until end of turn."
+
+[grammar_query]
+candidate_rules = [
+    "activated_enchanted_gets_until_eot",
+    "activated_source_gets_until_eot",
+    "target_permanent_gains_keyword_until_eot",
+    "static_enchanted_gets",
+]
+selected_rule = "activated_enchanted_gets_until_eot"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
