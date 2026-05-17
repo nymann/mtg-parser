@@ -1633,13 +1633,13 @@ static_damage_prevention_effect = {
   ~ static_damage_prevention_recipient ~ (^"and" ~ ^"to" ~ static_damage_prevention_recipient)*
 }
 static_damage_prevention_source = _{ land_subtype_plural }
-land_subtype_plural = @{ ^"deserts" }
+land_subtype_plural = @{ basic_land_type_plural | ^"deserts" }
 static_damage_prevention_recipient = _{
     source_object_damage_recipient
   | banded_creatures_prevention_recipient
 }
 banded_creatures_prevention_recipient = {
-    ^"creatures" ~ ^"banded" ~ ^"with" ~ source_object
+    ^"creatures" ~ ^"banded" ~ ^"with" ~ (source_object | ^"it")
 }
 damage_that_would_be_dealt_to_you_by_source_is_dealt_to_source_instead = {
     ^"all" ~ ^"damage" ~ ^"that" ~ ^"would" ~ ^"be" ~ ^"dealt"

@@ -1,0 +1,76 @@
+[[axis]]
+name = "effect_kind"
+values = ["static_prevention_effect"]
+
+[[axis]]
+name = "affected_event"
+values = ["damage_would_be_dealt"]
+
+[[axis]]
+name = "prevention_amount"
+values = ["damage_prevention_amount_axis"]
+
+[[axis]]
+name = "damage_kind"
+values = ["optional_damage_kind"]
+
+[[axis]]
+name = "damage_source"
+values = ["land_subtype_plural"]
+
+[[axis]]
+name = "damage_recipient"
+values = ["source_object_or_banded_creatures"]
+
+[boundary]
+excludes = [
+    "Static enters-tapped replacement effects, owned by static_enters_tapped.",
+    "This-turn direct prevention shields around damage that would be dealt to any target, owned by damage_prevention_effect.",
+    "Conditional source prevention effects with a player recipient, not this land-subtype static prevention shape.",
+]
+includes = [
+    "Static prevention effects for damage a land subtype would deal to the source object.",
+    "Static prevention effects for the next fixed amount of combat damage a land subtype would deal to the source object and creatures banded with it.",
+]
+
+[concept]
+name = "static_damage_prevention"
+pest_rules = ["static_damage_prevention_effect"]
+rules_queries = [
+    "lex: prevention effect prevent damage",
+    "lex: land subtype Forest Mountain Desert",
+]
+rules_terms = [
+    "prevention effect",
+    "damage",
+    "land type",
+    "basic land type",
+]
+
+[[counterexample]]
+reason = "Static enters-tapped replacement effect, owned by static_enters_tapped."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "This-turn direct prevention shield, owned by damage_prevention_effect."
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+
+[[counterexample]]
+reason = "Conditional source prevention with a player recipient, not this land-subtype static prevention shape."
+text = "If a source would deal damage to you, prevent 1 of that damage."
+
+[[example]]
+reason = "Static land-subtype prevention effect. The PEST root is the continuous-effect fragment before sentence punctuation."
+text = "Prevent all damage Forests would deal to this creature"
+
+[[example]]
+reason = "Static land-subtype combat-damage prevention with source and banded-creature recipients."
+text = "Prevent the next 1 combat damage Mountains would deal to this creature and to creatures banded with it"
+
+[grammar_query]
+candidate_rules = ["static_damage_prevention_effect"]
+selected_rule = "static_damage_prevention_effect"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
