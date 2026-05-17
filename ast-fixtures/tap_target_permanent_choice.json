@@ -1,0 +1,99 @@
+{
+  "concept": "tap_target_permanent_choice",
+  "fixture_path": "grammar-fixtures/tap_target_permanent_choice.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "tap_target_permanent_choice",
+      "text": "tap target creature.",
+      "ast": {
+        "TapUntapTargetPermanentChoice": {
+          "action": "Tap",
+          "optional": false,
+          "target": {
+            "TargetPermanents": [
+              "Creature"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "tap_target_permanent_choice",
+      "text": "you may tap target permanent.",
+      "ast": {
+        "TapUntapTargetPermanentChoice": {
+          "action": "Tap",
+          "optional": true,
+          "target": "TargetPermanent"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "tap_target_permanent_choice",
+      "text": "tap or untap target artifact.",
+      "ast": {
+        "TapUntapTargetPermanentChoice": {
+          "action": "TapOrUntap",
+          "optional": false,
+          "target": {
+            "TargetPermanents": [
+              "Artifact"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "tap_target_permanent_choice",
+      "text": "tap target artifact or creature.",
+      "ast": {
+        "TapUntapTargetPermanentChoice": {
+          "action": "Tap",
+          "optional": false,
+          "target": {
+            "TargetPermanents": [
+              "Artifact",
+              "Creature"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "sentence_statement",
+      "text": "tap target creature.",
+      "ast": {
+        "TapUntapTargetPermanentChoice": {
+          "action": "Tap",
+          "optional": false,
+          "target": {
+            "TargetPermanents": [
+              "Creature"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "activated_effect",
+      "text": "tap target creature.",
+      "ast": {
+        "TapUntapTargetPermanentChoice": {
+          "action": "Tap",
+          "optional": false,
+          "target": {
+            "TargetPermanents": [
+              "Creature"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
