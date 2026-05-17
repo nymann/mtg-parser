@@ -1,0 +1,41 @@
+{
+  "concept": "conditional_payment_damage_effect",
+  "fixture_path": "grammar-fixtures/conditional_payment_damage_effect.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "if_you_pay_source_deals_damage",
+      "text": "If you pay, CARDNAME deals damage equal to the number of charge counters on it to any target.",
+      "ast": {
+        "IfYouPaySourceDealsDamage": {
+          "counter_name": "charge",
+          "recipients": [
+            "AnyTarget"
+          ],
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "if_you_pay_source_deals_damage",
+      "text": "If you pay, this artifact deals damage equal to the number of charge counters on it to target creature and you.",
+      "ast": {
+        "IfYouPaySourceDealsDamage": {
+          "counter_name": "charge",
+          "recipients": [
+            {
+              "TargetPermanent": {
+                "permanent_type": "Creature"
+              }
+            },
+            "You"
+          ],
+          "source": {
+            "This": "Artifact"
+          }
+        }
+      }
+    }
+  ]
+}
