@@ -1,0 +1,35 @@
+[fixture]
+concept = "put_pt_counters_on_source"
+rule = "put_pt_counters_on_source"
+
+[[example]]
+text = "Put a +1/+1 counter on this creature."
+reason = "Activated effect placing one +1/+1 counter on a source object."
+
+[[example]]
+text = "Put two +1/+0 counters on it."
+reason = "Activated effect placing an exact counted quantity of P/T counters on a source object."
+
+[[example]]
+text = "Put up to X +1/+0 counters on CARDNAME."
+reason = "Activated effect placing an up-to variable quantity of P/T counters on a source object."
+
+[[counterexample]]
+text = "Put a spore counter on it."
+reason = "Named-counter placement, not power/toughness counter placement."
+
+[[counterexample]]
+text = "Put a +1/+1 counter on target creature."
+reason = "Target-object counter placement, not source-object counter placement."
+
+[[counterexample]]
+text = "This creature enters with seven +1/+0 counters on it."
+reason = "Enter-with counter replacement effect, not an activated put-counter effect."
+
+[[counterexample]]
+text = "Remove a +1/+1 counter from it."
+reason = "Remove-counter instruction, not put-counter instruction."
+
+[[counterexample]]
+text = "Put a +1/+1 counter on this creature. trailing"
+reason = "Exact-consumption guard."

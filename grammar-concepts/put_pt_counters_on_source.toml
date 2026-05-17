@@ -1,0 +1,92 @@
+[[axis]]
+name = "ability_context"
+values = ["activated_effect"]
+
+[[axis]]
+name = "action"
+values = ["put_counter"]
+
+[[axis]]
+name = "counter_ref"
+values = [
+    "pt_counter",
+    "pt_counters",
+]
+
+[[axis]]
+name = "counter_quantity"
+values = [
+    "article",
+    "exact_counter_amount",
+    "up_to_counter_amount",
+]
+
+[[axis]]
+name = "recipient"
+values = ["source_object"]
+
+[boundary]
+excludes = [
+    "Named-counter placement, not power/toughness counter placement.",
+    "Target-object counter placement, not source-object counter placement.",
+    "Enter-with counter replacement effects, not activated put-counter effects.",
+    "Remove-counter instructions, not put-counter instructions.",
+]
+includes = [
+    "Activated ability effects that put one or more power/toughness counters on the source object.",
+    "Source-object wording using it, this, this creature, or CARDNAME.",
+    "Single, exact-count, and up-to-count power/toughness counter quantities.",
+]
+
+[concept]
+name = "put_pt_counters_on_source"
+pest_rules = ["put_pt_counters_on_source"]
+rules_queries = [
+    "lex: put a +1/+1 counter on this creature",
+    "lex: put up to X +1/+0 counters on this creature",
+]
+rules_terms = [
+    "counter",
+    "power",
+    "put",
+    "source",
+    "toughness",
+]
+
+[[counterexample]]
+reason = "Named-counter placement, not power/toughness counter placement."
+text = "Put a spore counter on it."
+
+[[counterexample]]
+reason = "Target-object counter placement, not source-object counter placement."
+text = "Put a +1/+1 counter on target creature."
+
+[[counterexample]]
+reason = "Enter-with counter replacement effect, not an activated put-counter effect."
+text = "This creature enters with seven +1/+0 counters on it."
+
+[[counterexample]]
+reason = "Remove-counter instruction, not put-counter instruction."
+text = "Remove a +1/+1 counter from it."
+
+[[example]]
+text = "Put a +1/+1 counter on this creature."
+
+[[example]]
+text = "Put two +1/+0 counters on it."
+
+[[example]]
+text = "Put up to X +1/+0 counters on CARDNAME."
+
+[grammar_query]
+candidate_rules = [
+    "put_pt_counters_on_source",
+    "put_named_counters_on_source",
+    "source_enters_with_pt_counters",
+    "remove_pt_counter_from_it",
+]
+selected_rule = "put_pt_counters_on_source"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
