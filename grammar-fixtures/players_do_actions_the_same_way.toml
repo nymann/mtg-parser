@@ -1,0 +1,47 @@
+[fixture]
+concept = "players_do_actions_the_same_way"
+rule = "players_do_actions_the_same_way"
+
+[[example]]
+text = "Players discard cards the same way."
+reason = "Single supported discard-cards same-way action."
+
+[[example]]
+text = "Players sacrifice creatures the same way."
+reason = "Single supported sacrifice action with creatures as the permanent-type axis."
+
+[[example]]
+text = "Players sacrifice lands the same way."
+reason = "Single supported sacrifice action with lands as the permanent-type axis."
+
+[[example]]
+text = "Players discard cards and sacrifice creatures the same way."
+reason = "And-joined same-way action list with discard and sacrifice action members."
+
+[[example]]
+text = "players discard cards and sacrifice artifacts the same way."
+reason = "Case-insensitive subject with and-joined supported action members."
+
+[[counterexample]]
+text = "Each player discards cards the same way."
+reason = "Each-player subject is outside the players-subject same-way wrapper."
+
+[[counterexample]]
+text = "Players can't cast spells the same way."
+reason = "Static play restrictions are outside the same-way action axis."
+
+[[counterexample]]
+text = "Players draw cards the same way."
+reason = "Draw is not a supported balance same-way action member."
+
+[[counterexample]]
+text = "Players discard cards in the same way."
+reason = "The comparison phrase must be exactly the same way."
+
+[[counterexample]]
+text = "Players discard a card the same way."
+reason = "Counted or singular discard objects are outside the discard-cards action member."
+
+[[counterexample]]
+text = "Players discard cards the same way. trailing"
+reason = "Exact-consumption guard."

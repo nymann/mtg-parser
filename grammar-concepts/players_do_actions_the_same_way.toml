@@ -1,0 +1,108 @@
+[[axis]]
+name = "subject"
+values = ["players"]
+
+[[axis]]
+name = "action"
+values = [
+    "discard_cards",
+    "sacrifice_permanent_type_plural",
+]
+
+[[axis]]
+name = "action_join"
+values = [
+    "single",
+    "and_list",
+]
+
+[[axis]]
+name = "comparison_phrase"
+values = ["the_same_way"]
+
+[[axis]]
+name = "terminator"
+values = ["period"]
+
+[boundary]
+excludes = [
+    "Each-player instructions are owned by each_player_performs_action and related action concepts, not this players-subject same-way wrapper.",
+    "Players-subject restrictions such as Players can't cast spells are owned by static_play_restriction.",
+    "Unsupported same-way action members such as drawing cards are outside the current balance same-way action axis.",
+    "Same-way phrasings without the exact the same way comparison phrase are outside this concept.",
+]
+includes = [
+    "Complete sentence instructions where players discard cards the same way.",
+    "Complete sentence instructions where players sacrifice one supported permanent type plural the same way.",
+    "Complete sentence instructions joining supported same-way actions with and.",
+]
+
+[concept]
+name = "players_do_actions_the_same_way"
+pest_rules = [
+    "players_do_actions_the_same_way",
+    "balance_same_way_action",
+    "discard_cards_action",
+    "sacrifice_permanents_action",
+]
+rules_queries = [
+    "lex: players discard cards the same way",
+    "lex: players sacrifice creatures the same way",
+    "lex: players discard cards and sacrifice lands the same way",
+]
+rules_terms = [
+    "players",
+    "discard",
+    "sacrifice",
+    "same way",
+]
+
+[[counterexample]]
+reason = "Each-player subject is outside the players-subject same-way wrapper."
+text = "Each player discards cards the same way."
+
+[[counterexample]]
+reason = "Static play restrictions are outside the same-way action axis."
+text = "Players can't cast spells the same way."
+
+[[counterexample]]
+reason = "Draw is not a supported balance same-way action member."
+text = "Players draw cards the same way."
+
+[[counterexample]]
+reason = "The comparison phrase must be exactly the same way."
+text = "Players discard cards in the same way."
+
+[[counterexample]]
+reason = "Counted or singular discard objects are outside the discard-cards action member."
+text = "Players discard a card the same way."
+
+[[example]]
+text = "Players discard cards the same way."
+
+[[example]]
+text = "Players sacrifice creatures the same way."
+
+[[example]]
+text = "Players sacrifice lands the same way."
+
+[[example]]
+text = "Players discard cards and sacrifice creatures the same way."
+
+[[example]]
+text = "players discard cards and sacrifice artifacts the same way."
+
+[grammar_query]
+candidate_rules = [
+    "players_do_actions_the_same_way",
+    "balance_same_way_action",
+    "discard_cards_action",
+    "sacrifice_permanents_action",
+    "each_player_performs_action",
+    "static_play_restriction",
+]
+selected_rule = "players_do_actions_the_same_way"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
