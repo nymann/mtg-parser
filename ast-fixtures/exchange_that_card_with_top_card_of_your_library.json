@@ -1,0 +1,18 @@
+{
+  "concept": "exchange_that_card_with_top_card_of_your_library",
+  "fixture_path": "grammar-fixtures/exchange_that_card_with_top_card_of_your_library.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "exchange_that_card_with_top_card_of_your_library",
+      "text": "Exchange that card with the top card of your library.",
+      "ast": "ExchangeThatCardWithTopCardOfYourLibrary"
+    },
+    {
+      "index": 2,
+      "rule": "exchange_that_card_with_top_card_of_your_library",
+      "text": "exchange that card with the top card of your library.",
+      "ast": "ExchangeThatCardWithTopCardOfYourLibrary"
+    }
+  ]
+}
