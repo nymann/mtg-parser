@@ -2305,7 +2305,8 @@ its_controller_adds_an_additional_mana = {
     ^"its" ~ ^"controller" ~ ^"adds" ~ article ~ ^"additional" ~ mana_symbol ~ "."
 }
 source_object = { "CARDNAME" | (^"this" ~ source_object_kind) | (^"that" ~ ^"source") }
-source_object_kind = _{ permanent_object | aura_source_object | permanent_type }
+source_object_kind = _{ permanent_object | aura_source_object | source_compound_permanent_type | permanent_type }
+source_compound_permanent_type = { permanent_type ~ permanent_type+ }
 aura_source_object = { ^"aura" }
 permanent_object = { ^"permanent" }
 that_permanents_controller = { ^"that" ~ permanent_type ~ "'s" ~ ^"controller" }

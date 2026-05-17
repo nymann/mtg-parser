@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_attack_requirement"
+rule = "static_source_attacks_each_combat_if_able"
+
+[[example]]
+text = "This creature attacks each combat if able."
+reason = "Static source-object attack requirement for a single source permanent type."
+
+[[example]]
+text = "This artifact creature attacks each combat if able."
+reason = "Same static source-object attack requirement with a compound source permanent type."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Static enters-tapped replacement effect, not an attack requirement."
+
+[[counterexample]]
+text = "This creature can't attack unless defending player controls a basic land."
+reason = "Attack restriction with an unless condition, not an affirmative attack requirement."
+
+[[counterexample]]
+text = "All creatures able to block enchanted creature do so."
+reason = "Blocking requirement for objects able to block an enchanted object, not source-object attack requirement."
+
+[[counterexample]]
+text = "It blocks each attacking creature this turn if able."
+reason = "Temporary blocking requirement for a referenced object, not a static source-object attack requirement."
+
+[[counterexample]]
+text = "This creature attacks each combat if able. trailing"
+reason = "Exact-consumption guard."

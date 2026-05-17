@@ -1,0 +1,74 @@
+[[axis]]
+name = "ability_kind"
+values = ["static_ability"]
+
+[[axis]]
+name = "requirement_action"
+values = ["attack"]
+
+[[axis]]
+name = "required_object"
+values = ["source_object"]
+
+[[axis]]
+name = "frequency"
+values = ["each_combat"]
+
+[[axis]]
+name = "condition"
+values = ["if_able"]
+
+[boundary]
+excludes = [
+    "Source-object static replacement effects where the source enters tapped.",
+    "Source-object attack restrictions with an unless condition.",
+    "Enchanted-object blocking requirements.",
+    "Temporary blocking requirements for a referenced object.",
+]
+includes = [
+    "This creature attacks each combat if able.",
+    "This artifact creature attacks each combat if able.",
+]
+
+[concept]
+name = "static_attack_requirement"
+pest_rules = ["static_source_attacks_each_combat_if_able"]
+rules_queries = ["lex: attacks each combat if able requirement attack"]
+rules_terms = [
+    "static",
+    "attack requirement",
+    "requirement",
+    "attack",
+    "each combat",
+    "if able",
+]
+
+[[counterexample]]
+reason = "Static enters-tapped replacement effect, not an attack requirement."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "Attack restriction with an unless condition, not an affirmative attack requirement."
+text = "This creature can't attack unless defending player controls a basic land."
+
+[[counterexample]]
+reason = "Blocking requirement for objects able to block an enchanted object, not source-object attack requirement."
+text = "All creatures able to block enchanted creature do so."
+
+[[counterexample]]
+reason = "Temporary blocking requirement for a referenced object, not a static source-object attack requirement."
+text = "It blocks each attacking creature this turn if able."
+
+[[example]]
+text = "This creature attacks each combat if able."
+
+[[example]]
+text = "This artifact creature attacks each combat if able."
+
+[grammar_query]
+candidate_rules = ["static_source_attacks_each_combat_if_able"]
+selected_rule = "static_source_attacks_each_combat_if_able"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
