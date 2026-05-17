@@ -78,6 +78,16 @@ refactor-hotspot *args:
 refactor *args:
 	cargo xtask refactor-hotspot {{args}}
 
+# Run the autonomous concept phase loop and have it start the compact watcher
+# notifications. Pass extra phase-loop flags after the recipe name, e.g.
+#   just concept-phase-loop +4593972242 --no-push
+concept-phase-loop phone interval="30" *args:
+	cargo xtask concept-phase-loop --watch-imessage "{{phone}}" --watch-interval-minutes {{interval}} {{args}}
+
+# Run just the compact watcher beside an already-running phase loop.
+concept-phase-watch phone interval="30":
+	cargo xtask concept-phase-watch --notify-imessage "{{phone}}" --interval-minutes {{interval}}
+
 corpus-summary:
 	@jq '{total, passing, failing: (.total - .passing), grammar_left: ([.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text") | not))] | length), empty_oracle: ([.cards | to_entries[] | select(.value.status == "fail" and (.value.error | startswith("empty oracle text")))] | length)}' corpus_status.json
 

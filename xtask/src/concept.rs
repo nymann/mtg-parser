@@ -4,7 +4,7 @@ use std::fs;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitCode};
+use std::process::{Child, Command, ExitCode, Stdio};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -167,8 +167,9 @@ cargo xtask concept-phase-loop [--agent codex|claude]
                                [--repeat-stop-after N]
                                [--phase1-batch-size N]
                                [--phase1-max-batches N]
-                               [--notify-imessage BUDDY]
-                               [--notify-command SHELL]
+                               [--watch-imessage BUDDY]
+                               [--watch-command SHELL]
+                               [--watch-interval-minutes N]
                                [--no-push]
                                [--dry-run]
 
@@ -178,9 +179,11 @@ top-level Statement enum variants, AST failures becoming the majority of
 remaining non-green concepts, or all Phase 2 concepts going green. It then runs
 one bounded Phase 1 concept-grind batch and cycles back to Phase 2. Optional max
 flags are fuses for scheduled/manual runs, not normal stop goals. Notification
-hooks may also be provided through PHASE_NOTIFY_IMESSAGE or
-PHASE_NOTIFY_COMMAND. By default, the phase loop pushes successful concept
-commits; use --no-push or PHASE_GIT_PUSH=0 for local-only runs.
+hooks provided through --watch-imessage, --watch-command,
+PHASE_NOTIFY_IMESSAGE, or PHASE_NOTIFY_COMMAND start a separate
+concept-phase-watch process for compact periodic metrics and stopped alerts.
+By default, the phase loop pushes successful concept commits; use --no-push or
+PHASE_GIT_PUSH=0 for local-only runs.
 ";
 
 const PHASE_STATUS_USAGE: &str = "\
@@ -196,6 +199,7 @@ cargo xtask concept-phase-watch [--interval-minutes N]
                                 [--notify-imessage BUDDY]
                                 [--notify-command SHELL]
                                 [--once]
+                                [--exit-on-stop]
                                 [--max-messages N]
 
 Watches the autonomous concept phase loop without requiring a clean working
@@ -676,6 +680,7 @@ struct ConceptPhaseLoopOptions {
     phase1_max_batches: Option<u32>,
     notify_imessage: Option<String>,
     notify_command: Option<String>,
+    watch_interval_minutes: u64,
     git_push: bool,
     dry_run: bool,
 }
@@ -733,6 +738,7 @@ struct PhaseWatchOptions {
     notify_imessage: Option<String>,
     notify_command: Option<String>,
     once: bool,
+    exit_on_stop: bool,
     max_messages: Option<u32>,
 }
 
@@ -2122,6 +2128,14 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
     let mut phase1_max_batches = None::<u32>;
     let mut notify_imessage = env_nonempty("PHASE_NOTIFY_IMESSAGE");
     let mut notify_command = env_nonempty("PHASE_NOTIFY_COMMAND");
+    let mut watch_interval_minutes = env_nonempty("PHASE_WATCH_INTERVAL_MINUTES")
+        .map(|value| {
+            value
+                .parse()
+                .with_context(|| format!("PHASE_WATCH_INTERVAL_MINUTES value: {value:?}"))
+        })
+        .transpose()?
+        .unwrap_or(30);
     let mut git_push = env_bool("PHASE_GIT_PUSH").unwrap_or(true);
     let mut dry_run = false;
 
@@ -2174,25 +2188,37 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
             s if s.starts_with("--phase1-max-batches=") => {
                 phase1_max_batches = Some(parse_u32_flag_value("--phase1-max-batches", s)?);
             }
-            "--notify-imessage" => {
+            "--notify-imessage" | "--watch-imessage" => {
                 notify_imessage = Some(
                     iter.next()
-                        .ok_or_else(|| anyhow!("--notify-imessage requires a value"))?
+                        .ok_or_else(|| anyhow!("{arg} requires a value"))?
                         .to_string(),
                 );
             }
             s if s.starts_with("--notify-imessage=") => {
                 notify_imessage = Some(s["--notify-imessage=".len()..].to_string());
             }
-            "--notify-command" => {
+            s if s.starts_with("--watch-imessage=") => {
+                notify_imessage = Some(s["--watch-imessage=".len()..].to_string());
+            }
+            "--notify-command" | "--watch-command" => {
                 notify_command = Some(
                     iter.next()
-                        .ok_or_else(|| anyhow!("--notify-command requires a value"))?
+                        .ok_or_else(|| anyhow!("{arg} requires a value"))?
                         .to_string(),
                 );
             }
             s if s.starts_with("--notify-command=") => {
                 notify_command = Some(s["--notify-command=".len()..].to_string());
+            }
+            s if s.starts_with("--watch-command=") => {
+                notify_command = Some(s["--watch-command=".len()..].to_string());
+            }
+            "--watch-interval-minutes" => {
+                watch_interval_minutes = parse_next_u64(&mut iter, "--watch-interval-minutes")?;
+            }
+            s if s.starts_with("--watch-interval-minutes=") => {
+                watch_interval_minutes = parse_u64_flag_value("--watch-interval-minutes", s)?;
             }
             "--push" => git_push = true,
             "--no-push" => git_push = false,
@@ -2213,6 +2239,9 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
             bail!("{name} must be greater than zero");
         }
     }
+    if watch_interval_minutes == 0 {
+        bail!("--watch-interval-minutes must be greater than zero");
+    }
 
     Ok(ConceptPhaseLoopOptions {
         agent,
@@ -2224,6 +2253,7 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
         phase1_max_batches,
         notify_imessage,
         notify_command,
+        watch_interval_minutes,
         git_push,
         dry_run,
     })
@@ -2269,6 +2299,7 @@ fn parse_phase_watch_options(args: &[String]) -> Result<PhaseWatchOptions> {
     let mut notify_imessage = env_nonempty("PHASE_NOTIFY_IMESSAGE");
     let mut notify_command = env_nonempty("PHASE_NOTIFY_COMMAND");
     let mut once = false;
+    let mut exit_on_stop = false;
     let mut max_messages = None::<u32>;
 
     let mut iter = args.iter();
@@ -2302,6 +2333,7 @@ fn parse_phase_watch_options(args: &[String]) -> Result<PhaseWatchOptions> {
                 notify_command = Some(s["--notify-command=".len()..].to_string());
             }
             "--once" => once = true,
+            "--exit-on-stop" => exit_on_stop = true,
             "--max-messages" => max_messages = Some(parse_next_u32(&mut iter, "--max-messages")?),
             s if s.starts_with("--max-messages=") => {
                 max_messages = Some(parse_u32_flag_value("--max-messages", s)?);
@@ -2322,6 +2354,7 @@ fn parse_phase_watch_options(args: &[String]) -> Result<PhaseWatchOptions> {
         notify_imessage,
         notify_command,
         once,
+        exit_on_stop,
         max_messages,
     })
 }
@@ -4482,6 +4515,8 @@ fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
         return Ok(());
     }
 
+    let _watcher = spawn_phase_watch_if_configured(&options, &loop_dir)?;
+
     let mut phase2_commits = 0u32;
     let mut phase1_batches = 0u32;
     let mut phase2_batch = 1u32;
@@ -4618,25 +4653,6 @@ fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
             reason.starts_with("Phase 2 max batches reached")
                 || reason.starts_with("Phase 2 commit budget reached")
         });
-        notify_phase_loop(
-            &options,
-            "mtg-parser: Phase 2 stopped",
-            &format!(
-                "Phase 2 stopped in cycle {cycle}. {}\n{}",
-                if phase2_fuse_reached {
-                    "A Phase 2 fuse was reached, so Phase 1 will not start."
-                } else {
-                    "Running one bounded Phase 1 batch next."
-                },
-                stop_reasons
-                    .iter()
-                    .map(|reason| format!("- {reason}"))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            ),
-            &loop_dir,
-        );
-
         if phase2_fuse_reached {
             write_json(
                 cycle_dir.join("summary.json"),
@@ -4690,14 +4706,44 @@ fn run_phase_loop(options: ConceptPhaseLoopOptions) -> Result<()> {
     Ok(())
 }
 
-fn notify_phase_loop(options: &ConceptPhaseLoopOptions, title: &str, body: &str, loop_dir: &Path) {
-    notify_external(
-        options.notify_imessage.as_deref(),
-        options.notify_command.as_deref(),
-        title,
-        body,
-        loop_dir.join("notify_errors.txt"),
+fn spawn_phase_watch_if_configured(
+    options: &ConceptPhaseLoopOptions,
+    loop_dir: &Path,
+) -> Result<Option<Child>> {
+    if options.notify_imessage.is_none() && options.notify_command.is_none() {
+        return Ok(None);
+    }
+
+    let log_path = loop_dir.join("phase_watch.log");
+    let stdout = fs::File::create(&log_path)
+        .with_context(|| format!("create {}", log_path.display()))?;
+    let stderr = stdout
+        .try_clone()
+        .with_context(|| format!("clone {}", log_path.display()))?;
+
+    let mut command = Command::new(std::env::current_exe().context("current xtask executable")?);
+    command
+        .arg("concept-phase-watch")
+        .arg("--interval-minutes")
+        .arg(options.watch_interval_minutes.to_string())
+        .arg("--exit-on-stop")
+        .stdout(Stdio::from(stdout))
+        .stderr(Stdio::from(stderr))
+        .current_dir(repo_root());
+    if let Some(buddy) = &options.notify_imessage {
+        command.arg("--notify-imessage").arg(buddy);
+    }
+    if let Some(notify_command) = &options.notify_command {
+        command.arg("--notify-command").arg(notify_command);
+    }
+
+    let child = command.spawn().context("spawn concept-phase-watch")?;
+    println!(
+        "concept-phase-watch pid {} log: {}",
+        child.id(),
+        log_path.display()
     );
+    Ok(Some(child))
 }
 
 fn notify_phase_watch(options: &PhaseWatchOptions, title: &str, body: &str) {
@@ -4799,7 +4845,10 @@ fn run_phase_watch(options: PhaseWatchOptions) -> Result<()> {
         sent_messages += 1;
         was_running = Some(running);
 
-        if options.once || options.max_messages.is_some_and(|max| sent_messages >= max) {
+        if options.once
+            || stopped_transition && options.exit_on_stop
+            || options.max_messages.is_some_and(|max| sent_messages >= max)
+        {
             break;
         }
         thread::sleep(Duration::from_secs(
@@ -10220,9 +10269,10 @@ mod tests {
             "--repeat-stop-after=3".to_string(),
             "--phase1-batch-size=6".to_string(),
             "--phase1-max-batches=7".to_string(),
-            "--notify-imessage=me@example.com".to_string(),
+            "--watch-imessage=me@example.com".to_string(),
             "--notify-command".to_string(),
             "printf '%s\\n' \"$PHASE_NOTIFY_TITLE\"".to_string(),
+            "--watch-interval-minutes=15".to_string(),
             "--no-push".to_string(),
             "--dry-run".to_string(),
         ])
@@ -10238,6 +10288,7 @@ mod tests {
             options.notify_command.as_deref(),
             Some("printf '%s\\n' \"$PHASE_NOTIFY_TITLE\"")
         );
+        assert_eq!(options.watch_interval_minutes, 15);
         assert!(!options.git_push);
         assert!(options.dry_run);
     }
@@ -10250,6 +10301,7 @@ mod tests {
             "--notify-command".to_string(),
             "printf '%s\\n' \"$PHASE_NOTIFY_BODY\"".to_string(),
             "--once".to_string(),
+            "--exit-on-stop".to_string(),
             "--max-messages=2".to_string(),
         ])
         .expect("phase watch options parse");
@@ -10260,6 +10312,7 @@ mod tests {
             Some("printf '%s\\n' \"$PHASE_NOTIFY_BODY\"")
         );
         assert!(options.once);
+        assert!(options.exit_on_stop);
         assert_eq!(options.max_messages, Some(2));
     }
 
