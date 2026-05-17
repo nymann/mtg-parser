@@ -1,0 +1,14 @@
+{
+  "concept": "you_lose_game",
+  "fixture_path": "grammar-fixtures/you_lose_game.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "you_lose_the_game",
+      "text": "you lose the game.",
+      "ast": {
+        "TriggerEffect": "YouLoseTheGame"
+      }
+    }
+  ]
+}

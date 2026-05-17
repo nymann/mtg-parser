@@ -81,6 +81,7 @@ sentence_statement = _{
   | conditional_control_player_effect
   | then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way
   | player_loses_life
+  | you_lose_the_game
   | you_gain_life
   | target_player_gains_life
   | its_controller_gains_life

@@ -271,6 +271,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             let (player, amount) = player_loses_life_parts_from_pair(pair)?;
             Ok(Statement::PlayerLosesLife { player, amount })
         }
+        Rule::you_lose_the_game => Ok(Statement::TriggerEffect(TriggerEffect::YouLoseTheGame)),
         Rule::you_gain_life => Ok(Statement::TriggerEffect(you_gain_life_from_pair(pair)?)),
         Rule::life_loss_player => Ok(Statement::LifeLossPlayer(life_loss_player_from_pair(pair)?)),
         Rule::player_may_pay_mana => player_may_pay_mana_statement_from_pair(pair),
