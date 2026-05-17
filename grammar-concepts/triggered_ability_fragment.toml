@@ -1,0 +1,82 @@
+[[axis]]
+name = "trigger_word"
+values = [
+    "when",
+    "whenever",
+    "at",
+]
+
+[[axis]]
+name = "trigger_condition"
+values = [
+    "trigger_event_clause",
+    "trigger_event_clause_with_intervening_if",
+]
+
+[[axis]]
+name = "effect_fragment"
+values = [
+    "may_pay_mana_then_if_you_do_gain_life_fragment",
+    "may_have_source_become_copy_of_target_fragment",
+]
+
+[[axis]]
+name = "termination"
+values = ["periodless_fragment"]
+
+[boundary]
+excludes = [
+    "Full triggered abilities whose final effect is terminated by a period.",
+    "Triggered ability text with unsupported effect fragments.",
+    "Conditional follow-up fragments without a leading trigger word and trigger condition.",
+]
+includes = [
+    "Triggered ability fragments introduced by when, whenever, or at.",
+    "Trigger conditions with a trigger event clause and optional intervening-if clause.",
+    "Periodless trigger effect fragments for may-pay-mana/if-you-do-gain-life and may-have-source-become-copy effects.",
+]
+
+[concept]
+name = "triggered_ability_fragment"
+pest_rules = ["triggered_ability_fragment"]
+rules_queries = [
+    "lex: triggered ability fragment",
+    "lex: when triggered ability",
+    "lex: whenever triggered ability",
+]
+rules_terms = [
+    "triggered ability",
+    "intervening if",
+]
+
+[[counterexample]]
+reason = "Full triggered ability with a final period, owned by triggered_ability rather than the fragment rule."
+text = "When this creature attacks, you may pay {1}. If you do, you gain 3 life."
+
+[[counterexample]]
+reason = "Unsupported triggered effect fragment; this concept covers only the existing fragment-effect axis."
+text = "Whenever a creature dies, draw a card"
+
+[[counterexample]]
+reason = "Conditional follow-up fragment without a leading trigger word and trigger condition."
+text = "If you do, you gain 3 life"
+
+[[example]]
+text = "When this creature attacks, you may pay {1}. If you do, you gain 3 life"
+
+[[example]]
+text = "Whenever a creature dies, you may pay {G}. If you do, you gain 1 life"
+
+[[example]]
+text = "When this creature attacks, if this creature is tapped, you may pay {1}. If you do, you gain 3 life"
+
+[[example]]
+text = "At the beginning of your upkeep, you may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability"
+
+[grammar_query]
+candidate_rules = ["triggered_ability_fragment"]
+selected_rule = "triggered_ability_fragment"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

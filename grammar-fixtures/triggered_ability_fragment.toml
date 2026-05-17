@@ -1,0 +1,35 @@
+[fixture]
+concept = "triggered_ability_fragment"
+rule = "triggered_ability_fragment"
+
+[[example]]
+text = "When this creature attacks, you may pay {1}. If you do, you gain 3 life"
+reason = "When-trigger with may-pay-mana and periodless if-you-do gain-life effect fragment."
+
+[[example]]
+text = "Whenever a creature dies, you may pay {G}. If you do, you gain 1 life"
+reason = "Whenever-trigger with a permanent-dies event and may-pay-mana effect fragment."
+
+[[example]]
+text = "When this creature attacks, if this creature is tapped, you may pay {1}. If you do, you gain 3 life"
+reason = "Intervening-if trigger condition axis with the same periodless effect fragment."
+
+[[example]]
+text = "At the beginning of your upkeep, you may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability"
+reason = "At-trigger with copy effect fragment and no final period."
+
+[[counterexample]]
+text = "When this creature attacks, you may pay {1}. If you do, you gain 3 life."
+reason = "Full triggered ability with a final period, not a triggered ability fragment."
+
+[[counterexample]]
+text = "Whenever a creature dies, draw a card"
+reason = "Unsupported triggered effect fragment; this concept covers only the existing fragment-effect axis."
+
+[[counterexample]]
+text = "If you do, you gain 3 life"
+reason = "Conditional follow-up fragment without a leading trigger word and trigger condition."
+
+[[counterexample]]
+text = "When this creature attacks, you may pay {1}. If you do, you gain 3 life trailing"
+reason = "Exact-consumption guard."
