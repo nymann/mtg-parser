@@ -1,0 +1,71 @@
+[[axis]]
+name = "requirement_subject"
+values = [
+    "that_creature",
+    "creatures_active_player_controls",
+]
+
+[[axis]]
+name = "required_action"
+values = ["attack"]
+
+[[axis]]
+name = "duration"
+values = ["this_turn"]
+
+[[axis]]
+name = "modality"
+values = ["if_able"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "Combat status-change sentences where creatures become unblocked.",
+    "Temporary blocking requirements for a referenced object.",
+    "Static source-object attack requirements that apply each combat.",
+]
+includes = [
+    "That creature attacks this turn if able.",
+    "Creatures the active player controls attack this turn if able.",
+]
+
+[concept]
+name = "creatures_attack_this_turn_if_able"
+pest_rules = ["creatures_attack_this_turn_if_able"]
+rules_queries = ["lex: creatures attack this turn if able active player controls"]
+rules_terms = [
+    "attack",
+    "attack requirement",
+    "active player",
+    "this turn",
+    "if able",
+]
+
+[[counterexample]]
+reason = "Combat status-change sentence for creatures becoming unblocked, not an attack requirement."
+text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."
+
+[[counterexample]]
+reason = "Temporary blocking requirement, not a temporary attack requirement."
+text = "It blocks each attacking creature this turn if able."
+
+[[counterexample]]
+reason = "Static each-combat attack requirement for the source object, not this-turn active-player or that-creature wording."
+text = "Source attacks each combat if able."
+
+[[example]]
+text = "That creature attacks this turn if able."
+
+[[example]]
+text = "Creatures the active player controls attack this turn if able."
+
+[grammar_query]
+candidate_rules = ["creatures_attack_this_turn_if_able"]
+selected_rule = "creatures_attack_this_turn_if_able"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

@@ -1,0 +1,27 @@
+[fixture]
+concept = "creatures_attack_this_turn_if_able"
+rule = "creatures_attack_this_turn_if_able"
+
+[[example]]
+text = "That creature attacks this turn if able."
+reason = "Standalone this-turn attack requirement for the referenced creature."
+
+[[example]]
+text = "Creatures the active player controls attack this turn if able."
+reason = "Standalone this-turn attack requirement for creatures controlled by the active player."
+
+[[counterexample]]
+text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."
+reason = "Combat status-change sentence for creatures becoming unblocked, not an attack requirement."
+
+[[counterexample]]
+text = "It blocks each attacking creature this turn if able."
+reason = "Temporary blocking requirement, not a temporary attack requirement."
+
+[[counterexample]]
+text = "Source attacks each combat if able."
+reason = "Static each-combat attack requirement for the source object, not this-turn active-player or that-creature wording."
+
+[[counterexample]]
+text = "That creature attacks this turn if able. trailing"
+reason = "Exact-consumption guard."
