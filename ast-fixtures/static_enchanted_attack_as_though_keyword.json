@@ -1,0 +1,36 @@
+{
+  "concept": "static_enchanted_attack_as_though_keyword",
+  "fixture_path": "grammar-fixtures/static_enchanted_attack_as_though_keyword.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_enchanted_can_attack_as_though_it_had",
+      "text": "Enchanted creature can attack as though it had haste.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedCanAttackAsThoughItHad": {
+            "keyword": "Haste",
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_enchanted_can_attack_as_though_it_had",
+      "text": "Enchanted creature can attack as though it had flying.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedCanAttackAsThoughItHad": {
+            "keyword": "Flying",
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
