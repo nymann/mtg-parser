@@ -1,0 +1,42 @@
+{
+  "concept": "static_play_limit_permission",
+  "fixture_path": "grammar-fixtures/static_play_limit_permission.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_you_may_play_any_number_of_permanents_on_each_of_your_turns",
+      "text": "You may play any number of lands on each of your turns.",
+      "ast": {
+        "StaticAbility": {
+          "YouMayPlayAnyNumberOfPermanentsOnEachOfYourTurns": {
+            "permanent_type": "Land"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_you_may_play_any_number_of_permanents_on_each_of_your_turns",
+      "text": "You may play any number of artifacts on each of your turns.",
+      "ast": {
+        "StaticAbility": {
+          "YouMayPlayAnyNumberOfPermanentsOnEachOfYourTurns": {
+            "permanent_type": "Artifact"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "static_you_may_play_any_number_of_permanents_on_each_of_your_turns",
+      "text": "You may play any number of creatures on each of your turns.",
+      "ast": {
+        "StaticAbility": {
+          "YouMayPlayAnyNumberOfPermanentsOnEachOfYourTurns": {
+            "permanent_type": "Creature"
+          }
+        }
+      }
+    }
+  ]
+}
