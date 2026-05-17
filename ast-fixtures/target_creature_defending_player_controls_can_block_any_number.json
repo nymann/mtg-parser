@@ -1,0 +1,66 @@
+{
+  "concept": "target_creature_defending_player_controls_can_block_any_number",
+  "fixture_path": "grammar-fixtures/target_creature_defending_player_controls_can_block_any_number.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "target_creature_defending_player_controls_can_block_any_number",
+      "text": "Target creature defending player controls can block any number of creatures this turn.",
+      "ast": {
+        "StaticAbility": {
+          "BlockingCapacityPermission": {
+            "amount": "AnyNumber",
+            "duration": "ThisTurn",
+            "subject": "TargetCreatureDefendingPlayerControls"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "target_creature_defending_player_controls_can_block_any_number",
+      "text": "Target creature defending player controls can block any number of creatures each combat.",
+      "ast": {
+        "StaticAbility": {
+          "BlockingCapacityPermission": {
+            "amount": "AnyNumber",
+            "duration": "EachCombat",
+            "subject": "TargetCreatureDefendingPlayerControls"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "target_creature_defending_player_controls_can_block_any_number",
+      "text": "Target creature defending player controls can block an additional creature each combat.",
+      "ast": {
+        "StaticAbility": {
+          "BlockingCapacityPermission": {
+            "amount": "AdditionalOne",
+            "duration": "EachCombat",
+            "subject": "TargetCreatureDefendingPlayerControls"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "target_creature_defending_player_controls_can_block_any_number",
+      "text": "This creature can block an additional creature each combat.",
+      "ast": {
+        "StaticAbility": {
+          "BlockingCapacityPermission": {
+            "amount": "AdditionalOne",
+            "duration": "EachCombat",
+            "subject": {
+              "Source": {
+                "This": "Creature"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
