@@ -1,0 +1,14 @@
+{
+  "concept": "static_effect_preserves_aura",
+  "fixture_path": "grammar-fixtures/static_effect_preserves_aura.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_effect_doesnt_remove_this_aura",
+      "text": "This effect doesn't remove this Aura.",
+      "ast": {
+        "StaticAbility": "EffectDoesntRemoveThisAura"
+      }
+    }
+  ]
+}
