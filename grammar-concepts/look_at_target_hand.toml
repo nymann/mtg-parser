@@ -1,0 +1,69 @@
+[[axis]]
+name = "hand_owner"
+values = [
+    "target_player",
+    "target_opponent",
+]
+
+[[axis]]
+name = "action"
+values = ["look_at_hand"]
+
+[boundary]
+excludes = [
+    "Top-of-library inspection and reorder is owned by look_at_top_library_cards_then_reorder.",
+    "Keyword actions such as scry and fateseal are not explicit target hand inspection.",
+    "Choosing a card from the inspected hand is a follow-up action, not the hand-inspection action itself.",
+]
+includes = [
+    "Instructions to look at target player's hand.",
+    "Instructions to look at target opponent's hand.",
+    "Hand inspection as the first action in an imperative action sequence.",
+]
+
+[concept]
+name = "look_at_target_hand"
+pest_rules = ["look_at_target_hand_action"]
+rules_queries = [
+    "lex: look at target player's hand",
+    "lex: look at target opponent's hand",
+]
+rules_terms = [
+    "hand",
+    "look",
+    "opponent",
+    "player",
+]
+
+[[counterexample]]
+reason = "Top-of-library inspection and reorder, not hand inspection."
+text = "Look at the top three cards of target player's library, then put them back in any order."
+
+[[counterexample]]
+reason = "Top-of-library inspection with a variable count, not hand inspection."
+text = "Look at the top X cards of target player's library, then put them back in any order."
+
+[[counterexample]]
+reason = "Keyword action, not explicit target hand inspection."
+text = "Scry N."
+
+[[counterexample]]
+reason = "Keyword action, not explicit target hand inspection."
+text = "Fateseal N."
+
+[[example]]
+text = "Look at target player's hand."
+
+[[example]]
+text = "Look at target opponent's hand."
+
+[[example]]
+text = "Look at target player's hand and choose a card from it."
+
+[grammar_query]
+candidate_rules = ["look_at_target_hand_action"]
+selected_rule = "look_at_target_hand_action"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

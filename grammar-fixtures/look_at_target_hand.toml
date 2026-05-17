@@ -1,0 +1,40 @@
+[fixture]
+concept = "look_at_target_hand"
+rule = "look_at_target_hand_action"
+
+[[example]]
+text = "Look at target player's hand"
+reason = "Target-player hand owner at the owned PEST action root."
+
+[[example]]
+text = "Look at target opponent's hand"
+reason = "Target-opponent hand owner at the owned PEST action root."
+
+[[example]]
+text = "Look at target player's hand and choose a card from it."
+rule = "imperative_action_sequence"
+reason = "Hand inspection remains the first action when followed by choosing a card from it."
+
+[[counterexample]]
+text = "Look at the top three cards of target player's library, then put them back in any order."
+reason = "Top-of-library inspection and reorder belongs to a different concept."
+
+[[counterexample]]
+text = "Look at the top X cards of target player's library, then put them back in any order."
+reason = "Variable-count top-of-library inspection and reorder belongs to a different concept."
+
+[[counterexample]]
+text = "Scry N."
+reason = "Keyword action, not explicit target hand inspection."
+
+[[counterexample]]
+text = "Fateseal N."
+reason = "Keyword action, not explicit target hand inspection."
+
+[[counterexample]]
+text = "Look at target player's hand trailing"
+reason = "Exact-consumption guard."
+
+[[counterexample]]
+text = "Look at your hand"
+reason = "Different hand owner; this concept covers target player and target opponent only."
