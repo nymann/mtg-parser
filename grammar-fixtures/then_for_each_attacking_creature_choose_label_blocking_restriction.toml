@@ -1,0 +1,39 @@
+[fixture]
+concept = "then_for_each_attacking_creature_choose_label_blocking_restriction"
+rule = "then_for_each_attacking_creature_choose_label_blocking_restriction"
+
+[[example]]
+text = "then, for each attacking creature you control, choose \"left\" or \"right.\" that creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label."
+reason = "Lowercase sequence marker, each-attacking-creature-you-control iterator, label choice, this-combat blocking restriction, keyword blocker exception, and chosen-label pile exception."
+
+[[example]]
+text = "Then, for each attacking creature you control, choose \"right\" or \"left.\" that creature can't be blocked this combat except by creatures with trample and creatures in a pile with the chosen label."
+reason = "Oracle-style capitalization with the label options reversed and a different keyword ability."
+
+[[example]]
+text = "then, for each attacking creature you control, choose \"left\" or \"left.\" that creature can't be blocked this combat except by creatures with first strike and creatures in a pile with the chosen label."
+reason = "Same boundary with a multi-word keyword ability."
+
+[[counterexample]]
+text = "then that player loses all unspent mana and you add the mana lost this way."
+reason = "Unspent-mana transfer, not a combat blocking restriction."
+
+[[counterexample]]
+text = "it blocks each attacking creature this turn if able."
+reason = "Blocking requirement for one object, not per-attacking-creature label-choice restriction."
+
+[[counterexample]]
+text = "assign each pile to a different one of those attacking creatures at random."
+reason = "Pile assignment, not a label choice that creates a blocking restriction."
+
+[[counterexample]]
+text = "that creature can't be blocked this combat except by creatures with flying."
+reason = "Standalone blocking restriction without the sequence marker, iteration, label choice, or pile-with-chosen-label exception."
+
+[[counterexample]]
+text = "then, for each attacking creature you control, choose \"left\" or \"right.\" that creature can't be blocked this combat except by creatures with flying."
+reason = "Missing the second allowed-blocker class: creatures in a pile with the chosen label."
+
+[[counterexample]]
+text = "then, for each attacking creature you control, choose \"left\" or \"right.\" that creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label. trailing"
+reason = "Exact-consumption guard."

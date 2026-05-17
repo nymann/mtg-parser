@@ -1,0 +1,99 @@
+[[axis]]
+name = "sequence_marker"
+values = ["then"]
+
+[[axis]]
+name = "iterated_objects"
+values = ["each_attacking_creature_you_control"]
+
+[[axis]]
+name = "chooser"
+values = ["you"]
+
+[[axis]]
+name = "choice_kind"
+values = ["label_choice"]
+
+[[axis]]
+name = "label_options"
+values = ["quoted_label_or_quoted_label_with_inner_period"]
+
+[[axis]]
+name = "affected_object"
+values = ["that_creature"]
+
+[[axis]]
+name = "restriction_kind"
+values = ["cant_be_blocked_except_by"]
+
+[[axis]]
+name = "duration"
+values = ["this_combat"]
+
+[[axis]]
+name = "allowed_blockers"
+values = ["creatures_with_keyword_and_creatures_in_pile_with_chosen_label"]
+
+[boundary]
+excludes = [
+    "Unspent-mana transfer instructions owned by then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way.",
+    "Static or temporary blocking restrictions that do not iterate over each attacking creature you control.",
+    "Blocking requirements where a creature blocks each attacking creature if able.",
+    "Pile-assignment instructions that do not choose labels or create a blocking restriction.",
+]
+includes = [
+    "Then, for each attacking creature you control, choose a quoted label or a quoted label with an inner period.",
+    "The chosen label creates a this-combat blocking restriction for that creature.",
+    "Allowed blockers are creatures with a keyword and creatures in a pile with the chosen label.",
+]
+
+[concept]
+name = "then_for_each_attacking_creature_choose_label_blocking_restriction"
+pest_rules = ["then_for_each_attacking_creature_choose_label_blocking_restriction"]
+rules_queries = [
+    "lex: for each attacking creature you control choose left or right that creature can't be blocked this combat except by creatures with keyword and creatures in a pile with the chosen label",
+    "lex: that creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label",
+]
+rules_terms = [
+    "attacking creature",
+    "blocked",
+    "blocking restriction",
+    "this combat",
+    "keyword ability",
+]
+
+[[counterexample]]
+reason = "Unspent-mana transfer, not a combat blocking restriction."
+text = "then that player loses all unspent mana and you add the mana lost this way."
+
+[[counterexample]]
+reason = "Blocking requirement for one object, not per-attacking-creature label-choice restriction."
+text = "it blocks each attacking creature this turn if able."
+
+[[counterexample]]
+reason = "Pile assignment, not a label choice that creates a blocking restriction."
+text = "assign each pile to a different one of those attacking creatures at random."
+
+[[counterexample]]
+reason = "Standalone blocking restriction without the sequence marker, iteration, label choice, or pile-with-chosen-label exception."
+text = "that creature can't be blocked this combat except by creatures with flying."
+
+[[example]]
+text = """then, for each attacking creature you control, choose "left" or "right." that creature can't be blocked this combat except by creatures with flying and creatures in a pile with the chosen label."""
+
+[[example]]
+text = """Then, for each attacking creature you control, choose "right" or "left." that creature can't be blocked this combat except by creatures with trample and creatures in a pile with the chosen label."""
+
+[grammar_query]
+candidate_rules = [
+    "then_for_each_attacking_creature_choose_label_blocking_restriction",
+    "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way",
+    "creatures_in_assigned_pile_block_if_able",
+    "assign_each_pile_to_attacking_creature_at_random",
+    "static_enchanted_cant_be_blocked_except_by_creature_type",
+]
+selected_rule = "then_for_each_attacking_creature_choose_label_blocking_restriction"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
