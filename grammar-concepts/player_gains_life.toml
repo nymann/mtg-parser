@@ -1,0 +1,89 @@
+[[axis]]
+name = "recipient"
+values = [
+    "target_player",
+    "its_controller",
+]
+
+[[axis]]
+name = "amount"
+values = [
+    "fixed_number",
+    "variable",
+    "equal_to_its_power",
+]
+
+[[axis]]
+name = "context"
+values = [
+    "sentence_statement",
+    "modal_effect",
+]
+
+[boundary]
+excludes = [
+    "Life-loss statements.",
+    "Permanent keyword-gain effects.",
+    "Replacement effects that care about gaining life.",
+    "Damage-referenced life gain owned by damage life-gain concepts.",
+]
+includes = [
+    "Life-gain statements where the recipient is target player or its controller.",
+    "Fixed-number, variable, and equal-to-its-power life-gain amounts.",
+    "Sentence statements and modal bullet effects for target-player life gain.",
+]
+
+[concept]
+name = "player_gains_life"
+pest_rules = [
+    "player_gains_life",
+    "target_player_gains_life",
+    "its_controller_gains_life",
+]
+rules_queries = [
+    "lex: target player gains 3 life",
+    "lex: target player gains X life",
+    "lex: its controller gains life equal to its power",
+]
+rules_terms = ["life gain"]
+
+[[counterexample]]
+reason = "Life loss, not life gain."
+text = "Target player loses 3 life."
+
+[[counterexample]]
+reason = "Keyword-gain effect for a permanent, not player life gain."
+text = "Target permanent gains flying until end of turn."
+
+[[counterexample]]
+reason = "Life-gain replacement effect, not a life-gain statement."
+text = "If you would gain life, draw that many cards instead."
+
+[[counterexample]]
+reason = "Damage-prevention-referenced life gain is outside this recipient boundary."
+text = "You gain life equal to the damage prevented this way."
+
+[[example]]
+text = "Target player gains 3 life."
+
+[[example]]
+text = "Target player gains X life."
+
+[[example]]
+text = "Its controller gains life equal to its power."
+
+[[example]]
+text = "• Target player gains 3 life."
+
+[grammar_query]
+candidate_rules = [
+    "player_gains_life",
+    "target_player_gains_life",
+    "its_controller_gains_life",
+    "life_gain_amount",
+]
+selected_rule = "player_gains_life"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

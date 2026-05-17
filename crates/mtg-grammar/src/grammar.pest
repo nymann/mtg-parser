@@ -501,19 +501,25 @@ skip_event_instead_suffix = {
     ^"you" ~ ^"may" ~ ^"skip" ~ ^"that" ~ skip_event_reference ~ ^"instead"
 }
 skip_event_reference = _{ ^"draw" | ^"turn" }
+player_gains_life = {
+    player_gains_life_recipient ~ player_gains_life_predicate ~ "."
+}
 target_player_gains_life = {
-    ^"target" ~ ^"player" ~ ^"gains" ~ life_gain_amount ~ "."
+    target_player_life_gain_recipient ~ player_gains_life_predicate ~ "."
 }
 its_controller_gains_life = {
-    ^"its" ~ ^"controller" ~ ^"gains" ~ life_gain_amount ~ "."
+    its_controller_life_gain_recipient ~ player_gains_life_predicate ~ "."
 }
 life_gain_fixed_amount_statement = {
-    life_gain_fixed_amount_recipient ~ ^"gains" ~ life_gain_fixed_amount ~ "."
+    player_gains_life_recipient ~ ^"gains" ~ life_gain_fixed_amount ~ "."
 }
-life_gain_fixed_amount_recipient = _{
-    ^"target" ~ ^"player"
-  | ^"its" ~ ^"controller"
+player_gains_life_recipient = _{
+    target_player_life_gain_recipient
+  | its_controller_life_gain_recipient
 }
+target_player_life_gain_recipient = _{ ^"target" ~ ^"player" }
+its_controller_life_gain_recipient = _{ ^"its" ~ ^"controller" }
+player_gains_life_predicate = _{ ^"gains" ~ life_gain_amount }
 life_gain_amount = {
     life_gain_fixed_amount
   | life_gain_equal_to_its_power

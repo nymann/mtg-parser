@@ -1,0 +1,50 @@
+[fixture]
+concept = "player_gains_life"
+rule = "player_gains_life"
+
+[[example]]
+text = "Target player gains 3 life."
+reason = "Target-player recipient with fixed-number life gain."
+
+[[example]]
+text = "Target player gains X life."
+reason = "Target-player recipient with variable life gain."
+
+[[example]]
+text = "Its controller gains life equal to its power."
+reason = "Its-controller recipient with equal-to-its-power life gain."
+
+[[example]]
+rule = "modal_mode"
+text = "• Target player gains 3 life."
+reason = "Modal bullet context for target-player life gain."
+
+[[example]]
+rule = "target_player_gains_life"
+text = "Target player gains 3 life."
+reason = "Existing parser-facing target-player root remains covered."
+
+[[example]]
+rule = "its_controller_gains_life"
+text = "Its controller gains life equal to its power."
+reason = "Existing parser-facing its-controller root remains covered."
+
+[[counterexample]]
+text = "Target player loses 3 life."
+reason = "Life loss, not life gain."
+
+[[counterexample]]
+text = "Target permanent gains flying until end of turn."
+reason = "Keyword-gain effect for a permanent, not player life gain."
+
+[[counterexample]]
+text = "If you would gain life, draw that many cards instead."
+reason = "Life-gain replacement effect, not a life-gain statement."
+
+[[counterexample]]
+text = "You gain life equal to the damage prevented this way."
+reason = "Damage-prevention-referenced life gain is outside this recipient boundary."
+
+[[counterexample]]
+text = "Target player gains 3 life. trailing"
+reason = "Exact-consumption guard."
