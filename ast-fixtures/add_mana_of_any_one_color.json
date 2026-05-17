@@ -1,0 +1,42 @@
+{
+  "concept": "add_mana_of_any_one_color",
+  "fixture_path": "grammar-fixtures/add_mana_of_any_one_color.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "add_mana_of_any_one_color",
+      "text": "Add one mana of any one color.",
+      "ast": {
+        "AddManaOfAnyOneColor": {
+          "amount": 1
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "add_mana_of_any_one_color",
+      "text": "Add two mana of any one color.",
+      "ast": {
+        "AddManaOfAnyOneColor": {
+          "amount": 2
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "add_mana_of_any_one_color",
+      "text": "Add three mana of any one color.",
+      "ast": {
+        "AddManaOfAnyOneColor": {
+          "amount": 3
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "add_mana_of_any_one_color",
+      "text": "Add one mana of any color.",
+      "ast": "AddOneManaOfAnyColor"
+    }
+  ]
+}

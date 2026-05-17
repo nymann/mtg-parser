@@ -329,6 +329,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
                 source,
             })
         }
+        Rule::add_mana_of_any_one_color => add_mana_of_any_one_color_statement_from_pair(pair),
         Rule::add_mana => add_mana_from_pair(pair),
         Rule::until_eot_you_may_pay_cost_at_timing => {
             until_eot_you_may_pay_cost_at_timing_from_pair(pair)
@@ -2584,6 +2585,19 @@ fn add_mana_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     Ok(Statement::AddMana {
         amount: add_mana_amount_from_pair(amount_pair)?,
     })
+}
+
+fn add_mana_of_any_one_color_statement_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Statement, ParseError> {
+    let amount_pair = only_inner(pair, "add_mana_of_any_one_color missing number")?;
+    if amount_pair.as_rule() == Rule::add_one_mana_of_any_color {
+        return Ok(Statement::AddOneManaOfAnyColor);
+    }
+    let amount = number_word_to_u32(amount_pair.as_str()).ok_or(ParseError::Internal(
+        "add_mana_of_any_one_color number_word",
+    ))?;
+    Ok(Statement::AddManaOfAnyOneColor { amount })
 }
 
 fn add_mana_amount_from_pair(pair: Pair<Rule>) -> Result<AddManaAmount, ParseError> {

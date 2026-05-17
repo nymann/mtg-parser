@@ -290,6 +290,12 @@ pub enum Statement {
     AddMana {
         amount: AddManaAmount,
     },
+    /// "Add one mana of any color."
+    AddOneManaOfAnyColor,
+    /// "Add N mana of any one color."
+    AddManaOfAnyOneColor {
+        amount: u32,
+    },
     /// "Remove this card from your deck before playing if you're not
     /// playing for ante."
     AntePlayRestriction,

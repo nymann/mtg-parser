@@ -394,6 +394,17 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::AddMana { amount } => {
             write_add_mana_sentence(out, amount, SentenceCase::Upper);
         }
+        Statement::AddOneManaOfAnyColor => {
+            out.push_str("Add one mana of any color.");
+        }
+        Statement::AddManaOfAnyOneColor { amount } => {
+            write!(
+                out,
+                "Add {} mana of any one color.",
+                u32_to_number_word(*amount)
+            )
+                .expect("writing to String cannot fail");
+        }
         Statement::AntePlayRestriction => {
             out.push_str(
                 "Remove this card from your deck before playing if you're not playing for ante.",
