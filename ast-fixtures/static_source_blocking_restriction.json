@@ -1,0 +1,94 @@
+{
+  "concept": "static_source_blocking_restriction",
+  "fixture_path": "grammar-fixtures/static_source_blocking_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_source_cant_be_blocked_by_creature_type",
+      "text": "This creature can't be blocked by Walls.",
+      "ast": {
+        "StaticAbility": {
+          "SourceCantBeBlockedByCreatureType": {
+            "blocked_by": "Wall",
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_source_cant_be_blocked_by_creature_type",
+      "text": "This creature can't be blocked by Dragons.",
+      "ast": {
+        "StaticAbility": {
+          "SourceCantBeBlockedByCreatureType": {
+            "blocked_by": "Dragon",
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "static_source_cant_block_creatures_with_power_or_greater",
+      "text": "This creature can't block creatures with power 2 or greater.",
+      "ast": {
+        "StaticAbility": {
+          "SourceCantBlockCreaturesWithPowerOrGreater": {
+            "power": 2,
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "static_source_cant_block_creatures_with_power_or_greater",
+      "text": "This creature can't block creatures with power 6 or greater.",
+      "ast": {
+        "StaticAbility": {
+          "SourceCantBlockCreaturesWithPowerOrGreater": {
+            "power": 6,
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "static_source_doesnt_untap_during_your_untap_step",
+      "text": "This creature doesn't untap during your untap step.",
+      "ast": {
+        "StaticAbility": {
+          "SourceDoesntUntapDuringYourUntapStep": {
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "static_source_doesnt_untap_during_your_untap_step",
+      "text": "Enchanted creature doesn't untap during its controller's untap step.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedDoesntUntapDuringItsControllersUntapStep": {
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
