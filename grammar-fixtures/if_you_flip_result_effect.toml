@@ -1,0 +1,35 @@
+[fixture]
+concept = "if_you_flip_result_effect"
+rule = "if_you_flip_result_effect"
+
+[[example]]
+text = "If you win the flip, add {G}."
+reason = "Win result with activated add-mana body."
+
+[[example]]
+text = "If you lose the flip, draw a card."
+reason = "Lose result with activated draw-card body."
+
+[[example]]
+text = "If you win the flip, flip a coin."
+reason = "Win result with activated coin-flip body."
+
+[[counterexample]]
+text = "If you do, add {G}."
+reason = "Different conditional template owned by if_you_do_effect."
+
+[[counterexample]]
+text = "If the player does, untap it."
+reason = "Different actor and condition template."
+
+[[counterexample]]
+text = "When you win the flip, add {G}."
+reason = "Triggered template introduced by 'when', not this if-condition."
+
+[[counterexample]]
+text = "If you don't win the flip, add {G}."
+reason = "Negative-polarity condition outside the result axis."
+
+[[counterexample]]
+text = "If you win the flip, add {G}. trailing"
+reason = "Exact-consumption guard."

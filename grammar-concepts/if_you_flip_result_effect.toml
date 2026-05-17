@@ -1,0 +1,73 @@
+[[axis]]
+name = "result"
+values = [
+    "win",
+    "lose",
+]
+
+[[axis]]
+name = "body"
+values = ["activated_effect"]
+
+[boundary]
+excludes = [
+    "Other if-condition templates such as 'if you do'.",
+    "Actors other than the fixed 'you' actor.",
+    "Triggered templates introduced by 'when'.",
+    "Negative-polarity result conditions such as 'if you don't win the flip'.",
+]
+includes = [
+    "Conditional coin-flip-result effects introduced by 'if you win the flip,' or 'if you lose the flip,'.",
+    "Only the fixed actor 'you'.",
+    "Bodies accepted by the shared activated_effect grammar.",
+]
+
+[concept]
+name = "if_you_flip_result_effect"
+pest_rules = [
+    "if_you_flip_result_effect",
+    "coin_flip_result",
+]
+rules_queries = [
+    "lex: if you win the flip",
+    "lex: if you lose the flip",
+    "lex: flip a coin",
+]
+rules_terms = ["flip a coin"]
+
+[[counterexample]]
+reason = "Different conditional template owned by if_you_do_effect."
+text = "If you do, add {G}."
+
+[[counterexample]]
+reason = "Different actor and condition template."
+text = "If the player does, untap it."
+
+[[counterexample]]
+reason = "Triggered template introduced by 'when', not this if-condition."
+text = "When you win the flip, add {G}."
+
+[[counterexample]]
+reason = "Negative-polarity condition outside the result axis."
+text = "If you don't win the flip, add {G}."
+
+[[example]]
+text = "If you win the flip, add {G}."
+
+[[example]]
+text = "If you lose the flip, draw a card."
+
+[[example]]
+text = "If you win the flip, flip a coin."
+
+[grammar_query]
+candidate_rules = [
+    "if_you_flip_result_effect",
+    "if_you_do_effect",
+    "coin_flip_result",
+]
+selected_rule = "if_you_flip_result_effect"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
