@@ -1,0 +1,76 @@
+{
+  "concept": "until_eot_you_may_pay_cost_at_timing",
+  "fixture_path": "grammar-fixtures/until_eot_you_may_pay_cost_at_timing.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "until_eot_you_may_pay_cost_at_timing",
+      "text": "Until end of turn, any time you could activate a mana ability, you may pay 1 life.",
+      "ast": {
+        "UntilEndOfTurnYouMayPayCostAtTiming": {
+          "cost": {
+            "PayLife": {
+              "amount": 1
+            }
+          },
+          "timing": "AnyTimeYouCouldActivateAManaAbility"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "until_eot_you_may_pay_cost_at_timing",
+      "text": "Until end of turn, you may pay 2 life any time you could activate a mana ability.",
+      "ast": {
+        "UntilEndOfTurnYouMayPayCostAtTiming": {
+          "cost": {
+            "PayLife": {
+              "amount": 2
+            }
+          },
+          "timing": "AnyTimeYouCouldActivateAManaAbility"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "until_eot_you_may_pay_cost_at_timing",
+      "text": "Until end of turn, any time you could cast an instant, you may pay {G}.",
+      "ast": {
+        "UntilEndOfTurnYouMayPayCostAtTiming": {
+          "cost": {
+            "PayMana": {
+              "mana": {
+                "symbols": [
+                  "Green"
+                ]
+              }
+            }
+          },
+          "timing": "AnyTimeYouCouldCastAnInstant"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "until_eot_you_may_pay_cost_at_timing",
+      "text": "Until end of turn, you may pay {1} any time you could cast an instant.",
+      "ast": {
+        "UntilEndOfTurnYouMayPayCostAtTiming": {
+          "cost": {
+            "PayMana": {
+              "mana": {
+                "symbols": [
+                  {
+                    "Generic": 1
+                  }
+                ]
+              }
+            }
+          },
+          "timing": "AnyTimeYouCouldCastAnInstant"
+        }
+      }
+    }
+  ]
+}
