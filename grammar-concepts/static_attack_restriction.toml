@@ -1,0 +1,74 @@
+[[axis]]
+name = "ability_kind"
+values = ["static_ability"]
+
+[[axis]]
+name = "restriction_action"
+values = ["attack"]
+
+[[axis]]
+name = "restricted_object"
+values = ["source_object"]
+
+[[axis]]
+name = "restriction_polarity"
+values = ["cant"]
+
+[[axis]]
+name = "condition"
+values = ["unless_defending_player_controls_basic_land_type"]
+
+[boundary]
+excludes = [
+    "Source-object static replacement effects where the source enters tapped.",
+    "Source-object affirmative attack requirements.",
+    "Blocking and evasion restrictions.",
+    "Blocking requirements.",
+]
+includes = [
+    "This creature can't attack unless defending player controls an Island.",
+    "This artifact creature can't attack unless defending player controls a Forest.",
+]
+
+[concept]
+name = "static_attack_restriction"
+pest_rules = ["static_source_cant_attack_unless_defending_player_controls_basic_land"]
+rules_queries = ["lex: can't attack unless defending player controls basic land type"]
+rules_terms = [
+    "static",
+    "attack restriction",
+    "restriction",
+    "attack",
+    "defending player",
+    "basic land type",
+]
+
+[[counterexample]]
+reason = "Enters-battlefield replacement effect, owned by static_enters_tapped."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "Affirmative attack requirement, owned by static_attack_requirement."
+text = "This creature attacks each combat if able."
+
+[[counterexample]]
+reason = "Blocking/evasion restriction, not an attack restriction."
+text = "This creature can't be blocked by Walls."
+
+[[counterexample]]
+reason = "Blocking requirement, not an attack restriction."
+text = "All creatures able to block enchanted creature do so."
+
+[[example]]
+text = "This creature can't attack unless defending player controls an Island."
+
+[[example]]
+text = "This artifact creature can't attack unless defending player controls a Forest."
+
+[grammar_query]
+candidate_rules = ["static_source_cant_attack_unless_defending_player_controls_basic_land"]
+selected_rule = "static_source_cant_attack_unless_defending_player_controls_basic_land"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
