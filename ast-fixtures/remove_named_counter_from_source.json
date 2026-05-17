@@ -1,0 +1,88 @@
+{
+  "concept": "remove_named_counter_from_source",
+  "fixture_path": "grammar-fixtures/remove_named_counter_from_source.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "remove_named_counter_from_source",
+      "text": "Remove a corpse counter from this creature: Add {C}.",
+      "ast": {
+        "ActivatedAbility": {
+          "costs": [
+            {
+              "RemoveNamedCounterFromSource": {
+                "counter_name": "corpse",
+                "source": {
+                  "This": "Creature"
+                }
+              }
+            }
+          ],
+          "effect": {
+            "AddMana": {
+              "Cost": {
+                "symbols": [
+                  "Colorless"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "remove_named_counter_from_source",
+      "text": "Remove a spore counter from it: Add {C}.",
+      "ast": {
+        "ActivatedAbility": {
+          "costs": [
+            {
+              "RemoveNamedCounterFromSource": {
+                "counter_name": "spore",
+                "source": "It"
+              }
+            }
+          ],
+          "effect": {
+            "AddMana": {
+              "Cost": {
+                "symbols": [
+                  "Colorless"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "remove_named_counter_from_source",
+      "text": "Remove a charge counter from this artifact: Add {C}.",
+      "ast": {
+        "ActivatedAbility": {
+          "costs": [
+            {
+              "RemoveNamedCounterFromSource": {
+                "counter_name": "charge",
+                "source": {
+                  "This": "Artifact"
+                }
+              }
+            }
+          ],
+          "effect": {
+            "AddMana": {
+              "Cost": {
+                "symbols": [
+                  "Colorless"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

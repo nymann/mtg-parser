@@ -3,16 +3,16 @@ concept = "remove_named_counter_from_source"
 rule = "remove_named_counter_from_source"
 
 [[example]]
-text = "Remove a corpse counter from this creature"
-reason = "Mandatory activated-cost component removing one named corpse counter from this creature."
+text = "Remove a corpse counter from this creature: Add {C}."
+reason = "Activated ability with mandatory cost component removing one named corpse counter from this creature."
 
 [[example]]
-text = "Remove a spore counter from it"
-reason = "Mandatory activated-cost component using the pronoun source object."
+text = "Remove a spore counter from it: Add {C}."
+reason = "Activated ability with mandatory cost component using the pronoun source object."
 
 [[example]]
-text = "Remove a charge counter from this artifact"
-reason = "Named-counter axis variant using charge counter and this artifact."
+text = "Remove a charge counter from this artifact: Add {C}."
+reason = "Named-counter cost axis variant using charge counter and this artifact."
 
 [[counterexample]]
 text = "Remove target creature defending player controls from combat."
