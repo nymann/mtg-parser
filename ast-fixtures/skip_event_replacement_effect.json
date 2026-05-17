@@ -1,0 +1,33 @@
+{
+  "concept": "skip_event_replacement_effect",
+  "fixture_path": "grammar-fixtures/skip_event_replacement_effect.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "if_you_would_event_you_may_skip_that_instead",
+      "text": "If you would draw a card during your draw step, instead you may skip that draw.",
+      "ast": {
+        "IfYouWouldEventYouMaySkipThatInstead": {
+          "event": "DrawCardDuringYourDrawStep"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "if_you_would_event_you_may_skip_that_instead",
+      "text": "If you would begin your turn while this artifact is tapped, you may skip that turn instead.",
+      "ast": {
+        "IfYouWouldEventYouMaySkipThatInstead": {
+          "event": {
+            "BeginYourTurnWhileSourceIsStatus": {
+              "source": {
+                "This": "Artifact"
+              },
+              "status": "Tapped"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
