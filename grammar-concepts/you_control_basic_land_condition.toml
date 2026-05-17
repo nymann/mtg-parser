@@ -1,0 +1,79 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "relationship"
+values = ["control"]
+
+[[axis]]
+name = "object"
+values = ["basic_land_type"]
+
+[[axis]]
+name = "quantity"
+values = ["article"]
+
+[[axis]]
+name = "polarity"
+values = ["affirmative"]
+
+[[axis]]
+name = "sentence_form"
+values = ["condition_clause"]
+
+[boundary]
+excludes = [
+    "Ownership text is not control-checking text.",
+    "Negative plural basic-land control conditions are a separate polarity and quantity shape.",
+    "Basic-land noun phrases such as basic lands you control are not condition clauses.",
+    "Control conditions for actors other than you are outside this concept.",
+]
+includes = [
+    "you control a Plains",
+    "you control an Island",
+    "you control a Forest",
+]
+
+[concept]
+name = "you_control_basic_land_condition"
+pest_rules = ["you_control_basic_land"]
+rules_queries = ["lex: you control a basic land type condition"]
+rules_terms = [
+    "control",
+    "basic land type",
+    "condition",
+]
+
+[[counterexample]]
+reason = "Ownership relationship, not control."
+text = "You own target card in the graveyard."
+
+[[counterexample]]
+reason = "Negative plural condition, separate polarity and quantity shape."
+text = "you control no basic lands"
+
+[[counterexample]]
+reason = "Noun phrase/count operand, not a condition clause."
+text = "basic lands you control"
+
+[[counterexample]]
+reason = "Different actor."
+text = "defending player controls a Plains"
+
+[[example]]
+text = "you control a Plains"
+
+[[example]]
+text = "you control an Island"
+
+[[example]]
+text = "you control a Forest"
+
+[grammar_query]
+candidate_rules = ["you_control_basic_land"]
+selected_rule = "you_control_basic_land"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
