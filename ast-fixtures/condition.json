@@ -1,0 +1,82 @@
+{
+  "concept": "condition",
+  "fixture_path": "grammar-fixtures/condition.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "condition",
+      "text": "you control a Plains",
+      "ast": {
+        "Condition": {
+          "YouControlBasicLand": {
+            "land_type": "Plains"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "condition",
+      "text": "you control no Islands",
+      "ast": {
+        "Condition": {
+          "YouControlNoBasicLands": {
+            "land_type": "Island"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "condition",
+      "text": "CARDNAME is tapped",
+      "ast": {
+        "Condition": {
+          "SourceIsObjectStatus": {
+            "source": "ThisPermanent",
+            "status": "Tapped"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "condition",
+      "text": "Arc Runner isn't attacking",
+      "ast": {
+        "Condition": {
+          "SourceIsAttacking": {
+            "is_attacking": false,
+            "source_name": "Arc Runner"
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "condition",
+      "text": "Arc Runner is attacking",
+      "ast": {
+        "Condition": {
+          "SourceIsAttacking": {
+            "is_attacking": true,
+            "source_name": "Arc Runner"
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "condition",
+      "text": "enchanted creature isn't an artifact",
+      "ast": {
+        "Condition": {
+          "EnchantedIsNot": {
+            "negated_type": "Artifact",
+            "permanent_type": "Creature"
+          }
+        }
+      }
+    }
+  ]
+}
