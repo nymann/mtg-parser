@@ -14,17 +14,20 @@ values = ["keyword"]
 excludes = [
     "Enchanted-object keyword ability grants.",
     "Enchanted-object power/toughness modifications.",
-    "Enchanted-object grants of quoted triggered abilities.",
+    "Enchanted-object attack permission or restriction effects that mention a keyword.",
 ]
 includes = [
     "Enchanted creature loses flying.",
     "Enchanted artifact loses indestructible.",
-    "Enchanted land loses shroud.",
+    "enchanted creature loses flying",
 ]
 
 [concept]
 name = "static_enchanted_keyword_removal"
-pest_rules = ["static_enchanted_loses_keyword"]
+pest_rules = [
+    "static_enchanted_loses_keyword",
+    "static_enchanted_loses_keyword_fragment",
+]
 rules_queries = [
     "lex: enchanted permanent loses keyword ability",
     "lex: enchanted creature loses flying",
@@ -46,8 +49,8 @@ reason = "Enchanted-object P/T modification, not a keyword ability removal effec
 text = "Enchanted creature gets +1/+1."
 
 [[counterexample]]
-reason = "Quoted triggered ability grant, not a keyword ability removal effect."
-text = 'Enchanted creature has "Whenever this creature attacks, draw a card."'
+reason = "Attack permission effect that mentions a keyword, not keyword ability removal."
+text = "Enchanted creature can attack as though it didn't have flying."
 
 [[example]]
 text = "Enchanted creature loses flying."
@@ -56,11 +59,14 @@ text = "Enchanted creature loses flying."
 text = "Enchanted artifact loses indestructible."
 
 [[example]]
-text = "Enchanted land loses shroud."
+text = "enchanted creature loses flying"
 
 [grammar_query]
-candidate_rules = ["static_enchanted_loses_keyword"]
-selected_rule = "static_enchanted_loses_keyword"
+candidate_rules = [
+    "static_enchanted_loses_keyword",
+    "static_enchanted_loses_keyword_fragment",
+]
+selected_rule = "static_enchanted_loses_keyword_fragment"
 
 [maturity]
 blockers = []
