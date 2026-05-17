@@ -1,0 +1,27 @@
+[fixture]
+concept = "source_gains_static_ability"
+rule = "source_gains_static_ability"
+
+[[example]]
+text = "This creature gains \"enchanted creature loses flying.\""
+reason = "Source object gains a quoted static ability."
+
+[[example]]
+text = "CARDNAME gains \"enchanted creature loses flying.\""
+reason = "Named source object gains a quoted static ability."
+
+[[counterexample]]
+text = "This creature enters with seven +1/+0 counters on it."
+reason = "Enters-with-counters replacement effect, not an ability-granting continuous effect."
+
+[[counterexample]]
+text = "This creature gains flying until end of turn."
+reason = "Temporary keyword grant, not a quoted static ability grant."
+
+[[counterexample]]
+text = "Enchanted creature has flying."
+reason = "Static ability of an enchanted object, not the source gaining a quoted static ability."
+
+[[counterexample]]
+text = "This creature gains \"enchanted creature loses flying.\" trailing"
+reason = "Exact-consumption guard."

@@ -1,0 +1,76 @@
+[[axis]]
+name = "effect_kind"
+values = ["continuous_effect_grants_ability"]
+
+[[axis]]
+name = "affected_object"
+values = ["source_object"]
+
+[[axis]]
+name = "granted_ability_kind"
+values = ["static_ability"]
+
+[[axis]]
+name = "granted_ability_form"
+values = ["quoted_static_ability"]
+
+[boundary]
+excludes = [
+    "Replacement effects that modify how the source enters the battlefield.",
+    "Temporary source-object keyword grants until end of turn.",
+    "Static abilities already held by an enchanted object rather than granted to the source.",
+]
+includes = [
+    "Continuous effects where the source object gains a quoted static ability.",
+    "Source-object wording using this, this creature, or CARDNAME.",
+    "Quoted static abilities that are parsed as static ability grammar rather than opaque text.",
+]
+
+[concept]
+name = "source_gains_static_ability"
+pest_rules = ["source_gains_static_ability"]
+rules_queries = [
+    "lex: source gains quoted static ability",
+    "lex: permanent gains ability continuous effect",
+    "lex: enchanted creature loses flying static ability",
+]
+rules_terms = [
+    "continuous effect",
+    "gains",
+    "source",
+    "static ability",
+]
+
+[[counterexample]]
+reason = "Enters-with-counters replacement effect, not an ability-granting continuous effect."
+text = "This creature enters with seven +1/+0 counters on it."
+
+[[counterexample]]
+reason = "Temporary keyword grant, not a quoted static ability grant."
+text = "This creature gains flying until end of turn."
+
+[[counterexample]]
+reason = "Static ability of an enchanted object, not the source gaining a quoted static ability."
+text = "Enchanted creature has flying."
+
+[[example]]
+reason = "Source object gains a quoted static ability."
+text = 'This creature gains "enchanted creature loses flying."'
+
+[[example]]
+reason = "Named source object gains a quoted static ability."
+text = 'CARDNAME gains "enchanted creature loses flying."'
+
+[grammar_query]
+candidate_rules = [
+    "source_gains_static_ability",
+    "source_enters_with_pt_counters",
+    "activated_source_gains_keyword_until_eot",
+    "static_enchanted_has_keyword",
+    "static_enchanted_loses_keyword",
+]
+selected_rule = "source_gains_static_ability"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
