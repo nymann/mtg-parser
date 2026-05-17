@@ -1,0 +1,30 @@
+{
+  "concept": "this_turn_defending_players_make_random_blocking_piles",
+  "fixture_path": "grammar-fixtures/this_turn_defending_players_make_random_blocking_piles.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "this_turn_defending_players_make_random_blocking_piles",
+      "text": "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player.",
+      "ast": {
+        "StaticAbility": "ThisTurnDefendingPlayersMakeRandomBlockingPiles"
+      }
+    },
+    {
+      "index": 2,
+      "rule": "this_turn_defending_players_make_random_blocking_piles",
+      "text": "This turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into an number of piles equal to the number of attacking creatures for whom that player is the defending player.",
+      "ast": {
+        "StaticAbility": "ThisTurnDefendingPlayersMakeRandomBlockingPiles"
+      }
+    },
+    {
+      "index": 3,
+      "rule": "this_turn_defending_players_make_random_blocking_piles",
+      "text": "this turn, instead of declaring blockers, each defending player chooses any number of creatures they control and divides them into a number of piles equal to the number of attacking creatures for whom that player is the defending player.",
+      "ast": {
+        "StaticAbility": "ThisTurnDefendingPlayersMakeRandomBlockingPiles"
+      }
+    }
+  ]
+}
