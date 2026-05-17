@@ -2377,13 +2377,13 @@ source_object_kind = _{ permanent_object | aura_source_object | source_compound_
 source_compound_permanent_type = { &(permanent_type ~ permanent_type) ~ permanent_type ~ permanent_type+ }
 aura_source_object = { ^"aura" }
 permanent_object = { ^"permanent" }
-that_permanents_controller = { ^"that" ~ permanent_type ~ "'s" ~ ^"controller" }
+that_permanents_controller = { ^"that" ~ (permanent_object | permanent_type) ~ "'s" ~ ^"controller" }
 that_permanents_controller_may_attach_this_aura_to_permanent_of_their_choice = {
     that_permanents_controller ~ ^"may" ~ ^"attach" ~ ^"this" ~ ^"aura"
   ~ ^"to" ~ article ~ permanent_type ~ ^"of" ~ ^"their" ~ ^"choice" ~ "."
 }
-that_permanents_toughness = { ^"that" ~ permanent_type ~ "'s" ~ ^"toughness" }
-the_permanents_controller = { ^"the" ~ permanent_type ~ "'s" ~ ^"controller" }
+that_permanents_toughness = { ^"that" ~ (permanent_object | permanent_type) ~ "'s" ~ ^"toughness" }
+the_permanents_controller = { ^"the" ~ (permanent_object | permanent_type) ~ "'s" ~ ^"controller" }
 damage_amount_expression = _{ damage_dealt_to_you_this_turn | unsigned_number | variable_name }
 damage_dealt_to_you_this_turn = {
     ^"damage" ~ ^"dealt" ~ ^"to" ~ ^"you" ~ ^"this" ~ ^"turn"

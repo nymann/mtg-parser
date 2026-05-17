@@ -34,6 +34,21 @@ rule = "activated_direct_damage_effect"
 [[example]]
 text = "Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way."
 
+[[example]]
+text = "CARDNAME deals 1 damage to you."
+rule = "source_deals_damage"
+reason = "Trigger damage body with a fixed amount before damage and a player recipient."
+
+[[example]]
+text = "CARDNAME deals damage equal to that permanent's toughness to you."
+rule = "source_deals_damage"
+reason = "Trigger damage body with an equal-to amount after damage and before the recipient."
+
+[[example]]
+text = "CARDNAME deals damage to you equal to that permanent's toughness."
+rule = "source_deals_damage"
+reason = "Trigger damage body with an equal-to amount after the recipient."
+
 [[counterexample]]
 text = "Whenever this creature deals damage to an opponent, that player discards a card at random."
 reason = "Triggered damage condition, not a named-source damage event instruction."
@@ -49,6 +64,21 @@ reason = "Direct prevention effect, not an instruction for a named source to dea
 [[counterexample]]
 text = "Assign combat damage among creatures blocking or blocked by it."
 reason = "Combat damage assignment instruction, not a source-deals-damage event."
+
+[[counterexample]]
+text = "you gain 1 life."
+rule = "source_deals_damage"
+reason = "Life gain effect, not a damage event."
+
+[[counterexample]]
+text = "CARDNAME deals 1 damage to you and you gain 1 life."
+rule = "source_deals_damage"
+reason = "Trigger effect sequence that combines damage with a following life-gain effect; the damage_event boundary owns only the damage event."
+
+[[counterexample]]
+text = "When CARDNAME dies, CARDNAME deals 1 damage to you."
+rule = "source_deals_damage"
+reason = "Triggered ability wrapper; the damage_event boundary owns the source-deals-damage event, not the enclosing trigger."
 
 [[counterexample]]
 text = "Lightning Bolt deals 3 damage to any target. trailing"

@@ -14,6 +14,13 @@ values = [
 ]
 
 [[axis]]
+name = "amount_form"
+values = [
+    "fixed_amount",
+    "equal_to_amount",
+]
+
+[[axis]]
 name = "recipient"
 values = [
     "any_target",
@@ -24,6 +31,9 @@ values = [
     "target_permanent",
     "each_creature",
     "each_player",
+    "player",
+    "permanent",
+    "controller",
 ]
 
 [[axis]]
@@ -34,17 +44,30 @@ values = [
     "assignment_list",
 ]
 
+[[axis]]
+name = "amount_position"
+values = [
+    "before_damage",
+    "after_damage",
+    "after_recipient",
+]
+
 [boundary]
 excludes = [
     "Triggered damage conditions that start with whenever or when.",
     "Replacement effects for damage that would be dealt.",
     "Prevention effects that prevent a damage event rather than instructing a named source to deal damage.",
+    "Triggered ability introductions and trigger conditions; damage_event owns the source-deals-damage event body, not the enclosing trigger.",
+    "Trigger effect sequences that combine a damage event with a following non-damage effect.",
 ]
 includes = [
     "Named-source damage instructions rooted at damage_event_statement.",
     "Activated direct damage instructions rooted at activated_direct_damage_effect.",
+    "Source-deals-damage trigger effect members rooted at source_deals_damage.",
     "Fixed, variable, and derived equal-to damage amounts.",
+    "Trigger damage bodies with fixed amounts before damage, equal-to amounts after damage, and equal-to amounts after the recipient.",
     "Any-target, opponent-choice any-target, target-permanent, each-creature, each-player, recipient-list, divided-evenly, and per-recipient assignment recipient shapes.",
+    "Trigger damage recipients that are players, permanents, or controllers.",
 ]
 
 [concept]
@@ -52,10 +75,17 @@ name = "damage_event"
 pest_rules = [
     "damage_event_statement",
     "activated_direct_damage_effect",
+    "source_deals_damage",
+    "trigger_damage_event",
+    "trigger_damage_body",
+    "trigger_damage_amount",
+    "trigger_damage_equal_to_amount",
+    "trigger_damage_recipient",
 ]
 rules_queries = [
     "lex: source deals damage to any target",
     "lex: this permanent deals damage to target creature",
+    "lex: source deals damage equal to that permanent's toughness to you",
     "lex: damage divided evenly rounded down among any number of targets",
 ]
 rules_terms = [
@@ -83,6 +113,18 @@ text = "Prevent the next 1 damage that would be dealt to any target this turn."
 reason = "Combat damage assignment instruction, not a source-deals-damage event."
 text = "Assign combat damage among creatures blocking or blocked by it."
 
+[[counterexample]]
+reason = "Life gain effect, not a damage event."
+text = "you gain 1 life."
+
+[[counterexample]]
+reason = "Trigger effect sequence that combines damage with a following life-gain effect; the damage_event boundary owns only the damage event."
+text = "CARDNAME deals 1 damage to you and you gain 1 life."
+
+[[counterexample]]
+reason = "Triggered ability wrapper; the damage_event boundary owns the source-deals-damage event, not the enclosing trigger."
+text = "When CARDNAME dies, CARDNAME deals 1 damage to you."
+
 [[example]]
 text = "Lightning Bolt deals 3 damage to any target."
 
@@ -107,13 +149,27 @@ text = "CARDNAME deals 3 damage to each creature and each player."
 [[example]]
 text = "Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way."
 
+[[example]]
+text = "CARDNAME deals 1 damage to you."
+
+[[example]]
+text = "CARDNAME deals damage equal to that permanent's toughness to you."
+
+[[example]]
+text = "CARDNAME deals damage to you equal to that permanent's toughness."
+
 [grammar_query]
 candidate_rules = [
     "damage_event_statement",
     "damage_event_assignment_list",
     "damage_event_amount",
     "damage_event_recipients",
+    "source_deals_damage",
     "trigger_damage_event",
+    "trigger_damage_body",
+    "trigger_damage_amount",
+    "trigger_damage_equal_to_amount",
+    "trigger_damage_recipient",
     "damage_prevention_effect",
 ]
 selected_rule = "damage_event_statement"
