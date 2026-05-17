@@ -672,7 +672,7 @@ exchange_that_card_with_top_card_of_your_library = {
 
 imperative_action_sequence = {
     (
-      (look_at_target_hand_action ~ ^"and" ~ choose_card_from_it_action)
+      (look_at_target_hand_action ~ (^"and" ~ choose_card_from_it_action)?)
     | (imperative_action ~ ("," ~ imperative_action)* ~ "," ~ ^"then" ~ imperative_action)
     )
   ~ "."

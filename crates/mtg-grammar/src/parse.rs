@@ -549,7 +549,7 @@ fn imperative_action_sequence_from_pair(pair: Pair<Rule>) -> Result<Statement, P
         .into_inner()
         .map(imperative_action_from_pair)
         .collect::<Result<Vec<_>, _>>()?;
-    if actions.len() < 2 {
+    if actions.is_empty() {
         return Err(ParseError::Internal("imperative action sequence"));
     }
     Ok(Statement::ImperativeActionSequence { actions })

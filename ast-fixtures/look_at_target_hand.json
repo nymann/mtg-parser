@@ -1,0 +1,87 @@
+{
+  "concept": "look_at_target_hand",
+  "fixture_path": "grammar-fixtures/look_at_target_hand.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "look_at_target_hand_action",
+      "text": "Look at target player's hand.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "LookAtTargetHand": {
+                "player": "Player"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "look_at_target_hand_action",
+      "text": "Look at target opponent's hand.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "LookAtTargetHand": {
+                "player": "Opponent"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "activated_effect",
+      "text": "Look at target player's hand.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "LookAtTargetHand": {
+                "player": "Player"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "activated_effect",
+      "text": "Look at target opponent's hand.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "LookAtTargetHand": {
+                "player": "Opponent"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "imperative_action_sequence",
+      "text": "Look at target player's hand and choose a card from it.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "LookAtTargetHand": {
+                "player": "Player"
+              }
+            },
+            "ChooseCardFromIt"
+          ]
+        }
+      }
+    }
+  ]
+}

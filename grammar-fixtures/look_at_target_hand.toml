@@ -3,11 +3,11 @@ concept = "look_at_target_hand"
 rule = "look_at_target_hand_action"
 
 [[example]]
-text = "Look at target player's hand"
+text = "Look at target player's hand."
 reason = "Target-player hand owner at the owned PEST action root."
 
 [[example]]
-text = "Look at target opponent's hand"
+text = "Look at target opponent's hand."
 reason = "Target-opponent hand owner at the owned PEST action root."
 
 [[example]]
