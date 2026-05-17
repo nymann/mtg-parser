@@ -1,0 +1,22 @@
+{
+  "concept": "creatures_it_was_blocking_become_unblocked",
+  "fixture_path": "grammar-fixtures/creatures_it_was_blocking_become_unblocked.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "creatures_it_was_blocking_become_unblocked",
+      "text": "Creatures it was blocking that had become blocked by only that creature this combat become unblocked.",
+      "ast": {
+        "StaticAbility": "CreaturesItWasBlockingBecomeUnblocked"
+      }
+    },
+    {
+      "index": 2,
+      "rule": "creatures_it_was_blocking_become_unblocked",
+      "text": "creatures it was blocking that had become blocked by only that creature this combat become unblocked.",
+      "ast": {
+        "StaticAbility": "CreaturesItWasBlockingBecomeUnblocked"
+      }
+    }
+  ]
+}
