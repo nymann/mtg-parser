@@ -1,0 +1,39 @@
+[fixture]
+concept = "unless_you_pay_mana_do_actions"
+rule = "unless_you_pay_mana_do_actions"
+
+[[example]]
+text = "unless you pay {1}, draw a card."
+reason = "Single imperative consequence with a generic mana-cost payment."
+
+[[example]]
+text = "unless you pay {G}, tap CARDNAME."
+reason = "Single source-tap consequence with a colored mana-cost payment."
+
+[[example]]
+text = "unless you pay {2}{U}, discard your hand and shuffle."
+reason = "Multiple and-joined imperative consequences with a multi-symbol mana cost."
+
+[[example]]
+text = "unless you pay {X}, search your library for a card and put that card into your hand."
+reason = "Multiple and-joined library imperative consequences with variable mana."
+
+[[counterexample]]
+text = "unless that player pays {1}, draw a card."
+reason = "Unless-payment clause paid by that player, not you."
+
+[[counterexample]]
+text = "unless you pay 2 life, draw a card."
+reason = "Life payment, not mana-cost payment."
+
+[[counterexample]]
+text = "unless you pay {1}, CARDNAME deals 1 damage to any target."
+reason = "Damage effect consequence, not an imperative action in this concept."
+
+[[counterexample]]
+text = "sacrifice CARDNAME unless you pay {1}."
+reason = "Source-sacrifice unless-payment clause is owned by sacrifice_source."
+
+[[counterexample]]
+text = "unless you pay {1}, draw a card. trailing"
+reason = "Exact-consumption guard."

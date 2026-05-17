@@ -1,0 +1,93 @@
+[[axis]]
+name = "payer"
+values = ["you"]
+
+[[axis]]
+name = "payment"
+values = ["mana_cost"]
+
+[[axis]]
+name = "consequence_actions"
+values = [
+    "single_imperative_action",
+    "and_joined_imperative_actions",
+]
+
+[[axis]]
+name = "imperative_action_kind"
+values = [
+    "draw_cards",
+    "tap_source",
+    "discard_your_hand",
+    "search_library",
+    "shuffle",
+]
+
+[boundary]
+excludes = [
+    "Unless-payment clauses paid by a player other than you.",
+    "Unless-payment clauses whose payment is not a mana cost.",
+    "Unless-payment clauses whose consequence is not an imperative action sequence.",
+    "Source-sacrifice unless-payment clauses owned by sacrifice_source.",
+]
+includes = [
+    "Unless-payment clauses where you pay a mana cost to avoid one imperative consequence.",
+    "Unless-payment clauses where you pay a mana cost to avoid multiple and-joined imperative consequences.",
+]
+
+[concept]
+name = "unless_you_pay_mana_do_actions"
+pest_rules = ["unless_you_pay_mana_do_actions"]
+rules_queries = [
+    "lex: unless you pay mana do actions",
+    "lex: do something unless a player pays a cost",
+]
+rules_terms = [
+    "cost",
+    "mana cost",
+    "pay",
+    "unless",
+]
+
+[[counterexample]]
+reason = "Unless-payment clause paid by that player, not you."
+text = "unless that player pays {1}, draw a card."
+
+[[counterexample]]
+reason = "Life payment, not mana-cost payment."
+text = "unless you pay 2 life, draw a card."
+
+[[counterexample]]
+reason = "Damage effect consequence, not an imperative action in this concept."
+text = "unless you pay {1}, CARDNAME deals 1 damage to any target."
+
+[[counterexample]]
+reason = "Source-sacrifice unless-payment clause is owned by sacrifice_source."
+text = "sacrifice CARDNAME unless you pay {1}."
+
+[[example]]
+text = "unless you pay {1}, draw a card."
+
+[[example]]
+text = "unless you pay {G}, tap CARDNAME."
+
+[[example]]
+text = "unless you pay {2}{U}, discard your hand and shuffle."
+
+[[example]]
+text = "unless you pay {X}, search your library for a card and put that card into your hand."
+
+[grammar_query]
+candidate_rules = [
+    "unless_you_pay_mana_do_actions",
+    "imperative_action",
+    "imperative_action_sequence",
+    "mana_cost",
+    "player_may_pay_mana",
+    "sacrifice_source_unless_you_pay",
+]
+selected_rule = "unless_you_pay_mana_do_actions"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
