@@ -1,0 +1,31 @@
+[fixture]
+concept = "you_may_have_source_become_copy_of_target"
+rule = "you_may_have_source_become_copy_of_target"
+
+[[example]]
+text = "You may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability."
+reason = "Standalone optional triggered-effect statement where the source becomes a copy of a target creature with a color-copy exception and this ability."
+
+[[example]]
+text = "You may have CARDNAME become a copy of target artifact, except it's an enchantment in addition to its other types."
+reason = "Standalone optional triggered-effect statement where the source becomes a copy of a target artifact with a type-addition exception."
+
+[[counterexample]]
+text = "You may have it block an attacking creature of your choice."
+reason = "Optional blocking permission, not a source becoming a copy of a target permanent type."
+
+[[counterexample]]
+text = "You may have this creature enter as a copy of any creature on the battlefield."
+reason = "Enter-as-copy replacement effect, not a triggered-effect statement where the source becomes a copy."
+
+[[counterexample]]
+text = "Copy target instant spell, except that the copy is red."
+reason = "Spell-copy effect, not a source object becoming a copy of a target permanent type."
+
+[[counterexample]]
+text = "Target creature becomes a Forest until CARDNAME leaves the battlefield."
+reason = "Target permanent type-change duration effect, not a you-may-have source copy effect."
+
+[[counterexample]]
+text = "You may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability. trailing"
+reason = "Exact-consumption guard."

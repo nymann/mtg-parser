@@ -1,0 +1,91 @@
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "modality"
+values = ["may"]
+
+[[axis]]
+name = "causative"
+values = ["have"]
+
+[[axis]]
+name = "source"
+values = ["source_object"]
+
+[[axis]]
+name = "change"
+values = ["become_copy"]
+
+[[axis]]
+name = "copy_target"
+values = ["target_permanent_type"]
+
+[[axis]]
+name = "exception"
+values = ["copy_exception"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[[axis]]
+name = "effect_context"
+values = ["trigger_effect"]
+
+[boundary]
+excludes = [
+    "Optional blocking permission where you may have it block an attacking creature of your choice.",
+    "Enter-as-copy replacement effects where a source enters as a copy of any creature on the battlefield.",
+    "Spell-copy effects, including copy target instant spell wording.",
+    "Target permanent type-change effects that do not use become-a-copy wording.",
+]
+includes = [
+    "Standalone triggered-effect statements where you may have a source object become a copy of a target permanent type.",
+    "Copy exceptions that either omit copied color and grant this ability or add a permanent type in addition to other types.",
+]
+
+[concept]
+name = "you_may_have_source_become_copy_of_target"
+pest_rules = ["you_may_have_source_become_copy_of_target"]
+rules_queries = [
+    "lex: you may have this creature become a copy of target creature except it doesn't copy color has this ability",
+    "lex: become a copy of target artifact except enchantment in addition to other types",
+]
+rules_terms = [
+    "copy",
+    "permanent",
+    "target",
+    "triggered ability",
+]
+
+[[counterexample]]
+reason = "Optional blocking permission, not a source becoming a copy of a target permanent type."
+text = "You may have it block an attacking creature of your choice."
+
+[[counterexample]]
+reason = "Enter-as-copy replacement effect, not a triggered-effect statement where the source becomes a copy."
+text = "You may have this creature enter as a copy of any creature on the battlefield."
+
+[[counterexample]]
+reason = "Spell-copy effect, not a source object becoming a copy of a target permanent type."
+text = "Copy target instant spell, except that the copy is red."
+
+[[counterexample]]
+reason = "Target permanent type-change duration effect, not a you-may-have source copy effect."
+text = "Target creature becomes a Forest until CARDNAME leaves the battlefield."
+
+[[example]]
+text = "You may have this creature become a copy of target creature, except it doesn't copy that creature's color and it has this ability."
+
+[[example]]
+text = "You may have CARDNAME become a copy of target artifact, except it's an enchantment in addition to its other types."
+
+[grammar_query]
+candidate_rules = ["you_may_have_source_become_copy_of_target"]
+selected_rule = "you_may_have_source_become_copy_of_target"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
