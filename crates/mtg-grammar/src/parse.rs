@@ -324,6 +324,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             until_eot_you_may_pay_cost_at_timing_from_pair(pair)
         }
         Rule::if_you_do_effect => if_you_do_effect_from_pair(pair),
+        Rule::if_you_do_gain_life_fragment => Ok(Statement::IfYouDoGainLife {
+            amount: if_you_do_gain_life_amount_from_pair(pair)?,
+        }),
         Rule::if_you_do_cast_that_card_face_down_without_paying_mana_cost => {
             if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(pair)
         }

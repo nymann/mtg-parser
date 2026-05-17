@@ -50,6 +50,44 @@
     },
     {
       "index": 5,
+      "rule": "if_you_do_gain_life_fragment",
+      "text": "If you do, you gain 3 life",
+      "ast": {
+        "IfYouDoGainLife": {
+          "amount": 3
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "trigger_effect_fragment_sequence",
+      "text": "You may pay {1}. If you do, you gain 3 life",
+      "ast": {
+        "Compound": [
+          {
+            "PlayerMayPayMana": {
+              "amount": {
+                "Cost": {
+                  "symbols": [
+                    {
+                      "Generic": 1
+                    }
+                  ]
+                }
+              },
+              "player": "You"
+            }
+          },
+          {
+            "IfYouDoGainLife": {
+              "amount": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "index": 7,
       "rule": "if_you_do_effect",
       "text": "If you do, prevent the next 1 damage that would be dealt to any target this turn.",
       "ast": {
@@ -67,7 +105,7 @@
       }
     },
     {
-      "index": 6,
+      "index": 8,
       "rule": "if_you_do_effect",
       "text": "If you do, until your next turn, you can't be attacked except by creatures with flying.",
       "ast": {
@@ -79,7 +117,7 @@
       }
     },
     {
-      "index": 7,
+      "index": 9,
       "rule": "if_you_do_effect",
       "text": "If you do, until your next turn, you can't be attacked except by creatures with flying and/or shadow.",
       "ast": {
@@ -88,6 +126,17 @@
             "Flying",
             "Shadow"
           ]
+        }
+      }
+    },
+    {
+      "index": 10,
+      "rule": "if_you_do_effect",
+      "text": "If you do, you may cast that card face down as a 2/2 creature spell without paying its mana cost.",
+      "ast": {
+        "IfYouDoCastThatCardFaceDownWithoutPayingManaCost": {
+          "power": 2,
+          "toughness": 2
         }
       }
     }
