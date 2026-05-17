@@ -1,0 +1,58 @@
+{
+  "concept": "cast_restriction",
+  "fixture_path": "grammar-fixtures/cast_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "cast_restriction",
+      "text": "Cast this spell only before the combat damage step.",
+      "ast": {
+        "CastRestriction": {
+          "BeforeStep": {
+            "step": "CombatDamage"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "cast_restriction",
+      "text": "Cast this spell only during the declare attackers step.",
+      "ast": {
+        "CastRestriction": {
+          "DuringStep": {
+            "step": "DeclareAttackers"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "cast_restriction",
+      "text": "Cast this spell only during your combat damage step.",
+      "ast": {
+        "CastRestriction": {
+          "DuringYourStep": {
+            "step": "CombatDamage"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "cast_restriction",
+      "text": "Cast this spell only during combat before blockers are declared.",
+      "ast": {
+        "CastRestriction": "DuringCombatBeforeBlockersAreDeclared"
+      }
+    },
+    {
+      "index": 5,
+      "rule": "cast_restriction",
+      "text": "Cast this spell only during an opponent's turn, before attackers are declared.",
+      "ast": {
+        "CastRestriction": "DuringOpponentsTurnBeforeAttackersDeclared"
+      }
+    }
+  ]
+}
