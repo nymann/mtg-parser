@@ -87,6 +87,38 @@
           ]
         }
       }
+    },
+    {
+      "index": 6,
+      "rule": "each_player_performs_action",
+      "text": "Each player chooses a number of creatures they control equal to the number of creatures controlled by the player who controls the fewest, then sacrifices the rest.",
+      "ast": {
+        "EachPlayerPerformsAction": {
+          "actions": [
+            {
+              "EqualizeControlledPermanents": {
+                "permanent_type": "Creature"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 7,
+      "rule": "each_player_performs_action",
+      "text": "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest.",
+      "ast": {
+        "EachPlayerPerformsAction": {
+          "actions": [
+            {
+              "EqualizeControlledPermanents": {
+                "permanent_type": "Land"
+              }
+            }
+          ]
+        }
+      }
     }
   ]
 }
