@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_counter_conditioned_basic_land_type"
+rule = "static_that_permanent_is_basic_land_type_while_has_named_counter"
+
+[[example]]
+text = "That land is an Island for as long as it has a flood counter on it."
+reason = "Static continuous type-changing effect making that permanent a basic land type while it has a named counter."
+
+[[example]]
+text = "That creature is a Forest for as long as it has a named counter on it."
+reason = "Static continuous type-changing effect making that permanent a basic land type while it has a named counter."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Static enters-tapped replacement effect, owned by static_enters_tapped."
+
+[[counterexample]]
+text = "Enchanted land is an Island."
+reason = "Unconditional Aura/static type-setting, owned by static_enchanted_basic_land_type_setting."
+
+[[counterexample]]
+text = "Target land becomes an Island until CARDNAME leaves the battlefield."
+reason = "Activated or resolving temporary type-change, not a static counter-conditioned continuous effect."
+
+[[counterexample]]
+text = "Put a flood counter on target non-Island land."
+reason = "Counter placement effect, not static type-setting."
+
+[[counterexample]]
+text = "That land is an Island for as long as it has a flood counter on it. trailing"
+reason = "Exact-consumption guard."

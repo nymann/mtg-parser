@@ -1,0 +1,75 @@
+[[axis]]
+name = "ability_kind"
+values = ["static_ability"]
+
+[[axis]]
+name = "effect_kind"
+values = ["continuous_type_change"]
+
+[[axis]]
+name = "affected_object"
+values = ["that_permanent"]
+
+[[axis]]
+name = "granted_characteristic"
+values = ["basic_land_type"]
+
+[[axis]]
+name = "duration_condition"
+values = ["as_long_as_has_named_counter"]
+
+[boundary]
+excludes = [
+    "Static enters-tapped replacement effects, owned by static_enters_tapped.",
+    "Unconditional enchanted-object basic land type-setting effects, owned by static_enchanted_basic_land_type_setting.",
+    "Activated or resolving temporary target-land type-changing effects.",
+    "Counter placement effects, not static type-setting effects.",
+]
+includes = [
+    "That land is an Island for as long as it has a flood counter on it.",
+    "That creature is a Forest for as long as it has a named counter on it.",
+]
+
+[concept]
+name = "static_counter_conditioned_basic_land_type"
+pest_rules = ["static_that_permanent_is_basic_land_type_while_has_named_counter"]
+rules_queries = [
+    "lex: that land is an Island for as long as it has a flood counter on it",
+    "lex: continuous effect basic land type as long as permanent has counter",
+]
+rules_terms = [
+    "static ability",
+    "continuous effect",
+    "basic land type",
+    "counter",
+]
+
+[[counterexample]]
+reason = "Static enters-tapped replacement effect, owned by static_enters_tapped."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "Unconditional Aura/static type-setting, owned by static_enchanted_basic_land_type_setting."
+text = "Enchanted land is an Island."
+
+[[counterexample]]
+reason = "Activated or resolving temporary type-change, not a static counter-conditioned continuous effect."
+text = "Target land becomes an Island until CARDNAME leaves the battlefield."
+
+[[counterexample]]
+reason = "Counter placement effect, not static type-setting."
+text = "Put a flood counter on target non-Island land."
+
+[[example]]
+text = "That land is an Island for as long as it has a flood counter on it."
+
+[[example]]
+text = "That creature is a Forest for as long as it has a named counter on it."
+
+[grammar_query]
+candidate_rules = ["static_that_permanent_is_basic_land_type_while_has_named_counter"]
+selected_rule = "static_that_permanent_is_basic_land_type_while_has_named_counter"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
