@@ -69,6 +69,7 @@ sentence_statement = _{
   | it_cant_be_regenerated
   | if_its_permanent_cant_be_regenerated_and_would_die_exile_instead_this_turn
   | tap_all_permanents_then_mana_loss
+  | payment_failure_tap_mana_sources
   | player_payment_failure
   | target_player_activates_mana_ability_of_each_permanent_they_control
   | control_player_effect

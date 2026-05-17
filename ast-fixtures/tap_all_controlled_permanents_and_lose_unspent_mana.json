@@ -1,0 +1,54 @@
+{
+  "concept": "tap_all_controlled_permanents_and_lose_unspent_mana",
+  "fixture_path": "grammar-fixtures/tap_all_controlled_permanents_and_lose_unspent_mana.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "tap_all_permanents_then_mana_loss",
+      "text": "Tap all lands target player controls and that player loses all unspent mana.",
+      "ast": {
+        "TapAllPermanentsAndPlayerLosesUnspentMana": {
+          "actor": "TargetPlayer",
+          "permanent_type": "Land",
+          "with_mana_abilities": false
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "tap_all_permanents_then_mana_loss",
+      "text": "Tap all creatures target player controls and that player loses all unspent mana.",
+      "ast": {
+        "TapAllPermanentsAndPlayerLosesUnspentMana": {
+          "actor": "TargetPlayer",
+          "permanent_type": "Creature",
+          "with_mana_abilities": false
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "payment_failure_tap_mana_sources",
+      "text": "they tap all lands they control and lose all unspent mana",
+      "ast": {
+        "TapAllPermanentsAndPlayerLosesUnspentMana": {
+          "actor": "ThatPlayer",
+          "permanent_type": "Land",
+          "with_mana_abilities": false
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "payment_failure_tap_mana_sources",
+      "text": "they tap all creatures with mana abilities they control and lose all unspent mana",
+      "ast": {
+        "TapAllPermanentsAndPlayerLosesUnspentMana": {
+          "actor": "ThatPlayer",
+          "permanent_type": "Creature",
+          "with_mana_abilities": true
+        }
+      }
+    }
+  ]
+}

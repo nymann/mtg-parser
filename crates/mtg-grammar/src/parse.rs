@@ -207,6 +207,7 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::tap_all_permanents_then_mana_loss => {
             tap_all_permanents_then_mana_loss_from_pair(pair)
         }
+        Rule::payment_failure_tap_mana_sources => payment_failure_tap_mana_sources_from_pair(pair),
         Rule::player_payment_failure => player_payment_failure_from_pair(pair),
         Rule::target_player_activates_mana_ability_of_each_permanent_they_control => {
             target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(pair)
@@ -1713,6 +1714,19 @@ fn tap_all_permanents_then_mana_loss_from_pair(pair: Pair<Rule>) -> Result<State
     })
 }
 
+fn payment_failure_tap_mana_sources_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
+    let mut permanent_type = None;
+    let mut with_mana_abilities = false;
+    parse_payment_failure_tap_mana_sources(pair, &mut permanent_type, &mut with_mana_abilities)?;
+    Ok(Statement::TapAllPermanentsAndPlayerLosesUnspentMana {
+        actor: TapAllPermanentsActor::ThatPlayer,
+        permanent_type: permanent_type.ok_or(ParseError::Internal(
+            "payment failure tap missing permanent type",
+        ))?,
+        with_mana_abilities,
+    })
+}
+
 fn player_payment_failure_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
     let effect_pair = only_inner(pair, "player payment failure missing effect")?;
     Ok(Statement::PlayerPaymentFailure {
@@ -1725,15 +1739,11 @@ fn payment_failure_effect_from_pair(pair: Pair<Rule>) -> Result<PaymentFailureEf
         Rule::payment_failure_tap_mana_sources => {
             let mut permanent_type = None;
             let mut with_mana_abilities = false;
-            for child in pair.into_inner() {
-                match child.as_rule() {
-                    Rule::permanent_type_plural => {
-                        permanent_type = Some(permanent_type_from_plural_pair(child)?);
-                    }
-                    Rule::with_mana_abilities => with_mana_abilities = true,
-                    _ => {}
-                }
-            }
+            parse_payment_failure_tap_mana_sources(
+                pair,
+                &mut permanent_type,
+                &mut with_mana_abilities,
+            )?;
             Ok(PaymentFailureEffect::TapAllPermanentsAndLoseUnspentMana {
                 permanent_type: permanent_type.ok_or(ParseError::Internal(
                     "payment failure tap missing permanent type",
@@ -1743,6 +1753,23 @@ fn payment_failure_effect_from_pair(pair: Pair<Rule>) -> Result<PaymentFailureEf
         }
         _ => Err(ParseError::Internal("payment failure effect")),
     }
+}
+
+fn parse_payment_failure_tap_mana_sources(
+    pair: Pair<Rule>,
+    permanent_type: &mut Option<PermanentType>,
+    with_mana_abilities: &mut bool,
+) -> Result<(), ParseError> {
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::permanent_type_plural => {
+                *permanent_type = Some(permanent_type_from_plural_pair(child)?);
+            }
+            Rule::with_mana_abilities => *with_mana_abilities = true,
+            _ => {}
+        }
+    }
+    Ok(())
 }
 
 fn target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(
