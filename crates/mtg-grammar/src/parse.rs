@@ -372,6 +372,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::that_creatures_controller_sacrifices_it => Ok(Statement::TriggerEffect(
             TriggerEffect::ThatCreaturesControllerSacrificesIt,
         )),
+        Rule::their_controllers_sacrifice_them => Ok(Statement::TriggerEffect(
+            TriggerEffect::TheirControllersSacrificeThem,
+        )),
         Rule::you_may_put_this_card_onto_the_battlefield => Ok(Statement::TriggerEffect(
             TriggerEffect::YouMayPutThisCardOntoTheBattlefield,
         )),

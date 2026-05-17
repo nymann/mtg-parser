@@ -1,0 +1,22 @@
+{
+  "concept": "their_controllers_sacrifice_them",
+  "fixture_path": "grammar-fixtures/their_controllers_sacrifice_them.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "their_controllers_sacrifice_them",
+      "text": "their controllers sacrifice them.",
+      "ast": {
+        "TriggerEffect": "TheirControllersSacrificeThem"
+      }
+    },
+    {
+      "index": 2,
+      "rule": "their_controllers_sacrifice_them",
+      "text": "Their controllers sacrifice them.",
+      "ast": {
+        "TriggerEffect": "TheirControllersSacrificeThem"
+      }
+    }
+  ]
+}
