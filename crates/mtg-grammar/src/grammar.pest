@@ -185,11 +185,11 @@ phrase_statement = _{
   | keyword_ability_list
   | keyword_ability
   | triggered_ability_fragment
+  | player_taps_permanent_for_mana
   | player_casts_colored_spell
   | you_cast_spell_actor
   | player_cast_spell_actor
   | cast_spell_descriptor
-  | player_taps_permanent_for_mana
   | permanent_put_into_graveyard_from_battlefield
   | permanent_enters
   | permanent_dealt_damage_by_source_this_turn_dies
