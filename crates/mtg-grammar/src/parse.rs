@@ -2664,6 +2664,7 @@ fn trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseErro
         Rule::you_lose_the_game => Ok(TriggerEffect::YouLoseTheGame),
         Rule::you_gain_life => you_gain_life_from_pair(pair),
         Rule::you_may_pay_mana | Rule::player_may_pay_mana => you_may_pay_mana_from_pair(pair),
+        Rule::activated_draw_cards => draw_cards_trigger_effect_from_pair(pair),
         Rule::you_may_draw_cards => you_may_draw_cards_from_pair(pair),
         Rule::damage_prevention_effect_sentence => {
             let (effect, definitions) = damage_prevention_effect_sentence_from_pair(pair)?;
@@ -2780,10 +2781,21 @@ fn this_card_in_your_graveyard_with_cards_above_it_from_pair(
 }
 
 fn permanent_enters_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
-    let pt = only_inner(pair, "permanent_enters missing permanent_type")?;
-    Ok(TriggerEvent::PermanentEnters {
-        permanent_type: permanent_type_from_pair(pt)?,
-    })
+    let object_pair = only_inner(pair, "permanent_enters missing object")?;
+    let permanent_type = match object_pair.as_rule() {
+        Rule::permanent_type => permanent_type_from_pair(object_pair)?,
+        Rule::source_object => match source_object_from_pair(object_pair)? {
+            SourceObject::This(permanent_type) => permanent_type,
+            SourceObject::ThisPermanent => {
+                return Err(ParseError::Internal(
+                    "permanent_enters source missing permanent type",
+                ));
+            }
+            SourceObject::ThisAura => PermanentType::Enchantment,
+        },
+        _ => return Err(ParseError::Internal("permanent_enters object")),
+    };
+    Ok(TriggerEvent::PermanentEnters { permanent_type })
 }
 
 fn player_casts_colored_spell_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError> {
@@ -3227,10 +3239,21 @@ fn you_may_pay_mana_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseEr
 
 fn you_may_draw_cards_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
     let draw_pair = only_inner(pair, "you_may_draw_cards missing draw effect")?;
-    let count_pair = only_inner(draw_pair, "you_may_draw_cards missing count")?;
-    Ok(TriggerEffect::YouMayDrawCards {
-        count: draw_card_object_count_from_pair(count_pair, "you_may_draw_cards counted draw")?,
-    })
+    let count = draw_cards_trigger_count_from_pair(draw_pair, "you_may_draw_cards counted draw")?;
+    Ok(TriggerEffect::YouMayDrawCards { count })
+}
+
+fn draw_cards_trigger_effect_from_pair(pair: Pair<Rule>) -> Result<TriggerEffect, ParseError> {
+    let count = draw_cards_trigger_count_from_pair(pair, "trigger draw counted draw")?;
+    Ok(TriggerEffect::DrawCards { count })
+}
+
+fn draw_cards_trigger_count_from_pair(
+    pair: Pair<Rule>,
+    counted_context: &'static str,
+) -> Result<CardCount, ParseError> {
+    let count_pair = only_inner(pair, "draw trigger missing count")?;
+    draw_card_object_count_from_pair(count_pair, counted_context)
 }
 
 fn draw_card_object_count_from_pair(
@@ -3945,6 +3968,9 @@ fn delayed_remove_all_named_counters_from_linked_land_from_pair(
 fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError> {
     if pair.as_rule() != Rule::source_object {
         return Err(ParseError::Internal("source_object"));
+    }
+    if pair.as_str() == "CARDNAME" {
+        return Ok(SourceObject::ThisPermanent);
     }
     let kind = only_inner(pair, "source_object missing kind")?;
     match kind.as_rule() {

@@ -3,21 +3,19 @@ concept = "copy_permanent_enter_as"
 rule = "static_you_may_have_source_enter_as_copy"
 
 [[example]]
-text = "You may have CARDNAME enter as a copy of any creature on the battlefield, except it doesn't copy that creature's color and it has \"When this creature enters, draw a card.\""
+text = "You may have CARDNAME enter as a copy of any land on the battlefield, except it doesn't copy that land's color and it has \"When this land enters, draw a card.\""
 
 [[example]]
-text = "You may have CARDNAME enter as a copy of any artifact on the battlefield, except it doesn't copy that artifact's color and it has \"When this artifact enters, draw a card.\""
+text = "You may have CARDNAME enter as a copy of any planeswalker on the battlefield, except it doesn't copy that planeswalker's color and it has \"When this planeswalker enters, draw a card.\""
 
 [[example]]
 text = "You may have CARDNAME enter as a copy of any enchantment on the battlefield, except it doesn't copy that enchantment's color and it has \"When this enchantment enters, draw a card.\""
 
 [[example]]
-rule = "copy_exception_with_quoted_triggered_ability"
-text = ", except it doesn't copy that creature's color and it has \"When this creature enters, draw a card.\""
+text = "You may have CARDNAME enter as a copy of any creature on the battlefield, except it doesn't copy that creature's color and it has \"When this creature enters, draw a card.\""
 
 [[example]]
-rule = "copy_exception_with_quoted_triggered_ability"
-text = ", except it doesn't copy that artifact's color and it has \"When this artifact enters, draw a card.\""
+text = "You may have CARDNAME enter as a copy of any artifact on the battlefield, except it doesn't copy that artifact's color and it has \"When this artifact enters, draw a card.\""
 
 [[example]]
 text = "You may have CARDNAME enter as a copy of any creature on the battlefield, except it doesn't copy that creature's color and it has this ability."

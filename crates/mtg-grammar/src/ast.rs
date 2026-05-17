@@ -1261,6 +1261,8 @@ pub enum TriggerEffect {
         player: PayManaPlayer,
         amount: PayManaAmount,
     },
+    /// "draw a card/N cards"
+    DrawCards { count: CardCount },
     /// "you may draw a card/N cards"
     YouMayDrawCards { count: CardCount },
     /// "Prevent <amount> of that damage[, where ...]"

@@ -1,0 +1,210 @@
+{
+  "concept": "copy_permanent_enter_as",
+  "fixture_path": "grammar-fixtures/copy_permanent_enter_as.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_you_may_have_source_enter_as_copy",
+      "text": "You may have CARDNAME enter as a copy of any land on the battlefield, except it doesn't copy that land's color and it has \"When this land enters, draw a card.\"",
+      "ast": {
+        "StaticAbility": {
+          "YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield": {
+            "exception": {
+              "DoesntCopyColorAndHasAbility": {
+                "ability": {
+                  "TriggeredAbility": {
+                    "effects": [
+                      {
+                        "DrawCards": {
+                          "count": {
+                            "Number": 1
+                          }
+                        }
+                      }
+                    ],
+                    "event": {
+                      "PermanentEnters": {
+                        "permanent_type": "Land"
+                      }
+                    },
+                    "intervening_if": null
+                  }
+                },
+                "permanent_type": "Land"
+              }
+            },
+            "permanent_type": "Land",
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_you_may_have_source_enter_as_copy",
+      "text": "You may have CARDNAME enter as a copy of any planeswalker on the battlefield, except it doesn't copy that planeswalker's color and it has \"When this planeswalker enters, draw a card.\"",
+      "ast": {
+        "StaticAbility": {
+          "YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield": {
+            "exception": {
+              "DoesntCopyColorAndHasAbility": {
+                "ability": {
+                  "TriggeredAbility": {
+                    "effects": [
+                      {
+                        "DrawCards": {
+                          "count": {
+                            "Number": 1
+                          }
+                        }
+                      }
+                    ],
+                    "event": {
+                      "PermanentEnters": {
+                        "permanent_type": "Planeswalker"
+                      }
+                    },
+                    "intervening_if": null
+                  }
+                },
+                "permanent_type": "Planeswalker"
+              }
+            },
+            "permanent_type": "Planeswalker",
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "static_you_may_have_source_enter_as_copy",
+      "text": "You may have CARDNAME enter as a copy of any enchantment on the battlefield, except it doesn't copy that enchantment's color and it has \"When this enchantment enters, draw a card.\"",
+      "ast": {
+        "StaticAbility": {
+          "YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield": {
+            "exception": {
+              "DoesntCopyColorAndHasAbility": {
+                "ability": {
+                  "TriggeredAbility": {
+                    "effects": [
+                      {
+                        "DrawCards": {
+                          "count": {
+                            "Number": 1
+                          }
+                        }
+                      }
+                    ],
+                    "event": {
+                      "PermanentEnters": {
+                        "permanent_type": "Enchantment"
+                      }
+                    },
+                    "intervening_if": null
+                  }
+                },
+                "permanent_type": "Enchantment"
+              }
+            },
+            "permanent_type": "Enchantment",
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "static_you_may_have_source_enter_as_copy",
+      "text": "You may have CARDNAME enter as a copy of any creature on the battlefield, except it doesn't copy that creature's color and it has \"When this creature enters, draw a card.\"",
+      "ast": {
+        "StaticAbility": {
+          "YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield": {
+            "exception": {
+              "DoesntCopyColorAndHasAbility": {
+                "ability": {
+                  "TriggeredAbility": {
+                    "effects": [
+                      {
+                        "DrawCards": {
+                          "count": {
+                            "Number": 1
+                          }
+                        }
+                      }
+                    ],
+                    "event": {
+                      "PermanentEnters": {
+                        "permanent_type": "Creature"
+                      }
+                    },
+                    "intervening_if": null
+                  }
+                },
+                "permanent_type": "Creature"
+              }
+            },
+            "permanent_type": "Creature",
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "static_you_may_have_source_enter_as_copy",
+      "text": "You may have CARDNAME enter as a copy of any artifact on the battlefield, except it doesn't copy that artifact's color and it has \"When this artifact enters, draw a card.\"",
+      "ast": {
+        "StaticAbility": {
+          "YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield": {
+            "exception": {
+              "DoesntCopyColorAndHasAbility": {
+                "ability": {
+                  "TriggeredAbility": {
+                    "effects": [
+                      {
+                        "DrawCards": {
+                          "count": {
+                            "Number": 1
+                          }
+                        }
+                      }
+                    ],
+                    "event": {
+                      "PermanentEnters": {
+                        "permanent_type": "Artifact"
+                      }
+                    },
+                    "intervening_if": null
+                  }
+                },
+                "permanent_type": "Artifact"
+              }
+            },
+            "permanent_type": "Artifact",
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "static_you_may_have_source_enter_as_copy",
+      "text": "You may have CARDNAME enter as a copy of any creature on the battlefield, except it doesn't copy that creature's color and it has this ability.",
+      "ast": {
+        "StaticAbility": {
+          "YouMayHaveSourceEnterAsCopyOfAnyPermanentOnBattlefield": {
+            "exception": {
+              "DoesntCopyColorAndHasAbility": {
+                "ability": "ThisAbility",
+                "permanent_type": "Creature"
+              }
+            },
+            "permanent_type": "Creature",
+            "source": "ThisPermanent"
+          }
+        }
+      }
+    }
+  ]
+}

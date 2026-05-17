@@ -2984,6 +2984,11 @@ fn write_trigger_effect(
             write_pay_mana_amount(out, amount);
             out.push('.');
         }
+        TriggerEffect::DrawCards { count } => {
+            out.push_str("draw ");
+            write_card_count_object(out, *count);
+            out.push('.');
+        }
         TriggerEffect::YouMayDrawCards { count } => {
             out.push_str("you may draw ");
             write_card_count_object(out, *count);
