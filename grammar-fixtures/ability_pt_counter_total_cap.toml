@@ -1,0 +1,27 @@
+[fixture]
+concept = "ability_pt_counter_total_cap"
+rule = "this_ability_cant_cause_total_pt_counters_greater_than"
+
+[[example]]
+text = "this ability can't cause the total number of +1/+1 counters on it to be greater than three."
+reason = "Canonical can't-effect cap limiting the total +1/+1 counters this ability can cause on the source object."
+
+[[example]]
+text = "this ability can't cause the total number of -1/-1 counters on it to be greater than two."
+reason = "Same counter-total cap with the opposite power/toughness counter polarity."
+
+[[counterexample]]
+text = "this card is in your graveyard with three or more creature cards above it"
+reason = "Graveyard relative-position condition, not a counter-total cap caused by this ability."
+
+[[counterexample]]
+text = "damage that would reduce your life total to less than 1 reduces it to 1 instead."
+reason = "Life-total replacement effect, not a counter-total cap."
+
+[[counterexample]]
+text = "put a +1/+1 counter on it."
+reason = "Put-counter instruction, not a can't-effect cap on the total counter count."
+
+[[counterexample]]
+text = "this ability can't cause the total number of +1/+1 counters on it to be greater than three. trailing"
+reason = "Exact-consumption guard."

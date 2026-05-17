@@ -1,0 +1,70 @@
+[[axis]]
+name = "subject"
+values = ["this_ability"]
+
+[[axis]]
+name = "modality"
+values = ["cant_cause"]
+
+[[axis]]
+name = "measured_total"
+values = ["pt_counters_on_source_object"]
+
+[[axis]]
+name = "comparator"
+values = ["greater_than"]
+
+[[axis]]
+name = "threshold"
+values = ["number_word"]
+
+[[axis]]
+name = "rule_kind"
+values = ["cant_effect"]
+
+[boundary]
+excludes = [
+    "Graveyard relative-position conditions.",
+    "Life-total replacement effects.",
+    "Put-counter instructions.",
+    "Counter caps whose subject is not this ability.",
+]
+includes = ["Can't-effect limits where this ability cannot cause the total number of power/toughness counters on the source object to be greater than a number-word threshold."]
+
+[concept]
+name = "ability_pt_counter_total_cap"
+pest_rules = ["this_ability_cant_cause_total_pt_counters_greater_than"]
+rules_queries = ["lex: this ability can't cause the total number of +1/+1 counters on it to be greater than three"]
+rules_terms = [
+    "can't",
+    "counter",
+    "power",
+    "replacement effect",
+    "toughness",
+]
+
+[[counterexample]]
+reason = "Graveyard relative-position condition, not a counter-total cap caused by this ability."
+text = "this card is in your graveyard with three or more creature cards above it"
+
+[[counterexample]]
+reason = "Life-total replacement effect, not a counter-total cap."
+text = "damage that would reduce your life total to less than 1 reduces it to 1 instead."
+
+[[counterexample]]
+reason = "Put-counter instruction, not a can't-effect cap on the total counter count."
+text = "put a +1/+1 counter on it."
+
+[[example]]
+text = "this ability can't cause the total number of +1/+1 counters on it to be greater than three."
+
+[[example]]
+text = "this ability can't cause the total number of -1/-1 counters on it to be greater than two."
+
+[grammar_query]
+candidate_rules = ["this_ability_cant_cause_total_pt_counters_greater_than"]
+selected_rule = "this_ability_cant_cause_total_pt_counters_greater_than"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
