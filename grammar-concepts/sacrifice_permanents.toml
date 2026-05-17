@@ -1,0 +1,106 @@
+[[axis]]
+name = "action"
+values = ["sacrifice"]
+
+[[axis]]
+name = "sacrificed_object"
+values = [
+    "permanents",
+    "nontoken_permanents",
+    "permanent_type_plural",
+]
+
+[[axis]]
+name = "quantity"
+values = [
+    "implicit_plural",
+    "that_many",
+]
+
+[[axis]]
+name = "ability_context"
+values = ["triggered_effect_plain"]
+
+[[axis]]
+name = "source_relation"
+values = ["not_source_object"]
+
+[boundary]
+excludes = [
+    "Source-object sacrifice instructions belong to sacrifice_source.",
+    "Targeted sacrifice instructions are outside this generic permanent-sacrifice boundary.",
+    "Additional costs to cast a spell belong to spell_additional_cost_to_cast_this_spell.",
+    "Permanent-type other-than-source sacrifice belongs to sacrifice_permanent_other_than_source.",
+]
+includes = [
+    "Plain triggered-effect instructions that sacrifice that many permanents or nontoken permanents.",
+    "Generic plural permanent sacrifice action members.",
+    "Generic permanent-type plural sacrifice action members already used by same-way action wrappers.",
+]
+
+[concept]
+name = "sacrifice_permanents"
+pest_rules = [
+    "sacrifice_that_many_nontoken_permanents",
+    "sacrifice_permanents_action",
+]
+rules_queries = [
+    "lex: sacrifice that many nontoken permanents",
+    "lex: sacrifice permanents",
+]
+rules_terms = [
+    "sacrifice",
+    "permanent",
+    "nontoken",
+]
+
+[[counterexample]]
+reason = "Source-object sacrifice belongs to sacrifice_source."
+text = "sacrifice CARDNAME."
+
+[[counterexample]]
+reason = "Source-object sacrifice by pronoun belongs to sacrifice_source."
+text = "sacrifice it."
+
+[[counterexample]]
+reason = "Source-object kind sacrifice belongs to sacrifice_source."
+text = "sacrifice this creature."
+
+[[counterexample]]
+reason = "Referenced source-object sacrifice belongs to sacrifice_source."
+text = "sacrifice that source."
+
+[[counterexample]]
+reason = "Targeted sacrifice is outside generic permanent sacrifice."
+text = "sacrifice target creature."
+
+[[counterexample]]
+reason = "Exact-consumption guard for implicit plural sacrifice action members."
+text = "sacrifice permanents trailing"
+
+[[example]]
+text = "sacrifice that many nontoken permanents."
+
+[[example]]
+text = "sacrifice that many permanents."
+
+[[example]]
+text = "sacrifice permanents"
+
+[[example]]
+text = "sacrifice creatures"
+
+[grammar_query]
+candidate_rules = [
+    "sacrifice_that_many_nontoken_permanents",
+    "sacrifice_permanents_action",
+    "sacrifice_source",
+    "sacrifice_source_effect",
+    "sacrifice_permanent_cost",
+    "sacrifice_permanent_other_than_source",
+]
+selected_rule = "sacrifice_that_many_nontoken_permanents"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

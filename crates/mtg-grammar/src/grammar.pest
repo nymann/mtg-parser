@@ -867,7 +867,8 @@ color_choice = { article ~ ^"color" }
 
 balance_same_way_action = _{ discard_cards_action | sacrifice_permanents_action }
 discard_cards_action = { ^"discard" ~ ^"cards" }
-sacrifice_permanents_action = { ^"sacrifice" ~ permanent_type_plural }
+sacrifice_permanents_action = { ^"sacrifice" ~ sacrifice_permanents_implicit_plural_object }
+sacrifice_permanents_implicit_plural_object = _{ permanent_type_plural | ^"permanents" }
 
 keyword_ability = { keyword }
 keyword_ability_list = { keyword ~ ("," ~ keyword)+ }
@@ -2199,8 +2200,9 @@ sacrifice_source_effect = {
 }
 
 sacrifice_that_many_nontoken_permanents = {
-    ^"sacrifice" ~ ^"that" ~ ^"many" ~ ^"nontoken" ~ ^"permanents" ~ "."
+    ^"sacrifice" ~ ^"that" ~ ^"many" ~ sacrifice_permanents_that_many_object ~ "."
 }
+sacrifice_permanents_that_many_object = _{ ^"nontoken" ~ ^"permanents" | ^"permanents" }
 
 you_lose_the_game = { ^"you" ~ ^"lose" ~ ^"the" ~ ^"game" ~ "." }
 

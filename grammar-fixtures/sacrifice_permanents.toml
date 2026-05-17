@@ -1,0 +1,50 @@
+[fixture]
+concept = "sacrifice_permanents"
+rule = "sacrifice_that_many_nontoken_permanents"
+
+[[example]]
+text = "sacrifice that many nontoken permanents."
+reason = "That-many anaphoric quantity sacrificing nontoken permanents."
+
+[[example]]
+text = "sacrifice that many permanents."
+reason = "That-many anaphoric quantity sacrificing permanents."
+
+[[example]]
+rule = "sacrifice_permanents_action"
+text = "sacrifice permanents"
+reason = "Implicit plural quantity sacrificing generic permanents."
+
+[[example]]
+rule = "sacrifice_permanents_action"
+text = "sacrifice creatures"
+reason = "Existing permanent-type plural sacrifice action remains part of the generalized concept."
+
+[[counterexample]]
+text = "sacrifice CARDNAME."
+reason = "Source-object sacrifice belongs to sacrifice_source."
+
+[[counterexample]]
+text = "sacrifice it."
+reason = "Source-object sacrifice by pronoun belongs to sacrifice_source."
+
+[[counterexample]]
+text = "sacrifice this creature."
+reason = "Source-object kind sacrifice belongs to sacrifice_source."
+
+[[counterexample]]
+text = "sacrifice that source."
+reason = "Referenced source-object sacrifice belongs to sacrifice_source."
+
+[[counterexample]]
+text = "sacrifice target creature."
+reason = "Targeted sacrifice is outside generic permanent sacrifice."
+
+[[counterexample]]
+text = "sacrifice that many nontoken permanents. trailing"
+reason = "Exact-consumption guard."
+
+[[counterexample]]
+rule = "sacrifice_permanents_action"
+text = "sacrifice permanents trailing"
+reason = "Exact-consumption guard for implicit plural sacrifice action members."
