@@ -1,0 +1,105 @@
+[[axis]]
+name = "actor"
+values = ["target_player"]
+
+[[axis]]
+name = "action"
+values = ["activate"]
+
+[[axis]]
+name = "ability_kind"
+values = ["mana_ability"]
+
+[[axis]]
+name = "ability_quantity"
+values = ["article_singular"]
+
+[[axis]]
+name = "source_scope"
+values = ["each_controlled_permanent"]
+
+[[axis]]
+name = "source_permanent_type"
+values = [
+    "artifact",
+    "creature",
+    "enchantment",
+    "land",
+    "planeswalker",
+]
+
+[[axis]]
+name = "context"
+values = ["standalone_sentence"]
+
+[boundary]
+excludes = [
+    "Conditional or timing permission text for activating mana abilities.",
+    "Mana ability timing windows that do not instruct target player to activate a mana ability.",
+    "Tap-for-mana trigger events owned by permanent_tapped_for_mana.",
+    "Tap-all-controlled-permanents and unspent-mana loss instructions owned by tap_all_controlled_permanents_and_lose_unspent_mana.",
+    "Cost-modification text for activated abilities.",
+]
+includes = ["Standalone sentences instructing target player to activate a mana ability of each controlled permanent of a named permanent type."]
+
+[concept]
+name = "mana_ability_activation_instruction"
+pest_rules = ["target_player_activates_mana_ability_of_each_permanent_they_control"]
+rules_queries = [
+    "lex: target player activates a mana ability of each land they control",
+    "lex: activate mana ability of each artifact they control",
+]
+rules_terms = [
+    "activate",
+    "mana ability",
+    "permanent",
+]
+
+[[counterexample]]
+reason = "Conditional permission and spending restriction text, not a standalone target-player activation instruction."
+text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
+
+[[counterexample]]
+reason = "Timing permission for a payment, not an instruction to activate a mana ability."
+text = "Until end of turn, any time you could activate a mana ability, you may pay 1 life."
+
+[[counterexample]]
+reason = "Tap-for-mana trigger event, not an activate-a-mana-ability instruction."
+text = "Whenever a player taps a land for mana, that player adds one mana of any type that land produced."
+
+[[counterexample]]
+reason = "Tap-all-controlled-permanents plus unspent-mana loss instruction, not mana ability activation."
+text = "Tap all lands target player controls and that player loses all unspent mana."
+
+[[counterexample]]
+reason = "Activated ability cost modification, not an activation instruction."
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[example]]
+text = "Target player activates a mana ability of each land they control."
+
+[[example]]
+text = "Target player activates a mana ability of each artifact they control."
+
+[[example]]
+text = "Target player activates a mana ability of each creature they control."
+
+[[example]]
+text = "Target player activates a mana ability of each enchantment they control."
+
+[[example]]
+text = "Target player activates a mana ability of each planeswalker they control."
+
+[grammar_query]
+candidate_rules = [
+    "target_player_activates_mana_ability_of_each_permanent_they_control",
+    "player_taps_permanent_for_mana",
+    "tap_all_permanents_then_mana_loss",
+    "activated_abilities_cost_more_to_activate",
+    "player_may_pay_life",
+]
+selected_rule = "target_player_activates_mana_ability_of_each_permanent_they_control"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

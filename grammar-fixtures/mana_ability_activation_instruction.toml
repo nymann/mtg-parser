@@ -1,0 +1,47 @@
+[fixture]
+concept = "mana_ability_activation_instruction"
+rule = "target_player_activates_mana_ability_of_each_permanent_they_control"
+
+[[example]]
+text = "Target player activates a mana ability of each land they control."
+reason = "Standalone target-player instruction with singular mana ability and land source type."
+
+[[example]]
+text = "Target player activates a mana ability of each artifact they control."
+reason = "Standalone target-player instruction with singular mana ability and artifact source type."
+
+[[example]]
+text = "Target player activates a mana ability of each creature they control."
+reason = "Standalone target-player instruction with singular mana ability and creature source type."
+
+[[example]]
+text = "Target player activates a mana ability of each enchantment they control."
+reason = "Standalone target-player instruction with singular mana ability and enchantment source type."
+
+[[example]]
+text = "Target player activates a mana ability of each planeswalker they control."
+reason = "Standalone target-player instruction with singular mana ability and planeswalker source type."
+
+[[counterexample]]
+text = "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card."
+reason = "Conditional permission and spending restriction text, not a standalone target-player activation instruction."
+
+[[counterexample]]
+text = "Until end of turn, any time you could activate a mana ability, you may pay 1 life."
+reason = "Timing permission for a payment, not an instruction to activate a mana ability."
+
+[[counterexample]]
+text = "Whenever a player taps a land for mana, that player adds one mana of any type that land produced."
+reason = "Tap-for-mana trigger event, not an activate-a-mana-ability instruction."
+
+[[counterexample]]
+text = "Tap all lands target player controls and that player loses all unspent mana."
+reason = "Tap-all-controlled-permanents plus unspent-mana loss instruction, not mana ability activation."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Activated ability cost modification, not an activation instruction."
+
+[[counterexample]]
+text = "Target player activates a mana ability of each land they control. trailing"
+reason = "Exact-consumption guard."
