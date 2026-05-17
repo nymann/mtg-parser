@@ -1,0 +1,34 @@
+{
+  "concept": "spell_additional_cost_to_cast_this_spell",
+  "fixture_path": "grammar-fixtures/spell_additional_cost_to_cast_this_spell.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "as_additional_cost_to_cast_this_spell",
+      "text": "As an additional cost to cast this spell, sacrifice a creature.",
+      "ast": {
+        "AsAdditionalCostToCastThisSpell": {
+          "cost": {
+            "SacrificePermanent": {
+              "permanent_type": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "as_additional_cost_to_cast_this_spell",
+      "text": "As an additional cost to cast this spell, sacrifice an artifact.",
+      "ast": {
+        "AsAdditionalCostToCastThisSpell": {
+          "cost": {
+            "SacrificePermanent": {
+              "permanent_type": "Artifact"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
