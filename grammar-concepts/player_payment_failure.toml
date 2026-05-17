@@ -21,20 +21,16 @@ values = [
 excludes = [
     "Direct life-loss instructions owned by player_loses_life.",
     "Mana-loss instructions that are not payment-failure consequences.",
+    "Payment-failure effect bodies without the conditional wrapper, owned by tap_all_controlled_permanents_and_lose_unspent_mana.",
 ]
 includes = [
     "Conditional payment-failure clauses for that player.",
-    "Failure effects where that player taps all controlled permanents of a plural permanent type and loses all unspent mana.",
     "Permanent scopes with and without a mana-ability filter.",
 ]
 
 [concept]
 name = "player_payment_failure"
-pest_rules = [
-    "player_payment_failure",
-    "payment_failure_effect",
-    "payment_failure_tap_mana_sources",
-]
+pest_rules = ["player_payment_failure"]
 rules_queries = [
     "lex: if that player doesn't tap all lands they control lose all unspent mana",
     "lex: mana abilities lose all unspent mana",
@@ -66,7 +62,7 @@ text = "if that player doesn't, they tap all creatures with mana abilities they 
 [grammar_query]
 candidate_rules = [
     "player_payment_failure",
-    "payment_failure_effect",
+    "tap_all_permanents_then_mana_loss",
     "payment_failure_tap_mana_sources",
     "player_loses_life",
 ]

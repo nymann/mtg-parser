@@ -1,0 +1,97 @@
+[[axis]]
+name = "affected_player"
+values = [
+    "target_player",
+    "that_player",
+]
+
+[[axis]]
+name = "permanent_scope"
+values = ["permanent_type_plural"]
+
+[[axis]]
+name = "mana_ability_filter"
+values = [
+    "none",
+    "with_mana_abilities",
+]
+
+[[axis]]
+name = "context"
+values = [
+    "standalone_sentence",
+    "payment_failure_effect",
+]
+
+[boundary]
+excludes = [
+    "Unspent-mana loss without the tap-all-controlled-permanents effect.",
+    "Mana ability activation instructions that do not tap all controlled permanents and lose all unspent mana.",
+    "Tap-all-controlled-permanents instructions without unspent-mana loss.",
+    "Direct life-loss instructions owned by player_loses_life.",
+]
+includes = [
+    "Standalone sentences where all permanents of a plural permanent type controlled by target player are tapped and that player loses all unspent mana.",
+    "Payment-failure effect bodies where that player taps all permanents of a plural permanent type they control and loses all unspent mana.",
+    "Permanent scopes with and without a mana-ability filter.",
+]
+
+[concept]
+name = "tap_all_controlled_permanents_and_lose_unspent_mana"
+pest_rules = [
+    "tap_all_permanents_then_mana_loss",
+    "payment_failure_tap_mana_sources",
+]
+rules_queries = [
+    "lex: tap all lands target player controls that player loses all unspent mana",
+    "lex: they tap all creatures with mana abilities they control lose all unspent mana",
+]
+rules_terms = [
+    "mana ability",
+    "unspent mana",
+    "permanent",
+    "tap",
+]
+
+[[counterexample]]
+reason = "Unspent-mana loss without the tap-all-controlled-permanents effect."
+text = "then that player loses all unspent mana and you add the mana lost this way."
+
+[[counterexample]]
+reason = "Mana ability activation instruction, not tap-all-controlled-permanents plus unspent-mana loss."
+text = "target player activates a mana ability of each land they control."
+
+[[counterexample]]
+reason = "Tap-all-controlled-permanents instruction without unspent-mana loss."
+text = "tap all lands target player controls."
+
+[[counterexample]]
+reason = "Direct life-loss instruction, owned by player_loses_life."
+text = "Its owner loses 3 life."
+
+[[example]]
+text = "Tap all lands target player controls and that player loses all unspent mana."
+
+[[example]]
+text = "Tap all creatures target player controls and that player loses all unspent mana."
+
+[[example]]
+text = "they tap all lands they control and lose all unspent mana"
+
+[[example]]
+text = "they tap all creatures with mana abilities they control and lose all unspent mana"
+
+[grammar_query]
+candidate_rules = [
+    "tap_all_permanents_then_mana_loss",
+    "payment_failure_tap_mana_sources",
+    "player_payment_failure",
+    "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way",
+    "target_player_activates_mana_ability_of_each_permanent_they_control",
+    "player_loses_life",
+]
+selected_rule = "tap_all_permanents_then_mana_loss"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

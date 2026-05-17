@@ -1,0 +1,41 @@
+[fixture]
+concept = "tap_all_controlled_permanents_and_lose_unspent_mana"
+rule = "tap_all_permanents_then_mana_loss"
+
+[[example]]
+text = "Tap all lands target player controls and that player loses all unspent mana."
+reason = "Standalone sentence with target-player affected player, lands scope, and no mana-ability filter."
+
+[[example]]
+text = "Tap all creatures target player controls and that player loses all unspent mana."
+reason = "Standalone sentence with target-player affected player, creatures scope, and no mana-ability filter."
+
+[[example]]
+text = "they tap all lands they control and lose all unspent mana"
+rule = "payment_failure_tap_mana_sources"
+reason = "Payment-failure effect body with that-player actor, lands scope, and no mana-ability filter."
+
+[[example]]
+text = "they tap all creatures with mana abilities they control and lose all unspent mana"
+rule = "payment_failure_tap_mana_sources"
+reason = "Payment-failure effect body with that-player actor, creatures scope, and mana-ability filter."
+
+[[counterexample]]
+text = "then that player loses all unspent mana and you add the mana lost this way."
+reason = "Unspent-mana loss without the tap-all-controlled-permanents effect."
+
+[[counterexample]]
+text = "target player activates a mana ability of each land they control."
+reason = "Mana ability activation instruction, not tap-all-controlled-permanents plus unspent-mana loss."
+
+[[counterexample]]
+text = "tap all lands target player controls."
+reason = "Tap-all-controlled-permanents instruction without unspent-mana loss."
+
+[[counterexample]]
+text = "Its owner loses 3 life."
+reason = "Direct life-loss instruction, owned by player_loses_life."
+
+[[counterexample]]
+text = "Tap all lands target player controls and that player loses all unspent mana. trailing"
+reason = "Exact-consumption guard for the standalone sentence."

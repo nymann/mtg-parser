@@ -540,9 +540,8 @@ you_may_have_that_player_shuffle = {
 }
 
 tap_all_permanents_then_mana_loss = {
-    ^"tap" ~ ^"all" ~ permanent_type_plural ~ ^"target" ~ ^"player"
-  ~ ^"controls" ~ ^"and" ~ ^"that" ~ ^"player" ~ ^"loses" ~ ^"all"
-  ~ ^"unspent" ~ ^"mana" ~ "."
+    ^"tap" ~ tap_all_controlled_permanents_scope ~ ^"target" ~ ^"player"
+  ~ ^"controls" ~ ^"and" ~ that_player_loses_all_unspent_mana ~ "."
 }
 
 player_payment_failure = {
@@ -551,10 +550,17 @@ player_payment_failure = {
 }
 payment_failure_effect = _{ payment_failure_tap_mana_sources }
 payment_failure_tap_mana_sources = {
-    ^"they" ~ ^"tap" ~ ^"all" ~ permanent_type_plural
-  ~ with_mana_abilities? ~ ^"they" ~ ^"control" ~ ^"and" ~ ^"lose"
-  ~ ^"all" ~ ^"unspent" ~ ^"mana"
+    ^"they" ~ ^"tap" ~ tap_all_controlled_permanents_scope_with_optional_mana_abilities
+  ~ ^"they" ~ ^"control" ~ ^"and" ~ lose_all_unspent_mana
 }
+tap_all_controlled_permanents_scope = _{ ^"all" ~ permanent_type_plural }
+tap_all_controlled_permanents_scope_with_optional_mana_abilities = _{
+    tap_all_controlled_permanents_scope ~ with_mana_abilities?
+}
+that_player_loses_all_unspent_mana = _{
+    ^"that" ~ ^"player" ~ ^"loses" ~ ^"all" ~ ^"unspent" ~ ^"mana"
+}
+lose_all_unspent_mana = _{ ^"lose" ~ ^"all" ~ ^"unspent" ~ ^"mana" }
 with_mana_abilities = { ^"with" ~ ^"mana" ~ ^"abilities" }
 
 target_player_activates_mana_ability_of_each_permanent_they_control = {
