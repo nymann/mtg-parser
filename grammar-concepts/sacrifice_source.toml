@@ -1,0 +1,83 @@
+[[axis]]
+name = "action"
+values = ["sacrifice"]
+
+[[axis]]
+name = "sacrificed_object"
+values = [
+    "CARDNAME",
+    "it",
+    "this",
+    "this_source_object_kind",
+    "that_source",
+]
+
+[[axis]]
+name = "ability_context"
+values = ["activated_cost_component"]
+
+[boundary]
+excludes = [
+    "Sacrificing a generic permanent or permanent type, not the ability source object.",
+    "Targeted sacrifice instructions, not source-object sacrifice.",
+    "Destroy instructions, not the sacrifice keyword action.",
+]
+includes = [
+    "Activated cost components that use the sacrifice keyword action on the source object.",
+    "Source-object wording using CARDNAME, it, this, this source object kind, or that source.",
+]
+
+[concept]
+name = "sacrifice_source"
+pest_rules = ["sacrifice_source"]
+rules_queries = [
+    "lex: sacrifice this permanent",
+    "lex: sacrifice this source",
+]
+rules_terms = [
+    "sacrifice",
+    "source",
+]
+
+[[counterexample]]
+reason = "Generic permanent-type sacrifice, not source-object sacrifice."
+text = "sacrifice a creature"
+
+[[counterexample]]
+reason = "Targeted sacrifice instruction, not source-object sacrifice."
+text = "sacrifice target creature"
+
+[[counterexample]]
+reason = "Destroy instruction, not the sacrifice keyword action."
+text = "destroy CARDNAME"
+
+[[example]]
+text = "sacrifice CARDNAME"
+
+[[example]]
+text = "sacrifice it"
+
+[[example]]
+text = "sacrifice this"
+
+[[example]]
+text = "sacrifice this creature"
+
+[[example]]
+text = "sacrifice that source"
+
+[grammar_query]
+candidate_rules = [
+    "sacrifice_source",
+    "source_object",
+    "activated_cost_component",
+    "sacrifice_permanent_cost",
+    "sacrifice_permanent_other_than_source",
+    "sacrifice_source_effect",
+    "sacrifice_source_unless_you_pay",
+]
+selected_rule = "sacrifice_source"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

@@ -1,0 +1,39 @@
+[fixture]
+concept = "sacrifice_source"
+rule = "sacrifice_source"
+
+[[example]]
+text = "sacrifice CARDNAME"
+reason = "Activated cost component sacrificing the card source itself."
+
+[[example]]
+text = "sacrifice it"
+reason = "Activated cost component sacrificing the source object by pronoun."
+
+[[example]]
+text = "sacrifice this"
+reason = "Activated cost component sacrificing this source object without a kind."
+
+[[example]]
+text = "sacrifice this creature"
+reason = "Activated cost component sacrificing this source object with a permanent-type kind."
+
+[[example]]
+text = "sacrifice that source"
+reason = "Activated cost component sacrificing a previously referenced source."
+
+[[counterexample]]
+text = "sacrifice a creature"
+reason = "Generic permanent-type sacrifice, not source-object sacrifice."
+
+[[counterexample]]
+text = "sacrifice target creature"
+reason = "Targeted sacrifice instruction, not source-object sacrifice."
+
+[[counterexample]]
+text = "destroy CARDNAME"
+reason = "Destroy instruction, not the sacrifice keyword action."
+
+[[counterexample]]
+text = "sacrifice CARDNAME trailing"
+reason = "Exact-consumption guard."
