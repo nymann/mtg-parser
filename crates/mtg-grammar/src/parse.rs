@@ -4327,6 +4327,9 @@ fn source_object_from_pair(pair: Pair<Rule>) -> Result<SourceObject, ParseError>
     if pair.as_str() == "CARDNAME" {
         return Ok(SourceObject::ThisPermanent);
     }
+    if pair.as_str().eq_ignore_ascii_case("this") {
+        return Ok(SourceObject::ThisPermanent);
+    }
     if pair.as_str().eq_ignore_ascii_case("it") {
         return Ok(SourceObject::It);
     }
