@@ -1,0 +1,39 @@
+{
+  "concept": "spell_cast_cost_increase_per_target_beyond_first",
+  "fixture_path": "grammar-fixtures/spell_cast_cost_increase_per_target_beyond_first.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first",
+      "text": "This spell costs {1} more to cast for each target beyond the first.",
+      "ast": {
+        "ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst": {
+          "mana": {
+            "symbols": [
+              {
+                "Generic": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "this_spell_costs_mana_more_to_cast_for_each_target_beyond_the_first",
+      "text": "This spell costs {2}{U} more to cast for each target beyond the first.",
+      "ast": {
+        "ThisSpellCostsManaMoreToCastForEachTargetBeyondTheFirst": {
+          "mana": {
+            "symbols": [
+              {
+                "Generic": 2
+              },
+              "Blue"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
