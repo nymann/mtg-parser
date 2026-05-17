@@ -1,0 +1,80 @@
+[[axis]]
+name = "action"
+values = ["remove_from_combat"]
+
+[[axis]]
+name = "target_selector"
+values = ["target_creature_defending_player_controls"]
+
+[[axis]]
+name = "combat_object"
+values = ["creature"]
+
+[[axis]]
+name = "controller"
+values = ["defending_player"]
+
+[[axis]]
+name = "surface"
+values = ["sentence"]
+
+[boundary]
+excludes = [
+    "Blocking-capacity permissions for target creatures defending player controls.",
+    "Regeneration effects that can remove attacking or blocking creatures from combat as a rules consequence.",
+    "Destruction effects that share target creature wording.",
+    "Unblocking status changes for creatures blocked by a referenced creature.",
+]
+includes = ["Imperative sentence effects that remove target creature defending player controls from combat."]
+
+[concept]
+name = "remove_target_creature_defending_player_controls_from_combat"
+pest_rules = ["remove_target_creature_defending_player_controls_from_combat"]
+rules_files = [
+    "mtg-rules/glossary/remove-from-combat.md",
+    "mtg-rules/500-turn-structure/506-combat-phase.md",
+]
+rules_queries = [
+    "lex: remove from combat",
+    "lex: remove target creature defending player controls from combat",
+]
+rules_terms = [
+    "remove from combat",
+    "combat",
+    "creature",
+    "defending player",
+    "target",
+]
+
+[[counterexample]]
+reason = "Blocking-capacity permission, not a remove-from-combat effect."
+text = "Target creature defending player controls can block any number of creatures this turn."
+
+[[counterexample]]
+reason = "Regenerate is a different keyword action even though the rules for regeneration may remove an attacking or blocking creature from combat."
+text = "Regenerate target creature."
+
+[[counterexample]]
+reason = "Destroy is a different action even with target creature wording."
+text = "Destroy target creature."
+
+[[counterexample]]
+reason = "Unblocking is a combat status change for other creatures, not removing the target creature from combat."
+text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."
+
+[[example]]
+text = "Remove target creature defending player controls from combat."
+
+[grammar_query]
+candidate_rules = [
+    "remove_target_creature_defending_player_controls_from_combat",
+    "target_creature_defending_player_controls_can_block_any_number",
+    "regenerate_target_creature",
+    "destroy",
+    "creatures_it_was_blocking_become_unblocked",
+]
+selected_rule = "remove_target_creature_defending_player_controls_from_combat"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

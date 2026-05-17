@@ -1,0 +1,32 @@
+[fixture]
+concept = "remove_target_creature_defending_player_controls_from_combat"
+rule = "remove_target_creature_defending_player_controls_from_combat"
+
+[[example]]
+text = "Remove target creature defending player controls from combat."
+reason = "Imperative remove-from-combat effect for target creature controlled by the defending player."
+
+[[example]]
+rule = "sentence_statement"
+text = "Remove target creature defending player controls from combat."
+reason = "The concept is available as a sentence statement surface."
+
+[[counterexample]]
+text = "Target creature defending player controls can block any number of creatures this turn."
+reason = "Blocking-capacity permission, not a remove-from-combat effect."
+
+[[counterexample]]
+text = "Regenerate target creature."
+reason = "Regenerate is a different keyword action even though the rules for regeneration may remove an attacking or blocking creature from combat."
+
+[[counterexample]]
+text = "Destroy target creature."
+reason = "Destroy is a different action even with target creature wording."
+
+[[counterexample]]
+text = "Creatures it was blocking that had become blocked by only that creature this combat become unblocked."
+reason = "Unblocking is a combat status change for other creatures, not removing the target creature from combat."
+
+[[counterexample]]
+text = "Remove target creature defending player controls from combat. trailing"
+reason = "Exact-consumption guard."
