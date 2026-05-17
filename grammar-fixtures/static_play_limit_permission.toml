@@ -1,0 +1,31 @@
+[fixture]
+concept = "static_play_limit_permission"
+rule = "static_you_may_play_any_number_of_permanents_on_each_of_your_turns"
+
+[[example]]
+text = "You may play any number of lands on each of your turns."
+reason = "Static permission to play any number of lands during each of your turns."
+
+[[example]]
+text = "You may play any number of artifacts on each of your turns."
+reason = "Same play-limit permission shape with a different permanent-type plural."
+
+[[example]]
+text = "You may play any number of creatures on each of your turns."
+reason = "Same play-limit permission shape with another permanent-type plural."
+
+[[counterexample]]
+text = "White spells cost {3} more to cast."
+reason = "Static cost increase for colored spells, owned by static_cost_increase."
+
+[[counterexample]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+reason = "Static cost increase for activated abilities of colored permanents, owned by static_cost_increase."
+
+[[counterexample]]
+text = "Players can't cast spells with a name originally printed in the Alpha expansion."
+reason = "Static play restriction, owned by static_play_restriction."
+
+[[counterexample]]
+text = "You may play any number of lands on each of your turns. trailing"
+reason = "Exact-consumption guard."

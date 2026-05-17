@@ -1,0 +1,66 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_play_limit_permission"]
+
+[[axis]]
+name = "add_actor"
+values = ["you"]
+
+[[axis]]
+name = "add_action"
+values = ["play"]
+
+[[axis]]
+name = "add_quantity"
+values = ["any_number"]
+
+[[axis]]
+name = "add_affected_object"
+values = ["filter=permanent_type_plural"]
+
+[[axis]]
+name = "add_duration"
+values = ["each_of_your_turns"]
+
+[boundary]
+excludes = [
+    "Static cost increases for colored spells.",
+    "Static cost increases for activated abilities of colored permanents.",
+    "Static play restrictions saying players can't cast spells with a name originally printed in an expansion.",
+]
+includes = ["You may play any number of lands on each of your turns."]
+
+[concept]
+name = "static_play_limit_permission"
+pest_rules = ["static_you_may_play_any_number_of_permanents_on_each_of_your_turns"]
+rules_queries = ["lex: you may play any number of lands on each of your turns"]
+rules_terms = [
+    "static",
+    "permission",
+    "play",
+    "land",
+    "turn",
+]
+
+[[counterexample]]
+reason = "Static cost increase for colored spells, owned by static_cost_increase."
+text = "White spells cost {3} more to cast."
+
+[[counterexample]]
+reason = "Static cost increase for activated abilities of colored permanents, owned by static_cost_increase."
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[counterexample]]
+reason = "Static play restriction, owned by static_play_restriction."
+text = "Players can't cast spells with a name originally printed in the Alpha expansion."
+
+[[example]]
+text = "You may play any number of lands on each of your turns."
+
+[grammar_query]
+candidate_rules = ["static_you_may_play_any_number_of_permanents_on_each_of_your_turns"]
+selected_rule = "static_you_may_play_any_number_of_permanents_on_each_of_your_turns"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
