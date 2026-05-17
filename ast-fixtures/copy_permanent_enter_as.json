@@ -24,7 +24,11 @@
                     ],
                     "event": {
                       "PermanentEnters": {
-                        "permanent_type": "Land"
+                        "object": {
+                          "Source": {
+                            "This": "Land"
+                          }
+                        }
                       }
                     },
                     "intervening_if": null
@@ -61,7 +65,11 @@
                     ],
                     "event": {
                       "PermanentEnters": {
-                        "permanent_type": "Planeswalker"
+                        "object": {
+                          "Source": {
+                            "This": "Planeswalker"
+                          }
+                        }
                       }
                     },
                     "intervening_if": null
@@ -98,7 +106,11 @@
                     ],
                     "event": {
                       "PermanentEnters": {
-                        "permanent_type": "Enchantment"
+                        "object": {
+                          "Source": {
+                            "This": "Enchantment"
+                          }
+                        }
                       }
                     },
                     "intervening_if": null
@@ -135,7 +147,11 @@
                     ],
                     "event": {
                       "PermanentEnters": {
-                        "permanent_type": "Creature"
+                        "object": {
+                          "Source": {
+                            "This": "Creature"
+                          }
+                        }
                       }
                     },
                     "intervening_if": null
@@ -172,7 +188,11 @@
                     ],
                     "event": {
                       "PermanentEnters": {
-                        "permanent_type": "Artifact"
+                        "object": {
+                          "Source": {
+                            "This": "Artifact"
+                          }
+                        }
                       }
                     },
                     "intervening_if": null
