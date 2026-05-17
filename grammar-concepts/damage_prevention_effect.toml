@@ -18,6 +18,7 @@ name = "recipient"
 values = [
     "absent",
     "target_or_recipient_clause",
+    "activated_recipient_clause",
 ]
 
 [[axis]]
@@ -32,6 +33,7 @@ name = "surface"
 values = [
     "full_sentence",
     "modal_or_if_body_fragment",
+    "activated_effect_body",
 ]
 
 [boundary]
@@ -51,6 +53,7 @@ name = "damage_prevention_effect"
 pest_rules = [
     "damage_prevention_effect",
     "damage_prevention_effect_this_turn",
+    "activated_damage_prevention_effect",
 ]
 rules_queries = [
     "lex: prevention effect prevent damage",
@@ -74,6 +77,18 @@ text = "The next time a source of your choice would deal damage to target creatu
 reason = "Redirection/replacement, not prevention."
 text = "The next 1 damage that would be dealt to target creature this turn is dealt to you instead."
 
+[[counterexample]]
+reason = "Source power/toughness modifier, owned by activated_source_pt_modifier_until_eot."
+text = "This gets +1/+1 until end of turn."
+
+[[counterexample]]
+reason = "Named-source direct damage instruction, owned by damage_event."
+text = "This deals 1 damage to any target."
+
+[[counterexample]]
+reason = "Redirection/replacement, not prevention."
+text = "The next 1 damage that would be dealt to target creature this turn is dealt to its owner instead."
+
 [[example]]
 text = "Prevent the next 1 damage that would be dealt to any target this turn."
 
@@ -88,6 +103,12 @@ text = "Prevent X of that damage this turn."
 
 [[example]]
 text = "prevent that damage this turn."
+
+[[example]]
+text = "Prevent all damage that would be dealt to you this turn."
+
+[[example]]
+text = "Prevent the next 2 damage that would be dealt to this creature this turn."
 
 [maturity]
 blockers = []

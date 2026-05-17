@@ -19,9 +19,34 @@ reason = "Variable amount axis with that-damage prevented event."
 text = "prevent that damage this turn."
 reason = "Modal or if-body fragment shape: damage_prevention_replacement_effect plus damage_prevention_duration."
 
+[[example]]
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+rule = "activated_damage_prevention_effect"
+reason = "Activated direct prevention shield with any-target recipient clause."
+
+[[example]]
+text = "Prevent all damage that would be dealt to you this turn."
+rule = "activated_damage_prevention_effect"
+reason = "Activated all-damage prevention shield with player recipient clause."
+
+[[example]]
+text = "Prevent the next 2 damage that would be dealt to this creature this turn."
+rule = "activated_damage_prevention_effect"
+reason = "Activated next-amount prevention shield with source-object recipient clause."
+
 [[counterexample]]
 text = "Lightning Bolt deals 3 damage to any target."
 reason = "Named-source damage event, owned by damage_event."
+
+[[counterexample]]
+text = "This gets +1/+1 until end of turn."
+rule = "activated_damage_prevention_effect"
+reason = "Source power/toughness modifier, owned by activated_source_pt_modifier_until_eot."
+
+[[counterexample]]
+text = "This deals 1 damage to any target."
+rule = "activated_damage_prevention_effect"
+reason = "Named-source direct damage instruction, owned by damage_event."
 
 [[counterexample]]
 text = "The next time a source of your choice would deal damage to target creature this turn, prevent that damage."
@@ -29,6 +54,11 @@ reason = "Source-choice next-damage wrapper, not this direct prevention-shield s
 
 [[counterexample]]
 text = "The next 1 damage that would be dealt to target creature this turn is dealt to you instead."
+reason = "Redirection/replacement, not prevention."
+
+[[counterexample]]
+text = "The next 1 damage that would be dealt to target creature this turn is dealt to its owner instead."
+rule = "activated_damage_prevention_effect"
 reason = "Redirection/replacement, not prevention."
 
 [[counterexample]]
