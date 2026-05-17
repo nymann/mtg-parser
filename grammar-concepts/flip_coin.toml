@@ -1,0 +1,79 @@
+[[axis]]
+name = "action"
+values = ["flip"]
+
+[[axis]]
+name = "object"
+values = ["coin"]
+
+[[axis]]
+name = "article"
+values = ["a"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_imperative_effect"]
+
+[boundary]
+excludes = [
+    "Coin-flip result conditionals such as 'if you win the flip', owned by if_you_flip_result_effect.",
+    "Instructions to flip more than one coin or repeat coin flips.",
+    "Physical flip actions for cards or permanents, owned by physical_action or other object-specific concepts.",
+    "Sequenced effects that continue after the coin-flip instruction.",
+    "Definite-article wording such as 'the coin'; the shared article rule only models indefinite articles.",
+]
+includes = [
+    "Standalone imperative effects that instruct the player to flip a singular coin.",
+    "The indefinite article accepted by the shared article grammar.",
+    "Flipping a coin terminology from Comprehensive Rules 705.",
+]
+
+[concept]
+name = "flip_coin"
+pest_rules = ["flip_coin"]
+rules_queries = [
+    "lex: flip a coin",
+    "lex: flipping a coin",
+]
+rules_terms = [
+    "flip",
+    "coin",
+    "Flipping a Coin",
+    "705",
+]
+
+[[counterexample]]
+reason = "Coin-flip result conditionals are owned by if_you_flip_result_effect, not this standalone imperative effect."
+text = "If you win the flip, add {G}."
+
+[[counterexample]]
+reason = "Multiple-coin quantity is outside the singular coin object axis."
+text = "Flip two coins."
+
+[[counterexample]]
+reason = "Physical card flipping is a different object/action concept from coin randomization."
+text = "Flip a card."
+
+[[counterexample]]
+reason = "Sequenced effects continuing after the coin flip are outside this standalone imperative effect."
+text = "Flip a coin, then draw a card."
+
+[[counterexample]]
+reason = "Definite-article wording is outside the existing article axis."
+text = "Flip the coin."
+
+[[example]]
+text = "Flip a coin."
+
+[grammar_query]
+candidate_rules = [
+    "flip_coin",
+    "if_you_flip_result_effect",
+    "coin_flip_result",
+    "physical_action",
+]
+selected_rule = "flip_coin"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

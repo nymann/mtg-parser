@@ -1,0 +1,31 @@
+[fixture]
+concept = "flip_coin"
+rule = "flip_coin"
+
+[[example]]
+text = "Flip a coin."
+reason = "Standalone imperative coin-flip effect using the indefinite article."
+
+[[counterexample]]
+text = "If you win the flip, add {G}."
+reason = "Coin-flip result conditionals are owned by if_you_flip_result_effect, not this standalone imperative effect."
+
+[[counterexample]]
+text = "Flip two coins."
+reason = "Multiple-coin quantity is outside the singular coin object axis."
+
+[[counterexample]]
+text = "Flip a card."
+reason = "Physical card flipping is a different object/action concept from coin randomization."
+
+[[counterexample]]
+text = "Flip a coin, then draw a card."
+reason = "Sequenced effects continuing after the coin flip are outside this standalone imperative effect."
+
+[[counterexample]]
+text = "Flip the coin."
+reason = "Definite-article wording is outside the existing article axis."
+
+[[counterexample]]
+text = "Flip a coin. trailing"
+reason = "Exact-consumption guard."
