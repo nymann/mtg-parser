@@ -1,0 +1,30 @@
+{
+  "concept": "look_at_top_library_cards_then_reorder",
+  "fixture_path": "grammar-fixtures/look_at_top_library_cards_then_reorder.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order",
+      "text": "Look at the top three cards of target player's library, then put them back in any order.",
+      "ast": {
+        "LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder": {
+          "count": {
+            "Number": 3
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order",
+      "text": "Look at the top X cards of target player's library, then put them back in any order.",
+      "ast": {
+        "LookAtTopCardsOfTargetPlayersLibraryThenPutThemBackInAnyOrder": {
+          "count": {
+            "Variable": "X"
+          }
+        }
+      }
+    }
+  ]
+}
