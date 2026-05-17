@@ -1,0 +1,87 @@
+[[axis]]
+name = "actor"
+values = ["that_player"]
+
+[[axis]]
+name = "mana_action"
+values = ["add_mana"]
+
+[[axis]]
+name = "quantity"
+values = ["number_word"]
+
+[[axis]]
+name = "mana_type_constraint"
+values = ["any_type_that_referenced_permanent_produced"]
+
+[[axis]]
+name = "referenced_object"
+values = ["that_permanent_type"]
+
+[[axis]]
+name = "ability_context"
+values = ["trigger_effect_sentence"]
+
+[boundary]
+excludes = [
+    "Sacrifice instructions belong to controller-sacrifice concepts, not mana-production effects.",
+    "Unspent-mana loss instructions belong to mana-loss concepts, not produced-mana type choice.",
+    "Additional fixed mana-symbol production by a permanent's controller is a separate mana-production effect.",
+    "Instructions to activate mana abilities are activation instructions, not the result of a triggered mana ability.",
+]
+includes = [
+    "Triggered-effect sentences instructing that player to add a number-word quantity of mana.",
+    "Mana type constrained to any type produced by a referenced permanent type, matching Comprehensive Rules 106 and 605 wording.",
+]
+
+[concept]
+name = "that_player_adds_mana_of_any_type_that_permanent_produced"
+pest_rules = ["that_player_adds_mana_of_any_type_that_permanent_produced"]
+rules_queries = [
+    "lex: that player adds one mana of any type that land produced",
+    "lex: triggered mana ability adds mana any type land produced",
+]
+rules_terms = [
+    "add mana",
+    "type of mana",
+    "produced mana",
+    "mana ability",
+    "106",
+    "605",
+]
+
+[[counterexample]]
+reason = "Controller sacrifice instruction, not a mana-production triggered effect."
+text = "that creature's controller sacrifices it."
+
+[[counterexample]]
+reason = "Unspent-mana loss instruction, not adding mana of a type produced by a referenced permanent."
+text = "that player loses all unspent mana."
+
+[[counterexample]]
+reason = "Additional fixed mana-symbol production by its controller, not that player adding any type the permanent produced."
+text = "its controller adds an additional {G}."
+
+[[counterexample]]
+reason = "Mana ability activation instruction, not the mana added by a triggered mana ability."
+text = "target player activates a mana ability of each land they control."
+
+[[example]]
+text = "that player adds one mana of any type that land produced."
+
+[[example]]
+text = "That player adds one mana of any type that land produced."
+
+[grammar_query]
+candidate_rules = [
+    "that_player_adds_mana_of_any_type_that_permanent_produced",
+    "that_creatures_controller_sacrifices_it",
+    "then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way",
+    "its_controller_adds_an_additional_mana",
+    "target_player_activates_mana_ability_of_each_permanent_they_control",
+]
+selected_rule = "that_player_adds_mana_of_any_type_that_permanent_produced"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

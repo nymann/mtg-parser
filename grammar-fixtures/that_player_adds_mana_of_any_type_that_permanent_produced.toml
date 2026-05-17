@@ -1,0 +1,31 @@
+[fixture]
+concept = "that_player_adds_mana_of_any_type_that_permanent_produced"
+rule = "that_player_adds_mana_of_any_type_that_permanent_produced"
+
+[[example]]
+text = "that player adds one mana of any type that land produced."
+reason = "Triggered mana-ability effect with that-player actor, one-mana quantity, and land-produced type constraint."
+
+[[example]]
+text = "That player adds one mana of any type that land produced."
+reason = "Oracle-style sentence capitalization for the same produced-mana type constraint."
+
+[[counterexample]]
+text = "that creature's controller sacrifices it."
+reason = "Controller sacrifice instruction, not a mana-production triggered effect."
+
+[[counterexample]]
+text = "that player loses all unspent mana."
+reason = "Unspent-mana loss instruction, not adding mana of a type produced by a referenced permanent."
+
+[[counterexample]]
+text = "its controller adds an additional {G}."
+reason = "Additional fixed mana-symbol production by its controller, not that player adding any type the permanent produced."
+
+[[counterexample]]
+text = "target player activates a mana ability of each land they control."
+reason = "Mana ability activation instruction, not the mana added by a triggered mana ability."
+
+[[counterexample]]
+text = "that player adds one mana of any type that land produced. trailing"
+reason = "Exact-consumption guard."
