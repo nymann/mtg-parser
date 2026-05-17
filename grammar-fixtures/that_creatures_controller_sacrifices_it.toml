@@ -1,0 +1,31 @@
+[fixture]
+concept = "that_creatures_controller_sacrifices_it"
+rule = "that_creatures_controller_sacrifices_it"
+
+[[example]]
+text = "that creature's controller sacrifices it."
+reason = "Triggered effect instructing that creature's controller to sacrifice that creature."
+
+[[example]]
+text = "That creature's controller sacrifices it."
+reason = "Oracle-style sentence capitalization for the same controller-sacrifice effect."
+
+[[counterexample]]
+text = "sacrifice it."
+reason = "Source-object sacrifice, not controller-of-that-creature sacrifice."
+
+[[counterexample]]
+text = "sacrifice target creature."
+reason = "Targeted sacrifice instruction, not a referenced creature's controller sacrificing that creature."
+
+[[counterexample]]
+text = "destroy that creature."
+reason = "Destroy instruction, not the sacrifice keyword action."
+
+[[counterexample]]
+text = "their controllers sacrifice them."
+reason = "Plural controller sacrifice instruction for multiple referenced objects."
+
+[[counterexample]]
+text = "that creature's controller sacrifices it. trailing"
+reason = "Exact-consumption guard."

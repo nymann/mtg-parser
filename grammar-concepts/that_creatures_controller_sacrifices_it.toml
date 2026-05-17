@@ -1,0 +1,82 @@
+[[axis]]
+name = "referenced_object"
+values = ["that_creature"]
+
+[[axis]]
+name = "actor"
+values = ["that_creature_controller"]
+
+[[axis]]
+name = "keyword_action"
+values = ["sacrifice"]
+
+[[axis]]
+name = "sacrificed_object"
+values = ["it"]
+
+[[axis]]
+name = "ability_context"
+values = ["trigger_effect_sentence"]
+
+[boundary]
+excludes = [
+    "Sacrifice instructions where the source object or another player is the actor.",
+    "Sacrifice instructions whose sacrificed object is not the previously referenced creature.",
+    "Destroy instructions, not the sacrifice keyword action.",
+    "Plural controller sacrifice instructions for multiple referenced objects.",
+]
+includes = [
+    "Triggered-effect sentences instructing that creature's controller to sacrifice that creature.",
+    "Sacrifice keyword-action terminology from Comprehensive Rules 701.21.",
+]
+
+[concept]
+name = "that_creatures_controller_sacrifices_it"
+pest_rules = ["that_creatures_controller_sacrifices_it"]
+rules_queries = [
+    "lex: that creature's controller sacrifices it",
+    "lex: sacrifice that creature",
+]
+rules_terms = [
+    "sacrifice",
+    "Sacrifice",
+    "701.21",
+    "controller",
+]
+
+[[counterexample]]
+reason = "Source-object sacrifice belongs to sacrifice_source, not controller-of-that-creature sacrifice."
+text = "sacrifice it."
+
+[[counterexample]]
+reason = "Targeted sacrifice instruction, not a referenced creature's controller sacrificing that creature."
+text = "sacrifice target creature."
+
+[[counterexample]]
+reason = "Destroy instruction, not the sacrifice keyword action."
+text = "destroy that creature."
+
+[[counterexample]]
+reason = "Plural controller sacrifice instruction for multiple referenced objects."
+text = "their controllers sacrifice them."
+
+[[example]]
+text = "that creature's controller sacrifices it."
+
+[[example]]
+text = "That creature's controller sacrifices it."
+
+[grammar_query]
+candidate_rules = [
+    "that_creatures_controller_sacrifices_it",
+    "their_controllers_sacrifice_them",
+    "sacrifice_source",
+    "sacrifice_source_effect",
+    "sacrifice_permanent_other_than_source",
+    "destroy_that_creature_at_end_of_combat",
+]
+selected_rule = "that_creatures_controller_sacrifices_it"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
