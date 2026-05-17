@@ -1,0 +1,71 @@
+[[axis]]
+name = "blocker_ref"
+values = ["it"]
+
+[[axis]]
+name = "action"
+values = ["blocks"]
+
+[[axis]]
+name = "blocked_object"
+values = ["each_attacking_creature"]
+
+[[axis]]
+name = "duration"
+values = ["this_turn"]
+
+[[axis]]
+name = "modality"
+values = ["if_able"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "Optional instructions to have it block one attacking creature of your choice.",
+    "Temporary attack requirements for creatures rather than blocking requirements.",
+    "Static blocking requirements for all creatures able to block an enchanted object.",
+    "Blocking requirements that omit the this-turn duration.",
+]
+includes = ["Standalone this-turn blocking requirements where it blocks each attacking creature if able."]
+
+[concept]
+name = "it_blocks_each_attacking_creature_if_able"
+pest_rules = ["it_blocks_each_attacking_creature_if_able"]
+rules_queries = ["lex: it blocks each attacking creature this turn if able"]
+rules_terms = [
+    "attacking creature",
+    "block",
+    "blocking requirement",
+    "this turn",
+    "if able",
+]
+
+[[counterexample]]
+reason = "Optional instruction to have it block one chosen attacking creature, not a mandatory requirement to block each attacking creature."
+text = "You may have it block an attacking creature of your choice."
+
+[[counterexample]]
+reason = "Temporary attack requirement, not a temporary blocking requirement."
+text = "That creature attacks this turn if able."
+
+[[counterexample]]
+reason = "Global blocking requirement for creatures able to block an enchanted object, not an it-referenced requirement to block each attacking creature."
+text = "All creatures able to block enchanted creature do so."
+
+[[counterexample]]
+reason = "Blocking requirement without the this-turn duration axis."
+text = "It blocks each attacking creature if able."
+
+[[example]]
+text = "It blocks each attacking creature this turn if able."
+
+[grammar_query]
+candidate_rules = ["it_blocks_each_attacking_creature_if_able"]
+selected_rule = "it_blocks_each_attacking_creature_if_able"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

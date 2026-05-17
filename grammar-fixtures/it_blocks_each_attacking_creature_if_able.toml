@@ -1,0 +1,27 @@
+[fixture]
+concept = "it_blocks_each_attacking_creature_if_able"
+rule = "it_blocks_each_attacking_creature_if_able"
+
+[[example]]
+text = "It blocks each attacking creature this turn if able."
+reason = "Standalone this-turn blocking requirement for it to block each attacking creature."
+
+[[counterexample]]
+text = "You may have it block an attacking creature of your choice."
+reason = "Optional instruction to have it block one chosen attacking creature, not a mandatory requirement to block each attacking creature."
+
+[[counterexample]]
+text = "That creature attacks this turn if able."
+reason = "Temporary attack requirement, not a temporary blocking requirement."
+
+[[counterexample]]
+text = "All creatures able to block enchanted creature do so."
+reason = "Global blocking requirement for creatures able to block an enchanted object, not an it-referenced requirement to block each attacking creature."
+
+[[counterexample]]
+text = "It blocks each attacking creature if able."
+reason = "Blocking requirement without the this-turn duration axis."
+
+[[counterexample]]
+text = "It blocks each attacking creature this turn if able. trailing"
+reason = "Exact-consumption guard."
