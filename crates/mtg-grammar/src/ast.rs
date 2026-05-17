@@ -677,8 +677,12 @@ pub enum DamageLifeGainReference {
 pub enum DamageRecipient {
     /// "any target"
     AnyTarget,
+    /// "any target of an opponent's choice"
+    AnyTargetOfOpponentsChoice,
     /// "you"
     You,
+    /// "target <permanent_type>"
+    TargetPermanent { permanent_type: PermanentType },
     /// "target creature you control"
     TargetCreatureYouControl,
     /// "each creature"
@@ -697,6 +701,8 @@ pub enum DamageRecipient {
 pub enum DamageRecipients {
     /// "to any target"
     AnyTarget,
+    /// "to any target of an opponent's choice"
+    AnyTargetOfOpponentsChoice,
     /// "divided evenly, rounded down, among any number of targets"
     DividedEvenlyRoundedDownAmongAnyNumberOfTargets,
     /// "to <recipient> and <recipient>"

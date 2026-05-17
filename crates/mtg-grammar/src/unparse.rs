@@ -846,6 +846,9 @@ fn write_damage_recipients(out: &mut String, recipients: &[DamageRecipient]) {
 fn write_damage_event_recipients(out: &mut String, recipients: &DamageRecipients) {
     match recipients {
         DamageRecipients::AnyTarget => out.push_str(" to any target"),
+        DamageRecipients::AnyTargetOfOpponentsChoice => {
+            out.push_str(" to any target of an opponent's choice");
+        }
         DamageRecipients::DividedEvenlyRoundedDownAmongAnyNumberOfTargets => {
             out.push_str(" divided evenly, rounded down, among any number of targets");
         }
@@ -910,7 +913,14 @@ fn write_named_damage_event(out: &mut String, event: &NamedDamageEvent) {
 fn write_damage_recipient(out: &mut String, recipient: DamageRecipient) {
     match recipient {
         DamageRecipient::AnyTarget => out.push_str("any target"),
+        DamageRecipient::AnyTargetOfOpponentsChoice => {
+            out.push_str("any target of an opponent's choice");
+        }
         DamageRecipient::You => out.push_str("you"),
+        DamageRecipient::TargetPermanent { permanent_type } => {
+            out.push_str("target ");
+            out.push_str(permanent_type_name(permanent_type));
+        }
         DamageRecipient::TargetCreatureYouControl => out.push_str("target creature you control"),
         DamageRecipient::EachCreature => out.push_str("each creature"),
         DamageRecipient::EachCreatureWithKeyword { keyword } => {

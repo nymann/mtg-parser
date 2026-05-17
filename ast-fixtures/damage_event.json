@@ -1,0 +1,180 @@
+{
+  "concept": "damage_event",
+  "fixture_path": "grammar-fixtures/damage_event.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "damage_event_statement",
+      "text": "Lightning Bolt deals 3 damage to any target.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": {
+            "Number": 3
+          },
+          "recipient": "AnyTarget",
+          "source": "Lightning Bolt"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "activated_direct_damage_effect",
+      "text": "CARDNAME deals 1 damage to any target.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": {
+            "Number": 1
+          },
+          "recipient": "AnyTarget",
+          "source": "CARDNAME"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "activated_direct_damage_effect",
+      "text": "This permanent deals X damage to target creature.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": {
+            "Variable": "X"
+          },
+          "recipient": {
+            "List": [
+              {
+                "TargetPermanent": {
+                  "permanent_type": "Creature"
+                }
+              }
+            ]
+          },
+          "source": "This permanent"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "activated_direct_damage_effect",
+      "text": "CARDNAME deals 1 damage to any target of an opponent's choice.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": {
+            "Number": 1
+          },
+          "recipient": "AnyTargetOfOpponentsChoice",
+          "source": "CARDNAME"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "damage_event_statement",
+      "text": "Fireball deals X damage divided evenly, rounded down, among any number of targets.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": {
+            "Variable": "X"
+          },
+          "recipient": "DividedEvenlyRoundedDownAmongAnyNumberOfTargets",
+          "source": "Fireball"
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "damage_event_statement",
+      "text": "Psionic Blast deals 4 damage to any target and 2 damage to you.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": {
+            "Number": 4
+          },
+          "recipient": {
+            "Assignments": [
+              {
+                "amount": {
+                  "Number": 4
+                },
+                "recipient": "AnyTarget"
+              },
+              {
+                "amount": {
+                  "Number": 2
+                },
+                "recipient": "You"
+              }
+            ]
+          },
+          "source": "Psionic Blast"
+        }
+      }
+    },
+    {
+      "index": 7,
+      "rule": "activated_direct_damage_effect",
+      "text": "CARDNAME deals 1 damage to any target and 2 damage to you.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": {
+            "Number": 1
+          },
+          "recipient": {
+            "Assignments": [
+              {
+                "amount": {
+                  "Number": 1
+                },
+                "recipient": "AnyTarget"
+              },
+              {
+                "amount": {
+                  "Number": 2
+                },
+                "recipient": "You"
+              }
+            ]
+          },
+          "source": "CARDNAME"
+        }
+      }
+    },
+    {
+      "index": 8,
+      "rule": "activated_direct_damage_effect",
+      "text": "CARDNAME deals 3 damage to each creature and each player.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": {
+            "Number": 3
+          },
+          "recipient": {
+            "List": [
+              "EachCreature",
+              "EachPlayer"
+            ]
+          },
+          "source": "CARDNAME"
+        }
+      }
+    },
+    {
+      "index": 9,
+      "rule": "damage_event_statement",
+      "text": "Volcanic Eruption deals damage to each creature and each player equal to the number of Mountains put into a graveyard this way.",
+      "ast": {
+        "NamedSourceDealsDamage": {
+          "amount": {
+            "NumberOfBasicLandsPutIntoGraveyardThisWay": "Mountain"
+          },
+          "recipient": {
+            "List": [
+              "EachCreature",
+              "EachPlayer"
+            ]
+          },
+          "source": "Volcanic Eruption"
+        }
+      }
+    }
+  ]
+}

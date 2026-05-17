@@ -260,7 +260,7 @@ spell_type_choice = { spell_type ~ (^"or" ~ spell_type)* }
 spell_type = @{ ^"instant" | ^"sorcery" }
 
 damage_event_statement = {
-    proper_name ~ ^"deals"
+    (source_object | proper_name) ~ ^"deals"
   ~ (
       damage_event_assignment_list
     | (damage_event_amount ~ ^"damage" ~ damage_event_recipients)
@@ -274,7 +274,8 @@ damage_event_equal_to_amount = {
   ~ article ~ ^"graveyard" ~ ^"this" ~ ^"way"
 }
 damage_event_recipients = {
-    damage_event_any_target
+    damage_event_any_target_of_opponents_choice
+  | damage_event_any_target
   | damage_event_divided_evenly_rounded_down_among_any_number_of_targets
   | damage_event_recipient_list
 }
@@ -286,10 +287,14 @@ damage_event_assignment = {
 }
 damage_event_assignment_recipient = _{
     any_target_prevention_recipient
+  | any_target_of_opponents_choice_damage_recipient
   | you_damage_recipient
   | damage_recipient
 }
 damage_event_any_target = { ^"to" ~ ^"any" ~ ^"target" }
+damage_event_any_target_of_opponents_choice = {
+    ^"to" ~ any_target_of_opponents_choice_damage_recipient
+}
 damage_event_divided_evenly_rounded_down_among_any_number_of_targets = {
     ^"divided" ~ ^"evenly" ~ "," ~ ^"rounded" ~ ^"down" ~ ","
   ~ ^"among" ~ ^"any" ~ ^"number" ~ ^"of" ~ ^"targets"
@@ -346,7 +351,8 @@ prevention_recipient = _{ any_target_prevention_recipient | that_permanent_or_pl
 any_target_prevention_recipient = { ^"any" ~ ^"target" }
 that_permanent_or_player_prevention_recipient = { ^"that" ~ ^"permanent" ~ ^"or" ~ ^"player" }
 damage_recipient = {
-    target_creature_you_control_damage_recipient
+    target_permanent_damage_recipient
+  | target_creature_you_control_damage_recipient
   | each_creature_with_keyword
   | each_creature_without_keyword
   | each_creature_damage_recipient
@@ -2244,7 +2250,7 @@ its_controller_adds_an_additional_mana = {
     ^"its" ~ ^"controller" ~ ^"adds" ~ article ~ ^"additional" ~ mana_symbol ~ "."
 }
 source_object = { "CARDNAME" | (^"this" ~ source_object_kind) | (^"that" ~ ^"source") }
-source_object_kind = _{ aura_source_object | permanent_object | permanent_type }
+source_object_kind = _{ permanent_object | aura_source_object | permanent_type }
 aura_source_object = { ^"aura" }
 permanent_object = { ^"permanent" }
 that_permanents_controller = { ^"that" ~ permanent_type ~ "'s" ~ ^"controller" }

@@ -1298,6 +1298,9 @@ fn damage_event_recipients_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient
     let inner = only_inner(pair, "damage event recipients missing inner rule")?;
     match inner.as_rule() {
         Rule::damage_event_any_target => Ok(DamageRecipients::AnyTarget),
+        Rule::damage_event_any_target_of_opponents_choice => {
+            Ok(DamageRecipients::AnyTargetOfOpponentsChoice)
+        }
         Rule::damage_event_divided_evenly_rounded_down_among_any_number_of_targets => {
             Ok(DamageRecipients::DividedEvenlyRoundedDownAmongAnyNumberOfTargets)
         }
@@ -1320,7 +1323,16 @@ fn damage_recipient_from_pair(pair: Pair<Rule>) -> Result<DamageRecipient, Parse
     };
     match inner.as_rule() {
         Rule::any_target_prevention_recipient => Ok(DamageRecipient::AnyTarget),
+        Rule::any_target_of_opponents_choice_damage_recipient => {
+            Ok(DamageRecipient::AnyTargetOfOpponentsChoice)
+        }
         Rule::you_damage_recipient => Ok(DamageRecipient::You),
+        Rule::target_permanent_damage_recipient => {
+            let permanent_type_pair = only_inner(inner, "target damage recipient missing type")?;
+            Ok(DamageRecipient::TargetPermanent {
+                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+            })
+        }
         Rule::target_creature_you_control_damage_recipient => {
             Ok(DamageRecipient::TargetCreatureYouControl)
         }
