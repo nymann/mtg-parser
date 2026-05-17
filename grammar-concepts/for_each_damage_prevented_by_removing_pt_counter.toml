@@ -1,0 +1,87 @@
+[[axis]]
+name = "damage_unit"
+values = [
+    "fixed_number",
+    "variable_name",
+]
+
+[[axis]]
+name = "affected_object"
+values = ["source_object"]
+
+[[axis]]
+name = "counter_condition"
+values = ["has_pt_counter_on_it"]
+
+[[axis]]
+name = "counter_cost"
+values = ["remove_pt_counter_from_it"]
+
+[[axis]]
+name = "prevention_event"
+values = ["prevent_that_damage_unit"]
+
+[boundary]
+excludes = [
+    "Direct damage-prevention shields that do not condition prevention on removing a power/toughness counter.",
+    "Counter-removal costs that remove named counters rather than power/toughness counters.",
+    "Damage-prevention effects for targets or other recipients rather than the source object itself.",
+    "Triggered abilities that care about damage being prevented rather than replacement or prevention instructions that prevent the damage.",
+]
+includes = [
+    "For-each damage prevention instructions where damage that would be dealt to the source object is prevented by removing a power/toughness counter from it.",
+    "Fixed numeric and variable damage-unit wording.",
+    "Power/toughness counter conditions and matching power/toughness counter removal from it.",
+]
+
+[concept]
+name = "for_each_damage_prevented_by_removing_pt_counter"
+pest_rules = ["for_each_damage_prevented_by_removing_pt_counter"]
+rules_queries = [
+    "lex: for each damage prevented by removing a +1/+1 counter",
+    "lex: prevent damage by removing a power toughness counter",
+]
+rules_terms = [
+    "damage",
+    "prevention effect",
+    "counter",
+    "power",
+    "toughness",
+]
+
+[[counterexample]]
+reason = "Direct prevention shield without a counter-removal condition or cost."
+text = "Prevent the next 1 damage that would be dealt to this creature this turn."
+
+[[counterexample]]
+reason = "Named-counter variant, not a power/toughness counter prevention cost."
+text = "For each 1 damage that would be dealt to this creature, if it has a time counter on it, remove a time counter from it and prevent that 1 damage."
+
+[[counterexample]]
+reason = "Target-recipient prevention, not damage that would be dealt to the source object itself."
+text = "For each 1 damage that would be dealt to target creature, if it has a +1/+1 counter on it, remove a +1/+1 counter from it and prevent that 1 damage."
+
+[[counterexample]]
+reason = "Triggered ability about prevented damage, not the for-each prevention instruction."
+text = "Whenever damage is prevented this way, remove a +1/+1 counter from this creature."
+
+[[example]]
+text = "For each 1 damage that would be dealt to this creature, if it has a +1/+1 counter on it, remove a +1/+1 counter from it and prevent that 1 damage."
+
+[[example]]
+text = "For each X damage that would be dealt to CARDNAME, if it has a +0/+1 counter on it, remove a +0/+1 counter from it and prevent that X damage."
+
+[[example]]
+text = "For each 2 damage that would be dealt to it, if it has an -1/-1 counter on it, remove an -1/-1 counter from it and prevent that 2 damage."
+
+[grammar_query]
+candidate_rules = [
+    "for_each_damage_prevented_by_removing_pt_counter",
+    "damage_prevention_effect",
+    "remove_pt_counter_from_it",
+]
+selected_rule = "for_each_damage_prevented_by_removing_pt_counter"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

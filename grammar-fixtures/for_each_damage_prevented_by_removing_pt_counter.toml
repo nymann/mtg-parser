@@ -1,0 +1,35 @@
+[fixture]
+concept = "for_each_damage_prevented_by_removing_pt_counter"
+rule = "for_each_damage_prevented_by_removing_pt_counter"
+
+[[example]]
+text = "For each 1 damage that would be dealt to this creature, if it has a +1/+1 counter on it, remove a +1/+1 counter from it and prevent that 1 damage."
+reason = "Fixed damage unit prevented by removing a matching positive power/toughness counter from the source object."
+
+[[example]]
+text = "For each X damage that would be dealt to CARDNAME, if it has a +0/+1 counter on it, remove a +0/+1 counter from it and prevent that X damage."
+reason = "Variable damage unit prevented by removing a matching power/toughness counter from CARDNAME."
+
+[[example]]
+text = "For each 2 damage that would be dealt to it, if it has an -1/-1 counter on it, remove an -1/-1 counter from it and prevent that 2 damage."
+reason = "Fixed damage unit using an article before a negative power/toughness counter."
+
+[[counterexample]]
+text = "Prevent the next 1 damage that would be dealt to this creature this turn."
+reason = "Direct prevention shield without a counter-removal condition or cost."
+
+[[counterexample]]
+text = "For each 1 damage that would be dealt to this creature, if it has a time counter on it, remove a time counter from it and prevent that 1 damage."
+reason = "Named-counter variant, not a power/toughness counter prevention cost."
+
+[[counterexample]]
+text = "For each 1 damage that would be dealt to target creature, if it has a +1/+1 counter on it, remove a +1/+1 counter from it and prevent that 1 damage."
+reason = "Target-recipient prevention, not damage that would be dealt to the source object itself."
+
+[[counterexample]]
+text = "Whenever damage is prevented this way, remove a +1/+1 counter from this creature."
+reason = "Triggered ability about prevented damage, not the for-each prevention instruction."
+
+[[counterexample]]
+text = "For each 1 damage that would be dealt to this creature, if it has a +1/+1 counter on it, remove a +1/+1 counter from it and prevent that 1 damage. trailing"
+reason = "Exact-consumption guard."
