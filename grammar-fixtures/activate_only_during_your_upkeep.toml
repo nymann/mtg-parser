@@ -1,0 +1,31 @@
+[fixture]
+concept = "activate_only_during_your_upkeep"
+rule = "activate_only_during_your_upkeep"
+
+[[example]]
+text = "Activate only during your upkeep."
+reason = "Activation permission sentence restricted to the controller's upkeep."
+
+[[example]]
+text = "activate only during your upkeep."
+reason = "Same activation permission shape in lowercase; the grammar literals are case-insensitive."
+
+[[counterexample]]
+text = "Activate only during combat."
+reason = "Combat timing permission is a sibling concept, not the upkeep timing window."
+
+[[counterexample]]
+text = "Activate only during your turn."
+reason = "Your-turn timing permission is a sibling concept, not the upkeep timing window."
+
+[[counterexample]]
+text = "Activate only as a sorcery."
+reason = "Sorcery timing permission does not use the during-your-upkeep timing window."
+
+[[counterexample]]
+text = "Activate only during an opponent's turn, before attackers are declared."
+reason = "Opponent-turn timing permission with an additional condition is outside this concept."
+
+[[counterexample]]
+text = "Activate only during your upkeep. trailing"
+reason = "Exact-consumption guard."
