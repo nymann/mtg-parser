@@ -2243,25 +2243,37 @@ fn damage_prevention_effect_sentence_from_pair(
 fn if_you_do_cast_that_card_face_down_without_paying_mana_cost_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
-    let mut inner = pair.into_inner();
-    let power_pair = inner
+    let (power, toughness) = face_down_creature_spell_dimensions_from_pair(pair)?;
+    Ok(Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power, toughness })
+}
+
+fn face_down_creature_spell_dimensions_from_pair(
+    pair: Pair<Rule>,
+) -> Result<(u32, u32), ParseError> {
+    let mut number_texts = Vec::new();
+    collect_unsigned_number_texts(pair, &mut number_texts);
+    let mut numbers = number_texts.into_iter();
+    let power = numbers
         .next()
-        .ok_or(ParseError::Internal("face-down cast missing power"))?;
-    let toughness_pair = inner
+        .ok_or(ParseError::Internal("face-down cast missing power"))?
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("face-down cast power"))?;
+    let toughness = numbers
         .next()
-        .ok_or(ParseError::Internal("face-down cast missing toughness"))?;
-    Ok(
-        Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost {
-            power: power_pair
-                .as_str()
-                .parse::<u32>()
-                .map_err(|_| ParseError::Internal("face-down cast power"))?,
-            toughness: toughness_pair
-                .as_str()
-                .parse::<u32>()
-                .map_err(|_| ParseError::Internal("face-down cast toughness"))?,
-        },
-    )
+        .ok_or(ParseError::Internal("face-down cast missing toughness"))?
+        .parse::<u32>()
+        .map_err(|_| ParseError::Internal("face-down cast toughness"))?;
+    Ok((power, toughness))
+}
+
+fn collect_unsigned_number_texts(pair: Pair<Rule>, numbers: &mut Vec<String>) {
+    if pair.as_rule() == Rule::unsigned_number {
+        numbers.push(pair.as_str().to_owned());
+        return;
+    }
+    for child in pair.into_inner() {
+        collect_unsigned_number_texts(child, numbers);
+    }
 }
 
 fn damage_prevention_effect_from_this_turn_pair(
@@ -2647,6 +2659,10 @@ fn if_you_do_effect_from_inner_pair(pair: Pair<Rule>) -> Result<IfYouDoEffect, P
                 keywords: attack_restriction_keywords_from_pair(pair)?,
             },
         ),
+        Rule::may_cast_that_card_face_down_as_creature_spell_without_paying_mana_cost => {
+            let (power, toughness) = face_down_creature_spell_dimensions_from_pair(pair)?;
+            Ok(IfYouDoEffect::CastThatCardFaceDownWithoutPayingManaCost { power, toughness })
+        }
         _ => Err(ParseError::Internal("if_you_do effect")),
     }
 }

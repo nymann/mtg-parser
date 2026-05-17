@@ -30,6 +30,10 @@ reason = "You-do actor with next-turn attack restriction body and one keyword."
 text = "If you do, until your next turn, you can't be attacked except by creatures with flying and/or shadow."
 reason = "You-do actor with next-turn attack restriction body and keyword_and_or_list."
 
+[[example]]
+text = "If you do, you may cast that card face down as a 2/2 creature spell without paying its mana cost."
+reason = "You-do actor with cast-that-card face-down body parameterized by article and power/toughness numbers."
+
 [[counterexample]]
 text = "When you do, you gain 3 life."
 reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
@@ -57,6 +61,18 @@ reason = "Draw-card body is not part of the existing if_you_do_effect_body axis.
 [[counterexample]]
 text = "If you would gain life, draw that many cards instead."
 reason = "Life-gain replacement effect, not an if-you-do follow-up."
+
+[[counterexample]]
+text = "When you do, you may cast that card face down as a 2/2 creature spell without paying its mana cost."
+reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
+
+[[counterexample]]
+text = "If you don't, you may cast that card face down as a 2/2 creature spell without paying its mana cost."
+reason = "Negative polarity branch, outside the actor axis."
+
+[[counterexample]]
+text = "You may cast that card face down as a 2/2 creature spell without paying its mana cost."
+reason = "Missing if-you-do actor, so the body does not stand alone in this concept."
 
 [[counterexample]]
 text = "If you do, add {G}. trailing"

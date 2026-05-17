@@ -808,6 +808,7 @@ if_you_do_effect_body = _{
   | gain_life_effect
   | damage_prevention_effect_this_turn
   | cant_be_attacked_until_your_next_turn_except_by_creatures_with_keywords
+  | may_cast_that_card_face_down_as_creature_spell_without_paying_mana_cost
 }
 if_you_do_gain_life = { ^"if" ~ ^"you" ~ ^"do" ~ "," ~ gain_life_effect }
 gain_life_effect = { ^"you" ~ ^"gain" ~ unsigned_number ~ ^"life" ~ "." }
@@ -2069,8 +2070,10 @@ if_this_ability_activated_at_least_times_this_turn_sacrifice_source_at_next_end_
 }
 
 if_you_do_cast_that_card_face_down_without_paying_mana_cost = {
-    ^"if" ~ ^"you" ~ ^"do" ~ "," ~ ^"you" ~ ^"may" ~ ^"cast"
-  ~ ^"that" ~ ^"card" ~ ^"face" ~ ^"down" ~ ^"as" ~ article
+    if_do_actor ~ may_cast_that_card_face_down_as_creature_spell_without_paying_mana_cost
+}
+may_cast_that_card_face_down_as_creature_spell_without_paying_mana_cost = {
+    ^"you" ~ ^"may" ~ ^"cast" ~ ^"that" ~ ^"card" ~ ^"face" ~ ^"down" ~ ^"as" ~ article
   ~ unsigned_number ~ "/" ~ unsigned_number ~ ^"creature" ~ ^"spell"
   ~ ^"without" ~ ^"paying" ~ ^"its" ~ ^"mana" ~ ^"cost" ~ "."
 }

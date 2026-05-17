@@ -14,6 +14,7 @@ values = [
     "gain_life",
     "prevent_damage_this_turn",
     "cant_be_attacked_until_your_next_turn_except_by_creatures_with_keywords",
+    "may_cast_that_card_face_down_as_creature_spell_without_paying_mana_cost",
 ]
 
 [boundary]
@@ -26,6 +27,7 @@ includes = [
     "Conditional follow-up effects introduced by 'if you do,' or 'if the player does,'.",
     "Mana, untap, life-gain, and damage-prevention bodies already accepted by if_you_do_effect_body.",
     "Attack-restriction bodies that last until your next turn and use keyword_and_or_list after 'except by creatures with'.",
+    "Cast-that-card face-down bodies with article and power/toughness numbers for the creature spell characteristics.",
 ]
 
 [concept]
@@ -38,6 +40,8 @@ pest_rules = [
     "cant_be_attacked_until_your_next_turn_except_by_creatures_with_keywords",
     "if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_keywords",
     "keyword_and_or_list",
+    "if_you_do_cast_that_card_face_down_without_paying_mana_cost",
+    "may_cast_that_card_face_down_as_creature_spell_without_paying_mana_cost",
 ]
 rules_queries = [
     "lex: if you do effect",
@@ -76,6 +80,18 @@ text = "If you do, draw a card."
 reason = "Life-gain replacement effect, not an if-you-do follow-up."
 text = "If you would gain life, draw that many cards instead."
 
+[[counterexample]]
+reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
+text = "When you do, you may cast that card face down as a 2/2 creature spell without paying its mana cost."
+
+[[counterexample]]
+reason = "Negative polarity branch, outside the actor axis."
+text = "If you don't, you may cast that card face down as a 2/2 creature spell without paying its mana cost."
+
+[[counterexample]]
+reason = "Missing if-you-do actor, so the body does not stand alone in this concept."
+text = "You may cast that card face down as a 2/2 creature spell without paying its mana cost."
+
 [[example]]
 text = "If you do, add {G}."
 
@@ -96,6 +112,9 @@ text = "If you do, until your next turn, you can't be attacked except by creatur
 
 [[example]]
 text = "If you do, until your next turn, you can't be attacked except by creatures with flying and/or shadow."
+
+[[example]]
+text = "If you do, you may cast that card face down as a 2/2 creature spell without paying its mana cost."
 
 [maturity]
 blockers = []

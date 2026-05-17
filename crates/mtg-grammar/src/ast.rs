@@ -668,6 +668,9 @@ impl Statement {
                     keywords,
                 }
             }
+            IfYouDoEffect::CastThatCardFaceDownWithoutPayingManaCost { power, toughness } => {
+                Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power, toughness }
+            }
         }
     }
 
@@ -716,6 +719,10 @@ pub(crate) enum IfYouDoEffect {
     },
     CantBeAttackedUntilYourNextTurnExceptByCreaturesWithKeywords {
         keywords: Vec<Keyword>,
+    },
+    CastThatCardFaceDownWithoutPayingManaCost {
+        power: u32,
+        toughness: u32,
     },
 }
 

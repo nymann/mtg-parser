@@ -1341,6 +1341,13 @@ fn write_if_you_do_effect(out: &mut String, effect: IfYouDoEffect) {
             write_keyword_and_or_list(out, &keywords);
             out.push('.');
         }
+        IfYouDoEffect::CastThatCardFaceDownWithoutPayingManaCost { power, toughness } => {
+            write!(
+                out,
+                "you may cast that card face down as a {power}/{toughness} creature spell without paying its mana cost."
+            )
+            .expect("write to String never fails");
+        }
     });
 }
 
