@@ -1,0 +1,96 @@
+[[axis]]
+name = "affected_player"
+values = ["you"]
+
+[[axis]]
+name = "replaced_event"
+values = ["next_card_draw_this_turn"]
+
+[[axis]]
+name = "marker"
+values = ["instead"]
+
+[[axis]]
+name = "replacement_action"
+values = ["filter_top_library_cards_then_draw"]
+
+[[axis]]
+name = "library_owner"
+values = ["your_library"]
+
+[[axis]]
+name = "count"
+values = ["draw_count"]
+
+[[axis]]
+name = "bottom_ordering"
+values = ["random_order"]
+
+[[axis]]
+name = "ability_context"
+values = ["activated_effect"]
+
+[boundary]
+excludes = [
+    "Generic draw instructions that are not replacing the next card draw.",
+    "Other draw replacement effects with a different replacement result.",
+    "Draw-step replacement conditions that do not use the next-card-draw-this-turn shield.",
+    "Standalone top-library filtering instructions that are not replacing a draw.",
+]
+includes = [
+    "Activated replacement effects for the next time you would draw a card this turn.",
+    "Replacement effects whose result looks at the top counted cards of your library, puts all but one on the bottom in a random order, then draws a card.",
+    "Number-word and variable counts through the existing draw_count quantity axis.",
+]
+
+[concept]
+name = "next_card_draw_replacement"
+pest_rules = ["next_card_draw_replacement"]
+rules_queries = [
+    "lex: next time you would draw a card this turn instead look at the top cards of your library",
+    "lex: replacement effect draw a card this turn instead look at top cards library",
+]
+rules_terms = [
+    "card draw",
+    "draw",
+    "replacement effect",
+    "instead",
+    "library",
+]
+
+[[counterexample]]
+reason = "Generic draw instruction, not a next-card-draw replacement effect."
+text = "Draw a card."
+
+[[counterexample]]
+reason = "Different replacement result, not top-library filtering into a draw."
+text = "The next time you would draw a card this turn, instead put a card you own from outside the game into your hand."
+
+[[counterexample]]
+reason = "Draw-step replacement condition, not the next-card-draw-this-turn shield."
+text = "If you would draw a card during your draw step"
+
+[[counterexample]]
+reason = "Standalone top-library filtering action, not a draw replacement effect."
+text = "Look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card."
+
+[[example]]
+text = "The next time you would draw a card this turn, instead look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card."
+
+[[example]]
+text = "The next time you would draw a card this turn, instead look at the top three cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card."
+
+[grammar_query]
+candidate_rules = [
+    "next_card_draw_replacement",
+    "filter_top_library_cards",
+    "draw_card_during_your_draw_step",
+    "activated_draw_cards",
+    "draw_cards_action",
+    "look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order",
+]
+selected_rule = "next_card_draw_replacement"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

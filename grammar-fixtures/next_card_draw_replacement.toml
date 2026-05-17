@@ -1,0 +1,31 @@
+[fixture]
+concept = "next_card_draw_replacement"
+rule = "next_card_draw_replacement"
+
+[[example]]
+text = "The next time you would draw a card this turn, instead look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card."
+reason = "Next-card-draw-this-turn replacement with variable count through the existing draw_count axis."
+
+[[example]]
+text = "The next time you would draw a card this turn, instead look at the top three cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card."
+reason = "Next-card-draw-this-turn replacement with number-word count through the existing draw_count axis."
+
+[[counterexample]]
+text = "Draw a card."
+reason = "Generic draw instruction, not a next-card-draw replacement effect."
+
+[[counterexample]]
+text = "The next time you would draw a card this turn, instead put a card you own from outside the game into your hand."
+reason = "Different replacement result, not top-library filtering into a draw."
+
+[[counterexample]]
+text = "If you would draw a card during your draw step"
+reason = "Draw-step replacement condition, not the next-card-draw-this-turn shield."
+
+[[counterexample]]
+text = "Look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card."
+reason = "Standalone top-library filtering action, not a draw replacement effect."
+
+[[counterexample]]
+text = "The next time you would draw a card this turn, instead look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card. trailing"
+reason = "Exact-consumption guard."
