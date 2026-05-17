@@ -1,0 +1,23 @@
+[fixture]
+concept = "static_discard_replacement"
+rule = "static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead"
+
+[[example]]
+text = "If an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard."
+reason = "Static discard replacement effect with optional top-of-library destination instead of graveyard."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Static enters-tapped replacement effect, owned by static_enters_tapped."
+
+[[counterexample]]
+text = "The next time you would draw a card this turn, instead look at the top N cards of your library."
+reason = "Draw-event replacement effect, not a discard replacement."
+
+[[counterexample]]
+text = "Discard a card."
+reason = "Direct discard instruction, not a static replacement effect."
+
+[[counterexample]]
+text = "If an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard. trailing"
+reason = "Exact-consumption guard."

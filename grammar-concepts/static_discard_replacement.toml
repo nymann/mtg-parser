@@ -1,0 +1,71 @@
+[[axis]]
+name = "preserve_effect_kind"
+values = ["static_replacement_effect"]
+
+[[axis]]
+name = "affected_event"
+values = ["discard_card"]
+
+[[axis]]
+name = "affected_player"
+values = ["you"]
+
+[[axis]]
+name = "affected_object"
+values = ["discarded_card"]
+
+[[axis]]
+name = "replacement_destination"
+values = ["top_of_your_library"]
+
+[[axis]]
+name = "replaced_destination"
+values = ["your_graveyard"]
+
+[[axis]]
+name = "optionality"
+values = ["may"]
+
+[boundary]
+excludes = [
+    "Static enters-tapped replacement effects, owned by static_enters_tapped.",
+    "Draw-event replacement effects that look at and reorder library cards, owned separately from discard replacement.",
+    "Direct discard instructions that are not static replacement effects.",
+]
+includes = ["Static replacement effects where an effect causes you to discard a card and you may put the discarded card on top of your library instead of into your graveyard."]
+
+[concept]
+name = "static_discard_replacement"
+pest_rules = ["static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead"]
+rules_queries = ["lex: replacement effect discard instead graveyard library"]
+rules_terms = [
+    "discard",
+    "graveyard",
+    "instead",
+    "library",
+    "replacement effect",
+    "static ability",
+]
+
+[[counterexample]]
+reason = "Static enters-tapped replacement effect, owned by static_enters_tapped."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "Draw-event replacement effect that is not a discard replacement."
+text = "The next time you would draw a card this turn, instead look at the top N cards of your library."
+
+[[counterexample]]
+reason = "Direct discard instruction, not a static replacement effect."
+text = "Discard a card."
+
+[[example]]
+text = "If an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard."
+
+[grammar_query]
+candidate_rules = ["static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead"]
+selected_rule = "static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
