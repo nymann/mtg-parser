@@ -1,0 +1,35 @@
+[fixture]
+concept = "look_at_top_library_cards_then_reorder"
+rule = "look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order"
+
+[[example]]
+text = "Look at the top three cards of target player's library, then put them back in any order."
+reason = "Target-player library owner with number-word count, same-library top destination, and any-order reordering."
+
+[[example]]
+text = "Look at the top X cards of target player's library, then put them back in any order."
+reason = "Target-player library owner with variable count through the existing draw_count quantity axis."
+
+[[counterexample]]
+text = "Look at target player's hand."
+reason = "Hand inspection, not top-of-library inspection and reorder."
+
+[[counterexample]]
+text = "Look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card."
+reason = "Different library manipulation effect with your library, bottom-of-library destination, random ordering, and card draw."
+
+[[counterexample]]
+text = "Scry N."
+reason = "Keyword action, not the explicit look-and-reorder sentence."
+
+[[counterexample]]
+text = "Fateseal N."
+reason = "Keyword action, not the explicit target-player-library sentence."
+
+[[counterexample]]
+text = "You may have that player shuffle."
+reason = "Optional shuffle follow-up is a separate statement, not part of this concept."
+
+[[counterexample]]
+text = "Look at the top three cards of target player's library, then put them back in any order. trailing"
+reason = "Exact-consumption guard."

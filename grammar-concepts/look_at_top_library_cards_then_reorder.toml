@@ -1,0 +1,83 @@
+[[axis]]
+name = "count"
+values = ["draw_count"]
+
+[[axis]]
+name = "library_owner"
+values = ["target_player"]
+
+[[axis]]
+name = "action"
+values = ["look_at_top_cards"]
+
+[[axis]]
+name = "destination"
+values = ["same_library_back_on_top"]
+
+[[axis]]
+name = "ordering"
+values = ["any_order"]
+
+[[axis]]
+name = "shuffle_followup"
+values = ["separate_statement_not_part_of_concept"]
+
+[boundary]
+excludes = [
+    "Hand inspection is not top-of-library card inspection and reorder.",
+    "Your-library top-card filtering to the bottom of the library is a different library manipulation effect.",
+    "Keyword actions such as scry and fateseal are not this explicit look-and-reorder sentence.",
+    "Optional shuffle follow-up sentences are separate statements, not part of this concept.",
+]
+includes = [
+    "Instructions to look at the top counted cards of target player's library.",
+    "Instructions that put those same cards back on top of that library in any order.",
+    "Number-word and variable counts through the existing draw_count quantity axis.",
+]
+
+[concept]
+name = "look_at_top_library_cards_then_reorder"
+pest_rules = ["look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order"]
+rules_queries = [
+    "lex: look at the top three cards of target player's library then put them back in any order",
+    "lex: look at the top X cards of target player's library then put them back in any order",
+]
+rules_terms = [
+    "library",
+    "look",
+    "order",
+]
+
+[[counterexample]]
+reason = "Hand inspection, not top-of-library inspection and reorder."
+text = "Look at target player's hand."
+
+[[counterexample]]
+reason = "Different library manipulation effect: cards move to the bottom and the instruction draws a card."
+text = "Look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then draw a card."
+
+[[counterexample]]
+reason = "Keyword action, not the explicit look-and-reorder sentence."
+text = "Scry N."
+
+[[counterexample]]
+reason = "Keyword action, not the explicit target-player-library sentence."
+text = "Fateseal N."
+
+[[counterexample]]
+reason = "Optional shuffle follow-up is a separate statement, not part of this concept."
+text = "You may have that player shuffle."
+
+[[example]]
+text = "Look at the top three cards of target player's library, then put them back in any order."
+
+[[example]]
+text = "Look at the top X cards of target player's library, then put them back in any order."
+
+[grammar_query]
+candidate_rules = ["look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order"]
+selected_rule = "look_at_top_cards_of_target_players_library_then_put_them_back_in_any_order"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
