@@ -2119,6 +2119,7 @@ pub enum SpellType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CreatureType {
     Djinn,
+    Dragon,
     Elf,
     Goblin,
     Golem,

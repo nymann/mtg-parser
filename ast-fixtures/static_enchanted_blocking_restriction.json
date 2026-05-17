@@ -1,0 +1,36 @@
+{
+  "concept": "static_enchanted_blocking_restriction",
+  "fixture_path": "grammar-fixtures/static_enchanted_blocking_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_enchanted_cant_be_blocked_except_by_creature_type",
+      "text": "Enchanted creature can't be blocked except by Walls.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedCantBeBlockedExceptByCreatureType": {
+            "except_type": "Wall",
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_enchanted_cant_be_blocked_except_by_creature_type",
+      "text": "Enchanted creature can't be blocked except by Dragons.",
+      "ast": {
+        "StaticAbility": {
+          "EnchantedCantBeBlockedExceptByCreatureType": {
+            "except_type": "Dragon",
+            "object": {
+              "Permanent": "Creature"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

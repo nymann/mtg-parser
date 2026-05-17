@@ -6366,6 +6366,7 @@ fn creature_type_from_pair(pair: Pair<Rule>) -> Result<CreatureType, ParseError>
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
         "djinn" => Ok(CreatureType::Djinn),
+        "dragon" => Ok(CreatureType::Dragon),
         "elf" => Ok(CreatureType::Elf),
         "goblin" => Ok(CreatureType::Goblin),
         "golem" => Ok(CreatureType::Golem),
@@ -6383,6 +6384,7 @@ fn creature_type_from_plural_pair(pair: Pair<Rule>) -> Result<CreatureType, Pars
     }
     match pair.as_str().to_ascii_lowercase().as_str() {
         "djinns" => Ok(CreatureType::Djinn),
+        "dragons" => Ok(CreatureType::Dragon),
         "elves" => Ok(CreatureType::Elf),
         "goblins" => Ok(CreatureType::Goblin),
         "golems" => Ok(CreatureType::Golem),
