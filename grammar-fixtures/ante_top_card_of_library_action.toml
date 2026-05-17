@@ -1,0 +1,32 @@
+[fixture]
+concept = "ante_top_card_of_library_action"
+rule = "ante_top_card_of_your_library_action"
+
+[[example]]
+text = "Ante the top card of your library"
+reason = "Imperative action form with you as actor and your library as the library owner."
+
+[[example]]
+rule = "each_player_performs_action"
+text = "Each player antes the top card of their library."
+reason = "Each-player action form with their library as the library owner."
+
+[[counterexample]]
+text = "Remove this card from your deck before playing if you're not playing for ante."
+reason = "Deck-removal play restriction, owned by ante_play_restriction."
+
+[[counterexample]]
+text = "Exchange that card with the top card of your library."
+reason = "Exchange action, not an ante-library action."
+
+[[counterexample]]
+text = "Search your library for a card."
+reason = "Search action, not an ante-library action."
+
+[[counterexample]]
+text = "Look at the top card of a library."
+reason = "Library inspection effect, not an ante-library action."
+
+[[counterexample]]
+text = "Ante the top card of your library trailing"
+reason = "Exact-consumption guard."

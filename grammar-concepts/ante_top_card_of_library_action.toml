@@ -1,0 +1,88 @@
+[[axis]]
+name = "action"
+values = ["ante_top_card_of_library"]
+
+[[axis]]
+name = "actor"
+values = [
+    "you",
+    "each_player",
+]
+
+[[axis]]
+name = "library_owner"
+values = [
+    "your",
+    "their",
+]
+
+[[axis]]
+name = "scope"
+values = [
+    "imperative_action",
+    "each_player_action",
+]
+
+[boundary]
+excludes = [
+    "Deck-removal play restrictions for cards that are not being played for ante.",
+    "Exchange instructions involving the top card of a library.",
+    "Search instructions involving a library.",
+    "Library inspection effects involving top cards of a library.",
+]
+includes = [
+    "Imperative instructions to ante the top card of your library.",
+    "Each-player instructions where each player antes the top card of their library.",
+]
+
+[concept]
+name = "ante_top_card_of_library_action"
+pest_rules = [
+    "ante_top_card_of_your_library_action",
+    "each_player_antes_top_card_of_their_library_action",
+]
+rules_queries = [
+    "lex: ante the top card of your library",
+    "lex: each player antes the top card of their library",
+]
+rules_terms = [
+    "ante",
+    "library",
+    "card",
+]
+
+[[counterexample]]
+reason = "Deck-removal play restriction, owned by ante_play_restriction."
+text = "Remove this card from your deck before playing if you're not playing for ante."
+
+[[counterexample]]
+reason = "Exchange action, not an ante-library action."
+text = "Exchange that card with the top card of your library."
+
+[[counterexample]]
+reason = "Search action, not an ante-library action."
+text = "Search your library for a card."
+
+[[counterexample]]
+reason = "Library inspection effect, not an ante-library action."
+text = "Look at the top card of a library."
+
+[[example]]
+text = "Ante the top card of your library."
+
+[[example]]
+text = "Each player antes the top card of their library."
+
+[grammar_query]
+candidate_rules = [
+    "ante_play_restriction",
+    "ante_top_card_of_your_library_action",
+    "each_player_antes_top_card_of_their_library_action",
+    "exchange_that_card_with_top_card_of_your_library",
+    "search_your_library_for_a_card_action",
+]
+selected_rule = "ante_top_card_of_your_library_action"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
