@@ -1,0 +1,85 @@
+[[axis]]
+name = "effect_kind"
+values = ["blocking_restriction"]
+
+[[axis]]
+name = "subject"
+values = ["target_creature"]
+
+[[axis]]
+name = "subject_filter"
+values = ["power_n_or_less"]
+
+[[axis]]
+name = "modality"
+values = ["cant"]
+
+[[axis]]
+name = "action"
+values = ["be_blocked"]
+
+[[axis]]
+name = "duration"
+values = ["this_turn"]
+
+[[axis]]
+name = "threshold"
+values = ["unsigned_number"]
+
+[boundary]
+excludes = [
+    "Blocking-capacity permissions that let a creature block more creatures.",
+    "Combat-removal effects for a defending player's target creature.",
+    "Static enchanted-object blocking restrictions with an exception.",
+    "Static source-object blocking restrictions by creature type.",
+]
+includes = [
+    "Target creature with power 2 or less can't be blocked this turn.",
+    "Target creature with power 3 or less can't be blocked this turn.",
+]
+
+[concept]
+name = "target_creature_with_power_or_less_cant_be_blocked"
+pest_rules = ["target_creature_with_power_or_less_cant_be_blocked"]
+rules_queries = ["lex: target creature with power 2 or less can't be blocked this turn"]
+rules_terms = [
+    "blocking restriction",
+    "target creature",
+    "power",
+    "can't be blocked",
+    "this turn",
+]
+
+[[counterexample]]
+reason = "Blocking-capacity permission for a target creature controlled by the defending player, not a blocking restriction."
+text = "Target creature defending player controls can block any number of creatures this turn."
+
+[[counterexample]]
+reason = "Blocking-capacity permission for the source object, not a blocking restriction."
+text = "This creature can block an additional creature each combat."
+
+[[counterexample]]
+reason = "Combat-removal effect for a defending player's target creature, not an evasion effect."
+text = "Remove target creature defending player controls from combat."
+
+[[counterexample]]
+reason = "Static enchanted-object blocking restriction with a creature-type exception."
+text = "Enchanted creature can't be blocked except by Walls."
+
+[[counterexample]]
+reason = "Static source-object blocking restriction by creature type, not a temporary target-creature restriction."
+text = "This creature can't be blocked by Walls."
+
+[[example]]
+text = "Target creature with power 2 or less can't be blocked this turn."
+
+[[example]]
+text = "Target creature with power 3 or less can't be blocked this turn."
+
+[grammar_query]
+candidate_rules = ["target_creature_with_power_or_less_cant_be_blocked"]
+selected_rule = "target_creature_with_power_or_less_cant_be_blocked"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

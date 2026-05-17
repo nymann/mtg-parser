@@ -1,0 +1,35 @@
+[fixture]
+concept = "target_creature_with_power_or_less_cant_be_blocked"
+rule = "target_creature_with_power_or_less_cant_be_blocked"
+
+[[example]]
+text = "Target creature with power 2 or less can't be blocked this turn."
+reason = "Temporary blocking restriction for a target creature filtered by power threshold."
+
+[[example]]
+text = "Target creature with power 3 or less can't be blocked this turn."
+reason = "Same temporary blocking restriction with a different unsigned-number threshold."
+
+[[counterexample]]
+text = "Target creature defending player controls can block any number of creatures this turn."
+reason = "Blocking-capacity permission, owned by target_creature_defending_player_controls_can_block_any_number."
+
+[[counterexample]]
+text = "This creature can block an additional creature each combat."
+reason = "Source-object blocking-capacity permission, not a target-creature blocking restriction."
+
+[[counterexample]]
+text = "Remove target creature defending player controls from combat."
+reason = "Combat-removal effect, not an evasion effect."
+
+[[counterexample]]
+text = "Enchanted creature can't be blocked except by Walls."
+reason = "Static enchanted-object blocking restriction with an exception, not this temporary target-creature restriction."
+
+[[counterexample]]
+text = "This creature can't be blocked by Walls."
+reason = "Static source-object blocking restriction by creature type, not this temporary target-creature restriction."
+
+[[counterexample]]
+text = "Target creature with power 2 or less can't be blocked this turn. trailing"
+reason = "Exact-consumption guard."
