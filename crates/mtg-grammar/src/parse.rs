@@ -216,6 +216,18 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         }),
         Rule::referenced_card_play_instruction => referenced_card_play_instruction_from_pair(pair),
         Rule::mana_ability_activation_limit => mana_ability_activation_limit_from_pair(pair),
+        Rule::activation_limit_context => Ok(Statement::ActivationLimitContext {
+            context: activation_limit_context_from_pair(pair)?,
+        }),
+        Rule::mana_ability_source_limit => Ok(Statement::ManaAbilitySourceLimit {
+            source: mana_ability_source_limit_from_pair(pair)?,
+        }),
+        Rule::produced_mana_spending_limit => Ok(Statement::ProducedManaSpendingLimit {
+            spending: produced_mana_spending_limit_from_pair(pair)?,
+        }),
+        Rule::mana_spending_purpose => Ok(Statement::ManaSpendingPurpose {
+            purpose: mana_spending_purpose_from_pair(pair)?,
+        }),
         Rule::conditional_control_player_effect => conditional_control_player_effect_from_pair(pair),
         Rule::then_that_player_loses_unspent_mana_and_you_add_mana_lost_this_way => {
             Ok(Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay)
@@ -1811,11 +1823,7 @@ fn mana_ability_activation_limit_from_pair(pair: Pair<Rule>) -> Result<Statement
                 source = Some(mana_ability_source_limit_from_pair(child)?);
             }
             Rule::produced_mana_spending_limit => {
-                spending = child
-                    .into_inner()
-                    .filter(|purpose| purpose.as_rule() == Rule::mana_spending_purpose)
-                    .map(mana_spending_purpose_from_pair)
-                    .collect::<Result<Vec<_>, _>>()?;
+                spending = produced_mana_spending_limit_from_pair(child)?;
             }
             _ => {}
         }
@@ -1826,6 +1834,15 @@ fn mana_ability_activation_limit_from_pair(pair: Pair<Rule>) -> Result<Statement
         source: source.ok_or(ParseError::Internal("mana limit missing source"))?,
         spending,
     })
+}
+
+fn produced_mana_spending_limit_from_pair(
+    pair: Pair<Rule>,
+) -> Result<Vec<ManaSpendingPurpose>, ParseError> {
+    pair.into_inner()
+        .filter(|purpose| purpose.as_rule() == Rule::mana_spending_purpose)
+        .map(mana_spending_purpose_from_pair)
+        .collect()
 }
 
 fn activation_limit_context_from_pair(

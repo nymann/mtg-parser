@@ -175,6 +175,10 @@ phrase_statement = _{
   | label_phrase
   | draw_cards_action
   | draw_that_many_cards_replacement_result
+  | activation_limit_context
+  | mana_ability_source_limit
+  | produced_mana_spending_limit
+  | mana_spending_purpose
   | control_duration
   | spell_resolution_duration
   | control_player_condition

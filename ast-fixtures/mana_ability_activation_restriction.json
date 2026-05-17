@@ -1,0 +1,75 @@
+{
+  "concept": "mana_ability_activation_restriction",
+  "fixture_path": "grammar-fixtures/mana_ability_activation_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "mana_ability_activation_limit",
+      "text": "While doing so, the player can activate mana abilities only if they're from lands that player controls and only if mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card.",
+      "ast": {
+        "ManaAbilityActivationLimit": {
+          "context": "WhileDoingSo",
+          "player": "ThePlayer",
+          "source": "LandsThatPlayerControls",
+          "spending": [
+            "ActivateOtherManaAbilitiesOfLandsThePlayerControls",
+            "PlayThatCard"
+          ]
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "activation_limit_context",
+      "text": "While doing so",
+      "ast": {
+        "ActivationLimitContext": {
+          "context": "WhileDoingSo"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "mana_ability_source_limit",
+      "text": "they're from lands that player controls",
+      "ast": {
+        "ManaAbilitySourceLimit": {
+          "source": "LandsThatPlayerControls"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "produced_mana_spending_limit",
+      "text": "mana they produce is spent to activate other mana abilities of lands the player controls and/or to play that card",
+      "ast": {
+        "ProducedManaSpendingLimit": {
+          "spending": [
+            "ActivateOtherManaAbilitiesOfLandsThePlayerControls",
+            "PlayThatCard"
+          ]
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "mana_spending_purpose",
+      "text": "activate other mana abilities of lands the player controls",
+      "ast": {
+        "ManaSpendingPurpose": {
+          "purpose": "ActivateOtherManaAbilitiesOfLandsThePlayerControls"
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "mana_spending_purpose",
+      "text": "play that card",
+      "ast": {
+        "ManaSpendingPurpose": {
+          "purpose": "PlayThatCard"
+        }
+      }
+    }
+  ]
+}

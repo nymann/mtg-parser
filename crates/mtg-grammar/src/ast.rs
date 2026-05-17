@@ -213,6 +213,22 @@ pub enum Statement {
         source: ManaAbilitySourceLimit,
         spending: Vec<ManaSpendingPurpose>,
     },
+    /// A mana-ability activation restriction context fragment.
+    ActivationLimitContext {
+        context: ActivationLimitContext,
+    },
+    /// A mana-ability activation restriction source-scope fragment.
+    ManaAbilitySourceLimit {
+        source: ManaAbilitySourceLimit,
+    },
+    /// A produced-mana spending restriction fragment.
+    ProducedManaSpendingLimit {
+        spending: Vec<ManaSpendingPurpose>,
+    },
+    /// A produced-mana spending purpose fragment.
+    ManaSpendingPurpose {
+        purpose: ManaSpendingPurpose,
+    },
     /// "Then that player loses all unspent mana and you add the mana lost
     /// this way."
     ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay,

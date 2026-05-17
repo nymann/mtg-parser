@@ -318,6 +318,19 @@ fn write_statement(out: &mut String, statement: &Statement) {
             write_mana_spending_purposes(out, spending);
             out.push('.');
         }
+        Statement::ActivationLimitContext { context } => {
+            write_activation_limit_context(out, *context);
+        }
+        Statement::ManaAbilitySourceLimit { source } => {
+            write_mana_ability_source_limit(out, *source);
+        }
+        Statement::ProducedManaSpendingLimit { spending } => {
+            out.push_str("mana they produce is spent to ");
+            write_mana_spending_purposes(out, spending);
+        }
+        Statement::ManaSpendingPurpose { purpose } => {
+            write_mana_spending_purposes(out, &[*purpose]);
+        }
         Statement::ThenThatPlayerLosesUnspentManaAndYouAddManaLostThisWay => {
             out.push_str(
                 "Then that player loses all unspent mana and you add the mana lost this way.",
