@@ -19,6 +19,16 @@ text = "If you do, you gain 3 life."
 reason = "Life-gain body."
 
 [[example]]
+text = "If you do, you gain 3 life"
+rule = "if_you_do_gain_life_fragment"
+reason = "Periodless life-gain fragment shares the if-you-do actor and life-gain body axes."
+
+[[example]]
+text = "You may pay {1}. If you do, you gain 3 life"
+rule = "trigger_effect_fragment_sequence"
+reason = "Sequence usage of the periodless if-you-do life-gain fragment."
+
+[[example]]
 text = "If you do, prevent the next 1 damage that would be dealt to any target this turn."
 reason = "Damage-prevention body with this-turn duration."
 
@@ -63,6 +73,10 @@ text = "If you would gain life, draw that many cards instead."
 reason = "Life-gain replacement effect, not an if-you-do follow-up."
 
 [[counterexample]]
+text = "You gain 3 life."
+reason = "Missing if-you-do actor, so the life-gain body does not stand alone in this concept."
+
+[[counterexample]]
 text = "When you do, you may cast that card face down as a 2/2 creature spell without paying its mana cost."
 reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
 
@@ -77,3 +91,8 @@ reason = "Missing if-you-do actor, so the body does not stand alone in this conc
 [[counterexample]]
 text = "If you do, add {G}. trailing"
 reason = "Exact-consumption guard."
+
+[[counterexample]]
+text = "If you do, you gain 3 life trailing"
+rule = "if_you_do_gain_life_fragment"
+reason = "Exact-consumption guard for the periodless fragment spelling."

@@ -26,6 +26,7 @@ excludes = [
 includes = [
     "Conditional follow-up effects introduced by 'if you do,' or 'if the player does,'.",
     "Mana, untap, life-gain, and damage-prevention bodies already accepted by if_you_do_effect_body.",
+    "Periodless if-you-do life-gain fragments used inside trigger effect fragment sequences.",
     "Attack-restriction bodies that last until your next turn and use keyword_and_or_list after 'except by creatures with'.",
     "Cast-that-card face-down bodies with article and power/toughness numbers for the creature spell characteristics.",
 ]
@@ -35,6 +36,7 @@ name = "if_you_do_effect"
 pest_rules = [
     "if_you_do_effect",
     "if_you_do_gain_life",
+    "if_you_do_gain_life_fragment",
     "if_do_actor",
     "if_you_do_effect_body",
     "cant_be_attacked_until_your_next_turn_except_by_creatures_with_keywords",
@@ -81,6 +83,10 @@ reason = "Life-gain replacement effect, not an if-you-do follow-up."
 text = "If you would gain life, draw that many cards instead."
 
 [[counterexample]]
+reason = "Missing if-you-do actor, so the life-gain body does not stand alone in this concept."
+text = "You gain 3 life."
+
+[[counterexample]]
 reason = "Reflexive triggered template, not the conditional 'if you do' follow-up."
 text = "When you do, you may cast that card face down as a 2/2 creature spell without paying its mana cost."
 
@@ -103,6 +109,12 @@ text = "If you do, untap the land."
 
 [[example]]
 text = "If you do, you gain 3 life."
+
+[[example]]
+text = "If you do, you gain 3 life"
+
+[[example]]
+text = "You may pay {1}. If you do, you gain 3 life"
 
 [[example]]
 text = "If you do, prevent the next 1 damage that would be dealt to any target this turn."
