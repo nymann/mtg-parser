@@ -1,0 +1,51 @@
+{
+  "concept": "static_untap_step_restriction",
+  "fixture_path": "grammar-fixtures/static_untap_step_restriction.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps",
+      "text": "Creatures with power 3 or greater don't untap during their controllers' untap steps.",
+      "ast": {
+        "StaticAbility": {
+          "UntapRestrictionDuringUntapSteps": {
+            "restriction": {
+              "CreaturesWithPowerOrGreater": {
+                "power": 3
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps",
+      "text": "Players can't untap more than one creature during their untap steps.",
+      "ast": {
+        "StaticAbility": {
+          "UntapRestrictionDuringUntapSteps": {
+            "restriction": {
+              "PlayersCantUntapMoreThanPermanents": {
+                "amount": 1,
+                "permanent_type": "Creature"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "static_creatures_with_power_or_greater_dont_untap_during_their_controllers_untap_steps",
+      "text": "Players skip their untap steps.",
+      "ast": {
+        "StaticAbility": {
+          "UntapRestrictionDuringUntapSteps": {
+            "restriction": "PlayersSkipTheirUntapSteps"
+          }
+        }
+      }
+    }
+  ]
+}
