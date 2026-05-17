@@ -1,0 +1,88 @@
+{
+  "concept": "imperative_action_sequence",
+  "fixture_path": "grammar-fixtures/imperative_action_sequence.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "imperative_action_sequence",
+      "text": "Look at target player's hand.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "LookAtTargetHand": {
+                "player": "Player"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "imperative_action_sequence",
+      "text": "Look at target opponent's hand and choose a card from it.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "LookAtTargetHand": {
+                "player": "Opponent"
+              }
+            },
+            "ChooseCardFromIt"
+          ]
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "imperative_action_sequence",
+      "text": "tap CARDNAME.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            {
+              "TapSource": {
+                "source": "ThisPermanent"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "imperative_action_sequence",
+      "text": "Discard your hand, then draw a card.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            "DiscardYourHand",
+            {
+              "DrawCards": {
+                "count": {
+                  "Number": 1
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "imperative_action_sequence",
+      "text": "Search your library for a card, put that card into your hand, then shuffle.",
+      "ast": {
+        "ImperativeActionSequence": {
+          "actions": [
+            "SearchYourLibraryForACard",
+            "PutThatCardIntoYourHand",
+            "Shuffle"
+          ]
+        }
+      }
+    }
+  ]
+}
