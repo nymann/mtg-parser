@@ -1,0 +1,14 @@
+{
+  "concept": "static_discard_replacement",
+  "fixture_path": "grammar-fixtures/static_discard_replacement.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_if_effect_causes_you_to_discard_card_you_may_put_it_on_top_of_library_instead",
+      "text": "If an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard.",
+      "ast": {
+        "StaticAbility": "IfEffectCausesYouToDiscardCardYouMayPutItOnTopOfYourLibraryInstead"
+      }
+    }
+  ]
+}
