@@ -1,0 +1,27 @@
+[fixture]
+concept = "static_source_pt_equal_to_count"
+rule = "static_named_source_pt_equal_to_count"
+
+[[example]]
+text = "Keldon Warlord's power and toughness are each equal to the number of non-Wall creatures you control."
+reason = "Possessive named source P/T equal to a controlled non-creature-type creature count."
+
+[[example]]
+text = "Dakkon Blackblade's power and toughness are each equal to the number of lands you control."
+reason = "Possessive named source P/T equal to a controlled land count."
+
+[[counterexample]]
+text = "This creature enters tapped."
+reason = "Enters-tapped replacement effect, not a static P/T count effect."
+
+[[counterexample]]
+text = "As this creature enters, choose a color."
+reason = "As-enters choice replacement effect, not a static P/T count effect."
+
+[[counterexample]]
+text = "This permanent enters with N +1/+1 counters on it."
+reason = "Enters-with-counters replacement effect, not a static P/T count effect."
+
+[[counterexample]]
+text = "Dakkon Blackblade's power and toughness are each equal to the number of lands you control. trailing"
+reason = "Exact-consumption guard."

@@ -1,0 +1,71 @@
+[[axis]]
+name = "ability_kind"
+values = ["static_ability"]
+
+[[axis]]
+name = "effect_kind"
+values = ["continuous_effect"]
+
+[[axis]]
+name = "affected_characteristic"
+values = ["power_and_toughness"]
+
+[[axis]]
+name = "subject"
+values = ["possessive_named_source"]
+
+[[axis]]
+name = "value_relation"
+values = ["each_equal_to_count"]
+
+[[axis]]
+name = "count_basis"
+values = ["named_source_pt_count"]
+
+[boundary]
+excludes = [
+    "This creature enters tapped.",
+    "As this creature enters, choose a color.",
+    "This permanent enters with N +1/+1 counters on it.",
+]
+includes = [
+    "Keldon Warlord's power and toughness are each equal to the number of non-Wall creatures you control.",
+    "Dakkon Blackblade's power and toughness are each equal to the number of lands you control.",
+]
+
+[concept]
+name = "static_source_pt_equal_to_count"
+pest_rules = ["static_named_source_pt_equal_to_count"]
+rules_queries = ["lex: static ability power toughness equal number count"]
+rules_terms = [
+    "static ability",
+    "continuous effect",
+    "power",
+    "toughness",
+]
+
+[[counterexample]]
+reason = "Enters-tapped replacement effect, not a static P/T count effect."
+text = "This creature enters tapped."
+
+[[counterexample]]
+reason = "As-enters choice replacement effect, not a static P/T count effect."
+text = "As this creature enters, choose a color."
+
+[[counterexample]]
+reason = "Enters-with-counters replacement effect, not a static P/T count effect."
+text = "This permanent enters with N +1/+1 counters on it."
+
+[[example]]
+text = "Keldon Warlord's power and toughness are each equal to the number of non-Wall creatures you control."
+
+[[example]]
+text = "Dakkon Blackblade's power and toughness are each equal to the number of lands you control."
+
+[grammar_query]
+candidate_rules = ["static_named_source_pt_equal_to_count"]
+selected_rule = "static_named_source_pt_equal_to_count"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

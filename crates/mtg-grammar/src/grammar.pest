@@ -1208,12 +1208,14 @@ static_named_source_pt_equal_to_count = {
 named_source_pt_count = _{
     non_creature_type_creatures_you_control
   | basic_lands_you_control
+  | lands_you_control
   | creatures_named_on_battlefield
 }
 non_creature_type_creatures_you_control = {
     ^"non-" ~ creature_type ~ ^"creatures" ~ ^"you" ~ ^"control"
 }
 basic_lands_you_control = { basic_land_type_plural ~ ^"you" ~ ^"control" }
+lands_you_control = { ^"lands" ~ ^"you" ~ ^"control" }
 creatures_named_on_battlefield = {
     ^"creatures" ~ ^"named" ~ proper_name ~ ^"on" ~ ^"the" ~ ^"battlefield"
 }
