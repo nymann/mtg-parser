@@ -1,0 +1,30 @@
+{
+  "concept": "permanent_tapped_for_mana",
+  "fixture_path": "grammar-fixtures/permanent_tapped_for_mana.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "player_taps_permanent_for_mana",
+      "text": "a player taps a land for mana",
+      "ast": {
+        "TriggerEvent": {
+          "PlayerTapsPermanentForMana": {
+            "permanent_type": "Land"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "player_taps_permanent_for_mana",
+      "text": "a player taps an artifact for mana",
+      "ast": {
+        "TriggerEvent": {
+          "PlayerTapsPermanentForMana": {
+            "permanent_type": "Artifact"
+          }
+        }
+      }
+    }
+  ]
+}
