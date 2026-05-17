@@ -267,6 +267,15 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push_str(", ");
             write_control_player_effect_with_case(out, effect, SentenceCase::Lower);
         }
+        Statement::ControlPlayerDuration { duration } => {
+            write_control_player_duration(out, duration);
+        }
+        Statement::SpellResolutionDuration => {
+            out.push_str("that spell is resolving");
+        }
+        Statement::ControlPlayerCondition { condition } => {
+            write_control_player_condition(out, *condition);
+        }
         Statement::PlayReferencedCard {
             player,
             card,

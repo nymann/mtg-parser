@@ -1,0 +1,77 @@
+{
+  "concept": "control_player_resolution_duration",
+  "fixture_path": "grammar-fixtures/control_player_resolution_duration.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "control_player_effect",
+      "text": "You control that player until Word of Command finishes resolving.",
+      "ast": {
+        "ControlPlayer": {
+          "controller": "You",
+          "duration": {
+            "SourceFinishesResolving": {
+              "source_name": "Word of Command"
+            }
+          },
+          "player": "ThatPlayer"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "conditional_control_player_effect",
+      "text": "If the chosen card is cast as a spell, you control the player while that spell is resolving.",
+      "ast": {
+        "ConditionalControlPlayer": {
+          "condition": "ChosenCardIsCastAsSpell",
+          "effect": {
+            "controller": "You",
+            "duration": "ThatSpellIsResolving",
+            "player": "ThePlayer"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "control_duration",
+      "text": "until Word of Command finishes resolving",
+      "ast": {
+        "ControlPlayerDuration": {
+          "duration": {
+            "SourceFinishesResolving": {
+              "source_name": "Word of Command"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "control_duration",
+      "text": "while that spell is resolving",
+      "ast": {
+        "ControlPlayerDuration": {
+          "duration": "ThatSpellIsResolving"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "spell_resolution_duration",
+      "text": "that spell is resolving",
+      "ast": "SpellResolutionDuration"
+    },
+    {
+      "index": 6,
+      "rule": "control_player_condition",
+      "text": "the chosen card is cast as a spell",
+      "ast": {
+        "ControlPlayerCondition": {
+          "condition": "ChosenCardIsCastAsSpell"
+        }
+      }
+    }
+  ]
+}

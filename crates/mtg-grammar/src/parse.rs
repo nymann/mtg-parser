@@ -203,6 +203,13 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
             target_player_activates_mana_ability_of_each_permanent_they_control_from_pair(pair)
         }
         Rule::control_player_effect => control_player_statement_from_pair(pair),
+        Rule::control_duration => Ok(Statement::ControlPlayerDuration {
+            duration: control_duration_from_pair(pair)?,
+        }),
+        Rule::spell_resolution_duration => Ok(Statement::SpellResolutionDuration),
+        Rule::control_player_condition => Ok(Statement::ControlPlayerCondition {
+            condition: control_player_condition_from_pair(pair)?,
+        }),
         Rule::referenced_card_play_instruction => referenced_card_play_instruction_from_pair(pair),
         Rule::mana_ability_activation_limit => mana_ability_activation_limit_from_pair(pair),
         Rule::conditional_control_player_effect => conditional_control_player_effect_from_pair(pair),

@@ -170,6 +170,9 @@ phrase_statement = _{
     modal_choice
   | mana_cost
   | label_phrase
+  | control_duration
+  | spell_resolution_duration
+  | control_player_condition
   | semicolon_keyword_ability_list
   | keyword_ability_list
   | keyword_ability

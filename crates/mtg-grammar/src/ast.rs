@@ -178,6 +178,16 @@ pub enum Statement {
         condition: ControlPlayerCondition,
         effect: ControlPlayerEffect,
     },
+    /// A control-player duration fragment.
+    ControlPlayerDuration {
+        duration: ControlPlayerDuration,
+    },
+    /// A spell resolution duration fragment.
+    SpellResolutionDuration,
+    /// A control-player condition fragment.
+    ControlPlayerCondition {
+        condition: ControlPlayerCondition,
+    },
     /// "The player plays that card if able."
     PlayReferencedCard {
         player: ControlledPlayer,
