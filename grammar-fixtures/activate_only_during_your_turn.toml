@@ -1,0 +1,40 @@
+[fixture]
+concept = "activate_only_during_your_turn"
+rule = "activate_only_during_your_turn"
+
+[[example]]
+text = "Activate only during your turn."
+reason = "Activation permission sentence restricted to the controller's turn with no frequency limit."
+
+[[example]]
+text = "activate only during your turn."
+reason = "Same activation permission shape in lowercase; the grammar literals are case-insensitive."
+
+[[example]]
+text = "Activate only during your turn and only once each turn."
+rule = "activate_only_during_your_turn_and_only_once_each_turn"
+reason = "Same during-your-turn timing window with the once-each-turn activation frequency axis present."
+
+[[counterexample]]
+text = "Activate only during your upkeep."
+reason = "Upkeep timing permission is a sibling timing-window concept, not the your-turn timing window."
+
+[[counterexample]]
+text = "Activate only during combat."
+reason = "Combat timing permission is a sibling timing-window concept, not the your-turn timing window."
+
+[[counterexample]]
+text = "Activate only as a sorcery."
+reason = "Sorcery timing permission does not use the during-your-turn timing window."
+
+[[counterexample]]
+text = "Activate only during an opponent's turn, before attackers are declared."
+reason = "Opponent-turn timing permission with an additional before-attackers condition is outside this concept."
+
+[[counterexample]]
+text = "Only this ability's source's owner may activate this ability."
+reason = "Permission about who may activate the ability, not when it may be activated."
+
+[[counterexample]]
+text = "Activate only during your turn and only once each turn. trailing"
+reason = "Exact-consumption guard."

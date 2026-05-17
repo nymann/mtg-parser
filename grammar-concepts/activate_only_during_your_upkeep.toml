@@ -72,7 +72,6 @@ text = "Activate only during combat."
 candidate_rules = [
     "activate_only_during_your_upkeep",
     "activate_only_during_combat",
-    "activate_only_during_your_turn_and_only_once_each_turn",
     "activate_only_during_your_turn",
     "activate_only_during_opponents_turn_before_attackers_declared",
     "activate_only_as_sorcery",

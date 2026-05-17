@@ -1,0 +1,87 @@
+[[axis]]
+name = "action"
+values = ["activate"]
+
+[[axis]]
+name = "permission_polarity"
+values = ["only"]
+
+[[axis]]
+name = "timing_window"
+values = ["during_your_turn"]
+
+[[axis]]
+name = "activation_frequency"
+values = [
+    "none",
+    "once_each_turn",
+]
+
+[boundary]
+excludes = [
+    "Activation timing permissions for upkeep or combat windows.",
+    "Activation timing permissions using sorcery timing.",
+    "Activation timing permissions for an opponent's turn before attackers are declared.",
+    "Activation permissions about who may activate an ability.",
+]
+includes = [
+    "Standalone activation permission sentences restricting activation to during your turn.",
+    "The optional once-each-turn activation frequency attached to the same during-your-turn timing window.",
+]
+
+[concept]
+name = "activate_only_during_your_turn"
+pest_rules = [
+    "activate_only_during_your_turn",
+    "activate_only_during_your_turn_and_only_once_each_turn",
+]
+rules_queries = [
+    "lex: activate only during your turn",
+    "lex: activate only during your turn and only once each turn",
+]
+rules_terms = [
+    "activate",
+    "activated ability",
+    "turn",
+]
+
+[[counterexample]]
+reason = "Upkeep timing permission is a sibling timing-window concept, not the your-turn timing window."
+text = "Activate only during your upkeep."
+
+[[counterexample]]
+reason = "Combat timing permission is a sibling timing-window concept, not the your-turn timing window."
+text = "Activate only during combat."
+
+[[counterexample]]
+reason = "Sorcery timing permission does not use the during-your-turn timing window."
+text = "Activate only as a sorcery."
+
+[[counterexample]]
+reason = "Opponent-turn timing permission with an additional before-attackers condition is outside this concept."
+text = "Activate only during an opponent's turn, before attackers are declared."
+
+[[counterexample]]
+reason = "Permission about who may activate the ability, not when it may be activated."
+text = "Only this ability's source's owner may activate this ability."
+
+[[example]]
+text = "Activate only during your turn."
+
+[[example]]
+text = "Activate only during your turn and only once each turn."
+
+[grammar_query]
+candidate_rules = [
+    "activate_only_during_your_turn",
+    "activate_only_during_your_turn_and_only_once_each_turn",
+    "activate_only_during_your_upkeep",
+    "activate_only_during_combat",
+    "activate_only_during_opponents_turn_before_attackers_declared",
+    "activate_only_as_sorcery",
+]
+selected_rule = "activate_only_during_your_turn"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
