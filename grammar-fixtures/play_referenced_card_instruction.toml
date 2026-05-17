@@ -1,0 +1,35 @@
+[fixture]
+concept = "play_referenced_card_instruction"
+rule = "referenced_card_play_instruction"
+
+[[example]]
+text = "The player plays that card if able."
+reason = "Accepted no-PEST boundary example."
+
+[[example]]
+text = "That player plays that card if able."
+reason = "Accepted no-PEST boundary example."
+
+[[example]]
+text = "The player plays that card."
+reason = "Accepted no-PEST boundary example."
+
+[[counterexample]]
+text = "Mana they produce is spent to play that card."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "You may play this card any time you could cast an instant."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "If the chosen card is cast as a spell, you control the player while that spell is resolving."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "Target player activates a mana ability of each land they control."
+reason = "Rejected no-PEST boundary counterexample."
+
+[[counterexample]]
+text = "The player plays that card if able. trailing"
+reason = "Exact-consumption guard."

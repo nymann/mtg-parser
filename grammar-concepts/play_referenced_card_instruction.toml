@@ -1,0 +1,86 @@
+[[axis]]
+name = "player"
+values = [
+    "{that_player",
+    "the_player}",
+]
+
+[[axis]]
+name = "action"
+values = ["{play}"]
+
+[[axis]]
+name = "object"
+values = ["{that_card}"]
+
+[[axis]]
+name = "obligation"
+values = ["{instruction}"]
+
+[[axis]]
+name = "condition"
+values = [
+    "{none",
+    "if_able}",
+]
+
+[[axis]]
+name = "scope"
+values = ["{standalone_sentence}"]
+
+[boundary]
+excludes = [
+    "Boundary negative: Mana they produce is spent to play that card.",
+    "Boundary negative: You may play this card any time you could cast an instant.",
+    "Boundary negative: If the chosen card is cast as a spell, you control the player while that spell is resolving.",
+    "Boundary negative: Target player activates a mana ability of each land they control.",
+]
+includes = [
+    "Accepted no-PEST fixture wording: The player plays that card if able.",
+    "Accepted no-PEST fixture wording: That player plays that card if able.",
+    "Accepted no-PEST fixture wording: The player plays that card.",
+]
+
+[concept]
+name = "play_referenced_card_instruction"
+pest_rules = ["referenced_card_play_instruction"]
+rules_queries = ["lex: play referenced card instruction"]
+rules_terms = [
+    "play",
+    "referenced",
+    "card",
+    "instruction",
+]
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "Mana they produce is spent to play that card."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "You may play this card any time you could cast an instant."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "If the chosen card is cast as a spell, you control the player while that spell is resolving."
+
+[[counterexample]]
+reason = "Boundary negative from no-PEST fast-path decision."
+text = "Target player activates a mana ability of each land they control."
+
+[[example]]
+text = "The player plays that card if able."
+
+[[example]]
+text = "That player plays that card if able."
+
+[[example]]
+text = "The player plays that card."
+
+[grammar_query]
+candidate_rules = ["referenced_card_play_instruction"]
+selected_rule = "referenced_card_play_instruction"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
