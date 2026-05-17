@@ -1,0 +1,34 @@
+{
+  "concept": "static_enters_tapped",
+  "fixture_path": "grammar-fixtures/static_enters_tapped.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "static_source_enters_tapped",
+      "text": "This creature enters tapped.",
+      "ast": {
+        "StaticAbility": {
+          "SourceEntersTapped": {
+            "source": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "static_source_enters_tapped",
+      "text": "This artifact enters tapped.",
+      "ast": {
+        "StaticAbility": {
+          "SourceEntersTapped": {
+            "source": {
+              "This": "Artifact"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
