@@ -1,0 +1,49 @@
+{
+  "concept": "target_permanent_keyword_ability_gain_until_eot",
+  "fixture_path": "grammar-fixtures/target_permanent_keyword_ability_gain_until_eot.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "target_permanent_gains_keyword_until_eot",
+      "text": "Target creature gains flying until end of turn.",
+      "ast": {
+        "TargetPermanentGainsKeywordUntilEndOfTurn": {
+          "keyword": "Flying",
+          "target": {
+            "Permanent": "Creature"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "target_permanent_gains_keyword_until_eot",
+      "text": "Target attacking creature gains first strike until end of turn.",
+      "ast": {
+        "TargetPermanentGainsKeywordUntilEndOfTurn": {
+          "keyword": "FirstStrike",
+          "target": {
+            "CombatRoleCreature": {
+              "role": "Attacking"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "target_permanent_gains_keyword_until_eot",
+      "text": "Target creature you control with toughness less than CARDNAME's power gains flying until end of turn.",
+      "ast": {
+        "TargetPermanentGainsKeywordUntilEndOfTurn": {
+          "keyword": "Flying",
+          "target": {
+            "ControlledCreatureWithToughnessLessThanSourcePower": {
+              "source": "ThisPermanent"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
