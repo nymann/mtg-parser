@@ -43,22 +43,6 @@
     {
       "index": 4,
       "rule": "pay_mana_amount",
-      "text": "{1}",
-      "ast": {
-        "PayManaAmount": {
-          "Cost": {
-            "symbols": [
-              {
-                "Generic": 1
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "index": 5,
-      "rule": "pay_mana_amount",
       "text": "any amount of mana",
       "ast": {
         "PayManaAmount": "AnyAmountOfMana"

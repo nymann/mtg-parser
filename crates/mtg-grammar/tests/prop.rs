@@ -305,6 +305,7 @@ fn arb_target_player_discards_activated_ability() -> impl Strategy<Value = State
 
 fn arb_statement() -> impl Strategy<Value = Statement> {
     prop_oneof![
+        arb_mana_cost().prop_map(Statement::ManaCost),
         arb_add_mana_amount().prop_map(|amount| Statement::AddMana { amount }),
         arb_permanent_type().prop_map(|permanent_type| {
             Statement::AsAdditionalCostToCastThisSpell {

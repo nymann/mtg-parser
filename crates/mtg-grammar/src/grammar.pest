@@ -179,9 +179,9 @@ phrase_statement = _{
   | you_cast_spell_actor
   | player_cast_spell_actor
   | cast_spell_descriptor
+  | mana_cost
   | pay_mana_amount
   | pay_mana_player
-  | mana_cost
   | label_phrase
   | draw_cards_action
   | draw_that_many_cards_replacement_result

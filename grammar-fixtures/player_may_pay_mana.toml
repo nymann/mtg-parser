@@ -17,11 +17,6 @@ reason = "Player axis variant for the direct optional mana payment concept."
 
 [[example]]
 rule = "pay_mana_amount"
-text = "{1}"
-reason = "Amount axis variant for a concrete mana cost."
-
-[[example]]
-rule = "pay_mana_amount"
 text = "any amount of mana"
 reason = "Amount axis variant for unconstrained mana payment."
 
