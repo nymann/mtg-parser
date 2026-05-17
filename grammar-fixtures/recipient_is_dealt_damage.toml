@@ -1,0 +1,31 @@
+[fixture]
+concept = "recipient_is_dealt_damage"
+rule = "you_are_dealt_damage"
+
+[[example]]
+text = "you're dealt damage"
+reason = "Passive trigger event fragment where you are the damage recipient."
+
+[[counterexample]]
+text = "You own target card in the graveyard."
+reason = "Ownership statement, not a passive damage-recipient trigger event fragment."
+
+[[counterexample]]
+text = "source is dealt damage"
+reason = "Source object is the recipient, not you."
+
+[[counterexample]]
+text = "damage dealt to you this turn"
+reason = "Damage-history reference, not a trigger event fragment."
+
+[[counterexample]]
+text = "damage that would be dealt to you"
+reason = "Replacement-effect event reference, not actual passive damage being dealt to you."
+
+[[counterexample]]
+text = "source deals damage to you"
+reason = "Active-voice source damage event, not passive recipient wording."
+
+[[counterexample]]
+text = "you're dealt damage trailing"
+reason = "Exact-consumption guard."

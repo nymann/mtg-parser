@@ -1,0 +1,69 @@
+[[axis]]
+name = "recipient"
+values = ["you"]
+
+[[axis]]
+name = "event"
+values = ["damage"]
+
+[[axis]]
+name = "verb"
+values = ["dealt"]
+
+[[axis]]
+name = "voice"
+values = ["passive"]
+
+[[axis]]
+name = "sentence_form"
+values = ["trigger_event_fragment"]
+
+[boundary]
+excludes = [
+    "Ownership statements about target cards in zones.",
+    "Damage received by CARDNAME or another source object.",
+    "Damage-history and replacement-effect references to damage dealt to you.",
+    "Active-voice source-deals-damage events.",
+]
+includes = ["Trigger event fragments where you are passively dealt damage."]
+
+[concept]
+name = "recipient_is_dealt_damage"
+pest_rules = ["you_are_dealt_damage"]
+rules_queries = ["lex: you're dealt damage"]
+rules_terms = [
+    "damage",
+    "dealt",
+    "triggered ability",
+]
+
+[[counterexample]]
+reason = "Ownership statement, not a passive damage-recipient trigger event fragment."
+text = "You own target card in the graveyard."
+
+[[counterexample]]
+reason = "Source object is the recipient, not you."
+text = "source is dealt damage"
+
+[[counterexample]]
+reason = "Damage-history reference, not a trigger event fragment."
+text = "damage dealt to you this turn"
+
+[[counterexample]]
+reason = "Replacement-effect event reference, not actual passive damage being dealt to you."
+text = "damage that would be dealt to you"
+
+[[counterexample]]
+reason = "Active-voice source damage event, not passive recipient wording."
+text = "source deals damage to you"
+
+[[example]]
+text = "you're dealt damage"
+
+[grammar_query]
+candidate_rules = ["you_are_dealt_damage"]
+selected_rule = "you_are_dealt_damage"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
