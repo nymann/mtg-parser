@@ -1324,7 +1324,7 @@ assign_each_pile_to_attacking_creature_at_random = {
 }
 
 creatures_in_assigned_pile_block_if_able = {
-    ^"each" ~ ^"creature" ~ ^"in" ~ article ~ ^"pile" ~ ^"that"
+    ^"each" ~ ^"creature" ~ ^"in" ~ (article | ^"the") ~ ^"pile" ~ ^"that"
   ~ ^"can" ~ ^"block" ~ ^"the" ~ ^"creature" ~ ^"that" ~ ^"pile"
   ~ ^"is" ~ ^"assigned" ~ ^"to" ~ ^"does" ~ ^"so" ~ "."
 }

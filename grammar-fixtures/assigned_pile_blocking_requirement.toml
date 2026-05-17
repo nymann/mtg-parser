@@ -1,0 +1,31 @@
+[fixture]
+concept = "assigned_pile_blocking_requirement"
+rule = "creatures_in_assigned_pile_block_if_able"
+
+[[example]]
+text = "Each creature in a pile that can block the creature that pile is assigned to does so."
+reason = "Standalone mandatory blocking requirement for each creature in an assigned pile that can block the assigned creature."
+
+[[example]]
+text = "Each creature in the pile that can block the creature that pile is assigned to does so."
+reason = "Same assigned-pile blocking requirement with the definite article."
+
+[[counterexample]]
+text = "That creature attacks this turn if able."
+reason = "Attack requirement, not a blocking requirement inside the random pile procedure."
+
+[[counterexample]]
+text = "Creatures the active player controls attack this turn if able."
+reason = "Attack requirement for creatures controlled by the active player, not creatures in an assigned pile."
+
+[[counterexample]]
+text = "It blocks each attacking creature this turn if able."
+reason = "This-turn blocking requirement for a referenced object, not each creature in an assigned pile."
+
+[[counterexample]]
+text = "All creatures able to block enchanted creature do so."
+reason = "Static blocking requirement for creatures able to block an enchanted creature, not the assigned-pile procedure."
+
+[[counterexample]]
+text = "Each creature in a pile that can block the creature that pile is assigned to does so. trailing"
+reason = "Exact-consumption guard."

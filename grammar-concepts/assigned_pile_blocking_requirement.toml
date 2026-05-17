@@ -1,0 +1,75 @@
+[[axis]]
+name = "requirement_subject"
+values = ["creatures_in_assigned_pile"]
+
+[[axis]]
+name = "required_action"
+values = ["block_creature_assigned_to_that_pile"]
+
+[[axis]]
+name = "condition"
+values = ["can_block"]
+
+[[axis]]
+name = "modality"
+values = ["mandatory_if_able_do_so"]
+
+[[axis]]
+name = "procedure_context"
+values = ["random_blocking_piles"]
+
+[[axis]]
+name = "sentence_form"
+values = ["standalone_statement"]
+
+[boundary]
+excludes = [
+    "This-turn attack requirements.",
+    "This-turn blocking requirements for a referenced object.",
+    "Static blocking requirements for creatures able to block an enchanted creature.",
+]
+includes = [
+    "Each creature in a pile that can block the creature that pile is assigned to does so.",
+    "Each creature in the pile that can block the creature that pile is assigned to does so.",
+]
+
+[concept]
+name = "assigned_pile_blocking_requirement"
+pest_rules = ["creatures_in_assigned_pile_block_if_able"]
+rules_queries = ["lex: assigned pile block creature assigned to that pile does so"]
+rules_terms = [
+    "block",
+    "blocking requirement",
+    "if able",
+    "random",
+]
+
+[[counterexample]]
+reason = "Attack requirement, not a blocking requirement inside the random pile procedure."
+text = "That creature attacks this turn if able."
+
+[[counterexample]]
+reason = "Attack requirement for creatures controlled by the active player, not creatures in an assigned pile."
+text = "Creatures the active player controls attack this turn if able."
+
+[[counterexample]]
+reason = "This-turn blocking requirement for a referenced object, not each creature in an assigned pile."
+text = "It blocks each attacking creature this turn if able."
+
+[[counterexample]]
+reason = "Static blocking requirement for creatures able to block an enchanted creature, not the assigned-pile procedure."
+text = "All creatures able to block enchanted creature do so."
+
+[[example]]
+text = "Each creature in a pile that can block the creature that pile is assigned to does so."
+
+[[example]]
+text = "Each creature in the pile that can block the creature that pile is assigned to does so."
+
+[grammar_query]
+candidate_rules = ["creatures_in_assigned_pile_block_if_able"]
+selected_rule = "creatures_in_assigned_pile_block_if_able"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
