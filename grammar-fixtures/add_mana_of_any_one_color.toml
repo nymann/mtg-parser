@@ -14,9 +14,9 @@ reason = "Number-word quantity axis greater than one."
 text = "Add three mana of any one color."
 reason = "Additional number-word quantity coverage for the same choice scope."
 
-[[counterexample]]
+[[example]]
 text = "Add one mana of any color."
-reason = "Neighbor wording without the word one before color; owned by add_one_mana_of_any_color."
+reason = "Single-mana any-color wording variant."
 
 [[counterexample]]
 text = "Add one mana of that color."
@@ -25,6 +25,10 @@ reason = "Constrained-color mana production, not any-one-color choice scope."
 [[counterexample]]
 text = "Add one mana of any one type."
 reason = "Any-one-type mana can include colorless; this concept is limited to colors."
+
+[[counterexample]]
+text = "Add two mana of any color."
+reason = "Any-color wording without one before color is only in scope for single-mana quantity."
 
 [[counterexample]]
 text = "Add one mana of any one color. trailing"

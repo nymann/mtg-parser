@@ -5514,6 +5514,9 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
         Rule::add_one_mana_of_any_color => Ok(ActivatedEffect::AddOneManaOfAnyColor),
         Rule::add_mana_of_any_one_color => {
             let amount_pair = only_inner(pair, "add_mana_of_any_one_color missing number")?;
+            if amount_pair.as_rule() == Rule::add_one_mana_of_any_color {
+                return Ok(ActivatedEffect::AddOneManaOfAnyColor);
+            }
             let amount = number_word_to_u32(amount_pair.as_str())
                 .ok_or(ParseError::Internal("number_word"))?;
             Ok(ActivatedEffect::AddManaOfAnyOneColor { amount })

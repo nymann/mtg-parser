@@ -1365,7 +1365,6 @@ activated_cost_component = _{
 }
 activated_effect = _{
     add_mana_of_any_one_color
-  | add_one_mana_of_any_color
   | add_mana
   | tap_target_permanent_choice
   | target_permanent_becomes_basic_land_type_until_source_leaves
@@ -1399,9 +1398,12 @@ activated_effect = _{
   | physical_action
 }
 add_mana_of_any_one_color = {
-    ^"add" ~ number_word ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"one" ~ ^"color" ~ "."
+    (
+        ^"add" ~ number_word ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"one" ~ ^"color"
+      | add_one_mana_of_any_color
+    ) ~ "."
 }
-add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"color" ~ "." }
+add_one_mana_of_any_color = { ^"add" ~ ^"one" ~ ^"mana" ~ ^"of" ~ ^"any" ~ ^"color" }
 add_mana = { ^"add" ~ add_mana_amount ~ "." }
 add_mana_amount = _{ mana_cost | amount_of_mana_equal_to_sacrificed_permanent_mana_value }
 amount_of_mana_equal_to_sacrificed_permanent_mana_value = {
