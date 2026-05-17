@@ -11,6 +11,16 @@ text = "Look at target opponent's hand"
 reason = "Target-opponent hand owner at the owned PEST action root."
 
 [[example]]
+text = "Look at target player's hand."
+rule = "activated_effect"
+reason = "Activated effects use the shared target-hand action with sentence punctuation."
+
+[[example]]
+text = "Look at target opponent's hand."
+rule = "activated_effect"
+reason = "The hand-owner axis includes target opponents in activated effects."
+
+[[example]]
 text = "Look at target player's hand and choose a card from it."
 rule = "imperative_action_sequence"
 reason = "Hand inspection remains the first action when followed by choosing a card from it."

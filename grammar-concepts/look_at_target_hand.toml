@@ -23,7 +23,10 @@ includes = [
 
 [concept]
 name = "look_at_target_hand"
-pest_rules = ["look_at_target_hand_action"]
+pest_rules = [
+    "look_at_target_hand_action",
+    "look_at_target_players_hand",
+]
 rules_queries = [
     "lex: look at target player's hand",
     "lex: look at target opponent's hand",

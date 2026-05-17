@@ -1380,7 +1380,7 @@ untap_referenced_permanent = { ^"untap" ~ ^"the" ~ permanent_type ~ "." }
 take_extra_turn_after_this_one = {
     ^"take" ~ article ~ ^"extra" ~ ^"turn" ~ ^"after" ~ ^"this" ~ ^"one" ~ "."
 }
-look_at_target_players_hand = { ^"look" ~ ^"at" ~ ^"target" ~ ^"player's" ~ ^"hand" ~ "." }
+look_at_target_players_hand = { look_at_target_hand_action ~ "." }
 target_player_discards_cards = {
   target_player_discard_prefix ~ discard_amount ~ "."
 }
