@@ -14,7 +14,14 @@ values = [
 
 [[axis]]
 name = "ability_context"
-values = ["activated_cost_component"]
+values = [
+    "activated_cost_component",
+    "triggered_effect_unless_you_pay",
+]
+
+[[axis]]
+name = "payment_exception"
+values = ["trigger_payment_cost"]
 
 [boundary]
 excludes = [
@@ -24,12 +31,16 @@ excludes = [
 ]
 includes = [
     "Activated cost components that use the sacrifice keyword action on the source object.",
+    "Triggered-effect instructions that sacrifice the source object unless you pay a trigger payment cost.",
     "Source-object wording using CARDNAME, it, this, this source object kind, or that source.",
 ]
 
 [concept]
 name = "sacrifice_source"
-pest_rules = ["sacrifice_source"]
+pest_rules = [
+    "sacrifice_source",
+    "sacrifice_source_unless_you_pay",
+]
 rules_queries = [
     "lex: sacrifice this permanent",
     "lex: sacrifice this source",
@@ -51,6 +62,18 @@ text = "sacrifice target creature"
 reason = "Destroy instruction, not the sacrifice keyword action."
 text = "destroy CARDNAME"
 
+[[counterexample]]
+reason = "Generic permanent-type sacrifice, not source-object sacrifice."
+text = "sacrifice a creature unless you pay {1}."
+
+[[counterexample]]
+reason = "Targeted sacrifice instruction, not source-object sacrifice."
+text = "sacrifice target creature unless you pay {1}."
+
+[[counterexample]]
+reason = "Destroy instruction, not the sacrifice keyword action."
+text = "destroy CARDNAME unless you pay {1}."
+
 [[example]]
 text = "sacrifice CARDNAME"
 
@@ -65,6 +88,15 @@ text = "sacrifice this creature"
 
 [[example]]
 text = "sacrifice that source"
+
+[[example]]
+text = "sacrifice CARDNAME unless you pay {1}."
+
+[[example]]
+text = "sacrifice it unless you pay {2}."
+
+[[example]]
+text = "then sacrifice this creature unless you pay {G}."
 
 [grammar_query]
 candidate_rules = [

@@ -22,6 +22,21 @@ reason = "Activated cost component sacrificing this source object with a permane
 text = "sacrifice that source"
 reason = "Activated cost component sacrificing a previously referenced source."
 
+[[example]]
+rule = "sacrifice_source_unless_you_pay"
+text = "sacrifice CARDNAME unless you pay {1}."
+reason = "Triggered effect sacrificing the card source unless its trigger payment cost is paid."
+
+[[example]]
+rule = "sacrifice_source_unless_you_pay"
+text = "sacrifice it unless you pay {2}."
+reason = "Triggered effect sacrificing the source object by pronoun unless its trigger payment cost is paid."
+
+[[example]]
+rule = "sacrifice_source_unless_you_pay"
+text = "then sacrifice this creature unless you pay {G}."
+reason = "Then-prefixed triggered effect sacrificing this source object kind unless its trigger payment cost is paid."
+
 [[counterexample]]
 text = "sacrifice a creature"
 reason = "Generic permanent-type sacrifice, not source-object sacrifice."
@@ -32,6 +47,21 @@ reason = "Targeted sacrifice instruction, not source-object sacrifice."
 
 [[counterexample]]
 text = "destroy CARDNAME"
+reason = "Destroy instruction, not the sacrifice keyword action."
+
+[[counterexample]]
+rule = "sacrifice_source_unless_you_pay"
+text = "sacrifice a creature unless you pay {1}."
+reason = "Generic permanent-type sacrifice is outside the source-object sacrifice boundary."
+
+[[counterexample]]
+rule = "sacrifice_source_unless_you_pay"
+text = "sacrifice target creature unless you pay {1}."
+reason = "Targeted sacrifice is outside the source-object sacrifice boundary."
+
+[[counterexample]]
+rule = "sacrifice_source_unless_you_pay"
+text = "destroy CARDNAME unless you pay {1}."
 reason = "Destroy instruction, not the sacrifice keyword action."
 
 [[counterexample]]
