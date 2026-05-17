@@ -1,0 +1,31 @@
+[fixture]
+concept = "conditional_payment_damage_effect"
+rule = "if_you_pay_source_deals_damage"
+
+[[example]]
+text = "If you pay, CARDNAME deals damage equal to the number of charge counters on it to any target."
+reason = "Payment-success condition with source object, named-counter amount, and any-target recipient."
+
+[[example]]
+text = "If you pay, this artifact deals damage equal to the number of charge counters on it to target creature and you."
+reason = "Payment-success condition with source-object kind and recipient list."
+
+[[counterexample]]
+text = "If you do, CARDNAME deals damage equal to the number of charge counters on it to any target."
+reason = "If-you-do follow-up effect, not payment-success condition."
+
+[[counterexample]]
+text = "When you do, CARDNAME deals damage equal to the number of charge counters on it to any target."
+reason = "Reflexive triggered template, not payment-success condition."
+
+[[counterexample]]
+text = "If you don't, CARDNAME deals damage equal to the number of charge counters on it to any target."
+reason = "Negative payment-failure branch, outside the condition axis."
+
+[[counterexample]]
+text = "CARDNAME deals damage equal to the number of charge counters on it to any target."
+reason = "Missing payment-success condition."
+
+[[counterexample]]
+text = "If you pay, CARDNAME deals damage equal to the number of charge counters on it to any target. trailing"
+reason = "Exact-consumption guard."

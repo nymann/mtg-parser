@@ -1,0 +1,84 @@
+[[axis]]
+name = "condition"
+values = ["if_you_pay"]
+
+[[axis]]
+name = "effect"
+values = ["source_deals_damage"]
+
+[[axis]]
+name = "amount"
+values = ["equal_to_number_of_named_counters_on_it"]
+
+[[axis]]
+name = "recipient"
+values = [
+    "damage_recipient",
+    "damage_recipient_list",
+]
+
+[[axis]]
+name = "source"
+values = ["source_object"]
+
+[boundary]
+excludes = [
+    "If-you-do follow-up effects owned by if_you_do_effect.",
+    "Reflexive when-you-do triggers.",
+    "Negative payment-failure branches such as 'if you don't'.",
+    "Unconditional source-deals-damage instructions owned by damage_event.",
+]
+includes = [
+    "Payment-success condition introduced by 'if you pay,'.",
+    "Source-object damage effect with amount equal to the number of named counters on it.",
+    "Single damage recipients and damage recipient lists.",
+]
+
+[concept]
+name = "conditional_payment_damage_effect"
+pest_rules = [
+    "if_you_pay_source_deals_damage",
+    "named_counter_count_on_it",
+]
+rules_queries = ["lex: if you pay source deals damage equal to the number of counters on it"]
+rules_terms = [
+    "damage",
+    "source",
+    "counter",
+    "target",
+]
+
+[[counterexample]]
+reason = "If-you-do follow-up effect, not payment-success condition."
+text = "If you do, CARDNAME deals damage equal to the number of charge counters on it to any target."
+
+[[counterexample]]
+reason = "Reflexive triggered template, not payment-success condition."
+text = "When you do, CARDNAME deals damage equal to the number of charge counters on it to any target."
+
+[[counterexample]]
+reason = "Negative payment-failure branch, outside the condition axis."
+text = "If you don't, CARDNAME deals damage equal to the number of charge counters on it to any target."
+
+[[counterexample]]
+reason = "Missing payment-success condition."
+text = "CARDNAME deals damage equal to the number of charge counters on it to any target."
+
+[[example]]
+text = "If you pay, CARDNAME deals damage equal to the number of charge counters on it to any target."
+
+[[example]]
+text = "If you pay, this artifact deals damage equal to the number of charge counters on it to target creature and you."
+
+[grammar_query]
+candidate_rules = [
+    "if_you_pay_source_deals_damage",
+    "if_you_do_effect",
+    "damage_event_statement",
+    "activated_direct_damage_effect",
+]
+selected_rule = "if_you_pay_source_deals_damage"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

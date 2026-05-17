@@ -359,7 +359,7 @@ damage_event_divided_evenly_rounded_down_among_any_number_of_targets = {
   ~ ^"among" ~ ^"any" ~ ^"number" ~ ^"of" ~ ^"targets"
 }
 damage_event_recipient_list = {
-    ^"to" ~ damage_recipient ~ (^"and" ~ damage_recipient)*
+    ^"to" ~ damage_event_assignment_recipient ~ (^"and" ~ damage_event_assignment_recipient)*
 }
 damage_prevention_effect = {
     damage_prevention_effect_sentence
@@ -2318,8 +2318,9 @@ trigger_damage_variable_definition = {
 }
 if_you_pay_source_deals_damage = {
     ^"if" ~ ^"you" ~ ^"pay" ~ "," ~ source_object ~ ^"deals"
-  ~ ^"damage" ~ named_counter_count_on_it ~ ^"to" ~ damage_recipient
-  ~ (^"and" ~ damage_recipient)* ~ "."
+  ~ ^"damage" ~ named_counter_count_on_it ~ ^"to" ~ damage_event_assignment_recipient
+  ~ (^"and" ~ damage_event_assignment_recipient)*
+  ~ "."
 }
 named_counter_count_on_it = {
     ^"equal" ~ ^"to" ~ ^"the" ~ ^"number" ~ ^"of" ~ named_counters
