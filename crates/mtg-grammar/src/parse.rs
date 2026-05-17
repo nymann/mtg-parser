@@ -17,21 +17,22 @@ use crate::ast::{
     DamagePreventionAmount, DamagePreventionDuration, DamagePreventionEffect,
     DamagePreventionEvent, DamagePreventionSource, DamageRecipient, DamageRecipients,
     DamageRedirectionDestination, DestroyReferencedCreatureCondition, DestroyTarget, DiesWording,
-    DrawReplacementEffect, EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility,
-    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LandSubtype,
-    LifeAmount, LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
-    ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
-    NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
-    ObjectStatus, ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount,
-    PayManaPlayer, PaymentFailureEffect, PermanentController, PermanentEntersObject, PermanentType,
-    PhysicalAction, PlayRestriction, PlayRestrictionAction, PlayRestrictionAffected,
-    PlayRestrictionFilter, PlayerDiscardActor, PreventionRecipient, PtModifier, ReferencedCard,
-    ReferencedCreature, RegenerateRecipient, RegenerationRestrictionSubject, ReturnDestination,
-    Rounding, Sign, SignedNumber, SignedPtComponent, SignedVariable, SkipReplacementEvent,
-    SourceObject, SpellAdditionalCost, SpellType, Statement, StaticAbility,
-    StaticDamagePreventionEffect, StaticDamageRedirectionDestination, StaticDamageSource,
-    StaticUntapRestriction, StatusCreatureController, StatusCreatureGetDuration, Step,
-    TapAllPermanentsActor, TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
+    DrawReplacementEffect, EachPlayerAction, EnchantObject, EnchantedObject, FirstPlayedPermanent,
+    GrantedAbility, IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController,
+    LandSubtype, LifeAmount, LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause,
+    LifeTotalFloorPlayer, ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol,
+    MixedPtModifier, ModalMode, NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility,
+    NamedSourcePowerToughnessCount, ObjectStatus, ObjectStatusSubject, OptionalCost,
+    OtherCreatureTypeSubject, PayManaAmount, PayManaPlayer, PaymentFailureEffect,
+    PermanentController, PermanentEntersObject, PermanentType, PhysicalAction, PlayRestriction,
+    PlayRestrictionAction, PlayRestrictionAffected, PlayRestrictionFilter, PlayerDiscardActor,
+    PreventionRecipient, PtModifier, ReferencedCard, ReferencedCreature, RegenerateRecipient,
+    RegenerationRestrictionSubject, ReturnDestination, Rounding, Sign, SignedNumber,
+    SignedPtComponent, SignedVariable, SkipReplacementEvent, SourceObject, SpellAdditionalCost,
+    SpellType, Statement, StaticAbility, StaticDamagePreventionEffect,
+    StaticDamageRedirectionDestination, StaticDamageSource, StaticUntapRestriction,
+    StatusCreatureController, StatusCreatureGetDuration, Step, TapAllPermanentsActor,
+    TapUntapAction, TapUntapTarget, TappedForManaSubject, TargetHandPlayer,
     TargetPermanentEndOfTurnEffect, TargetPermanentSelector, TextChangeReplacementTerm, TokenColor,
     TokenDescription, TriggerCastActor, TriggerCastSpell, TriggerCondition,
     TriggerCounterRecipient, TriggerDamageCondition, TriggerDamageRecipient, TriggerDamageSource,
@@ -210,6 +211,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         | Rule::source_is_object_status
         | Rule::source_isnt_attacking
         | Rule::source_is_attacking => Ok(Statement::Condition(condition_from_pair(pair)?)),
+        Rule::it_wasnt_first_permanent_you_played_this_turn => Ok(Statement::InterveningIf(
+            intervening_if_from_pair(pair)?,
+        )),
         Rule::if_you_pay_source_deals_damage => if_you_pay_source_deals_damage_from_pair(pair),
         Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
             as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(pair)
@@ -3040,6 +3044,10 @@ fn source_attacks_from_pair(pair: Pair<Rule>) -> Result<TriggerEvent, ParseError
 
 fn triggered_intervening_if_from_pair(pair: Pair<Rule>) -> Result<InterveningIf, ParseError> {
     let condition_pair = only_inner(pair, "trigger_intervening_if_clause missing condition")?;
+    intervening_if_from_pair(condition_pair)
+}
+
+fn intervening_if_from_pair(condition_pair: Pair<Rule>) -> Result<InterveningIf, ParseError> {
     match condition_pair.as_rule() {
         Rule::its_on_the_battlefield => Ok(InterveningIf::ItsOnTheBattlefield),
         Rule::no_permanents_are_on_the_battlefield => {
@@ -3088,18 +3096,27 @@ fn triggered_intervening_if_from_pair(pair: Pair<Rule>) -> Result<InterveningIf,
             })
         }
         Rule::it_wasnt_first_permanent_you_played_this_turn => {
-            let permanent_type_pair =
-                condition_pair
-                    .into_inner()
-                    .next()
-                    .ok_or(ParseError::Internal(
-                        "first-play condition missing permanent_type",
-                    ))?;
+            let permanent_pair = condition_pair
+                .into_inner()
+                .next()
+                .ok_or(ParseError::Internal(
+                    "first-play condition missing permanent",
+                ))?;
             Ok(InterveningIf::ItWasntFirstPermanentYouPlayedThisTurn {
-                permanent_type: permanent_type_from_pair(permanent_type_pair)?,
+                permanent: first_played_permanent_from_pair(permanent_pair)?,
             })
         }
         _ => Err(ParseError::Internal("intervening-if condition")),
+    }
+}
+
+fn first_played_permanent_from_pair(pair: Pair<Rule>) -> Result<FirstPlayedPermanent, ParseError> {
+    match pair.as_rule() {
+        Rule::permanent_object => Ok(FirstPlayedPermanent::Permanent),
+        Rule::permanent_type => Ok(FirstPlayedPermanent::PermanentType(
+            permanent_type_from_pair(pair)?,
+        )),
+        _ => Err(ParseError::Internal("first-play permanent")),
     }
 }
 

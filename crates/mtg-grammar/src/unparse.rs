@@ -15,9 +15,9 @@ use crate::ast::{
     DamagePreventionDuration, DamagePreventionEffect, DamagePreventionEvent,
     DamagePreventionSource, DamageRecipient, DamageRecipients, DamageRedirectionDestination,
     DestroyReferencedCreatureCondition, DestroyTarget, DiesWording, DrawReplacementEffect,
-    EachPlayerAction, EnchantObject, EnchantedObject, GrantedAbility, IfYouDoEffect,
-    ImperativeAction, InterveningIf, Keyword, LandCountController, LandSubtype, LifeAmount,
-    LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
+    EachPlayerAction, EnchantObject, EnchantedObject, FirstPlayedPermanent, GrantedAbility,
+    IfYouDoEffect, ImperativeAction, InterveningIf, Keyword, LandCountController, LandSubtype,
+    LifeAmount, LifeLossAmount, LifeLossPlayer, LifeTotalFloorCause, LifeTotalFloorPlayer,
     ManaAbilitySourceLimit, ManaCost, ManaSpendingPurpose, ManaSymbol, MixedPtModifier, ModalMode,
     NamedCounterAmount, NamedDamageEvent, NamedKeywordAbility, NamedSourcePowerToughnessCount,
     ObjectStatus, ObjectStatusSubject, OptionalCost, OtherCreatureTypeSubject, PayManaAmount,
@@ -105,6 +105,7 @@ fn write_statement(out: &mut String, statement: &Statement) {
         Statement::VariableName(variable) => out.push_str(variable_name(*variable)),
         Statement::ValueExpression(expression) => write_value_expression(out, expression),
         Statement::Condition(condition) => write_condition(out, condition),
+        Statement::InterveningIf(iif) => write_intervening_if(out, *iif),
         Statement::IfYouPaySourceDealsDamage {
             source,
             counter_name,
@@ -3025,9 +3026,14 @@ fn write_intervening_if(out: &mut String, iif: InterveningIf) {
             out.push_str(" has ");
             write_keyword_lowercase(out, keyword);
         }
-        InterveningIf::ItWasntFirstPermanentYouPlayedThisTurn { permanent_type } => {
+        InterveningIf::ItWasntFirstPermanentYouPlayedThisTurn { permanent } => {
             out.push_str("it wasn't the first ");
-            out.push_str(permanent_type_name(permanent_type));
+            match permanent {
+                FirstPlayedPermanent::Permanent => out.push_str("permanent"),
+                FirstPlayedPermanent::PermanentType(permanent_type) => {
+                    out.push_str(permanent_type_name(permanent_type));
+                }
+            }
             out.push_str(" you played this turn");
         }
         InterveningIf::SourceAttackedOrBlockedThisCombat { source } => {

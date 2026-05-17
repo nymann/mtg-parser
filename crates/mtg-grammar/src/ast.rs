@@ -77,6 +77,8 @@ pub enum Statement {
     ValueExpression(ValueExpression),
     /// Standalone condition fragments used by concept-level parsing.
     Condition(Condition),
+    /// Standalone intervening-if fragments used by concept-level parsing.
+    InterveningIf(InterveningIf),
     /// "If you pay, this <source> deals damage equal to the number of
     /// <counter> counters on it to <recipient>[ and <recipient>]."
     IfYouPaySourceDealsDamage {
@@ -1319,8 +1321,8 @@ pub enum InterveningIf {
         object: EnchantedObject,
         keyword: Keyword,
     },
-    /// "if it wasn't the first <permanent_type> you played this turn"
-    ItWasntFirstPermanentYouPlayedThisTurn { permanent_type: PermanentType },
+    /// "if it wasn't the first <permanent/permanent_type> you played this turn"
+    ItWasntFirstPermanentYouPlayedThisTurn { permanent: FirstPlayedPermanent },
     /// "if this <source> attacked or blocked this combat"
     SourceAttackedOrBlockedThisCombat { source: SourceObject },
     /// "if this <source> is <status>"
@@ -1334,6 +1336,12 @@ pub enum InterveningIf {
         count: u32,
         card_type: PermanentType,
     },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FirstPlayedPermanent {
+    Permanent,
+    PermanentType(PermanentType),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

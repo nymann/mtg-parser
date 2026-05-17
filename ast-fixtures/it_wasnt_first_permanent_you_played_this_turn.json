@@ -1,0 +1,46 @@
+{
+  "concept": "it_wasnt_first_permanent_you_played_this_turn",
+  "fixture_path": "grammar-fixtures/it_wasnt_first_permanent_you_played_this_turn.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "it_wasnt_first_permanent_you_played_this_turn",
+      "text": "it wasn't the first permanent you played this turn",
+      "ast": {
+        "InterveningIf": {
+          "ItWasntFirstPermanentYouPlayedThisTurn": {
+            "permanent": "Permanent"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "it_wasnt_first_permanent_you_played_this_turn",
+      "text": "it wasn't the first creature you played this turn",
+      "ast": {
+        "InterveningIf": {
+          "ItWasntFirstPermanentYouPlayedThisTurn": {
+            "permanent": {
+              "PermanentType": "Creature"
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "it_wasnt_first_permanent_you_played_this_turn",
+      "text": "it wasn't the first artifact you played this turn",
+      "ast": {
+        "InterveningIf": {
+          "ItWasntFirstPermanentYouPlayedThisTurn": {
+            "permanent": {
+              "PermanentType": "Artifact"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

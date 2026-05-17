@@ -228,6 +228,7 @@ phrase_statement = _{
   | variable_name
   | value_expression
   | condition
+  | it_wasnt_first_permanent_you_played_this_turn
 }
 
 // Modal spells print a choice header followed by bullet-pointed modes.
