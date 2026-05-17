@@ -345,6 +345,14 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::choose_target_non_creature_type_creature_active_player_controlled_continuously => {
             choose_target_non_creature_type_creature_active_player_controlled_continuously_statement_from_pair(pair)
         }
+        Rule::put_named_counter_on_target_non_basic_land => {
+            let (counter_name, excluded_land_type) =
+                put_named_counter_on_target_non_basic_land_parts(pair)?;
+            Ok(Statement::PutNamedCounterOnTargetNonBasicLand {
+                counter_name,
+                excluded_land_type,
+            })
+        }
         Rule::draw_that_many_cards_replacement_result => {
             draw_that_many_cards_replacement_result_from_pair(pair)
         }
@@ -5800,26 +5808,11 @@ fn activated_effect_from_pair(pair: Pair<Rule>) -> Result<ActivatedEffect, Parse
             })
         }
         Rule::put_named_counter_on_target_non_basic_land => {
-            let mut inner = pair.into_inner();
-            let counter_pair = inner
-                .next()
-                .ok_or(ParseError::Internal("put named counter missing counter"))?;
-            let excluded_pair = inner.next().ok_or(ParseError::Internal(
-                "put named counter missing excluded land type",
-            ))?;
-            let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
-                "put named counter missing target permanent type",
-            ))?;
-            if permanent_type_from_pair(permanent_type_pair)? != PermanentType::Land {
-                return Err(ParseError::Internal("put named counter target type"));
-            }
-            let excluded_land_type_pair = excluded_pair
-                .into_inner()
-                .next()
-                .ok_or(ParseError::Internal("non basic land missing land type"))?;
+            let (counter_name, excluded_land_type) =
+                put_named_counter_on_target_non_basic_land_parts(pair)?;
             Ok(ActivatedEffect::PutNamedCounterOnTargetNonBasicLand {
-                counter_name: counter_name_from_counter_pair(counter_pair)?,
-                excluded_land_type: basic_land_type_from_pair(excluded_land_type_pair)?,
+                counter_name,
+                excluded_land_type,
             })
         }
         Rule::choose_creature_card_in_hand_payable_by_mana_spent_on_variable => {
@@ -5994,6 +5987,32 @@ fn token_color_from_pair(pair: Pair<Rule>) -> Result<TokenColor, ParseError> {
         Rule::colorless_word => Ok(TokenColor::Colorless),
         _ => Err(ParseError::Internal("token_color variant")),
     }
+}
+
+fn put_named_counter_on_target_non_basic_land_parts(
+    pair: Pair<Rule>,
+) -> Result<(String, BasicLandType), ParseError> {
+    let mut inner = pair.into_inner();
+    let counter_pair = inner
+        .next()
+        .ok_or(ParseError::Internal("put named counter missing counter"))?;
+    let excluded_pair = inner.next().ok_or(ParseError::Internal(
+        "put named counter missing excluded land type",
+    ))?;
+    let permanent_type_pair = inner.next().ok_or(ParseError::Internal(
+        "put named counter missing target permanent type",
+    ))?;
+    if permanent_type_from_pair(permanent_type_pair)? != PermanentType::Land {
+        return Err(ParseError::Internal("put named counter target type"));
+    }
+    let excluded_land_type_pair = excluded_pair
+        .into_inner()
+        .next()
+        .ok_or(ParseError::Internal("non basic land missing land type"))?;
+    Ok((
+        counter_name_from_counter_pair(counter_pair)?,
+        basic_land_type_from_pair(excluded_land_type_pair)?,
+    ))
 }
 
 fn pt_counter_put_amount_from_pair(pair: Pair<Rule>) -> Result<(CounterAmount, bool), ParseError> {

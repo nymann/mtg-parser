@@ -1,0 +1,28 @@
+{
+  "concept": "put_named_counter_on_target_nonbasic_land",
+  "fixture_path": "grammar-fixtures/put_named_counter_on_target_nonbasic_land.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "put_named_counter_on_target_non_basic_land",
+      "text": "Put a flood counter on target non-Island land.",
+      "ast": {
+        "PutNamedCounterOnTargetNonBasicLand": {
+          "counter_name": "flood",
+          "excluded_land_type": "Island"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "put_named_counter_on_target_non_basic_land",
+      "text": "Put a mire counter on target non-Swamp land.",
+      "ast": {
+        "PutNamedCounterOnTargetNonBasicLand": {
+          "counter_name": "mire",
+          "excluded_land_type": "Swamp"
+        }
+      }
+    }
+  ]
+}

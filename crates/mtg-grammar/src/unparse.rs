@@ -234,6 +234,16 @@ fn write_statement(out: &mut String, statement: &Statement) {
                 " creature the active player has controlled continuously since the beginning of the turn.",
             );
         }
+        Statement::PutNamedCounterOnTargetNonBasicLand {
+            counter_name,
+            excluded_land_type,
+        } => {
+            out.push_str("Put a ");
+            out.push_str(counter_name);
+            out.push_str(" counter on target non-");
+            out.push_str(basic_land_type_name(*excluded_land_type));
+            out.push_str(" land.");
+        }
         Statement::PlayerMayPayMana { player, amount } => {
             write_pay_mana_player(out, *player);
             if let Some(first) = out.get_mut(0..1) {

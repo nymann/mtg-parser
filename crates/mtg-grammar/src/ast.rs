@@ -185,6 +185,11 @@ pub enum Statement {
     ChooseTargetNonCreatureTypeCreatureActivePlayerControlledContinuouslySinceBeginningOfTurn {
         excluded_type: CreatureType,
     },
+    /// "Put a <counter> counter on target non-<basic_land_type> land."
+    PutNamedCounterOnTargetNonBasicLand {
+        counter_name: String,
+        excluded_land_type: BasicLandType,
+    },
     /// "<player> may pay <mana_cost/any amount of mana>."
     PlayerMayPayMana {
         player: PayManaPlayer,
