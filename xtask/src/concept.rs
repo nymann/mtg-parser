@@ -455,7 +455,7 @@ enum ExperimentDecision {
     None,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct ExistingGrammarMapReport {
     rule_count: usize,
     concept_count: usize,
@@ -467,7 +467,7 @@ struct ExistingGrammarMapReport {
     unmapped_rules: Vec<UnmappedGrammarRule>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct ConceptRuleMap {
     concept: String,
     maturity: String,
@@ -478,20 +478,20 @@ struct ConceptRuleMap {
     missing_rules: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct RuleLocationSummary {
     name: String,
     line: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct UnmappedGrammarRule {
     name: String,
     line: usize,
     suggested_concept: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct ConceptGap {
     concept: String,
     query: String,
@@ -507,7 +507,7 @@ struct ConceptGrindGateFailure {
     output: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct BoundaryDecision {
     owner: BoundaryOwner,
     owner_raw: String,
@@ -517,7 +517,7 @@ struct BoundaryDecision {
     pest_patch_intent: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "value")]
 enum BoundaryOwner {
     Existing(String),
@@ -573,6 +573,56 @@ struct PlumbingCooldownSelection {
     cooled_target_rules: Vec<String>,
     excluded_rules: Vec<String>,
     fallback_status: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct PersistedBlockedExclusion {
+    target_rule: String,
+    normalized_blocked_reason: String,
+    structural_exclusion_reason: String,
+    matched_feature: String,
+    evidence_rule_or_parent: String,
+    source_run: PathBuf,
+    source_iteration: u32,
+}
+
+#[derive(Debug, Serialize)]
+struct CandidateBuild {
+    gap: ConceptGap,
+    audit: CandidateBuildAudit,
+}
+
+#[derive(Debug, Serialize)]
+struct CandidateBuildAudit {
+    persisted_exclusions: Vec<PersistedBlockedExclusion>,
+    plumbing_cooldown_selection: PlumbingCooldownSelection,
+    excluded_count: usize,
+    excluded_rules: Vec<String>,
+    structural_exclusion_reason: String,
+    matched_feature: String,
+    evidence_rule_or_parent: String,
+    remaining_candidate_count: usize,
+    selected_post_filter_candidate: Option<CandidateSelectionSummary>,
+}
+
+#[derive(Debug, Serialize)]
+struct CandidateSelectionSummary {
+    concept: String,
+    query: String,
+    target_rule: String,
+    target_line: usize,
+    reason: String,
+}
+
+#[derive(Debug, Serialize)]
+struct SelectorContractReport {
+    status: String,
+    required_blocked_rules: Vec<String>,
+    persisted_blocked_rules: Vec<String>,
+    missing_rules: Vec<String>,
+    exposed_rules: Vec<String>,
+    missing_audit_fields: Vec<String>,
+    candidate_build: Option<CandidateBuildAudit>,
 }
 
 #[derive(Debug, Serialize)]
@@ -2236,6 +2286,15 @@ fn is_shared_plumbing_block_reason(reason: &str) -> bool {
     reason.starts_with("shared") || reason.starts_with("shared/plumbing")
 }
 
+fn is_structural_block_reason(reason: &str) -> bool {
+    let reason = reason.trim().to_ascii_lowercase();
+    is_shared_plumbing_block_reason(&reason)
+        || reason.contains("plumbing")
+        || reason.contains("wrapper")
+        || reason.contains("aggregator")
+        || reason.contains("lexical")
+}
+
 fn plumbing_cooldown_selection(
     report: &ExistingGrammarMapReport,
     blocked_targets: &BTreeSet<String>,
@@ -2260,6 +2319,273 @@ fn plumbing_cooldown_selection(
         excluded_rules: excluded_rules.into_iter().collect(),
         fallback_status: fallback_status.to_string(),
     }
+}
+
+const SELECTOR_CONTRACT_BLOCKED_RULES: &[&str] = &[
+    "spell_type",
+    "life_gain_amount",
+    "permanent_controller",
+    "permanent_object",
+    "damage_amount",
+    "colored_target_effect",
+    "colored_target_action",
+    "upper_alpha",
+];
+
+fn load_persisted_blocked_exclusions() -> Result<Vec<PersistedBlockedExclusion>> {
+    let root = grammar_concept_log_root();
+    if !root.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut exclusions_by_rule = BTreeMap::<String, PersistedBlockedExclusion>::new();
+    for run_entry in fs::read_dir(&root).with_context(|| format!("read {}", root.display()))? {
+        let run_entry = run_entry?;
+        let run_path = run_entry.path();
+        if !run_path.is_dir() {
+            continue;
+        }
+        let run_name = run_entry.file_name();
+        let run_name = run_name.to_string_lossy();
+        if !run_name.starts_with("grind-") {
+            continue;
+        }
+
+        for iteration_entry in
+            fs::read_dir(&run_path).with_context(|| format!("read {}", run_path.display()))?
+        {
+            let iteration_entry = iteration_entry?;
+            let iteration_path = iteration_entry.path();
+            if !iteration_path.is_dir() {
+                continue;
+            }
+            let iteration_name = iteration_entry.file_name();
+            let iteration_name = iteration_name.to_string_lossy();
+            let Some(iteration_raw) = iteration_name.strip_prefix("iteration-") else {
+                continue;
+            };
+            let source_iteration = iteration_raw.parse::<u32>().unwrap_or_default();
+            let gap_path = iteration_path.join("gap.json");
+            let decision_path = iteration_path.join("boundary_decision.json");
+            if !gap_path.exists() || !decision_path.exists() {
+                continue;
+            }
+            let gap_text = fs::read_to_string(&gap_path)
+                .with_context(|| format!("read {}", gap_path.display()))?;
+            let decision_text = fs::read_to_string(&decision_path)
+                .with_context(|| format!("read {}", decision_path.display()))?;
+            let gap: ConceptGap = serde_json::from_str(&gap_text)
+                .with_context(|| format!("parse {}", gap_path.display()))?;
+            let decision: BoundaryDecision = serde_json::from_str(&decision_text)
+                .with_context(|| format!("parse {}", decision_path.display()))?;
+            let BoundaryOwner::Blocked(reason) = decision.owner else {
+                continue;
+            };
+            let exclusion = PersistedBlockedExclusion {
+                target_rule: gap.target_rule.clone(),
+                normalized_blocked_reason: slug(&reason).replace('-', "_"),
+                structural_exclusion_reason: reason.clone(),
+                matched_feature: classify_blocked_feature(&gap.target_rule, &reason),
+                evidence_rule_or_parent: gap.target_rule,
+                source_run: run_path.clone(),
+                source_iteration,
+            };
+            let replace = exclusions_by_rule
+                .get(&exclusion.target_rule)
+                .is_none_or(|current| {
+                    (current.source_run.as_path(), current.source_iteration)
+                        <= (exclusion.source_run.as_path(), exclusion.source_iteration)
+                });
+            if replace {
+                exclusions_by_rule.insert(exclusion.target_rule.clone(), exclusion);
+            }
+        }
+    }
+
+    Ok(exclusions_by_rule.into_values().collect())
+}
+
+fn classify_blocked_feature(target_rule: &str, reason: &str) -> String {
+    let lower = reason.to_ascii_lowercase();
+    if lower.contains("lexical") {
+        "lexical_plumbing".to_string()
+    } else if lower.contains("wrapper") {
+        "wrapper_rule".to_string()
+    } else if lower.contains("aggregator") {
+        "aggregator_rule".to_string()
+    } else if lower.contains("controller") {
+        "controller_phrase".to_string()
+    } else if lower.contains("amount") {
+        "amount_wrapper".to_string()
+    } else if lower.contains("plumbing") || lower.starts_with("shared") {
+        "shared_plumbing".to_string()
+    } else {
+        target_rule.to_string()
+    }
+}
+
+fn seed_selector_exclusions(
+    report: &ExistingGrammarMapReport,
+    persisted_exclusions: &[PersistedBlockedExclusion],
+    blocked_targets: &mut BTreeSet<String>,
+    plumbing_cooldown: &mut PlumbingCooldownState,
+) -> Result<()> {
+    for exclusion in persisted_exclusions {
+        blocked_targets.insert(exclusion.target_rule.clone());
+        if !is_structural_block_reason(&exclusion.structural_exclusion_reason) {
+            continue;
+        }
+        let derivation = derive_plumbing_cooldown(report, &exclusion.target_rule)?;
+        for candidate in &derivation.cooled_target_rules {
+            plumbing_cooldown
+                .cooled_target_rules
+                .insert(candidate.target_rule.clone());
+        }
+        plumbing_cooldown.derivations.push(derivation);
+    }
+    Ok(())
+}
+
+fn build_concept_candidate(
+    report: &ExistingGrammarMapReport,
+    options: &ConceptGrindOptions,
+    blocked_targets: &BTreeSet<String>,
+    plumbing_cooldown: &PlumbingCooldownState,
+    persisted_exclusions: &[PersistedBlockedExclusion],
+) -> Result<CandidateBuild> {
+    let cooldown_selection =
+        plumbing_cooldown_selection(report, blocked_targets, plumbing_cooldown);
+    let excluded_rules: BTreeSet<String> =
+        cooldown_selection.excluded_rules.iter().cloned().collect();
+    let gap = select_concept_gap_excluding(report, options, &excluded_rules)?;
+    let remaining_candidate_count = report
+        .unmapped_rules
+        .iter()
+        .filter(|rule| !excluded_rules.contains(&rule.name))
+        .count();
+    let structural_exclusion_reason = join_audit_values(
+        persisted_exclusions
+            .iter()
+            .map(|exclusion| exclusion.structural_exclusion_reason.as_str()),
+    );
+    let matched_feature = join_audit_values(
+        persisted_exclusions
+            .iter()
+            .map(|exclusion| exclusion.matched_feature.as_str()),
+    );
+    let evidence_rule_or_parent = join_audit_values(
+        persisted_exclusions
+            .iter()
+            .map(|exclusion| exclusion.evidence_rule_or_parent.as_str()),
+    );
+    let selected_post_filter_candidate = Some(CandidateSelectionSummary {
+        concept: gap.concept.clone(),
+        query: gap.query.clone(),
+        target_rule: gap.target_rule.clone(),
+        target_line: gap.target_line,
+        reason: gap.reason.clone(),
+    });
+
+    Ok(CandidateBuild {
+        gap,
+        audit: CandidateBuildAudit {
+            persisted_exclusions: persisted_exclusions.to_vec(),
+            plumbing_cooldown_selection: cooldown_selection,
+            excluded_count: excluded_rules.len(),
+            excluded_rules: excluded_rules.into_iter().collect(),
+            structural_exclusion_reason,
+            matched_feature,
+            evidence_rule_or_parent,
+            remaining_candidate_count,
+            selected_post_filter_candidate,
+        },
+    })
+}
+
+fn join_audit_values<'a>(values: impl Iterator<Item = &'a str>) -> String {
+    let mut unique = BTreeSet::new();
+    for value in values {
+        let value = value.trim();
+        if !value.is_empty() {
+            unique.insert(value.to_string());
+        }
+    }
+    if unique.is_empty() {
+        "none".to_string()
+    } else {
+        unique.into_iter().collect::<Vec<_>>().join("; ")
+    }
+}
+
+fn selector_contract_check(
+    report: &ExistingGrammarMapReport,
+    options: &ConceptGrindOptions,
+    blocked_targets: &BTreeSet<String>,
+    plumbing_cooldown: &PlumbingCooldownState,
+    persisted_exclusions: &[PersistedBlockedExclusion],
+) -> Result<SelectorContractReport> {
+    let candidate = build_concept_candidate(
+        report,
+        options,
+        blocked_targets,
+        plumbing_cooldown,
+        persisted_exclusions,
+    )?;
+    let persisted_blocked_rules: BTreeSet<String> = persisted_exclusions
+        .iter()
+        .map(|exclusion| exclusion.target_rule.clone())
+        .collect();
+    let required_blocked_rules: BTreeSet<String> = SELECTOR_CONTRACT_BLOCKED_RULES
+        .iter()
+        .map(|rule| (*rule).to_string())
+        .collect();
+    let missing_rules = required_blocked_rules
+        .difference(&persisted_blocked_rules)
+        .cloned()
+        .collect::<Vec<_>>();
+    let exposed_rules = candidate
+        .audit
+        .selected_post_filter_candidate
+        .as_ref()
+        .filter(|selected| required_blocked_rules.contains(&selected.target_rule))
+        .map(|selected| vec![selected.target_rule.clone()])
+        .unwrap_or_default();
+    let missing_audit_fields = missing_candidate_audit_fields(&candidate.audit);
+    let status = if missing_rules.is_empty()
+        && exposed_rules.is_empty()
+        && missing_audit_fields.is_empty()
+    {
+        "ok"
+    } else {
+        "selector_contract_failed"
+    };
+
+    Ok(SelectorContractReport {
+        status: status.to_string(),
+        required_blocked_rules: required_blocked_rules.into_iter().collect(),
+        persisted_blocked_rules: persisted_blocked_rules.into_iter().collect(),
+        missing_rules,
+        exposed_rules,
+        missing_audit_fields,
+        candidate_build: Some(candidate.audit),
+    })
+}
+
+fn missing_candidate_audit_fields(audit: &CandidateBuildAudit) -> Vec<String> {
+    let mut missing = Vec::new();
+    if audit.structural_exclusion_reason.trim().is_empty() {
+        missing.push("structural_exclusion_reason".to_string());
+    }
+    if audit.matched_feature.trim().is_empty() {
+        missing.push("matched_feature".to_string());
+    }
+    if audit.evidence_rule_or_parent.trim().is_empty() {
+        missing.push("evidence_rule_or_parent".to_string());
+    }
+    if audit.selected_post_filter_candidate.is_none() {
+        missing.push("selected_post_filter_candidate".to_string());
+    }
+    missing
 }
 
 fn derive_plumbing_cooldown(
@@ -2489,15 +2815,50 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
 
     let mut blocked_targets = BTreeSet::new();
     let mut plumbing_cooldown = PlumbingCooldownState::default();
+    let mut persisted_exclusions = load_persisted_blocked_exclusions()?;
     let session_dir = grammar_concept_log_root().join(format!("grind-{}", unix_timestamp()));
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
     let mut metrics = ConceptGrindMetrics::new(session_dir.clone());
     metrics.write(&session_dir)?;
+    write_json(
+        session_dir.join("persisted_blocked_exclusions.json"),
+        &persisted_exclusions,
+    )?;
     sink.emit(FlowEvent::Note {
         level: NoteLevel::Info,
         text: format!("concept-grind log: {}", session_dir.display()),
     });
+
+    let selector_contract_map = run_map_existing(MapExistingOptions {
+        json: false,
+        expand_deps: true,
+    })?;
+    seed_selector_exclusions(
+        &selector_contract_map,
+        &persisted_exclusions,
+        &mut blocked_targets,
+        &mut plumbing_cooldown,
+    )?;
+    let selector_contract = selector_contract_check(
+        &selector_contract_map,
+        &options,
+        &blocked_targets,
+        &plumbing_cooldown,
+        &persisted_exclusions,
+    )?;
+    write_json(
+        session_dir.join("selector_contract.json"),
+        &selector_contract,
+    )?;
+    if selector_contract.status == "selector_contract_failed" {
+        bail!(
+            "selector_contract_failed: missing_rules={:?} exposed_rules={:?} missing_audit_fields={:?}",
+            selector_contract.missing_rules,
+            selector_contract.exposed_rules,
+            selector_contract.missing_audit_fields
+        );
+    }
 
     for iteration in 1..=options.max_iterations {
         if sink.stop_requested() {
@@ -2518,15 +2879,23 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
-        let cooldown_selection =
-            plumbing_cooldown_selection(&before, &blocked_targets, &plumbing_cooldown);
+        let candidate_build = build_concept_candidate(
+            &before,
+            &options,
+            &blocked_targets,
+            &plumbing_cooldown,
+            &persisted_exclusions,
+        )?;
+        let cooldown_selection = &candidate_build.audit.plumbing_cooldown_selection;
         write_json(
             iteration_dir.join("plumbing_cooldown_selection.json"),
-            &cooldown_selection,
+            cooldown_selection,
         )?;
-        let excluded_rules: BTreeSet<String> =
-            cooldown_selection.excluded_rules.iter().cloned().collect();
-        let gap = select_concept_gap_excluding(&before, &options, &excluded_rules)?;
+        write_json(
+            iteration_dir.join("candidate_build_audit.json"),
+            &candidate_build.audit,
+        )?;
+        let gap = candidate_build.gap;
         write_json(iteration_dir.join("gap.json"), &gap)?;
 
         sink.emit(FlowEvent::WorkflowIterationStarted {
@@ -2627,7 +2996,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     gap.target_rule
                 ),
             });
-            if is_shared_plumbing_block_reason(reason) {
+            if is_structural_block_reason(reason) {
                 let derivation = derive_plumbing_cooldown(&before, &gap.target_rule)?;
                 for candidate in &derivation.cooled_target_rules {
                     plumbing_cooldown
@@ -2652,6 +3021,21 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     ),
                 });
             }
+            let exclusion = PersistedBlockedExclusion {
+                target_rule: gap.target_rule.clone(),
+                normalized_blocked_reason: slug(reason).replace('-', "_"),
+                structural_exclusion_reason: reason.clone(),
+                matched_feature: classify_blocked_feature(&gap.target_rule, reason),
+                evidence_rule_or_parent: gap.target_rule.clone(),
+                source_run: session_dir.clone(),
+                source_iteration: iteration,
+            };
+            write_json(iteration_dir.join("blocked_exclusion.json"), &exclusion)?;
+            persisted_exclusions.push(exclusion);
+            write_json(
+                session_dir.join("persisted_blocked_exclusions.json"),
+                &persisted_exclusions,
+            )?;
             blocked_targets.insert(gap.target_rule);
             continue;
         }
@@ -5080,6 +5464,50 @@ mod tests {
     }
 
     #[test]
+    fn selector_contract_uses_candidate_build_exclusions() {
+        let report = selector_contract_report_for_test();
+        let options = auto_grind_options_for_test();
+        let persisted = selector_contract_exclusions_for_test();
+        let blocked_targets = persisted
+            .iter()
+            .map(|exclusion| exclusion.target_rule.clone())
+            .collect::<BTreeSet<_>>();
+        let cooldown = PlumbingCooldownState::default();
+
+        let contract =
+            selector_contract_check(&report, &options, &blocked_targets, &cooldown, &persisted)
+                .expect("contract runs");
+
+        assert_eq!(contract.status, "ok");
+        assert!(contract.exposed_rules.is_empty());
+        assert!(contract.missing_audit_fields.is_empty());
+        assert_eq!(
+            contract
+                .candidate_build
+                .as_ref()
+                .and_then(|audit| audit.selected_post_filter_candidate.as_ref())
+                .map(|selected| selected.target_rule.as_str()),
+            Some("draw_cards")
+        );
+    }
+
+    #[test]
+    fn selector_contract_fails_closed_when_persisted_rule_is_exposed() {
+        let report = selector_contract_report_for_test();
+        let options = auto_grind_options_for_test();
+        let persisted = selector_contract_exclusions_for_test();
+        let blocked_targets = BTreeSet::new();
+        let cooldown = PlumbingCooldownState::default();
+
+        let contract =
+            selector_contract_check(&report, &options, &blocked_targets, &cooldown, &persisted)
+                .expect("contract runs");
+
+        assert_eq!(contract.status, "selector_contract_failed");
+        assert_eq!(contract.exposed_rules, vec!["spell_type".to_string()]);
+    }
+
+    #[test]
     fn grind_loop_options_parse_resume_path() {
         let options = parse_grind_loop_options(&[
             "--resume".to_string(),
@@ -5385,6 +5813,64 @@ unrelated_rule = { "unrelated" }
                 "--update",
             ]
         );
+    }
+
+    fn auto_grind_options_for_test() -> ConceptGrindOptions {
+        ConceptGrindOptions {
+            agent: AgentProvider::Codex,
+            max_iterations: 1,
+            concept: None,
+            target_rule: None,
+            query: None,
+            repair_attempts: 0,
+            dry_run: true,
+            allow_dirty: false,
+            no_commit: true,
+        }
+    }
+
+    fn selector_contract_report_for_test() -> ExistingGrammarMapReport {
+        let mut unmapped_rules = SELECTOR_CONTRACT_BLOCKED_RULES
+            .iter()
+            .enumerate()
+            .map(|(index, rule)| UnmappedGrammarRule {
+                name: (*rule).to_string(),
+                line: index + 1,
+                suggested_concept: None,
+            })
+            .collect::<Vec<_>>();
+        unmapped_rules.push(UnmappedGrammarRule {
+            name: "draw_cards".to_string(),
+            line: 99,
+            suggested_concept: None,
+        });
+
+        ExistingGrammarMapReport {
+            rule_count: unmapped_rules.len(),
+            concept_count: 0,
+            dependency_expansion: true,
+            shared_rule_count: 0,
+            mapped_rule_count: 0,
+            unmapped_rule_count: unmapped_rules.len(),
+            concepts: Vec::new(),
+            unmapped_rules,
+        }
+    }
+
+    fn selector_contract_exclusions_for_test() -> Vec<PersistedBlockedExclusion> {
+        SELECTOR_CONTRACT_BLOCKED_RULES
+            .iter()
+            .enumerate()
+            .map(|(index, rule)| PersistedBlockedExclusion {
+                target_rule: (*rule).to_string(),
+                normalized_blocked_reason: "shared_plumbing".to_string(),
+                structural_exclusion_reason: "shared/plumbing".to_string(),
+                matched_feature: "shared_plumbing".to_string(),
+                evidence_rule_or_parent: (*rule).to_string(),
+                source_run: PathBuf::from(".grammar-concept-runs/grind-test"),
+                source_iteration: index as u32 + 1,
+            })
+            .collect()
     }
 
     fn map_report_for_test(target_owned: bool) -> ExistingGrammarMapReport {
