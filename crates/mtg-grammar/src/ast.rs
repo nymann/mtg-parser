@@ -1059,6 +1059,8 @@ pub enum EachPlayerAction {
     ShuffleTheirHandAndGraveyardIntoTheirLibrary,
     /// "discards their hand"
     DiscardTheirHand,
+    /// "chooses a number of <permanent_type>s they control equal to ..."
+    EqualizeControlledPermanents { permanent_type: PermanentType },
     /// "draws N cards"
     DrawCards { count: CardCount },
 }

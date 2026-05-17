@@ -171,7 +171,6 @@ sentence_statement = _{
   | triggered_ability_fragment
   | triggered_ability
   | physical_action
-  | each_player_equalizes_controlled_permanents
   | players_do_actions_the_same_way
   | source_enters_with_pt_counters
   | this_ability_cant_cause_total_pt_counters_greater_than
@@ -764,6 +763,7 @@ each_player_action = _{
     each_player_antes_top_card_of_their_library_action
   | each_player_shuffles_their_hand_and_graveyard_into_their_library_action
   | each_player_discards_their_hand_action
+  | each_player_equalizes_controlled_permanents
   | draw_cards_action
 }
 each_player_antes_top_card_of_their_library_action = {
@@ -815,15 +815,13 @@ if_you_do_until_your_next_turn_you_cant_be_attacked_except_by_creatures_with_key
 }
 keyword_and_or_list = { keyword ~ (^"and/or" ~ keyword)* }
 
-// Balance-style resource equalization:
-// each player keeps a count of objects matching the least-stocked player,
-// then follow-up actions can apply "the same way" to other resources.
+// Balance-style resource equalization action for the each-player wrapper.
 each_player_equalizes_controlled_permanents = {
-    ^"each" ~ ^"player" ~ ^"chooses" ~ article ~ ^"number" ~ ^"of"
-  ~ permanent_type_plural ~ ^"they" ~ ^"control" ~ ^"equal" ~ ^"to"
-  ~ ^"the" ~ ^"number" ~ ^"of" ~ permanent_type_plural ~ ^"controlled"
+    ^"chooses" ~ article ~ ^"number" ~ ^"of" ~ permanent_type_plural
+  ~ ^"they" ~ ^"control" ~ ^"equal" ~ ^"to" ~ ^"the" ~ ^"number"
+  ~ ^"of" ~ permanent_type_plural ~ ^"controlled"
   ~ ^"by" ~ ^"the" ~ ^"player" ~ ^"who" ~ ^"controls" ~ ^"the"
-  ~ ^"fewest" ~ "," ~ ^"then" ~ ^"sacrifices" ~ ^"the" ~ ^"rest" ~ "."
+  ~ ^"fewest" ~ "," ~ ^"then" ~ ^"sacrifices" ~ ^"the" ~ ^"rest"
 }
 
 players_do_actions_the_same_way = {

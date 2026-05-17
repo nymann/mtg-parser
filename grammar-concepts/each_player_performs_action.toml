@@ -8,6 +8,7 @@ values = [
     "ante_top_card_of_their_library",
     "shuffle_hand_and_graveyard_into_library",
     "discard_hand",
+    "choose_controlled_permanents_equal_to_fewest_and_sacrifice_rest",
     "draw_cards",
 ]
 
@@ -26,7 +27,7 @@ values = ["period"]
 excludes = [
     "Imperative action sequences without the each-player subject are owned by imperative_action_sequence or lower-level action concepts.",
     "Each-player discard instructions with counted card quantities are owned by player_discards_cards, not this hand-discard action sequence.",
-    "Each-player effects that choose, sacrifice, or otherwise perform unsupported actions are outside the current action-member axis.",
+    "Each-player effects that choose or sacrifice outside the supported equalize-controlled-permanents action are outside the current action-member axis.",
     "Each-opponent or target-player subjects are outside the each-player actor axis.",
 ]
 includes = [
@@ -39,11 +40,14 @@ name = "each_player_performs_action"
 pest_rules = [
     "each_player_performs_action",
     "each_player_action_sequence",
+    "each_player_action",
+    "each_player_equalizes_controlled_permanents",
 ]
 rules_queries = [
     "lex: each player draws a card",
     "lex: each player discards their hand then draws cards",
     "lex: each player shuffles their hand and graveyard into their library",
+    "lex: each player chooses a number of creatures they control equal to the number of creatures controlled by the player who controls the fewest then sacrifices the rest",
 ]
 rules_terms = [
     "each player",
@@ -52,6 +56,9 @@ rules_terms = [
     "discard",
     "shuffle",
     "ante",
+    "choose",
+    "sacrifice",
+    "permanent",
 ]
 
 [[counterexample]]
@@ -63,12 +70,24 @@ reason = "Counted-card discard is a discard instruction, not the supported hand-
 text = "Each player discards two cards."
 
 [[counterexample]]
-reason = "Unsupported each-player action member."
+reason = "Unsupported simple sacrifice action member."
 text = "Each player sacrifices a creature."
+
+[[counterexample]]
+reason = "Unsupported simple choose action member."
+text = "Each player chooses a creature they control."
+
+[[counterexample]]
+reason = "Target-player subject is outside the each-player actor axis."
+text = "Target player chooses a number of creatures they control equal to the number of creatures controlled by the player who controls the fewest, then sacrifices the rest."
 
 [[counterexample]]
 reason = "Each-opponent subject is outside the each-player actor axis."
 text = "Each opponent draws a card."
+
+[[counterexample]]
+reason = "Each-opponent subject is outside the each-player actor axis."
+text = "Each opponent chooses a number of creatures they control equal to the number of creatures controlled by the player who controls the fewest, then sacrifices the rest."
 
 [[example]]
 text = "Each player draws a card."
@@ -82,11 +101,18 @@ text = "Each player discards their hand, then draws seven cards."
 [[example]]
 text = "Each player shuffles their hand and graveyard into their library, then draws seven cards."
 
+[[example]]
+text = "Each player chooses a number of creatures they control equal to the number of creatures controlled by the player who controls the fewest, then sacrifices the rest."
+
+[[example]]
+text = "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest."
+
 [grammar_query]
 candidate_rules = [
     "each_player_performs_action",
     "each_player_action_sequence",
     "each_player_action",
+    "each_player_equalizes_controlled_permanents",
     "each_player_antes_top_card_of_their_library_action",
     "each_player_shuffles_their_hand_and_graveyard_into_their_library_action",
     "each_player_discards_their_hand_action",

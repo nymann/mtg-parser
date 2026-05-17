@@ -22,6 +22,14 @@ reason = "Two-action comma-then sequence with hand discard followed by draw."
 text = "Each player shuffles their hand and graveyard into their library, then draws seven cards."
 reason = "Two-action comma-then sequence with explicit hand/graveyard shuffle followed by draw."
 
+[[example]]
+text = "Each player chooses a number of creatures they control equal to the number of creatures controlled by the player who controls the fewest, then sacrifices the rest."
+reason = "Single equalize-controlled-permanents action with creatures as the permanent-type axis."
+
+[[example]]
+text = "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest."
+reason = "Single equalize-controlled-permanents action with lands as the permanent-type axis."
+
 [[counterexample]]
 text = "Draw a card."
 reason = "Imperative action sequence without the each-player actor."
@@ -32,10 +40,22 @@ reason = "Counted-card discard is a discard instruction, not the supported hand-
 
 [[counterexample]]
 text = "Each player sacrifices a creature."
-reason = "Unsupported each-player action member."
+reason = "Unsupported simple sacrifice action member."
+
+[[counterexample]]
+text = "Each player chooses a creature they control."
+reason = "Unsupported simple choose action member."
+
+[[counterexample]]
+text = "Target player chooses a number of creatures they control equal to the number of creatures controlled by the player who controls the fewest, then sacrifices the rest."
+reason = "Target-player subject is outside the each-player actor axis."
 
 [[counterexample]]
 text = "Each opponent draws a card."
+reason = "Each-opponent subject is outside the each-player actor axis."
+
+[[counterexample]]
+text = "Each opponent chooses a number of creatures they control equal to the number of creatures controlled by the player who controls the fewest, then sacrifices the rest."
 reason = "Each-opponent subject is outside the each-player actor axis."
 
 [[counterexample]]

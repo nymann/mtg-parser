@@ -573,13 +573,9 @@ fn write_statement(out: &mut String, statement: &Statement) {
             out.push('.');
         }
         Statement::EachPlayerEqualizesControlledPermanents { permanent_type } => {
-            out.push_str("Each player chooses a number of ");
-            out.push_str(permanent_type_plural_name(*permanent_type));
-            out.push_str(" they control equal to the number of ");
-            out.push_str(permanent_type_plural_name(*permanent_type));
-            out.push_str(
-                " controlled by the player who controls the fewest, then sacrifices the rest.",
-            );
+            out.push_str("Each player ");
+            write_equalize_controlled_permanents_action(out, *permanent_type);
+            out.push('.');
         }
         Statement::PlayersDoActionsTheSameWay { actions } => {
             out.push_str("Players ");
@@ -1193,11 +1189,22 @@ fn write_each_player_action(out: &mut String, action: EachPlayerAction) {
         EachPlayerAction::DiscardTheirHand => {
             out.push_str("discards their hand");
         }
+        EachPlayerAction::EqualizeControlledPermanents { permanent_type } => {
+            write_equalize_controlled_permanents_action(out, permanent_type);
+        }
         EachPlayerAction::DrawCards { count } => {
             out.push_str("draws ");
             write_card_count_object(out, count);
         }
     }
+}
+
+fn write_equalize_controlled_permanents_action(out: &mut String, permanent_type: PermanentType) {
+    out.push_str("chooses a number of ");
+    out.push_str(permanent_type_plural_name(permanent_type));
+    out.push_str(" they control equal to the number of ");
+    out.push_str(permanent_type_plural_name(permanent_type));
+    out.push_str(" controlled by the player who controls the fewest, then sacrifices the rest");
 }
 
 fn write_same_way_actions(out: &mut String, actions: &[BalanceSameWayAction]) {

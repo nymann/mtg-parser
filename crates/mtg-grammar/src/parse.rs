@@ -742,6 +742,10 @@ fn each_player_action_from_pair(pair: Pair<Rule>) -> Result<EachPlayerAction, Pa
             Ok(EachPlayerAction::ShuffleTheirHandAndGraveyardIntoTheirLibrary)
         }
         Rule::each_player_discards_their_hand_action => Ok(EachPlayerAction::DiscardTheirHand),
+        Rule::each_player_equalizes_controlled_permanents => {
+            let permanent_type = equalized_permanent_type_from_pair(pair)?;
+            Ok(EachPlayerAction::EqualizeControlledPermanents { permanent_type })
+        }
         Rule::draw_cards_action => {
             let count_pair = pair.into_inner().next().ok_or(ParseError::Internal(
                 "each-player draw action missing count",
@@ -952,6 +956,11 @@ fn text_change_replacement_term_from_pair(
 fn each_player_equalizes_controlled_permanents_from_pair(
     pair: Pair<Rule>,
 ) -> Result<Statement, ParseError> {
+    let permanent_type = equalized_permanent_type_from_pair(pair)?;
+    Ok(Statement::EachPlayerEqualizesControlledPermanents { permanent_type })
+}
+
+fn equalized_permanent_type_from_pair(pair: Pair<Rule>) -> Result<PermanentType, ParseError> {
     let mut types = pair.into_inner();
     let chosen_type = types.next().ok_or(ParseError::Internal(
         "equalize permanents missing chosen permanent_type_plural",
@@ -963,7 +972,7 @@ fn each_player_equalizes_controlled_permanents_from_pair(
     if permanent_type != permanent_type_from_plural_pair(comparison_type)? {
         return Err(ParseError::Internal("equalize permanents type mismatch"));
     }
-    Ok(Statement::EachPlayerEqualizesControlledPermanents { permanent_type })
+    Ok(permanent_type)
 }
 
 fn players_do_actions_the_same_way_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
