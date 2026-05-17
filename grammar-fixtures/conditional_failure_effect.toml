@@ -1,0 +1,31 @@
+[fixture]
+concept = "conditional_failure_effect"
+rule = "if_you_cant_source_deals_damage_to_you"
+
+[[example]]
+text = "If you can't, CARDNAME deals 3 damage to you."
+reason = "Standalone conditional failure sentence where your inability to perform the prior instruction makes the source object deal fixed damage to you."
+
+[[example]]
+text = "If you can't, it deals X damage to you."
+reason = "Standalone conditional failure sentence with pronoun source object and variable damage amount."
+
+[[counterexample]]
+text = "If you do, CARDNAME deals 3 damage to you."
+reason = "Positive if-you-do follow-up effect, not a conditional failure branch."
+
+[[counterexample]]
+text = "If you don't, CARDNAME deals 3 damage to you."
+reason = "Negative if-you-don't branch, not the inability-to-perform-prior-instruction condition."
+
+[[counterexample]]
+text = "CARDNAME deals 3 damage to you."
+reason = "Standalone source damage instruction without the conditional failure condition."
+
+[[counterexample]]
+text = "If you can't, you lose the game."
+reason = "Conditional failure game-loss consequence, owned by conditional_failure_game_loss."
+
+[[counterexample]]
+text = "If you can't, CARDNAME deals 3 damage to you. trailing"
+reason = "Exact-consumption guard."

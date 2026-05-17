@@ -1,0 +1,83 @@
+[[axis]]
+name = "condition_actor"
+values = ["you"]
+
+[[axis]]
+name = "condition"
+values = ["inability_to_perform_prior_instruction"]
+
+[[axis]]
+name = "consequence"
+values = ["source_deals_damage_to_you"]
+
+[[axis]]
+name = "damage_source"
+values = ["source_object"]
+
+[[axis]]
+name = "damage_amount"
+values = ["damage_amount"]
+
+[[axis]]
+name = "damage_recipient"
+values = ["you"]
+
+[[axis]]
+name = "surface"
+values = ["standalone_sentence"]
+
+[boundary]
+excludes = [
+    "Positive if-you-do follow-up effects owned by if_you_do_effect.",
+    "Negative if-you-don't branches.",
+    "Standalone source damage instructions without the conditional failure condition.",
+    "Conditional failure game-loss consequences owned by conditional_failure_game_loss.",
+]
+includes = ["Standalone sentences where your inability to perform a prior instruction causes the source object to deal damage to you."]
+
+[concept]
+name = "conditional_failure_effect"
+pest_rules = ["if_you_cant_source_deals_damage_to_you"]
+rules_queries = [
+    "lex: if you can't source deals damage to you",
+    "lex: unable to perform instruction deals damage to you",
+]
+rules_terms = [
+    "damage",
+    "instruction",
+]
+
+[[counterexample]]
+reason = "Positive if-you-do follow-up effect, not a conditional failure branch."
+text = "If you do, CARDNAME deals 3 damage to you."
+
+[[counterexample]]
+reason = "Negative if-you-don't branch, not the inability-to-perform-prior-instruction condition."
+text = "If you don't, CARDNAME deals 3 damage to you."
+
+[[counterexample]]
+reason = "Standalone source damage instruction without the conditional failure condition."
+text = "CARDNAME deals 3 damage to you."
+
+[[counterexample]]
+reason = "Conditional failure game-loss consequence, owned by conditional_failure_game_loss."
+text = "If you can't, you lose the game."
+
+[[example]]
+text = "If you can't, CARDNAME deals 3 damage to you."
+
+[[example]]
+text = "If you can't, it deals X damage to you."
+
+[grammar_query]
+candidate_rules = [
+    "if_you_cant_source_deals_damage_to_you",
+    "if_you_do_effect",
+    "if_you_cant_you_lose_the_game",
+    "damage_event",
+]
+selected_rule = "if_you_cant_source_deals_damage_to_you"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

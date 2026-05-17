@@ -2354,7 +2354,7 @@ damage_amount_expression = _{ damage_dealt_to_you_this_turn | unsigned_number | 
 damage_dealt_to_you_this_turn = {
     ^"damage" ~ ^"dealt" ~ ^"to" ~ ^"you" ~ ^"this" ~ ^"turn"
 }
-damage_amount = @{ ASCII_DIGIT+ }
+damage_amount = ${ unsigned_number | variable_name }
 
 // `it loses "<keyword>" and gains "<keyword>."`. The quoted strings are
 // themselves keyword abilities — recursive parsing keeps them in the
