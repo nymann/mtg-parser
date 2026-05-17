@@ -168,6 +168,7 @@ cargo xtask concept-phase-loop [--agent codex|claude]
                                [--phase1-max-batches N]
                                [--notify-imessage BUDDY]
                                [--notify-command SHELL]
+                               [--no-push]
                                [--dry-run]
 
 Runs Phase 2 in small committed batches until objective quality stop signals
@@ -177,7 +178,9 @@ remaining non-green concepts, or all Phase 2 concepts going green. Optional
 max flags are fuses for scheduled/manual runs, not normal stop goals. When a
 Phase 2 stop signal fires, it writes a summary and hands off to
 concept-grind-loop for Phase 1 concept work. Notification hooks may also be
-provided through PHASE_NOTIFY_IMESSAGE or PHASE_NOTIFY_COMMAND.
+provided through PHASE_NOTIFY_IMESSAGE or PHASE_NOTIFY_COMMAND. By default,
+the phase loop pushes successful concept commits; use --no-push or
+PHASE_GIT_PUSH=0 for local-only runs.
 ";
 
 const PHASE_STATUS_USAGE: &str = "\
@@ -646,6 +649,7 @@ struct ConceptPhaseLoopOptions {
     phase1_max_batches: Option<u32>,
     notify_imessage: Option<String>,
     notify_command: Option<String>,
+    git_push: bool,
     dry_run: bool,
 }
 
@@ -1972,6 +1976,7 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
     let mut phase1_max_batches = None::<u32>;
     let mut notify_imessage = env_nonempty("PHASE_NOTIFY_IMESSAGE");
     let mut notify_command = env_nonempty("PHASE_NOTIFY_COMMAND");
+    let mut git_push = env_bool("PHASE_GIT_PUSH").unwrap_or(true);
     let mut dry_run = false;
 
     let mut iter = args.iter();
@@ -2043,6 +2048,8 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
             s if s.starts_with("--notify-command=") => {
                 notify_command = Some(s["--notify-command=".len()..].to_string());
             }
+            "--push" => git_push = true,
+            "--no-push" => git_push = false,
             "--dry-run" => dry_run = true,
             other => bail!("unknown argument: {other}\n\n{PHASE_LOOP_USAGE}"),
         }
@@ -2071,6 +2078,7 @@ fn parse_phase_loop_options(args: &[String]) -> Result<ConceptPhaseLoopOptions> 
         phase1_max_batches,
         notify_imessage,
         notify_command,
+        git_push,
         dry_run,
     })
 }
@@ -2080,6 +2088,15 @@ fn env_nonempty(name: &str) -> Option<String> {
         .ok()
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
+}
+
+fn env_bool(name: &str) -> Option<bool> {
+    let value = env_nonempty(name)?;
+    match value.to_ascii_lowercase().as_str() {
+        "1" | "true" | "yes" | "on" => Some(true),
+        "0" | "false" | "no" | "off" => Some(false),
+        _ => None,
+    }
 }
 
 fn parse_phase_status_options(args: &[String]) -> Result<PhaseStatusOptions> {
@@ -4111,6 +4128,10 @@ fn run_phase_loop_phase2_batch(options: &ConceptPhaseLoopOptions, batch_dir: &Pa
             "--max-iterations",
             &options.phase2_batch_size.to_string(),
         ])
+        .env(
+            "CONCEPT_PIPELINE_PUSH",
+            if options.git_push { "1" } else { "0" },
+        )
         .current_dir(repo_root())
         .output()
         .context("cargo xtask concept-phase2-grind batch")?;
@@ -4140,6 +4161,10 @@ fn run_phase_loop_phase1(options: &ConceptPhaseLoopOptions, loop_dir: &Path) -> 
     }
     let output = Command::new("cargo")
         .args(&args)
+        .env(
+            "CONCEPT_PIPELINE_PUSH",
+            if options.git_push { "1" } else { "0" },
+        )
         .current_dir(repo_root())
         .output()
         .context("cargo xtask concept-grind-loop")?;
@@ -7352,8 +7377,11 @@ const PHASE2_GRIND_COMMIT_PATHS: &[&str] = &[
     "ast-fixtures",
     "crates/mtg-grammar/src/ast.rs",
     "crates/mtg-grammar/src/grammar.pest",
+    "crates/mtg-grammar/src/lib.rs",
     "crates/mtg-grammar/src/parse.rs",
     "crates/mtg-grammar/src/unparse.rs",
+    "crates/mtg-grammar/tests/prop.rs",
+    "crates/mtg-semantic/tests/prop.rs",
     "grammar-fixtures",
 ];
 
@@ -7437,6 +7465,7 @@ fn commit_phase2_grind_iteration(concept: &str, iteration: u32) -> Result<bool> 
     if !commit.status.success() {
         bail!("git commit failed\n{}", command_output_text(&commit));
     }
+    push_pipeline_commit_if_enabled()?;
     Ok(true)
 }
 
@@ -7509,11 +7538,27 @@ fn commit_concept_grind_iteration(gap: &ConceptGap, iteration: u32) -> Result<bo
     if !commit.status.success() {
         bail!("git commit failed\n{}", command_output_text(&commit));
     }
+    push_pipeline_commit_if_enabled()?;
     Ok(true)
 }
 
 fn cleanup_concept_grind_transient_artifacts() -> Result<()> {
     restore_tracked_file_from_head("crates/mtg-grammar/tests/prop.proptest-regressions")
+}
+
+fn push_pipeline_commit_if_enabled() -> Result<()> {
+    if !env_bool("CONCEPT_PIPELINE_PUSH").unwrap_or(false) {
+        return Ok(());
+    }
+    let output = Command::new("git")
+        .arg("push")
+        .current_dir(repo_root())
+        .output()
+        .context("git push")?;
+    if !output.status.success() {
+        bail!("git push failed\n{}", command_output_text(&output));
+    }
+    Ok(())
 }
 
 fn restore_tracked_file_from_head(path: &str) -> Result<()> {
@@ -8804,6 +8849,7 @@ mod tests {
             "--notify-imessage=me@example.com".to_string(),
             "--notify-command".to_string(),
             "printf '%s\\n' \"$PHASE_NOTIFY_TITLE\"".to_string(),
+            "--no-push".to_string(),
             "--dry-run".to_string(),
         ])
         .expect("phase loop options parse");
@@ -8818,6 +8864,7 @@ mod tests {
             options.notify_command.as_deref(),
             Some("printf '%s\\n' \"$PHASE_NOTIFY_TITLE\"")
         );
+        assert!(!options.git_push);
         assert!(options.dry_run);
     }
 
