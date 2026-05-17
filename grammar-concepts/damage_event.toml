@@ -114,7 +114,6 @@ candidate_rules = [
     "damage_event_amount",
     "damage_event_recipients",
     "trigger_damage_event",
-    "next_damage_event_effect",
     "damage_prevention_effect",
 ]
 selected_rule = "damage_event_statement"

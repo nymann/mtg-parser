@@ -1,0 +1,48 @@
+[fixture]
+concept = "activated_next_damage_event_replacement_effect"
+rule = "next_damage_event_effect"
+
+[[example]]
+text = "The next time a source of your choice would deal damage to you this turn, prevent that damage."
+
+[[example]]
+text = "The next time a source of your choice would deal damage to CARDNAME this turn, prevent all but 1 of that damage."
+reason = "Source-object recipient plus prevent-all-but result axis."
+
+[[example]]
+text = "The next time a source of your choice would deal damage to you this turn, that damage is dealt to you instead."
+reason = "Passive redirection result surface."
+
+[[example]]
+text = "The next time a red source of your choice would deal damage to target creature this turn, prevent that damage."
+reason = "Colored chosen source plus target-permanent recipient axes."
+
+[[example]]
+text = "The next time an unblocked creature of your choice would deal combat damage to you this turn, that source deals that damage to you instead."
+reason = "Unblocked-creature combat source plus legacy active redirection result surface."
+
+[[example]]
+text = "prevent all but 1 of that damage"
+rule = "activated_damage_event_result"
+reason = "Result-axis fixture coverage."
+
+[[example]]
+text = "that damage is dealt to you instead"
+rule = "activated_damage_event_result"
+reason = "Result-axis fixture coverage for passive redirection."
+
+[[counterexample]]
+text = "This gets +1/+1 until end of turn."
+reason = "Source power/toughness modifier, owned by activated_source_pt_modifier_until_eot."
+
+[[counterexample]]
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+reason = "Direct next-amount prevention shield, owned by damage_prevention_effect."
+
+[[counterexample]]
+text = "CARDNAME deals 1 damage to any target."
+reason = "Named-source direct damage instruction, owned by damage_event."
+
+[[counterexample]]
+text = "The next time a source of your choice would deal damage to you this turn, prevent that damage. trailing"
+reason = "Exact-consumption guard."

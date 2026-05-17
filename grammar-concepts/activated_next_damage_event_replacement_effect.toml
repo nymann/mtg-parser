@@ -1,0 +1,102 @@
+[[axis]]
+name = "ability_context"
+values = ["activated_effect"]
+
+[[axis]]
+name = "event"
+values = ["next_damage_event_this_turn"]
+
+[[axis]]
+name = "source"
+values = [
+    "chosen_damage_source",
+    "colored_damage_source",
+    "unblocked_creature_damage_source",
+]
+
+[[axis]]
+name = "recipient"
+values = [
+    "you",
+    "target_permanent",
+    "source_object",
+]
+
+[[axis]]
+name = "result"
+values = [
+    "prevent_that_damage",
+    "prevent_all_but_that_damage",
+    "redirect_that_damage_to_you",
+]
+
+[boundary]
+excludes = [
+    "Source power/toughness modifiers until end of turn.",
+    "Direct prevention shields for the next fixed amount of damage.",
+    "Named-source direct damage instructions.",
+    "Static damage redirection effects that do not choose a source for the next damage event.",
+]
+includes = [
+    "Activated replacement effects for the next time a chosen source would deal damage this turn.",
+    "Chosen, colored, and unblocked-creature damage source axes.",
+    "You, target-permanent, and source-object damage recipient axes.",
+    "Prevention, prevent-all-but, and redirect-that-damage result axes.",
+]
+
+[concept]
+name = "activated_next_damage_event_replacement_effect"
+pest_rules = [
+    "next_damage_event_effect",
+    "activated_damage_event_result",
+]
+rules_queries = [
+    "lex: the next time a source of your choice would deal damage prevent that damage",
+    "lex: the next time a source would deal damage prevent all but 1 of that damage",
+    "lex: damage is dealt to you instead",
+]
+rules_terms = [
+    "replacement effect",
+    "prevention effect",
+    "damage",
+    "source",
+    "event",
+]
+
+[[counterexample]]
+reason = "Source power/toughness modifier, owned by activated_source_pt_modifier_until_eot."
+text = "This gets +1/+1 until end of turn."
+
+[[counterexample]]
+reason = "Direct next-amount prevention shield, owned by damage_prevention_effect."
+text = "Prevent the next 1 damage that would be dealt to any target this turn."
+
+[[counterexample]]
+reason = "Named-source direct damage instruction, owned by damage_event."
+text = "CARDNAME deals 1 damage to any target."
+
+[[example]]
+text = "The next time a source of your choice would deal damage to you this turn, prevent that damage."
+
+[[example]]
+text = "The next time a source of your choice would deal damage to CARDNAME this turn, prevent all but 1 of that damage."
+
+[[example]]
+text = "The next time a source of your choice would deal damage to you this turn, that damage is dealt to you instead."
+
+[[example]]
+text = "The next time a red source of your choice would deal damage to target creature this turn, prevent that damage."
+
+[[example]]
+text = "The next time an unblocked creature of your choice would deal combat damage to you this turn, that source deals that damage to you instead."
+
+[grammar_query]
+candidate_rules = [
+    "next_damage_event_effect",
+    "activated_damage_event_result",
+]
+selected_rule = "next_damage_event_effect"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"
