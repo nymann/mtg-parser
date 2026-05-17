@@ -214,6 +214,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::it_wasnt_first_permanent_you_played_this_turn => Ok(Statement::InterveningIf(
             intervening_if_from_pair(pair)?,
         )),
+        Rule::this_card_in_your_graveyard_with_cards_above_it => Ok(Statement::InterveningIf(
+            intervening_if_from_pair(pair)?,
+        )),
         Rule::if_you_pay_source_deals_damage => if_you_pay_source_deals_damage_from_pair(pair),
         Rule::as_source_enters_you_lose_life_equal_to_your_life_total => {
             as_source_enters_you_lose_life_equal_to_your_life_total_from_pair(pair)

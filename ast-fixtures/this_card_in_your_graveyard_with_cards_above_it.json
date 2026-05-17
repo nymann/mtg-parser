@@ -1,0 +1,48 @@
+{
+  "concept": "this_card_in_your_graveyard_with_cards_above_it",
+  "fixture_path": "grammar-fixtures/this_card_in_your_graveyard_with_cards_above_it.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "this_card_in_your_graveyard_with_cards_above_it",
+      "text": "this card is in your graveyard with three or more creature cards above it",
+      "ast": {
+        "InterveningIf": {
+          "ThisCardInYourZoneWithCardsAboveIt": {
+            "card_type": "Creature",
+            "count": 3,
+            "zone": "Graveyard"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "this_card_in_your_graveyard_with_cards_above_it",
+      "text": "this card is in your graveyard with two or more artifact cards above it",
+      "ast": {
+        "InterveningIf": {
+          "ThisCardInYourZoneWithCardsAboveIt": {
+            "card_type": "Artifact",
+            "count": 2,
+            "zone": "Graveyard"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "this_card_in_your_graveyard_with_cards_above_it",
+      "text": "this card is in your graveyard with four or more land cards above it",
+      "ast": {
+        "InterveningIf": {
+          "ThisCardInYourZoneWithCardsAboveIt": {
+            "card_type": "Land",
+            "count": 4,
+            "zone": "Graveyard"
+          }
+        }
+      }
+    }
+  ]
+}

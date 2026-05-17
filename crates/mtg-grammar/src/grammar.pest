@@ -227,6 +227,7 @@ phrase_statement = _{
   | variable_definition
   | variable_name
   | value_expression
+  | this_card_in_your_graveyard_with_cards_above_it
   | condition
   | it_wasnt_first_permanent_you_played_this_turn
 }
