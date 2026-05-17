@@ -1940,7 +1940,7 @@ this_card_in_your_graveyard_with_cards_above_it = {
 }
 enchanted_has_keyword = { ^"enchanted" ~ enchanted_object ~ ^"has" ~ keyword }
 it_wasnt_first_permanent_you_played_this_turn = {
-    ^"it" ~ ^"wasn't" ~ ^"the" ~ ^"first" ~ permanent_type
+    ^"it" ~ ^"wasn't" ~ ^"the" ~ ^"first" ~ (permanent_object | permanent_type)
   ~ ^"you" ~ ^"played" ~ ^"this" ~ ^"turn"
 }
 source_attacked_or_blocked_this_combat = {

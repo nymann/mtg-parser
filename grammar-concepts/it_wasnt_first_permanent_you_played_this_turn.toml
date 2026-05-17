@@ -1,0 +1,84 @@
+[[axis]]
+name = "subject"
+values = ["it"]
+
+[[axis]]
+name = "polarity"
+values = ["negative"]
+
+[[axis]]
+name = "ordinal"
+values = ["first"]
+
+[[axis]]
+name = "object"
+values = ["permanent_type"]
+
+[[axis]]
+name = "actor"
+values = ["you"]
+
+[[axis]]
+name = "action"
+values = ["played"]
+
+[[axis]]
+name = "duration"
+values = ["this_turn"]
+
+[[axis]]
+name = "sentence_form"
+values = ["intervening_if_condition"]
+
+[boundary]
+excludes = [
+    "Standalone blocking requirements.",
+    "Simple play-event phrases.",
+    "Positive first-permanent conditions.",
+    "Spell-cast conditions.",
+]
+includes = ["Negative intervening-if conditions where it was not the first permanent type you played this turn."]
+
+[concept]
+name = "it_wasnt_first_permanent_you_played_this_turn"
+pest_rules = ["it_wasnt_first_permanent_you_played_this_turn"]
+rules_queries = ["lex: it wasn't the first permanent you played this turn"]
+rules_terms = [
+    "intervening if",
+    "permanent",
+    "play",
+    "this turn",
+]
+
+[[counterexample]]
+reason = "Standalone blocking requirement, not an intervening-if condition about the first permanent played this turn."
+text = "It blocks each attacking creature this turn if able."
+
+[[counterexample]]
+reason = "Simple play-event phrase, not a negative first-permanent condition."
+text = "you play a creature"
+
+[[counterexample]]
+reason = "Positive first-permanent condition, not the negative polarity owned by this concept."
+text = "it was the first permanent you played this turn"
+
+[[counterexample]]
+reason = "Spell-cast condition, not a permanent-type play condition."
+text = "it wasn't the first spell you cast this turn"
+
+[[example]]
+text = "it wasn't the first permanent you played this turn"
+
+[[example]]
+text = "it wasn't the first creature you played this turn"
+
+[[example]]
+text = "it wasn't the first artifact you played this turn"
+
+[grammar_query]
+candidate_rules = ["it_wasnt_first_permanent_you_played_this_turn"]
+selected_rule = "it_wasnt_first_permanent_you_played_this_turn"
+
+[maturity]
+blockers = []
+pest_grammar = "grammar_fixture_green"

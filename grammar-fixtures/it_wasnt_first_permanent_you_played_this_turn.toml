@@ -1,0 +1,35 @@
+[fixture]
+concept = "it_wasnt_first_permanent_you_played_this_turn"
+rule = "it_wasnt_first_permanent_you_played_this_turn"
+
+[[example]]
+text = "it wasn't the first permanent you played this turn"
+reason = "Negative intervening-if condition for a permanent object."
+
+[[example]]
+text = "it wasn't the first creature you played this turn"
+reason = "Same condition with a creature permanent-type object."
+
+[[example]]
+text = "it wasn't the first artifact you played this turn"
+reason = "Same condition with an artifact permanent-type object."
+
+[[counterexample]]
+text = "It blocks each attacking creature this turn if able."
+reason = "Standalone blocking requirement, not this intervening-if condition."
+
+[[counterexample]]
+text = "you play a creature"
+reason = "Simple play-event phrase, not a negative first-permanent condition."
+
+[[counterexample]]
+text = "it was the first permanent you played this turn"
+reason = "Positive first-permanent condition, not the negative polarity owned by this concept."
+
+[[counterexample]]
+text = "it wasn't the first spell you cast this turn"
+reason = "Spell-cast condition, not a permanent-type play condition."
+
+[[counterexample]]
+text = "it wasn't the first permanent you played this turn trailing"
+reason = "Exact-consumption guard."
