@@ -581,7 +581,7 @@ enum RoadmapKindFilter {
     Effects,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct ParseReport {
     concept: String,
     fixture_path: PathBuf,
@@ -648,7 +648,7 @@ struct AstSnapshotCase {
     ast: serde_json::Value,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Phase2MapReport {
     total_concepts: usize,
     grammar_green_concepts: usize,
@@ -667,7 +667,7 @@ struct Phase2MapReport {
     json: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Phase2ConceptStatus {
     concept: String,
     maturity: String,
@@ -683,7 +683,7 @@ struct Phase2ConceptStatus {
     first_error: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 enum Phase2AstStatus {
     Pass,
@@ -2232,10 +2232,7 @@ fn run_phase2_grind(options: Phase2GrindOptions, sink: &mut dyn FlowSink) -> Res
     fs::create_dir_all(&session_dir)
         .with_context(|| format!("create {}", session_dir.display()))?;
 
-    let baseline = run_phase2_map(Phase2MapOptions {
-        json: false,
-        include_all: false,
-    })?;
+    let baseline = run_phase2_map_fresh()?;
     sink.emit(FlowEvent::SessionStarted {
         workflow: "concept-phase2-grind".to_string(),
         set: "phase2".to_string(),
@@ -2250,10 +2247,7 @@ fn run_phase2_grind(options: Phase2GrindOptions, sink: &mut dyn FlowSink) -> Res
         let iteration_dir = session_dir.join(format!("iteration-{iteration:03}"));
         fs::create_dir_all(&iteration_dir)
             .with_context(|| format!("create {}", iteration_dir.display()))?;
-        let report = run_phase2_map(Phase2MapOptions {
-            json: false,
-            include_all: false,
-        })?;
+        let report = run_phase2_map_fresh()?;
         write_json(iteration_dir.join("phase2_map_before.json"), &report)?;
 
         let Some(candidate) = select_phase2_grind_candidate(&report, options.concept.as_deref())
@@ -2375,10 +2369,7 @@ fn run_phase2_grind(options: Phase2GrindOptions, sink: &mut dyn FlowSink) -> Res
             summary: Some("concept-parse, concept-ast-test, and cargo check passed".to_string()),
         });
 
-        let after = run_phase2_map(Phase2MapOptions {
-            json: false,
-            include_all: false,
-        })?;
+        let after = run_phase2_map_fresh()?;
         write_json(iteration_dir.join("phase2_map_after.json"), &after)?;
 
         sink.emit(FlowEvent::StepStarted {
@@ -2443,6 +2434,34 @@ fn run_phase2_grind(options: Phase2GrindOptions, sink: &mut dyn FlowSink) -> Res
     Ok(())
 }
 
+fn run_phase2_map_fresh() -> Result<Phase2MapReport> {
+    let output = Command::new("cargo")
+        .args(["xtask", "concept-phase2-map", "--json"])
+        .current_dir(repo_root())
+        .output()
+        .context("cargo xtask concept-phase2-map --json")?;
+    let text = command_output_text(&output);
+    if !output.status.success() {
+        bail!("fresh concept-phase2-map failed\n{text}");
+    }
+    serde_json::from_slice::<Phase2MapReport>(&output.stdout)
+        .with_context(|| format!("parse fresh concept-phase2-map JSON\n{text}"))
+}
+
+fn run_concept_parse_fresh(concept: &str) -> Result<ParseReport> {
+    let output = Command::new("cargo")
+        .args(["xtask", "concept-parse", concept, "--json"])
+        .current_dir(repo_root())
+        .output()
+        .with_context(|| format!("cargo xtask concept-parse {concept} --json"))?;
+    let text = command_output_text(&output);
+    if !output.status.success() {
+        bail!("fresh concept-parse failed for {concept}\n{text}");
+    }
+    serde_json::from_slice::<ParseReport>(&output.stdout)
+        .with_context(|| format!("parse fresh concept-parse JSON for {concept}\n{text}"))
+}
+
 fn select_phase2_grind_candidate<'a>(
     report: &'a Phase2MapReport,
     requested_concept: Option<&str>,
@@ -2475,12 +2494,7 @@ fn build_phase2_repair_prompt(
     candidate: &Phase2ConceptStatus,
     report: &Phase2MapReport,
 ) -> Result<String> {
-    let parse = run_concept_parse(Phase2Options {
-        concept: Some(candidate.concept.clone()),
-        fixture: None,
-        update: false,
-        json: false,
-    })?;
+    let parse = run_concept_parse_fresh(&candidate.concept)?;
     let parse_json = serde_json::to_string_pretty(&parse).context("serialize parse report")?;
     Ok(format!(
         "\

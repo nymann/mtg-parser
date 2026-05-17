@@ -170,10 +170,10 @@ fn render_session_bar(f: &mut Frame<'_>, area: Rect, state: &AppState) {
         .filter(|i| i.committed_duration_secs.is_some())
         .count();
     let cards_active = state
-        .iterations
-        .iter()
+        .active_iteration()
         .filter(|i| i.outcome.is_none())
-        .count();
+        .map(|_| 1)
+        .unwrap_or(0);
 
     let avg = state.avg_iteration_secs();
     let avg_cost = state.avg_cost_per_committed_iteration();
