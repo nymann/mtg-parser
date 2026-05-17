@@ -4075,7 +4075,9 @@ fn next_damage_event_effect_from_pair(
             Rule::damage_kind => {
                 kind = DamageKind::CombatDamage;
             }
-            Rule::you_damage_recipient | Rule::target_permanent_damage_recipient => {
+            Rule::you_damage_recipient
+            | Rule::target_permanent_damage_recipient
+            | Rule::source_object_damage_recipient => {
                 recipient = Some(activated_damage_recipient_from_pair(child)?);
             }
             Rule::prevent_that_damage

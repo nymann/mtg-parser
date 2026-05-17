@@ -1,0 +1,131 @@
+{
+  "concept": "activated_next_damage_event_replacement_effect",
+  "fixture_path": "grammar-fixtures/activated_next_damage_event_replacement_effect.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "next_damage_event_effect",
+      "text": "The next time a source of your choice would deal damage to you this turn, prevent that damage.",
+      "ast": {
+        "DamageEffect": {
+          "NextDamageEvent": {
+            "effect": "PreventThatDamage",
+            "kind": "Damage",
+            "recipient": "You",
+            "source": "Source"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "next_damage_event_effect",
+      "text": "The next time a source of your choice would deal damage to CARDNAME this turn, prevent all but 1 of that damage.",
+      "ast": {
+        "DamageEffect": {
+          "NextDamageEvent": {
+            "effect": {
+              "PreventAllBut": {
+                "amount": 1
+              }
+            },
+            "kind": "Damage",
+            "recipient": {
+              "Source": "ThisPermanent"
+            },
+            "source": "Source"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "next_damage_event_effect",
+      "text": "The next time a source of your choice would deal damage to you this turn, that damage is dealt to you instead.",
+      "ast": {
+        "DamageEffect": {
+          "NextDamageEvent": {
+            "effect": "RedirectToYou",
+            "kind": "Damage",
+            "recipient": "You",
+            "source": "Source"
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "next_damage_event_effect",
+      "text": "The next time a red source of your choice would deal damage to target creature this turn, prevent that damage.",
+      "ast": {
+        "DamageEffect": {
+          "NextDamageEvent": {
+            "effect": "PreventThatDamage",
+            "kind": "Damage",
+            "recipient": {
+              "TargetPermanent": {
+                "permanent_type": "Creature"
+              }
+            },
+            "source": {
+              "ColoredSource": {
+                "color": "Red"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "next_damage_event_effect",
+      "text": "The next time an unblocked creature of your choice would deal combat damage to you this turn, that source deals that damage to you instead.",
+      "ast": {
+        "DamageEffect": {
+          "NextDamageEvent": {
+            "effect": "RedirectToYou",
+            "kind": "CombatDamage",
+            "recipient": "You",
+            "source": "UnblockedCreature"
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "rule": "next_damage_event_effect",
+      "text": "The next time a source of your choice would deal damage to you this turn, prevent all but 1 of that damage.",
+      "ast": {
+        "DamageEffect": {
+          "NextDamageEvent": {
+            "effect": {
+              "PreventAllBut": {
+                "amount": 1
+              }
+            },
+            "kind": "Damage",
+            "recipient": "You",
+            "source": "Source"
+          }
+        }
+      }
+    },
+    {
+      "index": 7,
+      "rule": "next_damage_event_effect",
+      "text": "The next time a source of your choice would deal damage to CARDNAME this turn, that damage is dealt to you instead.",
+      "ast": {
+        "DamageEffect": {
+          "NextDamageEvent": {
+            "effect": "RedirectToYou",
+            "kind": "Damage",
+            "recipient": {
+              "Source": "ThisPermanent"
+            },
+            "source": "Source"
+          }
+        }
+      }
+    }
+  ]
+}

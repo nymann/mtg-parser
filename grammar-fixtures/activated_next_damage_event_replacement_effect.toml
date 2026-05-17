@@ -22,14 +22,12 @@ text = "The next time an unblocked creature of your choice would deal combat dam
 reason = "Unblocked-creature combat source plus legacy active redirection result surface."
 
 [[example]]
-text = "prevent all but 1 of that damage"
-rule = "activated_damage_event_result"
-reason = "Result-axis fixture coverage."
+text = "The next time a source of your choice would deal damage to you this turn, prevent all but 1 of that damage."
+reason = "Result-axis fixture coverage for prevent-all-but as full card text."
 
 [[example]]
-text = "that damage is dealt to you instead"
-rule = "activated_damage_event_result"
-reason = "Result-axis fixture coverage for passive redirection."
+text = "The next time a source of your choice would deal damage to CARDNAME this turn, that damage is dealt to you instead."
+reason = "Result-axis fixture coverage for passive redirection as full card text."
 
 [[counterexample]]
 text = "This gets +1/+1 until end of turn."
