@@ -1,0 +1,31 @@
+[fixture]
+concept = "activated_source_pt_modifier_until_eot"
+rule = "activated_source_gets_until_eot"
+
+[[example]]
+text = "This gets +1/+1 until end of turn."
+reason = "Activated source-object fixed P/T modifier until end of turn."
+
+[[example]]
+text = "CARDNAME gets +2/+0 until end of turn."
+reason = "CARDNAME source-object fixed P/T modifier until end of turn."
+
+[[counterexample]]
+text = "This gains flying until end of turn."
+reason = "Source keyword grant, not a source P/T modifier."
+
+[[counterexample]]
+text = "Enchanted creature gets +1/+1 until end of turn."
+reason = "Enchanted-object recipient, not source-object recipient."
+
+[[counterexample]]
+text = "Target creature gets +1/+1 until end of turn."
+reason = "Target-object recipient, not source-object recipient."
+
+[[counterexample]]
+text = "If this ability has been activated three or more times this turn, sacrifice this at the beginning of the next end step."
+reason = "Activated-ability history condition with delayed sacrifice, not a P/T modifier effect."
+
+[[counterexample]]
+text = "This gets +1/+1 until end of turn. trailing"
+reason = "Exact-consumption guard."

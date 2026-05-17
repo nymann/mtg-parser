@@ -733,6 +733,11 @@ fn statement_continues_previous_sentence(statement: &Statement) -> bool {
             | Statement::ConditionalControlPlayer { .. }
             | Statement::PlayReferencedCard { .. }
             | Statement::ManaAbilityActivationLimit { .. }
+    ) || matches!(
+        statement,
+        Statement::Destroy {
+            target: DestroyTarget::ReferencedCreatureAtBeginningOfNextEndStep { .. },
+        }
     )
 }
 

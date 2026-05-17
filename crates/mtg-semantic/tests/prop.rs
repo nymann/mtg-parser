@@ -536,9 +536,11 @@ fn arb_statement() -> impl Strategy<Value = Statement> {
         Just(Statement::ActivateOnlyDuringYourTurnAndOnlyOnceEachTurn),
         Just(Statement::ActivateOnlyDuringOpponentsTurnBeforeAttackersDeclared),
         Just(Statement::ActivateOnlyAsSorcery),
-        Just(Statement::DestroyReferencedCreatureAtBeginningOfNextEndStep {
-            target: ReferencedCreature::It,
-            condition: Some(DestroyReferencedCreatureCondition::DidntAttackThisTurn),
+        Just(Statement::Destroy {
+            target: DestroyTarget::ReferencedCreatureAtBeginningOfNextEndStep {
+                target: ReferencedCreature::It,
+                condition: Some(DestroyReferencedCreatureCondition::DidntAttackThisTurn),
+            },
         }),
         (1u32..=10, 1u32..=10).prop_map(|(power, toughness)| {
             Statement::IfYouDoCastThatCardFaceDownWithoutPayingManaCost { power, toughness }
