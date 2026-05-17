@@ -1,0 +1,72 @@
+{
+  "concept": "copy_spell",
+  "fixture_path": "grammar-fixtures/copy_spell.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "copy_target_spell_except_copy_is_color",
+      "text": "Copy target instant spell, except that the copy is red.",
+      "ast": {
+        "CopyTargetSpellExceptCopyIsColor": {
+          "color": "Red",
+          "spell_types": [
+            "Instant"
+          ]
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "copy_target_spell_except_copy_is_color",
+      "text": "Copy target sorcery spell, except that the copy is blue.",
+      "ast": {
+        "CopyTargetSpellExceptCopyIsColor": {
+          "color": "Blue",
+          "spell_types": [
+            "Sorcery"
+          ]
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "copy_target_spell_except_copy_is_color",
+      "text": "Copy target instant or sorcery spell, except that the copy is red.",
+      "ast": {
+        "CopyTargetSpellExceptCopyIsColor": {
+          "color": "Red",
+          "spell_types": [
+            "Instant",
+            "Sorcery"
+          ]
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "copy_target_spell_except_copy_is_color",
+      "text": "Copy target instant spell, except that the copy is white.",
+      "ast": {
+        "CopyTargetSpellExceptCopyIsColor": {
+          "color": "White",
+          "spell_types": [
+            "Instant"
+          ]
+        }
+      }
+    },
+    {
+      "index": 5,
+      "rule": "copy_target_spell_except_copy_is_color",
+      "text": "Copy target sorcery spell, except that the copy is green.",
+      "ast": {
+        "CopyTargetSpellExceptCopyIsColor": {
+          "color": "Green",
+          "spell_types": [
+            "Sorcery"
+          ]
+        }
+      }
+    }
+  ]
+}
