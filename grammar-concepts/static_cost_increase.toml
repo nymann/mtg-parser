@@ -6,27 +6,34 @@ values = ["static_cost_modification"]
 name = "add_affected_object"
 values = [
     "colored_spells",
+    "activated_abilities_of_colored_permanents",
     "filter=color_word",
+    "filter=permanent_type_plural",
     "cost_delta=mana_cost",
     "polarity=more",
     "affected_action=cast",
+    "affected_action=activate",
 ]
 
 [boundary]
 excludes = [
     "Boundary negative: Players can't cast spells with a name originally printed in the Alpha expansion.",
     "Boundary negative: This spell costs {1} more to cast for each target beyond the first.",
-    "Boundary negative: Activated abilities of white enchantments cost {3} more to activate.",
 ]
 includes = [
     "Accepted no-PEST fixture wording: White spells cost {3} more to cast.",
     "Accepted no-PEST fixture wording: Black spells cost {1} more to cast.",
     "Accepted no-PEST fixture wording: Red spells cost {1} more to cast.",
+    "Accepted fixture wording: Activated abilities of white enchantments cost {3} more to activate.",
+    "Accepted fixture wording: Activated abilities of blue artifacts cost {1} more to activate.",
 ]
 
 [concept]
 name = "static_cost_increase"
-pest_rules = ["static_colored_spells_cost_mana_more_to_cast"]
+pest_rules = [
+    "static_colored_spells_cost_mana_more_to_cast",
+    "static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate",
+]
 rules_queries = ["lex: static cost increase"]
 rules_terms = [
     "static",
@@ -42,10 +49,6 @@ text = "Players can't cast spells with a name originally printed in the Alpha ex
 reason = "Boundary negative from no-PEST fast-path decision."
 text = "This spell costs {1} more to cast for each target beyond the first."
 
-[[counterexample]]
-reason = "Boundary negative from no-PEST fast-path decision."
-text = "Activated abilities of white enchantments cost {3} more to activate."
-
 [[example]]
 text = "White spells cost {3} more to cast."
 
@@ -55,8 +58,17 @@ text = "Black spells cost {1} more to cast."
 [[example]]
 text = "Red spells cost {1} more to cast."
 
+[[example]]
+text = "Activated abilities of white enchantments cost {3} more to activate."
+
+[[example]]
+text = "Activated abilities of blue artifacts cost {1} more to activate."
+
 [grammar_query]
-candidate_rules = ["static_colored_spells_cost_mana_more_to_cast"]
+candidate_rules = [
+    "static_colored_spells_cost_mana_more_to_cast",
+    "static_activated_abilities_of_colored_permanents_cost_mana_more_to_activate",
+]
 selected_rule = "static_colored_spells_cost_mana_more_to_cast"
 
 [maturity]
