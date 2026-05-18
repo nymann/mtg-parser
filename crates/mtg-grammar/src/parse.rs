@@ -366,6 +366,9 @@ fn statement_from_pair(pair: Pair<Rule>) -> Result<Statement, ParseError> {
         Rule::delayed_remove_all_named_counters_from_linked_land => Ok(Statement::TriggerEffect(
             delayed_remove_all_named_counters_from_linked_land_from_pair(pair)?,
         )),
+        Rule::loses_and_gains_keyword => {
+            Ok(Statement::TriggerEffect(loses_and_gains_keyword_from_pair(pair)?))
+        }
         Rule::source_gains_static_ability => Ok(Statement::TriggerEffect(
             source_gains_static_ability_from_pair(pair)?,
         )),

@@ -157,6 +157,7 @@ sentence_statement = _{
   | defending_player_divides_creatures_without_keyword_into_labeled_piles
   | creatures_in_assigned_pile_block_if_able
   | then_for_each_attacking_creature_choose_label_blocking_restriction
+  | loses_and_gains_keyword
   | source_gains_static_ability
   | as_source_enters_choose
   | activated_ability_with_activation_permission

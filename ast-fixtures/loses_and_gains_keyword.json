@@ -1,0 +1,60 @@
+{
+  "concept": "loses_and_gains_keyword",
+  "fixture_path": "grammar-fixtures/loses_and_gains_keyword.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "loses_and_gains_keyword",
+      "text": "it loses \"flying\" and gains \"trample.\"",
+      "ast": {
+        "TriggerEffect": {
+          "LosesAndGainsKeyword": {
+            "gains": "Trample",
+            "loses": "Flying"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "loses_and_gains_keyword",
+      "text": "it loses \"islandwalk\" and gains \"protection from black.\"",
+      "ast": {
+        "TriggerEffect": {
+          "LosesAndGainsKeyword": {
+            "gains": {
+              "Protection": "Black"
+            },
+            "loses": "Islandwalk"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "loses_and_gains_keyword",
+      "text": "it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\"",
+      "ast": {
+        "TriggerEffect": {
+          "LosesAndGainsKeyword": {
+            "gains": {
+              "Enchant": {
+                "PutOntoBattlefieldByThisAura": {
+                  "card_type": "Creature"
+                }
+              }
+            },
+            "loses": {
+              "Enchant": {
+                "CardInZone": {
+                  "card_type": "Creature",
+                  "zone": "Graveyard"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
