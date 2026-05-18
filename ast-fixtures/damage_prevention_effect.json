@@ -84,6 +84,63 @@
           "recipient": null
         }
       }
+    },
+    {
+      "index": 6,
+      "rule": "activated_damage_prevention_effect",
+      "text": "Prevent the next 1 damage that would be dealt to any target this turn.",
+      "ast": {
+        "PreventDamageThisTurn": {
+          "amount": {
+            "Next": {
+              "Number": 1
+            }
+          },
+          "definitions": [],
+          "duration": "ThisTurn",
+          "event": "ThatWouldBeDealt",
+          "kind": null,
+          "recipient": "AnyTarget"
+        }
+      }
+    },
+    {
+      "index": 7,
+      "rule": "activated_damage_prevention_effect",
+      "text": "Prevent all damage that would be dealt to you this turn.",
+      "ast": {
+        "PreventDamageThisTurn": {
+          "amount": "All",
+          "definitions": [],
+          "duration": "ThisTurn",
+          "event": "ThatWouldBeDealt",
+          "kind": null,
+          "recipient": "You"
+        }
+      }
+    },
+    {
+      "index": 8,
+      "rule": "activated_damage_prevention_effect",
+      "text": "Prevent the next 2 damage that would be dealt to this creature this turn.",
+      "ast": {
+        "PreventDamageThisTurn": {
+          "amount": {
+            "Next": {
+              "Number": 2
+            }
+          },
+          "definitions": [],
+          "duration": "ThisTurn",
+          "event": "ThatWouldBeDealt",
+          "kind": null,
+          "recipient": {
+            "SourceObject": {
+              "This": "Creature"
+            }
+          }
+        }
+      }
     }
   ]
 }

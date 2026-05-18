@@ -1716,6 +1716,7 @@ fn write_prevention_recipient(out: &mut String, recipient: PreventionRecipient) 
     match recipient {
         PreventionRecipient::AnyTarget => out.push_str("any target"),
         PreventionRecipient::ThatPermanentOrPlayer => out.push_str("that permanent or player"),
+        PreventionRecipient::You => out.push_str("you"),
         PreventionRecipient::SourceObject(source) => write_source_object(out, source),
         PreventionRecipient::CreaturesBandedWithSource(source) => {
             out.push_str("creatures banded with ");

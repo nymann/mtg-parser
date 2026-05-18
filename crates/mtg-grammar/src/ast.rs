@@ -987,6 +987,8 @@ pub enum PreventionRecipient {
     AnyTarget,
     /// "that permanent or player"
     ThatPermanentOrPlayer,
+    /// "you"
+    You,
     /// "this <object>"
     SourceObject(SourceObject),
     /// "creatures banded with this <object>"

@@ -2707,6 +2707,7 @@ fn prevention_recipient_from_pair(pair: Pair<Rule>) -> Result<PreventionRecipien
         Rule::that_permanent_or_player_prevention_recipient => {
             Ok(PreventionRecipient::ThatPermanentOrPlayer)
         }
+        Rule::you_damage_recipient => Ok(PreventionRecipient::You),
         Rule::source_object_damage_recipient => {
             let source_pair = only_inner(pair, "damage prevention missing source object")?;
             Ok(PreventionRecipient::SourceObject(source_object_from_pair(

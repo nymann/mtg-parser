@@ -439,7 +439,12 @@ damage_prevention_duration_fragment = { ^"this" ~ ^"turn" }
 this_turn_period = _{ ^"this" ~ ^"turn" ~ "." }
 damage_prevention_variable_definition = { "," ~ where_clause }
 damage_prevention_amount = _{ damage_amount_expression }
-prevention_recipient = _{ any_target_prevention_recipient | that_permanent_or_player_prevention_recipient }
+prevention_recipient = _{
+    any_target_prevention_recipient
+  | that_permanent_or_player_prevention_recipient
+  | you_damage_recipient
+  | source_object_damage_recipient
+}
 any_target_prevention_recipient = { ^"any" ~ ^"target" }
 that_permanent_or_player_prevention_recipient = { ^"that" ~ ^"permanent" ~ ^"or" ~ ^"player" }
 damage_recipient = {
