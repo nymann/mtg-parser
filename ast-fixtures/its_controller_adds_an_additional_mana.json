@@ -1,0 +1,42 @@
+{
+  "concept": "its_controller_adds_an_additional_mana",
+  "fixture_path": "grammar-fixtures/its_controller_adds_an_additional_mana.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "its_controller_adds_an_additional_mana",
+      "text": "its controller adds an additional {G}.",
+      "ast": {
+        "TriggerEffect": {
+          "ItsControllerAddsAdditionalMana": {
+            "mana": "Green"
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "its_controller_adds_an_additional_mana",
+      "text": "Its controller adds an additional {G}.",
+      "ast": {
+        "TriggerEffect": {
+          "ItsControllerAddsAdditionalMana": {
+            "mana": "Green"
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "its_controller_adds_an_additional_mana",
+      "text": "its controller adds an additional {C}.",
+      "ast": {
+        "TriggerEffect": {
+          "ItsControllerAddsAdditionalMana": {
+            "mana": "Colorless"
+          }
+        }
+      }
+    }
+  ]
+}
