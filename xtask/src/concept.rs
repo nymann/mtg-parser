@@ -27,6 +27,8 @@ use crate::paths::{
 use crate::refactor_hotspot;
 use crate::rules_context;
 
+const NO_UNMAPPED_RULES_MESSAGE: &str = "no unblocked unmapped grammar rules remain";
+
 const DISCOVER_USAGE: &str = "\
 cargo xtask concept-discover --query TEXT [--concept NAME] [--set CODE] [--limit N]
 
@@ -6565,13 +6567,26 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
             expand_deps: true,
         })?;
         write_json(iteration_dir.join("map_before.json"), &before)?;
-        let candidate_build = build_concept_candidate(
+        let candidate_build = match build_concept_candidate(
             &before,
             &options,
             &blocked_targets,
             &plumbing_cooldown,
             &persisted_exclusions,
-        )?;
+        ) {
+            Ok(build) => build,
+            Err(e) if e.to_string().contains(NO_UNMAPPED_RULES_MESSAGE) => {
+                sink.emit(FlowEvent::Note {
+                    level: NoteLevel::Info,
+                    text: format!("concept-grind: {NO_UNMAPPED_RULES_MESSAGE}"),
+                });
+                sink.emit(FlowEvent::SessionFinished {
+                    reason: SessionEndReason::AllPass,
+                });
+                return Ok(());
+            }
+            Err(e) => return Err(e),
+        };
         let cooldown_selection = &candidate_build.audit.plumbing_cooldown_selection;
         write_json(
             iteration_dir.join("plumbing_cooldown_selection.json"),
@@ -7277,7 +7292,7 @@ fn select_concept_gap_excluding(
         .iter()
         .filter(|rule| !excluded_rules.contains(&rule.name))
         .next()
-        .ok_or_else(|| anyhow!("no unblocked unmapped grammar rules remain"))?;
+        .ok_or_else(|| anyhow!(NO_UNMAPPED_RULES_MESSAGE))?;
     let concept = slug(&rule.name).replace('-', "_");
     Ok(ConceptGap {
         concept,
