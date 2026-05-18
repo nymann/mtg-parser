@@ -1,0 +1,48 @@
+{
+  "concept": "activation_permission",
+  "fixture_path": "grammar-fixtures/activation_permission.toml",
+  "cases": [
+    {
+      "index": 1,
+      "rule": "activation_permission",
+      "text": "Only this ability's source's owner may activate this ability.",
+      "ast": {
+        "OnlySourcesOwnerMayActivateThisAbility": {
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "rule": "activation_permission",
+      "text": "Only this permanent's owner may activate this ability.",
+      "ast": {
+        "OnlySourcesOwnerMayActivateThisAbility": {
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "rule": "activation_permission",
+      "text": "only this permanent's owner may activate this ability.",
+      "ast": {
+        "OnlySourcesOwnerMayActivateThisAbility": {
+          "source": "ThisPermanent"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "rule": "activation_permission",
+      "text": "Activate only during your upkeep.",
+      "ast": "ActivateOnlyDuringYourUpkeep"
+    },
+    {
+      "index": 5,
+      "rule": "activation_permission",
+      "text": "activate only during your upkeep.",
+      "ast": "ActivateOnlyDuringYourUpkeep"
+    }
+  ]
+}
