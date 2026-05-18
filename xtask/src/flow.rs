@@ -94,6 +94,11 @@ pub enum SessionEndReason {
     /// Auto-advance walked off the end of Scryfall's paper expansion
     /// list — every tracked set is fully covered, no more sets to add.
     CorpusComplete,
+    /// concept-grind has nothing to claim right now: every unmapped
+    /// grammar rule is either already owned or excluded by cooldown.
+    /// Not a "done" signal — more rules can appear as the grammar or
+    /// corpus grows.
+    NoUnmappedRulesRemain,
     // The reason string is consumed only by sinks that surface to the
     // user (TUI today, console keeps it brief).
     SurfacedToHuman(#[allow(dead_code)] String),

@@ -1004,6 +1004,9 @@ fn output_session_end(reason: &SessionEndReason) -> String {
         SessionEndReason::CorpusComplete => {
             "session · corpus complete (no more paper sets)".to_string()
         }
+        SessionEndReason::NoUnmappedRulesRemain => {
+            "session · caught up (no unblocked unmapped grammar rules right now)".to_string()
+        }
         SessionEndReason::DryRunStop => "session · dry-run complete".to_string(),
         SessionEndReason::StopRequested => "session · stopped after current iteration".to_string(),
         SessionEndReason::MaxIterationsReached(n) => {

@@ -141,6 +141,13 @@ impl FlowSink for ConsoleSink {
                     println!();
                     println!("All tracked sets fully covered. No more paper sets to advance to.");
                 }
+                SessionEndReason::NoUnmappedRulesRemain => {
+                    println!();
+                    println!(
+                        "Caught up: no unblocked unmapped grammar rules to claim right now. \
+                         More may appear as the grammar or corpus grows."
+                    );
+                }
                 SessionEndReason::DryRunStop => {
                     println!();
                     println!(

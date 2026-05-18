@@ -6581,7 +6581,7 @@ fn run_grind(options: ConceptGrindOptions, sink: &mut dyn FlowSink) -> Result<()
                     text: format!("concept-grind: {NO_UNMAPPED_RULES_MESSAGE}"),
                 });
                 sink.emit(FlowEvent::SessionFinished {
-                    reason: SessionEndReason::AllPass,
+                    reason: SessionEndReason::NoUnmappedRulesRemain,
                 });
                 return Ok(());
             }

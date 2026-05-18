@@ -1156,6 +1156,10 @@ fn session_end_line(reason: &SessionEndReason) -> Line<'static> {
         SessionEndReason::CorpusComplete => {
             ("session · corpus complete (no more paper sets)", C_GOOD)
         }
+        SessionEndReason::NoUnmappedRulesRemain => (
+            "session · caught up (no unblocked unmapped grammar rules right now)",
+            C_DIM,
+        ),
         SessionEndReason::DryRunStop => ("session · dry-run complete", C_DIM),
         SessionEndReason::StopRequested => ("session · stopped after current iteration", C_GOOD),
         SessionEndReason::MaxIterationsReached(n) => {
